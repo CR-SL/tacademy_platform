@@ -20,13 +20,15 @@ class DemoContentSeeder extends Seeder
     {
         $roles = Role::pluck('id', 'name');
 
-        // --- Utilizadores demo (password local: "password") ---
+        // --- Utilizadores demo (password local: "password"; em produção vem de SEED_DEMO_PASSWORD) ---
+        $password = Hash::make(env('SEED_DEMO_PASSWORD', 'password'));
+
         $admin = User::firstOrCreate(
             ['email' => 'admin@tacademy.pt'],
             [
                 'role_id' => $roles['admin'],
                 'name' => 'Admin T.Academy',
-                'password' => Hash::make('password'),
+                'password' => $password,
                 'level' => 'gold',
                 'email_verified_at' => now(),
             ]
@@ -37,7 +39,7 @@ class DemoContentSeeder extends Seeder
             [
                 'role_id' => $roles['formador'],
                 'name' => 'João Formador',
-                'password' => Hash::make('password'),
+                'password' => $password,
                 'level' => 'silver',
                 'email_verified_at' => now(),
             ]
@@ -48,7 +50,7 @@ class DemoContentSeeder extends Seeder
             [
                 'role_id' => $roles['aluno'],
                 'name' => 'Maria Aluna',
-                'password' => Hash::make('password'),
+                'password' => $password,
                 'streak_days' => 12,
                 'last_active_at' => now(),
                 'email_verified_at' => now(),
@@ -60,7 +62,7 @@ class DemoContentSeeder extends Seeder
             [
                 'role_id' => $roles['aluno'],
                 'name' => 'Pedro Aluno',
-                'password' => Hash::make('password'),
+                'password' => $password,
                 'email_verified_at' => now(),
             ]
         );

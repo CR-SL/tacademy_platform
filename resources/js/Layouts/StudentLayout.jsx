@@ -45,7 +45,7 @@ function NavButton({ item, active }) {
 }
 
 export default function StudentLayout({ children }) {
-    const { auth, url } = usePage().props;
+    const { auth } = usePage().props;
     const currentUrl = usePage().url;
     const user = auth?.user ?? {};
 
