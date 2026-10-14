@@ -9,10 +9,10 @@ export default function Edit({ mustVerifyEmail, status }) {
         <StudentLayout>
             <Head title="Perfil" />
 
-            <p className="mb-6 text-lg font-bold sm:text-xl">O teu perfil</p>
+            <h1 className="mx-auto mb-6 max-w-3xl font-display text-[26px] font-bold uppercase">O teu perfil</h1>
 
             <div className="mx-auto max-w-3xl space-y-6">
-                <div className="ta-glass rounded-2xl p-6">
+                <div className="ta-cut-16 bg-surface p-6">
                     <UpdateProfileInformationForm
                         mustVerifyEmail={mustVerifyEmail}
                         status={status}
@@ -20,11 +20,11 @@ export default function Edit({ mustVerifyEmail, status }) {
                     />
                 </div>
 
-                <div className="ta-glass rounded-2xl p-6">
+                <div className="ta-cut-16 bg-surface p-6">
                     <UpdatePasswordForm className="max-w-xl" />
                 </div>
 
-                <div className="ta-glass rounded-2xl p-6">
+                <div className="ta-cut-16 bg-surface p-6">
                     <DeleteUserForm className="max-w-xl" />
                 </div>
             </div>

@@ -20,16 +20,16 @@ export default function ForgotPassword({ status }) {
         <GuestLayout>
             <Head title="Recuperar palavra-passe" />
 
-            <h1 className="mb-1 text-xl font-bold text-ink">
+            <h1 className="mb-1 font-display text-2xl font-bold uppercase text-ink">
                 Recuperar palavra-passe
             </h1>
-            <p className="mb-6 text-sm text-steel">
+            <p className="mb-6 text-sm text-muted">
                 Sem problema. Indica o teu email e enviamos-te um link para
                 definires uma nova palavra-passe.
             </p>
 
             {status && (
-                <div className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
+                <div className="mb-4 ta-cut-8 bg-accent px-3 py-2 text-sm font-semibold text-on-accent">
                     {status}
                 </div>
             )}
@@ -55,10 +55,10 @@ export default function ForgotPassword({ status }) {
                     </PrimaryButton>
                 </div>
 
-                <p className="mt-6 text-center text-sm text-steel">
+                <p className="mt-6 text-center text-sm text-muted">
                     <Link
                         href={route('login')}
-                        className="font-semibold text-tblue hover:underline"
+                        className="font-semibold text-accent-ink hover:underline"
                     >
                         ← Voltar ao início de sessão
                     </Link>

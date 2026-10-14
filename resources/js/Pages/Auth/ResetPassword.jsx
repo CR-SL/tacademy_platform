@@ -25,10 +25,10 @@ export default function ResetPassword({ token, email }) {
         <GuestLayout>
             <Head title="Definir nova palavra-passe" />
 
-            <h1 className="mb-1 text-xl font-bold text-ink">
+            <h1 className="mb-1 font-display text-2xl font-bold uppercase text-ink">
                 Nova palavra-passe
             </h1>
-            <p className="mb-6 text-sm text-steel">
+            <p className="mb-6 text-sm text-muted">
                 Escolhe uma nova palavra-passe para a tua conta.
             </p>
 

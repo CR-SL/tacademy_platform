@@ -1,203 +1,416 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import StudentLayout from '@/Layouts/StudentLayout';
-import { CatalogIcon } from '@/Components/NavIcons';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import StudentLayout, { formatXp, initials } from '@/Layouts/StudentLayout';
 
-function formatDuration(minutes) {
-    if (!minutes) return '—';
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    if (h && m) return `${h}h${String(m).padStart(2, '0')}`;
-    if (h) return `${h}h`;
-    return `${m} min`;
+// Dashboard "Centro de Tarefas" — Identidade Visual v3 · direção 4b (ver README.md).
+
+const XP_PER_LEVEL = 400;
+const ACCENT = 'var(--color-accent)';
+const TRACK = 'var(--color-track)';
+
+const TABS = [
+    { key: 'daily', label: 'Diárias' },
+    { key: 'weekly', label: 'Semanais' },
+    { key: 'team', label: 'Equipa' },
+];
+
+const FEED_AGO = ['agora', '3 min', '6 min', '9 min', '12 min'];
+
+// Barras e anéis animam de 0 até ao valor ao montar.
+function useMounted() {
+    const [ready, setReady] = useState(false);
+    useEffect(() => {
+        const t = setTimeout(() => setReady(true), 60);
+        return () => clearTimeout(t);
+    }, []);
+    return ready;
 }
 
-const levelLabels = {
-    iniciante: 'Iniciante',
-    intermedio: 'Intermédio',
-    avancado: 'Avançado',
-};
-
-function courseGradient(color = '#2F6FED') {
-    return `linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 65%, #000))`;
-}
-
-function ProgressRing({ percent }) {
-    const r = 34;
-    const circumference = 2 * Math.PI * r;
-    const offset = circumference * (1 - percent / 100);
+function SectionLabel({ children, className = '' }) {
     return (
-        <svg width="80" height="80" viewBox="0 0 80 80" className="mx-auto mb-2 block">
-            <circle cx="40" cy="40" r={r} fill="none" stroke="rgba(15,27,45,.10)" strokeWidth="8" />
-            <circle
-                cx="40"
-                cy="40"
-                r={r}
-                fill="none"
-                stroke="url(#ringGrad)"
-                strokeWidth="8"
-                strokeDasharray={circumference.toFixed(1)}
-                strokeDashoffset={offset.toFixed(1)}
-                strokeLinecap="round"
-                transform="rotate(-90 40 40)"
-                style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,.5))' }}
-            />
-            <defs>
-                <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stopColor="#2F6FED" />
-                    <stop offset="1" stopColor="#22D3EE" />
-                </linearGradient>
-            </defs>
-            <text x="40" y="45" textAnchor="middle" className="fill-ink text-[15px] font-extrabold">
-                {percent}%
-            </text>
-        </svg>
-    );
-}
-
-function AiBadge() {
-    return (
-        <span className="absolute left-2.5 top-2.5 z-10 flex items-center gap-1 rounded-full border border-[rgba(34,211,238,.5)] bg-[rgba(34,211,238,.15)] px-2 py-0.5 text-[9px] font-extrabold tracking-wide text-[#7ff0ff]">
-            ✦ AULA COM IA
+        <span className={`font-display text-[13px] font-bold uppercase tracking-[0.1em] ${className}`}>
+            {children}
         </span>
     );
 }
 
-function CourseCard({ course }) {
-    if (course.has_ai) {
-        return (
-            <Link
-                href={course.url ?? '#'}
-                className="ta-ai-surface ta-rise relative block rounded-2xl border border-[rgba(34,211,238,.4)] p-2.5 transition hover:-translate-y-1"
-            >
-                <AiBadge />
-                <div className="mb-2.5 flex h-24 items-center justify-center rounded-lg">
-                    <div className="ta-orb h-11 w-11" />
-                </div>
-                <p className="mb-0.5 line-clamp-2 text-xs font-bold leading-snug text-white">
-                    {course.title}
-                </p>
-                <p className="text-[10px] text-[#8ea3c0]">
-                    {levelLabels[course.level] ?? course.level} · {formatDuration(course.duration_minutes)}
-                </p>
-            </Link>
-        );
-    }
+function ProfileCard({ name, xp, stats, ready }) {
+    const level = Math.floor(xp / XP_PER_LEVEL) + 1;
+    const inLevel = xp % XP_PER_LEVEL;
+    const pct = Math.round((inLevel / XP_PER_LEVEL) * 100);
+    const shown = ready ? pct : 0;
 
     return (
-        <Link
-            href={course.url ?? '#'}
-            className="ta-glass ta-rise block rounded-2xl p-2.5 transition hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(47,111,237,0.14)]"
-        >
+        <div className="ta-cut-16 flex flex-col items-center gap-3.5 bg-surface p-[22px] text-center">
             <div
-                className="mb-2.5 flex h-24 items-center justify-center rounded-lg text-white"
-                style={{ background: courseGradient(course.category?.color_hex) }}
+                className="flex h-[108px] w-[108px] items-center justify-center rounded-full"
+                style={{
+                    background: `conic-gradient(${ACCENT} 0 ${shown}%, ${TRACK} 0 100%)`,
+                    transition: 'background .6s',
+                }}
             >
-                <CatalogIcon className="h-7 w-7" />
+                <div className="flex h-[94px] w-[94px] items-center justify-center rounded-full bg-surface2 font-display text-[30px] font-bold text-ink">
+                    {initials(name) || 'AL'}
+                </div>
             </div>
-            <p className="mb-0.5 line-clamp-2 text-xs font-bold leading-snug">{course.title}</p>
-            <p className="text-[10px] text-steel">
-                {levelLabels[course.level] ?? course.level} · {formatDuration(course.duration_minutes)}
-            </p>
-        </Link>
-    );
-}
 
-function ContinueHero({ course }) {
-    return (
-        <div className="ta-ai-surface ta-rise relative flex flex-col justify-between gap-4 rounded-2xl p-5">
-            <div className="ta-ai-glow" />
-            <div className="ta-ai-glow ta-ai-glow--yellow" />
-            <div className="relative flex items-center gap-3">
-                <div className="ta-orb h-12 w-12" />
-                <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-[#7ff0ff]">
-                        A continuar{course.has_ai ? ' · Aula com IA' : ''}
+            <div>
+                <div className="font-display text-[13px] font-bold tracking-[0.1em] text-accent-ink">
+                    NÍVEL {level}
+                </div>
+                <div className="mt-0.5 font-display text-[26px] font-bold leading-[1.1]">{name}</div>
+                <div className="text-sm text-muted">Técnico de Diagnóstico</div>
+            </div>
+
+            <div className="flex w-full flex-col gap-1.5">
+                <div className="ta-slant-4 h-2.5 bg-track">
+                    <div className="ta-fill h-full bg-accent" style={{ width: `${shown}%` }} />
+                </div>
+                <div className="flex justify-between text-xs text-muted">
+                    <span>
+                        {inLevel} / {XP_PER_LEVEL} XP
                     </span>
-                    <p className="mt-0.5 text-base font-extrabold leading-tight text-white">
-                        {course.title}
-                    </p>
+                    <span>Nível {level + 1}</span>
                 </div>
             </div>
-            <div className="relative">
-                <div className="h-1.5 overflow-hidden rounded-full bg-white/15">
-                    <div
-                        className="h-full rounded-full bg-gradient-to-r from-cyan to-[#7ff0ff] shadow-[0_0_12px_rgba(34,211,238,.7)]"
-                        style={{ width: `${course.percent}%` }}
-                    />
-                </div>
+
+            <div className="grid w-full grid-cols-3 gap-1.5 border-t border-line pt-3.5">
+                {[
+                    [stats.lessons, 'AULAS'],
+                    [`${stats.hours}h`, 'ESTUDO'],
+                    [stats.certificates, 'CERTIF.'],
+                ].map(([value, label]) => (
+                    <div key={label}>
+                        <div className="font-display text-[22px] font-bold">{value}</div>
+                        <div className="text-[11px] text-muted">{label}</div>
+                    </div>
+                ))}
             </div>
-            <Link
-                href={course.url ?? '#'}
-                className="absolute bottom-4 right-5 text-xs font-extrabold text-cyan"
-            >
-                Continuar →
-            </Link>
         </div>
     );
 }
 
-export default function Dashboard({ greeting, quote, ring, continueCourse, popularCourses }) {
-    const { auth } = usePage().props;
-    const firstName = (auth?.user?.name ?? '').split(' ')[0] || 'aluno';
+function ContinueCard({ course }) {
+    if (!course) {
+        return (
+            <div className="ta-cut-16 flex flex-col gap-3 bg-accent p-5 text-on-accent">
+                <span className="font-display text-xs font-bold tracking-[0.1em]">COMEÇAR</span>
+                <span className="font-display text-[22px] font-bold leading-[1.1]">
+                    Ainda não começaste nenhum curso
+                </span>
+                <Link
+                    href="/cursos"
+                    className="ta-cut-8 ta-press self-start bg-on-accent px-4 py-[9px] font-display text-sm font-bold text-accent"
+                >
+                    VER CURSOS ▶
+                </Link>
+            </div>
+        );
+    }
+
+    const segment = { done: '#18181b', current: '#18181b70', todo: '#18181b25' };
 
     return (
-        <StudentLayout>
-            <Head title="Início" />
+        <div className="ta-cut-16 flex flex-col gap-3 bg-accent p-5 text-on-accent">
+            <span className="font-display text-xs font-bold tracking-[0.1em]">
+                CONTINUAR{course.has_ai ? ' · AULA COM IA' : ''}
+            </span>
+            <span className="font-display text-[22px] font-bold leading-[1.1]">{course.title}</span>
+            {course.modules.length > 0 && (
+                <div
+                    className="grid gap-1"
+                    style={{ gridTemplateColumns: `repeat(${course.modules.length}, minmax(0, 1fr))` }}
+                >
+                    {course.modules.map((state, i) => (
+                        <div
+                            key={i}
+                            className="h-2"
+                            style={{ background: segment[state], transform: 'skewX(-20deg)' }}
+                        />
+                    ))}
+                </div>
+            )}
+            <div className="flex items-center justify-between gap-3">
+                <span className="text-[13px] font-semibold">
+                    Módulo {course.current_module} de {course.modules.length || 1}
+                </span>
+                <Link
+                    href={course.url}
+                    className="ta-cut-8 ta-press bg-on-accent px-4 py-[9px] font-display text-sm font-bold text-accent"
+                >
+                    RETOMAR ▶
+                </Link>
+            </div>
+        </div>
+    );
+}
 
-            <p className="mb-0.5 bg-gradient-to-r from-ink to-tblue bg-clip-text text-lg font-extrabold text-transparent sm:text-xl">
-                {greeting}, {firstName} 👋
-            </p>
-            <p className="mb-6 text-xs text-steel sm:text-sm">
-                Pequenos passos, um técnico mais completo.
-            </p>
+function MissionRow({ mission, index, ready, onClaim }) {
+    const complete = mission.progress >= mission.target;
+    const claimed = mission.claimed;
+    const claimable = complete && !claimed;
+    const pct = Math.min(100, (mission.progress / mission.target) * 100);
 
-            <div className="grid gap-6 lg:grid-cols-3">
-                {/* Coluna lateral: percurso + citação */}
-                <aside className="grid grid-cols-2 gap-4 lg:order-2 lg:col-span-1 lg:grid-cols-1">
-                    <div className="ta-glass rounded-2xl p-5 text-center">
-                        <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-steel">
-                            O teu percurso
-                        </p>
-                        <ProgressRing percent={ring.percent} />
-                        <p className="text-[11px] text-steel">
-                            {ring.done} de {ring.total} objetivos concluídos
-                        </p>
+    const button = claimed
+        ? { label: 'RECOLHIDO ✓', cls: 'border border-line bg-transparent text-muted cursor-default' }
+        : complete
+          ? { label: 'RECOLHER', cls: 'border border-transparent bg-accent text-on-accent cursor-pointer' }
+          : { label: 'EM CURSO', cls: 'border border-transparent bg-surface2 text-muted cursor-default' };
+
+    return (
+        <div
+            className="ta-cut-12 grid grid-cols-[44px_minmax(0,1fr)] items-center gap-4 bg-surface px-5 py-[18px] sm:grid-cols-[44px_minmax(0,1fr)_150px]"
+            style={{
+                boxShadow: claimable ? `inset 0 0 0 2px ${ACCENT}` : 'none',
+                transition: 'box-shadow .3s',
+            }}
+        >
+            <div
+                className={`ta-cut-8 flex h-11 w-11 items-center justify-center font-display text-lg font-bold transition-colors duration-300 ${
+                    complete ? 'bg-accent text-on-accent' : 'bg-surface2 text-muted'
+                }`}
+            >
+                {claimed ? '✓' : complete ? '!' : index + 1}
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-2">
+                <div className="flex items-baseline justify-between gap-2.5">
+                    <span className="text-base font-semibold">{mission.title}</span>
+                    <span className="whitespace-nowrap font-display text-sm font-bold text-accent-ink">
+                        +{mission.reward_xp} XP
+                    </span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                    <div className="h-2 flex-1 bg-track">
+                        <div className="ta-fill h-full bg-accent" style={{ width: `${ready ? pct : 0}%` }} />
+                    </div>
+                    <span className="font-display text-[13px] font-semibold text-muted">
+                        {mission.progress}/{mission.target}
+                    </span>
+                </div>
+            </div>
+
+            <button
+                type="button"
+                onClick={() => claimable && onClaim(mission)}
+                disabled={!claimable}
+                className={`ta-press col-span-2 py-[11px] text-center font-display text-sm font-bold tracking-[0.04em] sm:col-span-1 ${button.cls}`}
+            >
+                {button.label}
+            </button>
+        </div>
+    );
+}
+
+function TeamChallenge({ challenge, ready }) {
+    const pct = Math.round((challenge.done / challenge.target) * 100);
+    const left = challenge.target - challenge.done;
+
+    return (
+        <div className="ta-cut-12 flex items-center gap-5 bg-surface p-5">
+            <div
+                className="flex h-[84px] w-[84px] shrink-0 items-center justify-center rounded-full"
+                style={{
+                    background: `conic-gradient(${ACCENT} 0 ${ready ? pct : 0}%, ${TRACK} 0 100%)`,
+                    transition: 'background .6s',
+                }}
+            >
+                <div className="flex h-[66px] w-[66px] items-center justify-center rounded-full bg-surface font-display text-lg font-bold">
+                    {pct}%
+                </div>
+            </div>
+            <div className="flex flex-1 flex-col gap-1">
+                <span className="font-display text-xs font-bold uppercase tracking-[0.1em] text-muted">
+                    Desafio de equipa · {challenge.team}
+                </span>
+                <span className="text-lg font-semibold">
+                    {challenge.done} de {challenge.target} aulas concluídas esta semana
+                </span>
+                <span className="text-sm text-muted">
+                    {left > 0
+                        ? `Faltam ${left} aulas. Se conseguirem, toda a equipa ganha +${challenge.reward_xp} XP.`
+                        : `Desafio cumprido! Toda a equipa ganha +${challenge.reward_xp} XP.`}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+// Feed ao vivo: na produção deve vir de websocket ou polling; aqui roda os eventos a cada 3s.
+function LiveFeed({ events }) {
+    const [offset, setOffset] = useState(0);
+
+    useEffect(() => {
+        if (events.length < 2) return;
+        const iv = setInterval(() => setOffset((o) => o + 1), 3000);
+        return () => clearInterval(iv);
+    }, [events.length]);
+
+    const n = events.length;
+    const rows = Array.from({ length: Math.min(5, n) }, (_, i) => ({
+        ...events[(((offset - i) % n) + n) % n],
+        key: offset - i,
+        ago: FEED_AGO[i],
+        opacity: 1 - i * 0.14,
+    }));
+
+    return (
+        <div className="ta-cut-16 flex flex-col gap-1 bg-surface p-5">
+            <div className="mb-2 flex items-center gap-2">
+                <span className="ta-live-dot inline-block h-2 w-2 rounded-full bg-live" />
+                <SectionLabel>Ao vivo na equipa</SectionLabel>
+            </div>
+            {rows.map((row, i) => (
+                <div
+                    key={row.key}
+                    className={`grid grid-cols-[32px_minmax(0,1fr)] gap-2.5 border-t border-line py-[9px] ${i === 0 ? 'ta-slide-in' : ''}`}
+                    style={{ opacity: row.opacity, transition: 'opacity .3s' }}
+                >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface2 text-xs font-semibold">
+                        {initials(row.name)}
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-sm leading-[1.3]">
+                            <span className="font-semibold">{row.name}</span> {row.action}
+                        </span>
+                        <span className="text-xs text-muted">{row.ago}</span>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function Leaderboard({ rows }) {
+    return (
+        <div className="ta-cut-16 flex flex-col gap-1 bg-surface p-5">
+            <SectionLabel className="mb-2">Classificação semanal</SectionLabel>
+            {rows.map((row, i) => (
+                <div
+                    key={row.name + i}
+                    className={`grid grid-cols-[28px_1fr_auto] items-center gap-2.5 px-2.5 py-2 transition-colors duration-300 ${
+                        row.me ? 'bg-accent text-on-accent' : 'text-ink'
+                    }`}
+                >
+                    <span className="font-display text-base font-bold">{i + 1}</span>
+                    <span className="truncate text-sm font-medium">
+                        {row.name}
+                        {row.me ? ' (tu)' : ''}
+                    </span>
+                    <span className="font-display text-sm font-bold">{formatXp(row.xp)}</span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+export default function Dashboard({
+    stats,
+    continueCourse,
+    xp: initialXp,
+    missions: initialMissions,
+    teamChallenge,
+    feed,
+    leaderboard,
+}) {
+    const { auth } = usePage().props;
+    const name = auth?.user?.name ?? 'Aluno';
+    const ready = useMounted();
+
+    const [xp, setXp] = useState(initialXp);
+    const [missions, setMissions] = useState(initialMissions);
+    const [tab, setTab] = useState('daily');
+    const [toast, setToast] = useState(null);
+    const toastTimer = useRef(null);
+
+    useEffect(() => () => clearTimeout(toastTimer.current), []);
+
+    // Recolher: atualização otimista (XP, nível, anel, barra, classificação).
+    // TODO: quando existir a API, chamar POST /missions/:id/claim e acertar com o XP devolvido.
+    const claim = (mission) => {
+        setMissions((all) => ({
+            ...all,
+            [tab]: all[tab].map((m) => (m.id === mission.id ? { ...m, claimed: true } : m)),
+        }));
+        setXp((v) => v + mission.reward_xp);
+        setToast({ id: Date.now(), xp: mission.reward_xp });
+        clearTimeout(toastTimer.current);
+        toastTimer.current = setTimeout(() => setToast(null), 2200);
+    };
+
+    const board = useMemo(
+        () =>
+            leaderboard
+                .map((row) => (row.me ? { ...row, xp } : row))
+                .sort((a, b) => b.xp - a.xp),
+        [leaderboard, xp],
+    );
+
+    const pending = (key) => missions[key].filter((m) => m.progress >= m.target && !m.claimed).length;
+
+    return (
+        <StudentLayout xp={xp}>
+            <Head title="Tarefas" />
+
+            {toast && (
+                <div
+                    key={toast.id}
+                    role="status"
+                    className="ta-cut-10 ta-toast fixed left-1/2 top-20 z-40 -ml-[110px] w-[220px] bg-accent py-3 text-center font-display text-lg font-bold text-on-accent shadow-[0_10px_30px_rgba(0,0,0,.2)]"
+                >
+                    +{toast.xp} XP RECOLHIDOS
+                </div>
+            )}
+
+            <div className="grid gap-[18px] lg:grid-cols-[290px_minmax(0,1fr)_290px]">
+                {/* Coluna esquerda: perfil + continuar */}
+                <div className="flex flex-col gap-[18px]">
+                    <ProfileCard name={name} xp={xp} stats={stats} ready={ready} />
+                    <ContinueCard course={continueCourse} />
+                </div>
+
+                {/* Coluna central: tarefas + desafio de equipa */}
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h1 className="font-display text-[26px] font-bold">TAREFAS</h1>
+                        <div className="ta-cut-8 flex gap-1 bg-surface p-1" role="tablist">
+                            {TABS.map(({ key, label }) => {
+                                const n = pending(key);
+                                const active = tab === key;
+                                return (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={active}
+                                        onClick={() => setTab(key)}
+                                        className={`flex items-center gap-2 px-4 py-2 font-display text-sm font-semibold transition-colors duration-200 ${
+                                            active ? 'bg-ink text-page' : 'bg-transparent text-muted hover:text-ink'
+                                        }`}
+                                    >
+                                        {label}
+                                        {n > 0 && (
+                                            <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent text-[11px] font-bold text-on-accent">
+                                                {n}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
-                    <div className="flex items-center rounded-2xl bg-gradient-to-br from-tblue to-[#1B4FC4] p-5 text-white shadow-[0_10px_30px_rgba(47,111,237,.20)]">
-                        <p className="text-sm font-semibold leading-snug">“{quote}”</p>
-                    </div>
-                </aside>
+                    {missions[tab].map((mission, i) => (
+                        <MissionRow key={mission.id} mission={mission} index={i} ready={ready} onClaim={claim} />
+                    ))}
 
-                {/* Coluna principal: a continuar + populares */}
-                <div className="space-y-6 lg:order-1 lg:col-span-2">
-                    {continueCourse ? (
-                        <ContinueHero course={continueCourse} />
-                    ) : (
-                        <div className="ta-glass rounded-2xl p-5 text-center text-sm text-steel">
-                            Ainda não começaste nenhum curso.{' '}
-                            <Link href="/cursos" className="font-bold text-tblue">
-                                Explorar catálogo →
-                            </Link>
-                        </div>
-                    )}
+                    <TeamChallenge challenge={teamChallenge} ready={ready} />
+                </div>
 
-                    <div>
-                        <div className="mb-3 flex items-center gap-2">
-                            <span className="h-[7px] w-[7px] rounded-full bg-brand-yellow shadow-[0_0_8px_rgba(232,148,15,.6)]" />
-                            <p className="text-[11px] font-bold uppercase tracking-wide text-steel">
-                                Popular esta semana
-                            </p>
-                            <Link href="/cursos" className="ml-auto text-[11px] font-semibold text-tblue">
-                                Ver tudo
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-                            {popularCourses.map((course) => (
-                                <CourseCard key={course.id} course={course} />
-                            ))}
-                        </div>
-                    </div>
+                {/* Coluna direita: feed ao vivo + classificação */}
+                <div className="flex flex-col gap-[18px]">
+                    <LiveFeed events={feed} />
+                    <Leaderboard rows={board} />
                 </div>
             </div>
         </StudentLayout>

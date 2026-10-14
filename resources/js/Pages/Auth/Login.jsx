@@ -3,6 +3,7 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import ThemeToggle from '@/Components/ThemeToggle';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useRef } from 'react';
 
@@ -139,10 +140,11 @@ export default function Login({ status, canResetPassword }) {
     return (
         <>
             <Head title="Entrar" />
+            <ThemeToggle className="fixed right-4 top-4 z-30 bg-surface" />
 
             <div
                 ref={wrapRef}
-                className="relative bg-pearl text-ink"
+                className="relative bg-page text-ink"
                 style={{ height: reduced ? 'auto' : '240vh' }}
             >
                 <div
@@ -152,8 +154,6 @@ export default function Login({ status, canResetPassword }) {
                         'flex flex-col items-center justify-center overflow-hidden px-4'
                     }
                 >
-                    <div className="ta-aurora" />
-
                     <div className="relative z-10 flex w-full flex-col items-center gap-8">
                         {/* Palco do logótipo */}
                         <div
@@ -206,16 +206,16 @@ export default function Login({ status, canResetPassword }) {
                         {/* Cartão de login */}
                         <div
                             ref={formRef}
-                            className="w-full max-w-md rounded-2xl border border-white/80 bg-white/70 p-6 shadow-[0_10px_30px_rgba(47,111,237,0.08)] backdrop-blur-xl"
+                            className="ta-cut-16 w-full max-w-md bg-surface p-6"
                             style={formStyle(p0)}
                         >
-                            <h1 className="mb-1 text-xl font-bold text-ink">Bem-vindo de volta</h1>
-                            <p className="mb-5 text-sm text-steel">
+                            <h1 className="mb-1 font-display text-2xl font-bold uppercase text-ink">Bem-vindo de volta</h1>
+                            <p className="mb-5 text-sm text-muted">
                                 Entra para continuar a tua formação.
                             </p>
 
                             {status && (
-                                <div className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
+                                <div className="mb-4 ta-cut-8 bg-accent px-3 py-2 text-sm font-semibold text-on-accent">
                                     {status}
                                 </div>
                             )}
@@ -256,7 +256,7 @@ export default function Login({ status, canResetPassword }) {
                                             checked={data.remember}
                                             onChange={(e) => setData('remember', e.target.checked)}
                                         />
-                                        <span className="ms-2 text-sm text-steel">
+                                        <span className="ms-2 text-sm text-muted">
                                             Manter sessão iniciada
                                         </span>
                                     </label>
@@ -264,7 +264,7 @@ export default function Login({ status, canResetPassword }) {
                                     {canResetPassword && (
                                         <Link
                                             href={route('password.request')}
-                                            className="text-sm text-steel underline hover:text-tblue focus:outline-none"
+                                            className="text-sm text-muted underline hover:text-accent-ink focus:outline-none"
                                         >
                                             Esqueceste-te da palavra-passe?
                                         </Link>
@@ -277,11 +277,11 @@ export default function Login({ status, canResetPassword }) {
                                     </PrimaryButton>
                                 </div>
 
-                                <p className="mt-6 text-center text-sm text-steel">
+                                <p className="mt-6 text-center text-sm text-muted">
                                     Ainda não tens conta?{' '}
                                     <Link
                                         href={route('register')}
-                                        className="font-semibold text-tblue hover:underline"
+                                        className="font-semibold text-accent-ink hover:underline"
                                     >
                                         Criar conta
                                     </Link>
@@ -294,7 +294,7 @@ export default function Login({ status, canResetPassword }) {
                     {!reduced && (
                         <div
                             ref={hintRef}
-                            className="pointer-events-none absolute bottom-6 left-1/2 z-10 -translate-x-1/2 text-center text-[11px] font-semibold uppercase tracking-widest text-steel"
+                            className="pointer-events-none absolute bottom-6 left-1/2 z-10 -translate-x-1/2 text-center font-display text-[12px] font-semibold uppercase tracking-[0.1em] text-muted"
                             style={hintStyle(p0)}
                         >
                             Faz scroll ↓

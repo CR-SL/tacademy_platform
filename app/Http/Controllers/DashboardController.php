@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * Dashboard "Centro de Missões" (Identidade Visual v3 · direção 4b).
+ */
 class DashboardController extends Controller
 {
     public function __invoke(Request $request): Response
@@ -17,61 +21,40 @@ class DashboardController extends Controller
         $user = $request->user();
 
         return Inertia::render('Dashboard', [
-            'greeting' => $this->greeting(),
-            'quote' => $this->quote(),
-            'ring' => $this->ring($user->id),
+            'stats' => $this->stats($user->id),
             'continueCourse' => $this->continueCourse($user->id),
-            'popularCourses' => $this->popularCourses(),
+            ...$this->demoGamification($user),
         ]);
     }
 
-    private function greeting(): string
-    {
-        $hour = (int) now()->format('H');
-
-        return match (true) {
-            $hour < 12 => 'Bom dia',
-            $hour < 20 => 'Boa tarde',
-            default => 'Boa noite',
-        };
-    }
-
-    private function quote(): string
-    {
-        return collect([
-            'O progresso soma-se a tudo. Continua.',
-            'Um pouco todos os dias leva-te longe.',
-            'Aprender é a melhor manutenção.',
-            'Cada lição é uma ferramenta a mais.',
-        ])->random();
-    }
-
     /**
-     * Percurso do aluno: lições concluídas vs. total das lições dos cursos inscritos.
+     * Estatísticas do cartão de perfil: aulas concluídas, horas de estudo, certificados.
      *
-     * @return array{percent:int, done:int, total:int}
+     * @return array{lessons:int, hours:int, certificates:int}
      */
-    private function ring(int $userId): array
+    private function stats(int $userId): array
     {
-        $courseIds = Enrollment::where('user_id', $userId)->pluck('course_id');
+        $completed = LessonProgress::where('user_id', $userId)->where('status', 'completed');
 
-        $total = Lesson::whereHas('module', fn ($q) => $q->whereIn('course_id', $courseIds))->count();
+        $seconds = Lesson::whereIn('id', (clone $completed)->select('lesson_id'))->sum('duration_seconds');
 
-        $done = LessonProgress::where('user_id', $userId)
-            ->where('status', 'completed')
-            ->count();
-
-        $percent = $total > 0 ? (int) round(($done / $total) * 100) : 0;
-
-        return ['percent' => $percent, 'done' => $done, 'total' => $total];
+        return [
+            'lessons' => $completed->count(),
+            'hours' => (int) round($seconds / 3600),
+            'certificates' => DB::table('certificates')
+                ->where('user_id', $userId)
+                ->where('status', 'valid')
+                ->count(),
+        ];
     }
 
     /**
-     * Curso a retomar: inscrição ativa mais recente + progresso desse curso.
+     * Curso a retomar: inscrição ativa mais recente, com o estado de cada módulo
+     * (concluído / atual / por fazer) para os segmentos do cartão "Continuar".
      */
     private function continueCourse(int $userId): ?array
     {
-        $enrollment = Enrollment::with('course.category')
+        $enrollment = Enrollment::with(['course.modules' => fn ($q) => $q->orderBy('order_index')->with('lessons:id,module_id')])
             ->where('user_id', $userId)
             ->where('status', 'active')
             ->latest('enrolled_at')
@@ -82,43 +65,88 @@ class DashboardController extends Controller
         }
 
         $course = $enrollment->course;
-        $total = Lesson::whereHas('module', fn ($q) => $q->where('course_id', $course->id))->count();
-        $done = LessonProgress::where('user_id', $userId)
+        $doneIds = LessonProgress::where('user_id', $userId)
             ->where('status', 'completed')
-            ->whereHas('lesson.module', fn ($q) => $q->where('course_id', $course->id))
-            ->count();
+            ->pluck('lesson_id')
+            ->flip();
+
+        $current = null;
+        $modules = $course->modules->values()->map(function ($module, $i) use ($doneIds, &$current) {
+            $lessons = $module->lessons;
+            $done = $lessons->isNotEmpty() && $lessons->every(fn ($l) => $doneIds->has($l->id));
+
+            if ($done) {
+                return 'done';
+            }
+            if ($current === null) {
+                $current = $i;
+
+                return 'current';
+            }
+
+            return 'todo';
+        })->all();
 
         return [
             'title' => $course->title,
-            'percent' => $total > 0 ? (int) round(($done / $total) * 100) : 0,
             'url' => '/cursos/'.$course->ulid,
             'has_ai' => $course->lessons()->where('content_type', 'avatar')->exists(),
-            'category' => ['color_hex' => $course->category?->color_hex],
+            'modules' => $modules,
+            'current_module' => ($current ?? max(count($modules) - 1, 0)) + 1,
         ];
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * Gamificação (XP, missões, feed da equipa, classificação, desafio de equipa).
+     *
+     * DADOS DE DEMONSTRAÇÃO: ainda não existem tabelas para missões/XP. Quando existirem,
+     * substituir por queries reais e expor `POST /missions/{id}/claim` (devolve o novo XP);
+     * o frontend já faz a atualização otimista.
+     *
+     * @return array<string, mixed>
      */
-    private function popularCourses(): array
+    private function demoGamification(User $user): array
     {
-        return Course::with('category')
-            ->where('status', 'published')
-            ->withCount('enrollments')
-            ->withCount(['lessons as ai_count' => fn ($q) => $q->where('content_type', 'avatar')])
-            ->orderByDesc('enrollments_count')
-            ->latest()
-            ->take(8)
-            ->get()
-            ->map(fn (Course $course) => [
-                'id' => $course->id,
-                'title' => $course->title,
-                'level' => $course->level,
-                'duration_minutes' => $course->duration_minutes,
-                'url' => '/cursos/'.$course->ulid,
-                'has_ai' => $course->ai_count > 0,
-                'category' => ['color_hex' => $course->category?->color_hex],
-            ])
-            ->all();
+        $xp = 1240;
+
+        return [
+            'xp' => $xp,
+            'missions' => [
+                'daily' => [
+                    ['id' => 'd1', 'title' => 'Concluir 1 aula', 'progress' => 1, 'target' => 1, 'reward_xp' => 50, 'claimed' => false],
+                    ['id' => 'd2', 'title' => 'Acertar 5 perguntas no quiz', 'progress' => 5, 'target' => 5, 'reward_xp' => 40, 'claimed' => false],
+                    ['id' => 'd3', 'title' => 'Estudar 20 minutos', 'progress' => 12, 'target' => 20, 'reward_xp' => 30, 'claimed' => false],
+                ],
+                'weekly' => [
+                    ['id' => 'w1', 'title' => 'Concluir 3 aulas de Eletricidade', 'progress' => 2, 'target' => 3, 'reward_xp' => 150, 'claimed' => false],
+                    ['id' => 'w2', 'title' => 'Estudar 5 dias esta semana', 'progress' => 5, 'target' => 5, 'reward_xp' => 200, 'claimed' => false],
+                    ['id' => 'w3', 'title' => 'Obter 1 certificado', 'progress' => 0, 'target' => 1, 'reward_xp' => 500, 'claimed' => false],
+                ],
+                'team' => [
+                    ['id' => 't1', 'title' => 'Oficina Lisboa: 40 aulas', 'progress' => 31, 'target' => 40, 'reward_xp' => 300, 'claimed' => false],
+                    ['id' => 't2', 'title' => 'Toda a equipa com 1 quiz feito', 'progress' => 8, 'target' => 8, 'reward_xp' => 250, 'claimed' => false],
+                ],
+            ],
+            'teamChallenge' => [
+                'team' => 'Oficina Lisboa',
+                'done' => 31,
+                'target' => 40,
+                'reward_xp' => 300,
+            ],
+            'feed' => [
+                ['name' => 'Rui Martins', 'action' => 'concluiu Redes CAN Bus'],
+                ['name' => 'Ana Sousa', 'action' => 'subiu para o Nível 7'],
+                ['name' => 'João Pires', 'action' => 'ganhou o emblema Faísca'],
+                ['name' => 'Marta Lopes', 'action' => 'começou Osciloscópio'],
+                ['name' => 'Pedro Reis', 'action' => 'chegou a 10 dias seguidos'],
+                ['name' => 'Inês Costa', 'action' => 'acertou 10/10 no quiz OBD'],
+            ],
+            'leaderboard' => [
+                ['name' => 'Rui Martins', 'xp' => 2140, 'me' => false],
+                ['name' => 'Ana Sousa', 'xp' => 1890, 'me' => false],
+                ['name' => $user->name, 'xp' => $xp, 'me' => true],
+                ['name' => 'João Pires', 'xp' => 980, 'me' => false],
+            ],
+        ];
     }
 }

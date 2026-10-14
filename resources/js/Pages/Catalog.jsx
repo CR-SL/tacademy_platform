@@ -17,55 +17,44 @@ const levelLabels = {
     avancado: 'Avançado',
 };
 
-function courseGradient(color = '#2F6FED') {
-    return `linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 65%, #000))`;
-}
-
 function formatPrice(price) {
     if (!price || price <= 0) return 'Grátis';
     return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(price);
 }
 
+// Fundo riscado com a cor da categoria (cursos = ícone + cor, sem fotografia).
+function hatch(color = '#F8B101') {
+    return `repeating-linear-gradient(135deg, color-mix(in oklch, ${color} 28%, var(--color-surface)) 0 8px, color-mix(in oklch, ${color} 12%, var(--color-surface)) 8px 16px)`;
+}
+
 function CourseCard({ course }) {
-    if (course.has_ai) {
-        return (
-            <Link
-                href={course.url ?? '#'}
-                className="ta-ai-surface relative block w-56 shrink-0 rounded-2xl border border-[rgba(34,211,238,.4)] p-3 transition hover:-translate-y-1"
-            >
-                <span className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full border border-[rgba(34,211,238,.5)] bg-[rgba(34,211,238,.15)] px-2 py-0.5 text-[9px] font-extrabold tracking-wide text-[#7ff0ff]">
-                    ✦ AULA COM IA
-                </span>
-                <div className="mb-3 flex h-28 items-center justify-center rounded-xl">
-                    <div className="ta-orb h-12 w-12" />
-                </div>
-                <p className="mb-1 line-clamp-2 text-sm font-bold leading-snug text-white">
-                    {course.title}
-                </p>
-                <p className="mb-2 text-[11px] text-[#8ea3c0]">
-                    {levelLabels[course.level] ?? course.level} · {formatDuration(course.duration_minutes)}
-                </p>
-                <p className="text-sm font-bold text-cyan">{formatPrice(course.price)}</p>
-            </Link>
-        );
-    }
+    const color = course.category?.color_hex ?? '#F8B101';
 
     return (
         <Link
             href={course.url ?? '#'}
-            className="ta-glass block w-56 shrink-0 rounded-2xl p-3 transition hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(47,111,237,0.14)]"
+            className="ta-cut-12 group flex w-56 shrink-0 flex-col gap-3 bg-surface p-3 transition-transform duration-200 hover:-translate-y-1"
         >
             <div
-                className="mb-3 flex h-28 items-center justify-center rounded-xl text-white"
-                style={{ background: courseGradient(course.category?.color_hex) }}
+                className="ta-cut-8 relative flex h-28 items-center justify-center text-ink"
+                style={{ background: hatch(color) }}
             >
+                {course.has_ai && (
+                    <span className="ta-cut-8 absolute left-2 top-2 bg-on-accent px-2 py-0.5 font-display text-[10px] font-bold tracking-[0.08em] text-accent">
+                        AULA COM IA
+                    </span>
+                )}
                 <CatalogIcon className="h-8 w-8" />
             </div>
-            <p className="mb-1 line-clamp-2 text-sm font-bold leading-snug">{course.title}</p>
-            <p className="mb-2 text-[11px] text-steel">
-                {levelLabels[course.level] ?? course.level} · {formatDuration(course.duration_minutes)}
-            </p>
-            <p className="text-sm font-bold text-tblue">{formatPrice(course.price)}</p>
+            <div className="flex flex-1 flex-col gap-1 px-1">
+                <p className="line-clamp-2 text-[15px] font-semibold leading-snug">{course.title}</p>
+                <p className="text-xs text-muted">
+                    {levelLabels[course.level] ?? course.level} · {formatDuration(course.duration_minutes)}
+                </p>
+                <p className="mt-auto pt-1 font-display text-[15px] font-bold text-accent-ink">
+                    {formatPrice(course.price)}
+                </p>
+            </div>
         </Link>
     );
 }
@@ -73,14 +62,12 @@ function CourseCard({ course }) {
 function Shelf({ category }) {
     return (
         <section className="mb-8">
-            <div className="mb-3 flex items-center gap-2">
-                <span
-                    className="h-3 w-3 rounded-full"
-                    style={{ background: category.color_hex }}
-                />
-                <h2 className="text-sm font-bold text-ink">{category.name}</h2>
+            <div className="mb-3 flex items-center gap-2.5">
+                <span className="h-3 w-3 -skew-x-[20deg]" style={{ background: category.color_hex }} />
+                <h2 className="font-display text-[15px] font-bold uppercase tracking-[0.08em]">{category.name}</h2>
+                <span className="font-display text-[13px] font-semibold text-muted">{category.courses.length}</span>
             </div>
-            <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+            <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
                 {category.courses.map((course) => (
                     <CourseCard key={course.id} course={course} />
                 ))}
@@ -92,15 +79,13 @@ function Shelf({ category }) {
 export default function Catalog({ categories }) {
     return (
         <StudentLayout>
-            <Head title="Catálogo" />
+            <Head title="Cursos" />
 
-            <p className="mb-0.5 text-lg font-bold">Catálogo de cursos</p>
-            <p className="mb-6 text-xs text-steel">
-                Explora por categoria. Novos cursos a caminho.
-            </p>
+            <h1 className="font-display text-[26px] font-bold uppercase">Cursos</h1>
+            <p className="mb-6 text-[15px] text-muted">Explora por categoria. Novos cursos a caminho.</p>
 
             {categories.length === 0 ? (
-                <div className="rounded-2xl bg-pearl p-6 text-center text-sm text-steel">
+                <div className="ta-cut-12 bg-surface p-6 text-center text-sm text-muted">
                     Ainda não há cursos publicados.
                 </div>
             ) : (

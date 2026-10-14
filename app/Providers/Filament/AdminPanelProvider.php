@@ -28,8 +28,12 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::hex('#F8B101'), // amarelo T.Academy (Identidade Visual v3)
             ])
+            ->brandLogo(asset('images/brand/logo-tacademy.png'))
+            ->darkModeBrandLogo(asset('images/brand/logo-tacademy-dark.png'))
+            ->brandLogoHeight('2rem')
+            ->favicon(asset('images/brand/passarinho.png'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([

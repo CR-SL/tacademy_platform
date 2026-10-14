@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conceito A · As Peças — T.Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+/* ===== HERO: montagem do pássaro (pinned, 320vh) ===== */
+.hero { height: 320vh; position: relative; }
+.stage { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.grid-bg { position: absolute; inset: -20% 0; background: radial-gradient(#cfccc4 1.2px, transparent 1.4px) 0 0 / 26px 26px; opacity: .7; will-change: transform; }
+.ghost { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--display); font-weight: 700; font-size: 26vw; line-height: 1; color: transparent; -webkit-text-stroke: 1px #dcd9d1; white-space: nowrap; will-change: transform; user-select: none; }
+.logo { position: relative; width: min(88vw, 760px); aspect-ratio: 2884 / 1600; }
+.logo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; will-change: transform, opacity; pointer-events: none; }
+.hero-copy { position: absolute; left: 0; right: 0; text-align: center; padding: 0 20px; will-change: transform, opacity; }
+.hero-copy.top { top: 16vh; }
+.hero-copy.bottom { bottom: 12vh; }
+.hero-copy .h-display { font-size: clamp(34px, 5.4vw, 72px); }
+.hero-copy p { font-size: clamp(16px, 1.6vw, 20px); color: var(--muted); max-width: 560px; margin: 14px auto 0; }
+.scroll-hint { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); font-family: var(--display); font-size: 12px; letter-spacing: .14em; color: var(--muted); }
+.skill-chip { position: absolute; padding: 6px 12px; background: var(--surface); font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: .06em; will-change: transform, opacity; white-space: nowrap; }
+
+/* ===== QUEM SOMOS: camadas a velocidades diferentes ===== */
+.about { position: relative; padding: 18vh clamp(16px, 6vw, 80px); min-height: 120vh; overflow: hidden; }
+.about .wrap { position: relative; max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.1fr .9fr; gap: 6vw; align-items: center; }
+.about .h-display { font-size: clamp(36px, 5vw, 68px); }
+.about .h-display em { font-style: normal; color: var(--accent-ink); }
+.about p.lead { font-size: 20px; color: var(--muted); max-width: 520px; }
+.depth { position: relative; height: 520px; }
+.depth > * { position: absolute; will-change: transform; }
+.depth .card-a { inset: 40px 60px 120px 0; background: #18181b; color: #f2f2f3; padding: 28px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; }
+.depth .card-a b { font-family: var(--display); font-size: 64px; line-height: 1; color: var(--accent); }
+.depth .card-b { right: 0; bottom: 30px; width: 58%; background: var(--accent); color: var(--on-accent); padding: 22px; font-family: var(--display); font-weight: 700; font-size: 22px; line-height: 1.15; }
+.depth .bird-float { right: 6%; top: -10px; width: 120px; opacity: .9; }
+.depth .stripe { left: -30px; bottom: 0; width: 170px; height: 170px; background: repeating-linear-gradient(135deg, #e3e0d8 0 10px, transparent 10px 20px); }
+.stats { display: flex; gap: 36px; margin-top: 34px; }
+.stats b { display: block; font-family: var(--display); font-size: 40px; line-height: 1; }
+.stats span { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+/* ===== O QUE FAZEMOS: 3 passos com linha que se desenha ===== */
+.what { padding: 14vh clamp(16px, 6vw, 80px); background: var(--surface); position: relative; }
+.what .head { max-width: 1180px; margin: 0 auto 56px; }
+.what .h-display { font-size: clamp(34px, 4.4vw, 60px); max-width: 760px; }
+.steps { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; position: relative; }
+.steps svg { position: absolute; left: 0; top: 34px; width: 100%; height: 8px; overflow: visible; }
+.step { background: var(--bg); padding: 26px; position: relative; display: flex; flex-direction: column; gap: 12px; }
+.step .n { width: 68px; height: 68px; background: var(--accent); color: var(--on-accent); font-family: var(--display); font-weight: 700; font-size: 28px; display: flex; align-items: center; justify-content: center; }
+.step h3 { font-family: var(--display); font-size: 24px; margin: 6px 0 0; }
+.step p { margin: 0; color: var(--muted); }
+
+/* ===== CURSOS: scroll horizontal pinned ===== */
+.courses { position: relative; }
+.courses .sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 34px; }
+.courses .head { padding: 0 clamp(16px, 6vw, 80px); display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+.courses .h-display { font-size: clamp(34px, 4.4vw, 60px); }
+.track { display: flex; gap: 22px; padding: 0 clamp(16px, 6vw, 80px); will-change: transform; }
+.counter { font-family: var(--display); font-weight: 700; font-size: 15px; color: var(--muted); }
+
+/* ===== CTA final ===== */
+.cta { position: relative; overflow: hidden; background: var(--accent); color: var(--on-accent); padding: 18vh clamp(16px, 6vw, 80px); text-align: center; }
+.cta .h-display { font-size: clamp(40px, 7vw, 104px); }
+.cta .bird-big { position: absolute; width: 380px; right: -60px; bottom: -120px; opacity: .14; will-change: transform; filter: brightness(0); }
+
+@media (max-width: 860px) {
+    .about .wrap { grid-template-columns: 1fr; }
+    .depth { height: 420px; }
+    .steps { grid-template-columns: 1fr; }
+    .steps svg { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="#top"><img src="/images/brand/logo-tacademy.png" alt="T.Academy"></a>
+    <ul>
+        <li><a href="#quem-somos">Quem Somos</a></li>
+        <li><a href="#contactos">Contactos</a></li>
+        <li><a href="#cursos">Cursos</a></li>
+    </ul>
+    <a class="btn btn-accent cut-8" href="/login">Entrar ▶</a>
+</nav>
+<div class="progress"></div>
+
+<!-- 1 · HERO -->
+<section class="hero" id="top">
+    <div class="stage">
+        <div class="grid-bg" id="gridBg"></div>
+        <div class="ghost" id="ghost">T.ACADEMY</div>
+
+        <div class="hero-copy top" id="copyA">
+            <div class="label">Gestão de Talentos · Formação Automóvel</div>
+            <h1 class="h-display">Um bom técnico<br>não nasce feito.</h1>
+        </div>
+
+        <div class="logo" id="logo"></div>
+
+        <div class="hero-copy bottom" id="copyB" style="opacity:0">
+            <h2 class="h-display" style="font-size:clamp(26px,3.4vw,44px)">Constrói-se, peça a peça.</h2>
+            <p>Cada curso é uma peça. Cada peça faz-te voar mais alto.</p>
+        </div>
+        <div class="scroll-hint" id="hint">FAZ SCROLL ↓</div>
+    </div>
+</section>
+
+<!-- 2 · QUEM SOMOS -->
+<section class="about" id="quem-somos">
+    <div class="wrap">
+        <div>
+            <div class="label reveal">Quem somos</div>
+            <h2 class="h-display reveal" style="--d:.08s">Formamos as pessoas que <em>mantêm Portugal em movimento.</em></h2>
+            <p class="lead reveal" style="--d:.16s">A T.Academy é a área de formação e gestão de talentos para oficinas automóveis. Juntamos técnicos experientes, aulas práticas e avatares de IA para que cada profissional aprenda ao seu ritmo — na oficina, no telemóvel ou em casa.</p>
+            <div class="stats reveal" style="--d:.24s">
+                <div><b data-count="1200">0</b><span>técnicos*</span></div>
+                <div><b data-count="40">0</b><span>cursos*</span></div>
+                <div><b data-count="98" data-suffix="%">0</b><span>satisfação*</span></div>
+            </div>
+            <p style="font-size:12px;color:var(--muted)">* números de exemplo</p>
+        </div>
+        <div class="depth">
+            <div class="stripe" data-speed="-0.25"></div>
+            <div class="card-a cut-16" data-speed="0.12">
+                <b>+15</b>
+                <span>anos de experiência no setor automóvel*</span>
+            </div>
+            <div class="card-b cut-12" data-speed="-0.18">Formação certificada, feita por quem conhece a oficina.</div>
+            <img class="bird-float" src="/images/brand/passarinho.png" alt="" data-speed="-0.4">
+        </div>
+    </div>
+</section>
+
+<!-- 3 · O QUE FAZEMOS -->
+<section class="what" id="o-que-fazemos">
+    <div class="head">
+        <div class="label reveal">O que fazemos</div>
+        <h2 class="h-display reveal" style="--d:.08s">Do primeiro diagnóstico ao certificado.</h2>
+    </div>
+    <div class="steps" id="steps">
+        <svg viewBox="0 0 100 2" preserveAspectRatio="none"><line id="stepLine" x1="0" y1="1" x2="100" y2="1" stroke="#F8B101" stroke-width="2" vector-effect="non-scaling-stroke" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg>
+        <div class="step cut-16 reveal"><div class="n cut-8">01</div><h3>Aprende</h3><p>Cursos curtos e práticos, com vídeo, quizzes e aulas com avatar de IA que respondem às tuas dúvidas.</p></div>
+        <div class="step cut-16 reveal" style="--d:.12s"><div class="n cut-8">02</div><h3>Pratica</h3><p>Tarefas diárias, desafios de equipa e XP. A aprendizagem transforma-se em rotina.</p></div>
+        <div class="step cut-16 reveal" style="--d:.24s"><div class="n cut-8">03</div><h3>Certifica</h3><p>Certificados reconhecidos e uma área de gestor para acompanhar a evolução de toda a equipa.</p></div>
+    </div>
+</section>
+
+<!-- 4 · CURSOS (horizontal) -->
+<section class="courses" id="cursos">
+    <div class="sticky">
+        <div class="head">
+            <div>
+                <div class="label">Cursos</div>
+                <h2 class="h-display">Escolhe a próxima peça.</h2>
+            </div>
+            <div class="counter" id="counter">01 / 06</div>
+        </div>
+        <div class="track" id="track"></div>
+    </div>
+</section>
+
+<!-- 5 · CTA -->
+<section class="cta">
+    <img class="bird-big" id="birdBig" src="/images/brand/passarinho.png" alt="">
+    <div class="label" style="color:var(--on-accent)">Pronto para levantar voo?</div>
+    <h2 class="h-display">Começa hoje.</h2>
+    <p style="font-size:20px;max-width:520px;margin:18px auto 30px">Entra na plataforma e retoma onde ficaste — ou fala connosco para formar a tua equipa.</p>
+    <a class="btn btn-dark cut-8" href="/login">Entrar na plataforma ▶</a>
+</section>
+
+<footer class="footer" id="contactos">
+    <div>
+        <img src="/images/brand/logo-tacademy-dark.png" alt="T.Academy" style="height:34px;width:auto;margin-bottom:16px">
+        <p>Formação e gestão de talentos para o setor automóvel.</p>
+    </div>
+    <div><h5>CONTACTOS</h5><p>geral@tacademy.pt*</p><p>+351 000 000 000*</p></div>
+    <div><h5>PLATAFORMA</h5><p><a href="/login">Entrar</a></p><p><a href="#cursos">Cursos</a></p></div>
+</footer>
+
+<div class="concept-switch"><a href="index.html">←</a><a class="on" href="a-pecas.html">A · Peças</a><a href="a2-navbar.html">A2 · Navbar</a><a href="b-voo.html">B · Voo</a><a href="c-profundidade.html">C · Profundidade</a></div>
+
+<script src="base.js"></script>
+<script>
+const { clamp, ease, sub, pinProgress, courses, courseCard, reduced, rng } = TA;
+TA.chrome(); TA.reveals();
+
+/* --- Hero: 31 fragmentos voam da esquerda e montam o pássaro --- */
+const logo = document.getElementById('logo');
+const R = rng(20260101);
+const frags = Array.from({ length: 31 }, (_, i) => {
+    const img = new Image();
+    img.src = `/images/logo3d/frag_${String(i).padStart(2, '0')}.png`;
+    img.alt = '';
+    logo.appendChild(img);
+    return { img, dx: -(20 + R() * 60), dy: (R() - .5) * 90, rot: (R() - .5) * 120, s: .6 + R() * .8, start: (i / 31) * .42 };
+});
+const whole = Object.assign(new Image(), { src: '/images/logo3d/bird_whole.png', alt: '' });
+const name = Object.assign(new Image(), { src: '/images/logo3d/name.png', alt: 'T.Academy' });
+const phrase = Object.assign(new Image(), { src: '/images/logo3d/phrase.png', alt: 'Gestão de Talentos' });
+logo.append(whole, name, phrase);
+
+/* Etiquetas de competências que "caem" para dentro do pássaro */
+const skills = ['DIAGNÓSTICO', 'ELETRÓNICA', 'CAN BUS', 'OBD-II', 'GESTÃO', 'ATENDIMENTO'];
+const stage = document.querySelector('.stage');
+const chips = skills.map((s, i) => {
+    const el = document.createElement('div');
+    el.className = 'skill-chip cut-8'; el.textContent = s;
+    const a = (i / skills.length) * Math.PI * 2;
+    el.dataset.x = Math.cos(a) * 38; el.dataset.y = Math.sin(a) * 30;
+    stage.appendChild(el); return el;
+});
+
+const hero = document.querySelector('.hero');
+const copyA = document.getElementById('copyA'), copyB = document.getElementById('copyB');
+const ghost = document.getElementById('ghost'), gridBg = document.getElementById('gridBg'), hint = document.getElementById('hint');
+
+function renderHero(p) {
+    frags.forEach((f) => {
+        const e = ease(sub(p, f.start, f.start + .38)), k = 1 - e;
+        f.img.style.transform = `translate(${f.dx * k}%, ${f.dy * k}%) rotate(${f.rot * k}deg) scale(${1 + (f.s - 1) * k})`;
+        f.img.style.opacity = e;
+    });
+    whole.style.opacity = sub(p, .74, .86);
+    const n = ease(sub(p, .38, .78));
+    name.style.transform = `translateX(${(1 - n) * 40}%)`; name.style.opacity = n;
+    const ph = ease(sub(p, .7, .92));
+    phrase.style.transform = `translateY(${(1 - ph) * 30}%)`; phrase.style.opacity = ph;
+
+    const a = sub(p, 0, .3);
+    copyA.style.opacity = 1 - a; copyA.style.transform = `translateY(${-a * 60}px)`;
+    const b = ease(sub(p, .82, 1));
+    copyB.style.opacity = b; copyB.style.transform = `translateY(${(1 - b) * 40}px)`;
+    hint.style.opacity = 1 - sub(p, 0, .08);
+
+    // Camadas de fundo a velocidades diferentes (parallax clássico)
+    ghost.style.transform = `translate(calc(-50% + ${(.5 - p) * 30}vw), -50%)`;
+    gridBg.style.transform = `translateY(${-p * 12}%)`;
+
+    // Chips: aparecem à volta e são "absorvidos" pelo centro
+    chips.forEach((c, i) => {
+        const t = sub(p, .05 + i * .04, .55 + i * .03);
+        const fly = ease(sub(t, .45, 1));
+        const x = +c.dataset.x * (1 - fly), y = +c.dataset.y * (1 - fly);
+        c.style.left = `calc(50% + ${x}vw)`; c.style.top = `calc(50% + ${y}vh)`;
+        c.style.transform = `translate(-50%,-50%) scale(${1 - fly * .6})`;
+        c.style.opacity = Math.min(sub(t, 0, .2), 1 - fly);
+    });
+}
+
+/* --- Quem somos: data-speed = parallax por elemento --- */
+const speedEls = [...document.querySelectorAll('[data-speed]')];
+function renderSpeeds() {
+    speedEls.forEach((el) => {
+        const r = el.parentElement.getBoundingClientRect();
+        const off = (r.top + r.height / 2 - innerHeight / 2);
+        el.style.transform = `translateY(${off * +el.dataset.speed}px)`;
+    });
+}
+
+/* --- Contadores --- */
+const io = new IntersectionObserver((es) => es.forEach((e) => {
+    if (!e.isIntersecting) return; io.unobserve(e.target);
+    const el = e.target, to = +el.dataset.count, suf = el.dataset.suffix || '', t0 = performance.now();
+    const step = (t) => { const k = ease(clamp((t - t0) / 1400)); el.textContent = Math.round(to * k).toLocaleString('pt-PT') + suf; if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+}), { threshold: .6 });
+document.querySelectorAll('[data-count]').forEach((el) => io.observe(el));
+
+/* --- Linha dos passos desenha-se com o scroll --- */
+const steps = document.getElementById('steps'), stepLine = document.getElementById('stepLine');
+
+/* --- Cursos: scroll vertical → movimento horizontal --- */
+const track = document.getElementById('track'), coursesSec = document.getElementById('cursos'), counter = document.getElementById('counter');
+track.innerHTML = courses.map(courseCard).join('');
+const sizeCourses = () => { coursesSec.style.height = `${track.scrollWidth - innerWidth + innerHeight * 1.2}px`; };
+sizeCourses(); addEventListener('resize', sizeCourses);
+
+const birdBig = document.getElementById('birdBig');
+
+TA.onFrame(() => {
+    renderHero(reduced ? 1 : pinProgress(hero));
+    if (!reduced) renderSpeeds();
+    const sr = steps.getBoundingClientRect();
+    stepLine.style.strokeDashoffset = 1 - clamp((innerHeight * .8 - sr.top) / (sr.height + innerHeight * .2));
+    const cp = pinProgress(coursesSec), maxX = track.scrollWidth - innerWidth;
+    track.style.transform = `translateX(${-cp * Math.max(0, maxX)}px)`;
+    counter.textContent = `${String(Math.min(courses.length, 1 + Math.round(cp * (courses.length - 1)))).padStart(2, '0')} / ${String(courses.length).padStart(2, '0')}`;
+    const cr = birdBig.parentElement.getBoundingClientRect();
+    birdBig.style.transform = `translate(${(cr.top / innerHeight) * -80}px, ${(cr.top / innerHeight) * 120}px) rotate(${cr.top / innerHeight * -12}deg)`;
+});
+</script>
+</body>
+</html>

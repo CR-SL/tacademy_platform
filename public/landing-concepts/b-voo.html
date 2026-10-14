@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conceito B · O Voo — T.Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+/* ===== HERO: camadas que reagem ao rato (profundidade) ===== */
+.hero { position: relative; height: 100vh; min-height: 640px; overflow: hidden; display: grid; place-items: center; }
+.layer { position: absolute; inset: 0; will-change: transform; pointer-events: none; }
+.sun { position: absolute; width: 60vmin; height: 60vmin; border-radius: 50%; left: 50%; top: 46%; transform: translate(-50%, -50%); background: radial-gradient(circle, #ffe08a 0%, #f8b10155 45%, transparent 70%); }
+.ridge { position: absolute; left: -10%; right: -10%; bottom: 0; height: 34vh; }
+.hero-logo { position: relative; width: min(72vw, 620px); aspect-ratio: 2884 / 1600; margin-top: -26vh; }
+.hero-logo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; will-change: transform; }
+.hero-text { position: absolute; bottom: 7vh; left: 0; right: 0; text-align: center; padding: 0 20px; }
+.hero-text .h-display { font-size: clamp(30px, 4.6vw, 62px); }
+.hero-text p { color: var(--muted); font-size: 19px; margin: 10px auto 22px; max-width: 520px; }
+
+/* ===== Trilho de voo (SVG absoluto sobre o conteúdo) ===== */
+.flight { position: relative; }
+.flight svg.path { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
+.flyer { position: fixed; z-index: 40; width: 110px; aspect-ratio: 1; left: 0; top: 0; pointer-events: none; will-change: transform; opacity: 0; transition: opacity .3s; }
+.flyer img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 8px 14px rgba(0,0,0,.18)); }
+
+.chapter { position: relative; z-index: 1; min-height: 100vh; display: flex; align-items: center; padding: 12vh clamp(16px, 7vw, 100px); }
+.chapter .inner { max-width: 560px; }
+.chapter.right { justify-content: flex-end; }
+.chapter .num { font-family: var(--display); font-weight: 700; font-size: 120px; line-height: .8; color: transparent; -webkit-text-stroke: 1.5px var(--accent); }
+.chapter .h-display { font-size: clamp(34px, 4.6vw, 64px); margin-top: 10px; }
+.chapter p { font-size: 19px; color: var(--muted); }
+.perch { width: 18px; height: 18px; background: var(--accent); transform: rotate(45deg); margin: 22px 0; box-shadow: 0 0 0 6px #f8b10133; }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.pills span { padding: 7px 12px; background: var(--surface); font-family: var(--display); font-weight: 600; font-size: 14px; }
+
+/* Linha de texto com máscara (revelação por linha) */
+.mask { display: block; overflow: hidden; }
+.mask > span { display: block; transform: translateY(105%); transition: transform .9s cubic-bezier(.2, .8, .2, 1); transition-delay: var(--d, 0s); }
+.in .mask > span, .mask.in > span { transform: none; }
+
+/* Cursos: cartões em leque */
+.fan { position: relative; z-index: 1; padding: 10vh clamp(16px, 7vw, 100px) 22vh; }
+.fan .h-display { font-size: clamp(34px, 4.6vw, 64px); text-align: center; }
+.fan-row { display: flex; justify-content: center; margin-top: 60px; perspective: 1400px; }
+.fan-row .course-card { margin: 0 -26px; transform-origin: 50% 120%; transition: transform .6s cubic-bezier(.2, .8, .2, 1), margin .4s; box-shadow: 0 14px 40px rgba(0,0,0,.08); }
+.fan-row .course-card:hover { transform: translateY(-30px) rotate(0) scale(1.04) !important; z-index: 5; }
+
+.cta-band { position: relative; z-index: 1; background: #18181b; color: #f2f2f3; padding: 16vh clamp(16px, 7vw, 100px); display: grid; grid-template-columns: 1fr auto; gap: 30px; align-items: center; }
+.cta-band .h-display { font-size: clamp(36px, 5vw, 76px); }
+.cta-band .h-display em { font-style: normal; color: var(--accent); }
+
+@media (max-width: 860px) {
+    .chapter, .chapter.right { justify-content: flex-start; }
+    .fan-row { flex-direction: column; align-items: center; gap: 16px; }
+    .fan-row .course-card { margin: 0; transform: none !important; }
+    .cta-band { grid-template-columns: 1fr; }
+    .flyer { width: 70px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="#top"><img src="/images/brand/logo-tacademy.png" alt="T.Academy"></a>
+    <ul>
+        <li><a href="#quem-somos">Quem Somos</a></li>
+        <li><a href="#contactos">Contactos</a></li>
+        <li><a href="#cursos">Cursos</a></li>
+    </ul>
+    <a class="btn btn-accent cut-8" href="/login">Entrar ▶</a>
+</nav>
+<div class="progress"></div>
+
+<!-- HERO -->
+<header class="hero" id="top">
+    <div class="layer" data-depth="10"><div class="sun"></div></div>
+    <div class="layer" data-depth="22">
+        <svg class="ridge" viewBox="0 0 1200 300" preserveAspectRatio="none"><path d="M0 300 L0 190 L140 120 L260 170 L420 80 L560 150 L700 90 L860 160 L1000 100 L1200 170 L1200 300Z" fill="#ebe8e0"/></svg>
+    </div>
+    <div class="layer" data-depth="40">
+        <svg class="ridge" style="height:22vh" viewBox="0 0 1200 300" preserveAspectRatio="none"><path d="M0 300 L0 210 L180 160 L340 230 L520 150 L720 220 L900 170 L1200 240 L1200 300Z" fill="#e1ddd2"/></svg>
+    </div>
+    <div class="hero-logo" id="heroLogo">
+        <img src="/images/logo3d/phrase.png" alt="Gestão de Talentos" data-depth="18">
+        <img src="/images/logo3d/name.png" alt="T.Academy" data-depth="30">
+        <img src="/images/logo3d/bird_whole.png" alt="" data-depth="60" id="heroBird">
+    </div>
+    <div class="hero-text">
+        <h1 class="h-display reveal">Aprender é levantar voo.</h1>
+        <p class="reveal" style="--d:.1s">Formação prática para técnicos de oficina automóvel — com aulas de IA, tarefas e certificados.</p>
+        <a class="btn btn-accent cut-8 reveal" style="--d:.2s" href="#quem-somos">Descobrir ↓</a>
+    </div>
+</header>
+
+<!-- VOO: capítulos ligados por um trilho -->
+<main class="flight" id="flight">
+    <svg class="path" id="pathSvg" preserveAspectRatio="none">
+        <path id="trailBg" fill="none" stroke="#dedbd3" stroke-width="2" stroke-dasharray="2 10" stroke-linecap="round"/>
+        <path id="trail" fill="none" stroke="#F8B101" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+
+    <section class="chapter" id="quem-somos">
+        <div class="inner reveal">
+            <div class="num">01</div>
+            <div class="perch" data-perch></div>
+            <div class="label">Quem somos</div>
+            <h2 class="h-display"><span class="mask"><span>Nascemos dentro</span></span><span class="mask"><span style="--d:.08s">da oficina.</span></span></h2>
+            <p>A T.Academy é a área de formação e gestão de talentos para o setor automóvel. Sabemos o que um técnico precisa porque estivemos do lado de lá do elevador.</p>
+        </div>
+    </section>
+
+    <section class="chapter right" id="o-que-fazemos">
+        <div class="inner reveal">
+            <div class="num">02</div>
+            <div class="perch" data-perch></div>
+            <div class="label">O que fazemos</div>
+            <h2 class="h-display"><span class="mask"><span>Formação que cabe</span></span><span class="mask"><span style="--d:.08s">no dia de trabalho.</span></span></h2>
+            <p>Cursos curtos, aulas com avatar de IA, tarefas diárias e desafios de equipa. Os gestores acompanham a evolução de toda a oficina num só painel.</p>
+            <div class="pills"><span class="cut-8">Diagnóstico</span><span class="cut-8">Eletrónica</span><span class="cut-8">Redes CAN</span><span class="cut-8">Gestão de oficina</span></div>
+        </div>
+    </section>
+
+    <section class="chapter" id="como">
+        <div class="inner reveal">
+            <div class="num">03</div>
+            <div class="perch" data-perch></div>
+            <div class="label">Como funciona</div>
+            <h2 class="h-display"><span class="mask"><span>Aprende. Pratica.</span></span><span class="mask"><span style="--d:.08s">Certifica.</span></span></h2>
+            <p>Ganha XP em cada aula, sobe de nível e recebe certificados que contam na tua carreira.</p>
+        </div>
+    </section>
+
+    <section class="fan" id="cursos">
+        <div class="perch" data-perch style="margin:0 auto 26px"></div>
+        <div class="label" style="text-align:center">Cursos</div>
+        <h2 class="h-display">Onde vais pousar a seguir?</h2>
+        <div class="fan-row" id="fan"></div>
+    </section>
+</main>
+
+<section class="cta-band">
+    <h2 class="h-display">Prontos para <em>descolar</em>?</h2>
+    <a class="btn btn-accent cut-8" href="/login">Entrar na plataforma ▶</a>
+</section>
+
+<footer class="footer" id="contactos">
+    <div>
+        <img src="/images/brand/logo-tacademy-dark.png" alt="T.Academy" style="height:34px;width:auto;margin-bottom:16px">
+        <p>Formação e gestão de talentos para o setor automóvel.</p>
+    </div>
+    <div><h5>CONTACTOS</h5><p>geral@tacademy.pt*</p><p>+351 000 000 000*</p></div>
+    <div><h5>PLATAFORMA</h5><p><a href="/login">Entrar</a></p><p><a href="#cursos">Cursos</a></p></div>
+</footer>
+
+<div class="concept-switch"><a href="index.html">←</a><a href="a-pecas.html">A · Peças</a><a href="a2-navbar.html">A2 · Navbar</a><a class="on" href="b-voo.html">B · Voo</a><a href="c-profundidade.html">C · Profundidade</a></div>
+
+<!-- O pássaro que voa pela página -->
+<div class="flyer" id="flyer"><img src="/images/brand/passarinho.png" alt=""></div>
+
+<script src="base.js"></script>
+<script>
+const { clamp, ease, courses, courseCard, reduced } = TA;
+TA.chrome(); TA.reveals();
+
+/* --- Hero: profundidade com o rato + scroll --- */
+const depthEls = [...document.querySelectorAll('.hero [data-depth]')];
+let mx = 0, my = 0;
+TA.mouse((x, y) => { mx = x; my = y; paintHero(); });
+function paintHero() {
+    const s = Math.min(scrollY, innerHeight);
+    depthEls.forEach((el) => {
+        const d = +el.dataset.depth;
+        el.style.transform = `translate(${-mx * d * .5}px, ${-my * d * .4 + s * d / 100}px)`;
+    });
+}
+
+/* --- Trilho: ziguezague entre os "poleiros" de cada capítulo --- */
+const flight = document.getElementById('flight');
+const svg = document.getElementById('pathSvg'), trail = document.getElementById('trail'), trailBg = document.getElementById('trailBg');
+const flyer = document.getElementById('flyer');
+let len = 0;
+function buildPath() {
+    const fr = flight.getBoundingClientRect();
+    const W = flight.offsetWidth, H = flight.offsetHeight;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const pts = [...document.querySelectorAll('[data-perch]')].map((p) => {
+        const r = p.getBoundingClientRect();
+        return [r.left + r.width / 2 - fr.left, r.top + r.height / 2 - fr.top];
+    });
+    pts.unshift([W * .5, 0]);
+    let d = `M ${pts[0][0]} ${pts[0][1]}`;
+    for (let i = 1; i < pts.length; i++) {
+        const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], my2 = (y0 + y1) / 2;
+        const swing = (i % 2 ? 1 : -1) * W * .18;
+        d += ` C ${x0 + swing} ${my2}, ${x1 - swing} ${my2}, ${x1} ${y1}`;
+    }
+    trail.setAttribute('d', d); trailBg.setAttribute('d', d);
+    len = trail.getTotalLength();
+    trail.style.strokeDasharray = len;
+}
+buildPath(); addEventListener('resize', buildPath); addEventListener('load', buildPath);
+
+/* --- Cursos em leque --- */
+const fan = document.getElementById('fan');
+fan.innerHTML = courses.slice(0, 5).map(courseCard).join('');
+const fanCards = [...fan.children];
+
+TA.onFrame(() => {
+    paintHero();
+    const fr = flight.getBoundingClientRect();
+    // Progresso do voo: o pássaro segue o ponto do trilho à altura de 55% do ecrã
+    const target = innerHeight * .55 - fr.top;
+    const p = clamp(target / flight.offsetHeight);
+    const at = reduced ? len : p * len;
+    trail.style.strokeDashoffset = len - at;
+
+    if (len) {
+        // Procura o comprimento do trilho cuja altura corresponde ao alvo (pesquisa binária)
+        let lo = 0, hi = len;
+        for (let i = 0; i < 20; i++) { const mid = (lo + hi) / 2; trail.getPointAtLength(mid).y < target ? lo = mid : hi = mid; }
+        const pt = trail.getPointAtLength(lo), ahead = trail.getPointAtLength(Math.min(len, lo + 6));
+        const sx = fr.width / flight.offsetWidth;
+        const angle = Math.atan2(ahead.y - pt.y, ahead.x - pt.x) * 180 / Math.PI;
+        const flap = Math.sin(performance.now() / 120) * 4;
+        flyer.style.transform = `translate(${fr.left + pt.x * sx - flyer.offsetWidth / 2}px, ${fr.top + pt.y - flyer.offsetHeight / 2 + flap}px) rotate(${clamp(angle - 90, -35, 35)}deg)`;
+        flyer.style.opacity = target > 0 && fr.bottom > innerHeight * .4 ? 1 : 0;
+    }
+
+    // Leque: abre conforme a secção entra
+    const fanR = fan.getBoundingClientRect();
+    const open = ease(clamp((innerHeight - fanR.top) / (innerHeight * .8)));
+    fanCards.forEach((c, i) => {
+        const k = i - (fanCards.length - 1) / 2;
+        c.style.transform = `translateY(${Math.abs(k) * 18 * open + (1 - open) * 120}px) rotate(${k * 7 * open}deg)`;
+        c.style.marginLeft = c.style.marginRight = `${-60 + open * 40}px`;
+    });
+});
+/* bater de asas contínuo mesmo sem scroll */
+if (!reduced) (function flap() { dispatchEvent(new Event('scroll')); setTimeout(() => requestAnimationFrame(flap), 60); })();
+</script>
+</body>
+</html>

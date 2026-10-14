@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Landing · Conceitos — T.Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+main { max-width: 1180px; margin: 0 auto; padding: 56px 20px 80px; }
+.intro .h-display { font-size: clamp(36px, 5vw, 60px); }
+.intro p { color: var(--muted); font-size: 19px; max-width: 720px; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
+.c { background: var(--surface); padding: 24px; display: flex; flex-direction: column; gap: 12px; transition: transform .25s; }
+.c:hover { transform: translateY(-6px); }
+.c .tag { font-family: var(--display); font-weight: 700; font-size: 48px; line-height: 1; color: var(--accent); }
+.c.dark { background: #18181b; color: #f2f2f3; }
+.c h2 { font-family: var(--display); margin: 0; font-size: 26px; }
+.c p { margin: 0; color: var(--muted); }
+.c ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; }
+.c .btn { margin-top: auto; align-self: flex-start; }
+.tech { margin-top: 56px; background: var(--surface); padding: 28px; }
+.tech h3 { font-family: var(--display); margin: 0 0 14px; font-size: 22px; }
+.tech table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.tech td, .tech th { text-align: left; padding: 10px 8px; border-top: 1px solid var(--line); vertical-align: top; }
+.tech th { font-family: var(--display); font-size: 13px; letter-spacing: .08em; color: var(--muted); border-top: 0; }
+.yes { color: var(--accent-ink); font-weight: 700; }
+@media (max-width: 860px) { .cards { grid-template-columns: 1fr; } .tech { overflow-x: auto; } }
+</style>
+</head>
+<body>
+<main>
+    <div class="intro">
+        <div class="label">Landing page · 3 direções para escolher</div>
+        <h1 class="h-display">Parallax com storytelling</h1>
+        <p>Os três conceitos usam o logo 3D (fragmentos, pássaro, nome e frase), a navbar fixa (Quem Somos · Contactos · Cursos · Entrar) e os cursos reais da plataforma. Abre cada um, faz scroll e mexe o rato.</p>
+    </div>
+
+    <div class="cards">
+        <div class="c cut-16">
+            <div class="tag">A</div>
+            <h2>As Peças</h2>
+            <p>«Um bom técnico não nasce feito — constrói-se peça a peça.» Os 31 fragmentos montam o pássaro e as competências são absorvidas por ele.</p>
+            <ul><li>Hero preso ao ecrã (pinned) com montagem</li><li>Camadas a velocidades diferentes</li><li>Contadores, linha que se desenha</li><li>Cursos em scroll horizontal</li></ul>
+            <a class="btn btn-accent cut-8" href="a-pecas.html">Ver conceito A ▶</a>
+        </div>
+        <div class="c cut-16">
+            <div class="tag">B</div>
+            <h2>O Voo</h2>
+            <p>«Aprender é levantar voo.» O passarinho percorre a página por um trilho que se desenha com o scroll e pousa em cada capítulo.</p>
+            <ul><li>Hero com profundidade ao mexer o rato</li><li>Trilho SVG ligado ao scroll</li><li>Títulos revelados linha a linha</li><li>Cursos abrem em leque</li></ul>
+            <a class="btn btn-accent cut-8" href="b-voo.html">Ver conceito B ▶</a>
+        </div>
+        <div class="c dark cut-16">
+            <div class="tag">C</div>
+            <h2>Profundidade</h2>
+            <p>Tema escuro, estilo HUD. O scroll é uma câmara que atravessa um túnel 3D: logo, quem somos, APRENDE · PRATICA · CERTIFICA, cursos.</p>
+            <ul><li>Perspetiva CSS 3D (translateZ)</li><li>Camadas do logo separam-se em Z</li><li>HUD com progresso e capítulos</li><li>O mais imersivo, o mais pesado</li></ul>
+            <a class="btn btn-accent cut-8" href="c-profundidade.html">Ver conceito C ▶</a>
+        </div>
+    </div>
+
+    <div class="tech cut-16">
+        <h3>Boas práticas aplicadas (e a aplicar na versão final)</h3>
+        <table>
+            <tr><th>TÉCNICA</th><th>PORQUÊ</th></tr>
+            <tr><td>Animar só <b>transform</b> e <b>opacity</b></td><td>São as propriedades que o browser anima na GPU, sem recalcular o layout — mantém 60 fps.</td></tr>
+            <tr><td>Um único ciclo <b>requestAnimationFrame</b> por scroll</td><td>Evita trabalho repetido em cada evento de scroll.</td></tr>
+            <tr><td>Secções <b>pinned</b> (position: sticky + progresso 0→1)</td><td>A base do storytelling: o ecrã fica parado enquanto a história avança.</td></tr>
+            <tr><td><b>CSS scroll-driven animations</b> (<code>animation-timeline: view()</code>)</td><td>Para revelações simples sem JavaScript. Já há suporte nos principais browsers; usar com fallback.</td></tr>
+            <tr><td><b>prefers-reduced-motion</b></td><td>Quem desativa animações no sistema vê a página estática, já no estado final. <span class="yes">Já nos protótipos.</span></td></tr>
+            <tr><td>Parallax do rato só em <b>desktop</b></td><td>Em ecrãs tácteis é desligado; em mobile as animações ficam mais curtas.</td></tr>
+            <tr><td>Texto real em HTML (não em imagens)</td><td>SEO e acessibilidade: a landing será em Blade, indexável.</td></tr>
+        </table>
+        <p style="font-size:13px;color:var(--muted);margin:14px 0 0">* Números e contactos nos protótipos são de exemplo.</p>
+    </div>
+</main>
+</body>
+</html>

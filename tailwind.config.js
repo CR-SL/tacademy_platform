@@ -13,26 +13,23 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
+                // Identidade Visual v3 · 4b: Barlow (texto) + Chakra Petch (títulos, números, rótulos)
+                sans: ['Barlow', ...defaultTheme.fontFamily.sans],
+                display: ['"Chakra Petch"', ...defaultTheme.fontFamily.sans],
             },
             colors: {
-                // Paleta T.Academy Platform (ver claude.md secção 8)
-                pearl: 'var(--color-pearl)',
-                mist: 'var(--color-mist)',
-                steel: 'var(--color-steel)',
-                tblue: 'var(--color-tblue)',
-                cyan: 'var(--color-cyan)',
+                // Tokens em resources/css/app.css (mudam com o tema claro/escuro)
+                accent: 'var(--color-accent)',
+                'accent-ink': 'var(--color-accent-ink)',
+                'on-accent': 'var(--color-on-accent)',
+                page: 'var(--color-bg)',
+                surface: 'var(--color-surface)',
+                surface2: 'var(--color-surface2)',
                 ink: 'var(--color-ink)',
-                'brand-yellow': 'var(--color-brand-yellow)',
-            },
-            borderRadius: {
-                card: 'var(--radius-card)',
-            },
-            boxShadow: {
-                card: 'var(--shadow-card)',
-            },
-            backgroundImage: {
-                'gradient-brand': 'var(--gradient-brand)',
+                muted: 'var(--color-muted)',
+                line: 'var(--color-line)',
+                track: 'var(--color-track)',
+                live: 'var(--color-live)',
             },
         },
     },

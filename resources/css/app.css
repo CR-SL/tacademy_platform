@@ -3,130 +3,95 @@
 @tailwind utilities;
 
 /*
- | Design tokens — T.Academy Platform (ver claude.md secção 8)
- | Paleta azul dominante + amarelo/laranja da marca em detalhes.
- | Tema claro forçado (data-theme="light" no <html>); o dark mode fica p/ Fase 2.
+ | Design tokens — Identidade Visual v3, direção 4b "Centro de Missões"
+ | (ver README.md e docs/claude.md secção 8.2).
+ | Amarelo T.Academy como acento, cantos chanfrados, Chakra Petch + Barlow.
+ | Tema claro/escuro via data-theme no <html> (preferência guardada em localStorage).
  */
-:root {
-    --color-white: #FFFFFF;      /* Pure White — superfícies/cards */
-    --color-pearl: #F5F7FA;      /* Pearl Gray — fundo da página */
-    --color-mist: #E4E9F0;       /* Mist — bordas, divisórias */
-    --color-steel: #64748B;      /* Steel Blue — texto secundário */
-    --color-tblue: #2F6FED;      /* T.Blue — ação principal, estados ativos */
-    --color-cyan: #22D3EE;       /* Cyan — acento secundário (gradientes) */
-    --color-ink: #0F1B2D;        /* Ink — texto principal / títulos */
-    --color-brand-yellow: #E8940F; /* Amarelo da marca — só em detalhes (logo, streak) */
+:root,
+[data-theme='light'] {
+    --color-accent: #F8B101;
+    --color-accent-ink: #946A00;   /* texto amarelo sobre fundo claro */
+    --color-on-accent: #18181B;
+    --color-bg: #F4F3EF;
+    --color-surface: #FFFFFF;
+    --color-surface2: #EFEEE9;
+    --color-ink: #18181B;
+    --color-muted: #66666D;
+    --color-line: #E4E2DC;
+    --color-track: #E8E6E0;
+    --color-live: #E5484D;
+    color-scheme: light;
+}
 
-    --gradient-brand: linear-gradient(135deg, var(--color-tblue), var(--color-cyan));
-
-    --radius-card: 16px;
-    --shadow-card: 0 1px 2px rgba(15, 27, 45, 0.04), 0 4px 16px rgba(15, 27, 45, 0.06);
+[data-theme='dark'] {
+    --color-accent-ink: #F8B101;
+    --color-bg: #0F1013;
+    --color-surface: #191B20;
+    --color-surface2: #23262C;
+    --color-ink: #F2F2F3;
+    --color-muted: #9095A0;
+    --color-line: #2A2D33;
+    --color-track: #2C2F36;
+    color-scheme: dark;
 }
 
 body {
-    background-color: var(--color-pearl);
+    background-color: var(--color-bg);
     color: var(--color-ink);
+    transition: background-color 0.3s, color 0.3s;
 }
+
+/* Logo: versão com "Gestão de Talentos" em claro no tema escuro */
+.ta-logo-dark { display: none; }
+[data-theme='dark'] .ta-logo-light { display: none; }
+[data-theme='dark'] .ta-logo-dark { display: block; }
 
 /*
- | Direção "Luminous Light + IA" (ver claude.md secção 8.1)
- | Componentes reutilizáveis: aurora, vidro, superfície de IA (escura), orb.
- | Motion sempre sob prefers-reduced-motion.
+ | Chanfro — o raio da identidade. N = 16 (cartões grandes), 12 (linhas),
+ | 10 (notificação), 8 (botões e chips). Raio só em elementos redondos.
  */
+.ta-cut-8 { clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+.ta-cut-10 { clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+.ta-cut-12 { clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px); }
+.ta-cut-16 { clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px); }
+/* Barra de XP com cantos inclinados */
+.ta-slant-4 { clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
 
-/* Fundo com aurora subtil (radiais azul/cyan/amarelo) */
-.ta-aurora {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background:
-        radial-gradient(38% 46% at 12% 6%, rgba(47, 111, 237, 0.16), transparent 60%),
-        radial-gradient(32% 42% at 94% 12%, rgba(34, 211, 238, 0.18), transparent 60%),
-        radial-gradient(30% 40% at 80% 98%, rgba(232, 148, 15, 0.09), transparent 60%);
-}
-
-/* Superfície em vidro (glassmorphism) */
-.ta-glass {
-    background: rgba(255, 255, 255, 0.62);
-    border: 1px solid rgba(255, 255, 255, 0.9);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
-    box-shadow: 0 10px 30px rgba(47, 111, 237, 0.08);
+/* Barras e anéis animam de 0 até ao valor ao montar */
+.ta-fill {
+    transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Superfície de IA — escura e luminosa (styling, não dark mode) */
-.ta-ai-surface {
-    position: relative;
-    overflow: hidden;
-    color: #fff;
-    background: radial-gradient(130% 150% at 82% 18%, #173a7a 0%, #0d1b34 55%, #0a1428 100%);
-    box-shadow: 0 18px 44px rgba(13, 27, 52, 0.35), inset 0 0 0 1px rgba(34, 211, 238, 0.15);
+.ta-press {
+    transition: transform 0.15s, background-color 0.3s, color 0.3s;
 }
-.ta-ai-glow {
-    position: absolute;
-    right: -30px;
-    top: -34px;
-    width: 170px;
-    height: 170px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(34, 211, 238, 0.5), transparent 70%);
-    filter: blur(4px);
-    pointer-events: none;
-}
-.ta-ai-glow--yellow {
-    right: auto;
-    left: -40px;
-    top: auto;
-    bottom: -40px;
-    width: 120px;
-    height: 120px;
-    background: radial-gradient(circle, rgba(232, 148, 15, 0.22), transparent 70%);
-    filter: none;
+.ta-press:active {
+    transform: scale(0.96);
 }
 
-/* Orb do avatar de IA */
-.ta-orb {
-    position: relative;
-    flex-shrink: 0;
-    border-radius: 50%;
+@keyframes tpop {
+    0% { transform: translateY(-12px) scale(0.9); opacity: 0; }
+    10% { transform: translateY(0) scale(1.05); opacity: 1; }
+    18% { transform: scale(1); }
+    85% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-8px); }
 }
-.ta-orb::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #7ff0ff, #22d3ee 45%, #2f6fed 82%);
-    box-shadow: 0 0 18px rgba(34, 211, 238, 0.55);
+@keyframes tblink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
 }
-.ta-orb::after {
-    content: "";
-    position: absolute;
-    inset: -5px;
-    border-radius: 50%;
-    border: 2px solid rgba(34, 211, 238, 0.5);
+@keyframes tslide {
+    0% { transform: translateY(-14px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
 }
+
+.ta-toast { animation: tpop 2.2s ease forwards; }
 
 @media (prefers-reduced-motion: no-preference) {
-    .ta-aurora {
-        animation: ta-drift 18s ease-in-out infinite alternate;
-    }
-    @keyframes ta-drift {
-        to { transform: translate(16px, 12px) scale(1.05); }
-    }
-    .ta-orb::after {
-        animation: ta-pulse 2.4s ease-in-out infinite;
-    }
-    @keyframes ta-pulse {
-        0%, 100% { transform: scale(1); opacity: 0.6; }
-        50% { transform: scale(1.2); opacity: 0; }
-    }
-    .ta-rise {
-        opacity: 0;
-        transform: translateY(10px);
-        animation: ta-rise 0.55s ease forwards;
-    }
-    @keyframes ta-rise {
-        to { opacity: 1; transform: none; }
-    }
+    .ta-live-dot { animation: tblink 1.2s ease-in-out infinite; }
+    .ta-slide-in { animation: tslide 0.4s ease; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ta-fill { transition: none; }
 }

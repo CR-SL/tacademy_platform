@@ -25,8 +25,8 @@ export default function Register() {
         <GuestLayout>
             <Head title="Criar conta" />
 
-            <h1 className="mb-1 text-xl font-bold text-ink">Criar conta</h1>
-            <p className="mb-6 text-sm text-steel">
+            <h1 className="mb-1 font-display text-2xl font-bold uppercase text-ink">Criar conta</h1>
+            <p className="mb-6 text-sm text-muted">
                 Começa a tua formação em poucos segundos.
             </p>
 
@@ -113,11 +113,11 @@ export default function Register() {
                     </PrimaryButton>
                 </div>
 
-                <p className="mt-6 text-center text-sm text-steel">
+                <p className="mt-6 text-center text-sm text-muted">
                     Já tens conta?{' '}
                     <Link
                         href={route('login')}
-                        className="font-semibold text-tblue hover:underline"
+                        className="font-semibold text-accent-ink hover:underline"
                     >
                         Entrar
                     </Link>

@@ -1,22 +1,17 @@
 import { Link } from '@inertiajs/react';
+import Logo from '@/Components/Logo';
+import ThemeToggle from '@/Components/ThemeToggle';
 
 export default function GuestLayout({ children }) {
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-pearl px-4 py-10">
-            <Link href="/" className="mb-6 flex items-center gap-2">
-                <img
-                    src="/images/passarinho.png"
-                    alt="T.Academy"
-                    className="h-8 w-auto"
-                />
-                <span className="text-lg font-bold text-ink">
-                    T.Academy <span className="text-tblue">Platform</span>
-                </span>
+        <div className="relative flex min-h-screen flex-col items-center justify-center bg-page px-4 py-10 text-ink">
+            <ThemeToggle className="absolute right-4 top-4" />
+
+            <Link href="/" className="mb-7">
+                <Logo className="h-9" />
             </Link>
 
-            <div className="w-full overflow-hidden rounded-2xl border border-mist bg-white px-6 py-7 shadow-card sm:max-w-md">
-                {children}
-            </div>
+            <div className="ta-cut-16 w-full bg-surface px-6 py-7 sm:max-w-md">{children}</div>
         </div>
     );
 }

@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conceito C · Profundidade — T.Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+/* Variante escura do 4b (tokens do tema escuro) */
+:root { --accent-ink: #F8B101; --bg: #0F1013; --surface: #191B20; --surface2: #23262C; --ink: #F2F2F3; --muted: #9095A0; --line: #2A2D33; --track: #2C2F36; }
+body { background: var(--bg); }
+.course-card .thumb { color: #18181b; }
+
+/* ===== Túnel: câmara avança em Z com o scroll ===== */
+.tunnel { height: 700vh; position: relative; }
+.viewport { position: sticky; top: 0; height: 100vh; overflow: hidden; perspective: 900px; perspective-origin: 50% 50%; }
+.world { position: absolute; inset: 0; transform-style: preserve-3d; will-change: transform; }
+.plane { position: absolute; left: 50%; top: 50%; transform-style: preserve-3d; will-change: transform, opacity; }
+.plane > .box { transform: translate(-50%, -50%); transform-style: preserve-3d; }
+
+/* Grelha de chão e estrelas para dar sensação de velocidade */
+.floor { position: absolute; left: 50%; top: 50%; width: 4000px; height: 12000px; transform: translate(-50%, 0) rotateX(90deg) translateZ(-260px); transform-origin: 50% 0; background: linear-gradient(#f8b10122 1px, transparent 1px) 0 0 / 100% 120px, linear-gradient(90deg, #f8b10114 1px, transparent 1px) 0 0 / 120px 100%; mask-image: linear-gradient(transparent, #000 20%, #000 60%, transparent); }
+.spark { position: absolute; left: 50%; top: 50%; width: 3px; height: 3px; background: var(--accent); border-radius: 50%; opacity: .6; }
+
+.logo3 { position: relative; width: min(80vw, 820px); aspect-ratio: 2884 / 1600; }
+.logo3 img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; will-change: transform; }
+.panel { width: min(86vw, 640px); background: color-mix(in srgb, var(--surface) 92%, transparent); padding: 34px; border: 1px solid var(--line); }
+.panel .h-display { font-size: clamp(32px, 4.2vw, 56px); }
+.panel p { color: var(--muted); font-size: 18px; margin-bottom: 0; }
+.big-word { font-family: var(--display); font-weight: 700; font-size: clamp(80px, 16vw, 240px); line-height: .85; color: transparent; -webkit-text-stroke: 2px var(--accent); white-space: nowrap; }
+.hud { position: absolute; z-index: 5; font-family: var(--display); font-weight: 600; font-size: 12px; letter-spacing: .14em; color: var(--muted); }
+.hud.tl { left: clamp(16px, 4vw, 40px); top: 92px; }
+.hud.br { right: clamp(16px, 4vw, 40px); bottom: 70px; text-align: right; }
+.hud b { color: var(--accent); font-size: 28px; display: block; letter-spacing: 0; }
+.chapters { position: absolute; z-index: 5; right: clamp(16px, 4vw, 40px); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; }
+.chapters i { width: 10px; height: 10px; background: var(--track); transform: rotate(45deg); transition: background .3s, transform .3s; }
+.chapters i.on { background: var(--accent); transform: rotate(45deg) scale(1.4); }
+.course-grid { display: grid; grid-template-columns: repeat(3, 260px); gap: 18px; }
+.course-grid .course-card { width: 260px; }
+.course-grid .course-card .thumb { height: 110px; }
+
+.after { padding: 16vh clamp(16px, 6vw, 80px); text-align: center; background: var(--accent); color: var(--on-accent); }
+.after .h-display { font-size: clamp(40px, 6vw, 92px); }
+.nav ul a { color: #9095a0; }
+.nav ul a:hover, .nav ul a.on { color: #f2f2f3; }
+
+@media (max-width: 860px) { .course-grid { grid-template-columns: 1fr 1fr; } .course-grid .course-card { width: 40vw; } .course-grid .course-card:nth-child(n+5) { display: none; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="#top"><img src="/images/brand/logo-tacademy-dark.png" alt="T.Academy"></a>
+    <ul>
+        <li><a href="#quem-somos">Quem Somos</a></li>
+        <li><a href="#contactos">Contactos</a></li>
+        <li><a href="#cursos">Cursos</a></li>
+    </ul>
+    <a class="btn btn-accent cut-8" href="/login">Entrar ▶</a>
+</nav>
+<div class="progress"></div>
+
+<section class="tunnel" id="top">
+    <!-- âncoras de navegação dentro do túnel -->
+    <span id="quem-somos" style="position:absolute;top:150vh"></span>
+    <span id="cursos" style="position:absolute;top:560vh"></span>
+
+    <div class="viewport" id="vp">
+        <div class="hud tl">T.ACADEMY · FORMAÇÃO AUTOMÓVEL<b id="hudPct">000%</b></div>
+        <div class="hud br" id="hudLabel">INÍCIO</div>
+        <div class="chapters" id="dots"></div>
+        <div class="world" id="world">
+            <div class="floor"></div>
+        </div>
+    </div>
+</section>
+
+<section class="after">
+    <div class="label" style="color:var(--on-accent)">Chegaste ao fim do túnel</div>
+    <h2 class="h-display">A tua formação começa aqui.</h2>
+    <p style="font-size:20px;max-width:520px;margin:18px auto 30px">Entra para retomar os teus cursos, ou fala connosco para formar a tua equipa.</p>
+    <a class="btn btn-dark cut-8" href="/login">Entrar na plataforma ▶</a>
+</section>
+
+<footer class="footer" id="contactos">
+    <div>
+        <img src="/images/brand/logo-tacademy-dark.png" alt="T.Academy" style="height:34px;width:auto;margin-bottom:16px">
+        <p>Formação e gestão de talentos para o setor automóvel.</p>
+    </div>
+    <div><h5>CONTACTOS</h5><p>geral@tacademy.pt*</p><p>+351 000 000 000*</p></div>
+    <div><h5>PLATAFORMA</h5><p><a href="/login">Entrar</a></p><p><a href="#cursos">Cursos</a></p></div>
+</footer>
+
+<div class="concept-switch"><a href="index.html">←</a><a href="a-pecas.html">A · Peças</a><a href="a2-navbar.html">A2 · Navbar</a><a href="b-voo.html">B · Voo</a><a class="on" href="c-profundidade.html">C · Profundidade</a></div>
+
+<script src="base.js"></script>
+<script>
+const { clamp, ease, pinProgress, courses, courseCard, reduced, rng } = TA;
+TA.chrome();
+
+const world = document.getElementById('world');
+const GAP = 1400; // distância em Z entre planos
+
+/* Cada plano fica numa profundidade; x/y deslocam-no do centro para o túnel "curvar" */
+const planes = [
+    { label: 'INÍCIO', x: 0, y: 0, html: `
+        <div class="logo3" id="logo3">
+            <img src="/images/logo3d/phrase.png" alt="Gestão de Talentos" data-z="-60">
+            <img src="/images/logo3d/name.png" alt="T.Academy" data-z="0">
+            <img src="/images/logo3d/bird_whole.png" alt="" data-z="120">
+        </div>` },
+    { label: 'QUEM SOMOS', x: -260, y: -40, html: `
+        <div class="panel cut-16">
+            <div class="label">01 · Quem somos</div>
+            <h2 class="h-display">Formação feita por quem conhece a oficina.</h2>
+            <p>A T.Academy é a área de formação e gestão de talentos para o setor automóvel. Preparamos técnicos para os carros de hoje — e de amanhã.</p>
+        </div>` },
+    { label: 'O QUE FAZEMOS', x: 300, y: 30, html: `<div class="big-word">APRENDE</div>` },
+    { label: 'O QUE FAZEMOS', x: -200, y: 60, html: `<div class="big-word">PRATICA</div>` },
+    { label: 'O QUE FAZEMOS', x: 220, y: -50, html: `<div class="big-word">CERTIFICA</div>` },
+    { label: 'COMO', x: 0, y: 0, html: `
+        <div class="panel cut-16">
+            <div class="label">02 · O que fazemos</div>
+            <h2 class="h-display">Aulas com IA, tarefas e XP.</h2>
+            <p>Cursos curtos e práticos, avatares de IA que tiram dúvidas, desafios de equipa e certificados. Os gestores acompanham tudo num painel.</p>
+        </div>` },
+    { label: 'CURSOS', x: 0, y: 0, html: `
+        <div>
+            <div class="label" style="text-align:center;margin-bottom:16px">03 · Cursos em destaque</div>
+            <div class="course-grid">${courses.map(courseCard).join('')}</div>
+        </div>` },
+];
+
+planes.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'plane';
+    el.innerHTML = `<div class="box">${p.html}</div>`;
+    world.appendChild(el);
+    p.el = el; p.z = -i * GAP;
+});
+
+/* Faíscas espalhadas pelo túnel */
+const R = rng(7);
+for (let i = 0; i < 160; i++) {
+    const s = document.createElement('i');
+    s.className = 'spark';
+    s.style.transform = `translate3d(${(R() - .5) * 3000}px, ${(R() - .5) * 1800}px, ${-R() * GAP * planes.length}px)`;
+    world.appendChild(s);
+}
+
+const dots = document.getElementById('dots');
+const labels = [...new Set(planes.map((p) => p.label))];
+dots.innerHTML = labels.map(() => '<i></i>').join('');
+
+const tunnel = document.querySelector('.tunnel');
+const hudPct = document.getElementById('hudPct'), hudLabel = document.getElementById('hudLabel');
+let mx = 0, my = 0;
+TA.mouse((x, y) => { mx = x; my = y; render(); });
+
+function render() {
+    const raw = reduced ? 1 : pinProgress(tunnel);
+    const p = clamp(raw / .85); // os últimos 15% ficam parados nos cursos
+    const camZ = p * GAP * (planes.length - 1); // câmara avança
+    // A câmara segue suavemente o x/y do plano mais próximo (curva do túnel)
+    const f = p * (planes.length - 1), i0 = Math.floor(f), t = ease(f - i0);
+    const a = planes[i0], b = planes[Math.min(i0 + 1, planes.length - 1)];
+    const cx = a.x + (b.x - a.x) * t, cy = a.y + (b.y - a.y) * t;
+    world.style.transform = `translate3d(${-cx - mx * 30}px, ${-cy - my * 20}px, ${camZ}px) rotateY(${mx * 3}deg) rotateX(${-my * 3}deg)`;
+
+    planes.forEach((pl) => {
+        const dist = pl.z + camZ; // 0 = à frente da câmara; >0 = já passou
+        const op = dist > 300 ? 0 : dist > 0 ? 1 - dist / 300 : clamp(1 + dist / (GAP * 0.9));
+        pl.el.style.opacity = op;
+        pl.el.style.transform = `translate3d(${pl.x}px, ${pl.y}px, ${pl.z}px)`;
+        pl.el.style.pointerEvents = op > .6 ? 'auto' : 'none';
+    });
+
+    // Camadas do logo separam-se em Z (efeito 3D do logótipo)
+    document.querySelectorAll('#logo3 img').forEach((img) => {
+        const z = +img.dataset.z * (1 + p * 6);
+        img.style.transform = `translateZ(${z}px) translate(${mx * z * -.05}px, ${my * z * -.05}px)`;
+    });
+    document.getElementById('logo3').style.transformStyle = 'preserve-3d';
+
+    const cur = planes[Math.round(f)].label;
+    hudLabel.textContent = cur;
+    hudPct.textContent = String(Math.round(raw * 100)).padStart(3, '0') + '%';
+    [...dots.children].forEach((d, i) => d.classList.toggle('on', labels[i] === cur));
+}
+TA.onFrame(render);
+</script>
+</body>
+</html>
