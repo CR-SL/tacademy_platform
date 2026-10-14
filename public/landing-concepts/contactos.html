@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contactos — T.Academy (protótipo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+:root { --gutter: clamp(16px, 6vw, 80px); --live: #E5484D; }
+[hidden] { display: none !important; }
+.nav { background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-color: var(--line); }
+.nav .btn { padding: 8px 13px; font-size: 10.5px; }
+
+/* ===== Cabeçalho ===== */
+.head { padding: 130px var(--gutter) 40px; max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 30px; align-items: end; }
+.head .h-display { font-size: clamp(44px, 7vw, 96px); margin-top: 8px; }
+.head p { color: var(--muted); font-size: 19px; max-width: 560px; margin: 14px 0 0; }
+.who { display: flex; gap: 4px; padding: 4px; background: var(--surface); }
+.who button { border: 0; background: transparent; padding: 12px 18px; font-family: var(--display); font-weight: 700; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); cursor: pointer; transition: background .2s, color .2s; }
+.who button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+/* ===== Formulário + lateral ===== */
+.main { max-width: 1240px; margin: 0 auto; padding: 0 var(--gutter) 90px; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.card { background: var(--surface); padding: 30px; }
+.card h2 { font-family: var(--display); font-size: 26px; margin: 0 0 4px; }
+.card .sub { color: var(--muted); margin: 0 0 24px; }
+form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-family: var(--display); font-weight: 600; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.field label i { font-style: normal; color: var(--accent-ink); }
+.field input, .field select, .field textarea { font: inherit; font-size: 16px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); padding: 12px 14px; border-radius: 0; outline: none; transition: border-color .2s, box-shadow .2s; }
+.field textarea { min-height: 130px; resize: vertical; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.field .err { color: var(--live); font-size: 13px; min-height: 0; }
+.field.bad input, .field.bad textarea { border-color: var(--live); }
+.company { display: contents; }
+.company[hidden] { display: none; }
+.consent { grid-column: 1 / -1; display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--muted); }
+.consent input { margin-top: 3px; accent-color: var(--accent); width: 16px; height: 16px; }
+.actions { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.actions small { color: var(--muted); }
+.success { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.success .tick { width: 64px; height: 64px; background: var(--accent); color: var(--on-accent); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 700; font-size: 32px; }
+.success h2 { margin: 6px 0 0; }
+
+.side { display: flex; flex-direction: column; gap: 22px; }
+.socials { display: flex; flex-direction: column; gap: 10px; }
+.social { display: grid; grid-template-columns: 46px 1fr auto; gap: 14px; align-items: center; padding: 12px 14px 12px 12px; background: var(--bg); transition: transform .25s cubic-bezier(.3,1.5,.5,1), background .2s; }
+.social:hover { transform: translateX(6px); background: var(--surface2); }
+.social .ic { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; background: var(--ink); color: var(--accent); }
+.social .ic svg { width: 22px; height: 22px; }
+.social b { display: block; font-family: var(--display); font-size: 17px; }
+.social span { color: var(--muted); font-size: 14px; }
+.social .go { font-family: var(--display); font-weight: 700; color: var(--accent-ink); }
+.dark-card { background: #18181b; color: #f2f2f3; padding: 26px; display: flex; flex-direction: column; gap: 14px; }
+.dark-card .label { color: var(--accent); }
+.dark-card dl { margin: 0; display: grid; gap: 12px; }
+.dark-card dt { font-size: 12px; letter-spacing: .1em; color: #9095a0; font-family: var(--display); font-weight: 600; }
+.dark-card dd { margin: 2px 0 0; font-size: 17px; }
+.dark-card .note { font-size: 13px; color: #9095a0; }
+
+/* ===== FAQ ===== */
+.faq { background: var(--surface); padding: 90px var(--gutter); }
+.faq-in { max-width: 1000px; margin: 0 auto; }
+.faq-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; margin-bottom: 26px; }
+.faq .h-display { font-size: clamp(34px, 4.4vw, 56px); margin-top: 8px; }
+.tabs { display: flex; gap: 4px; padding: 4px; background: var(--bg); }
+.tabs button { border: 0; background: transparent; padding: 9px 16px; font-family: var(--display); font-weight: 600; font-size: 14px; color: var(--muted); cursor: pointer; display: flex; gap: 8px; align-items: center; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+.tabs .n { min-width: 20px; height: 20px; border-radius: 10px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.search { position: relative; margin-bottom: 18px; }
+.search input { width: 100%; font: inherit; font-size: 17px; padding: 15px 16px 15px 46px; background: var(--bg); border: 1px solid var(--line); outline: none; }
+.search input:focus { border-color: var(--accent); }
+.search svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); }
+details { background: var(--bg); margin-bottom: 8px; }
+summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 1fr 28px; gap: 16px; align-items: center; padding: 18px 20px; font-weight: 600; font-size: 18px; }
+summary::-webkit-details-marker { display: none; }
+summary .pm { width: 28px; height: 28px; background: var(--surface); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 700; transition: transform .3s, background .2s; }
+details[open] summary .pm { transform: rotate(45deg); background: var(--accent); }
+details .ans { padding: 0 20px 20px; color: var(--muted); max-width: 760px; }
+details .ans p { margin: 0 0 8px; }
+mark { background: color-mix(in srgb, var(--accent) 45%, transparent); color: inherit; padding: 0 2px; }
+.empty-faq { padding: 26px; background: var(--bg); color: var(--muted); }
+.faq-cta { margin-top: 26px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 22px 24px; background: var(--accent); color: var(--on-accent); }
+.faq-cta b { font-family: var(--display); font-size: 20px; }
+.proto-note { font-size: 13px; color: var(--muted); margin-top: 14px; }
+
+@media (max-width: 900px) {
+    .head { grid-template-columns: 1fr; }
+    .main { grid-template-columns: 1fr; }
+    form { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .social, summary .pm { transition: none; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="a-pecas.html"><img src="/images/brand/logo-tacademy.png" alt="T.Academy"></a>
+    <ul>
+        <li><a href="a-pecas.html#quem-somos">Quem Somos</a></li>
+        <li><a class="on" href="#top">Contactos</a></li>
+        <li><a href="a-pecas.html#cursos">Cursos</a></li>
+    </ul>
+    <a class="btn btn-accent cut-8" href="/login">Entrar ▶</a>
+</nav>
+
+<header class="head" id="top">
+    <div>
+        <div class="label reveal">Contactos</div>
+        <h1 class="h-display reveal" style="--d:.06s">Fala connosco.</h1>
+        <p class="reveal" style="--d:.12s">Dúvidas sobre um curso, formação para a tua equipa ou ajuda com a plataforma. Diz-nos quem és e mostramos-te o caminho mais rápido.</p>
+    </div>
+    <div class="who cut-8 reveal" style="--d:.18s" role="group" aria-label="Quem és">
+        <button type="button" data-who="empresa" aria-pressed="true">Sou empresa</button>
+        <button type="button" data-who="particular" aria-pressed="false">Sou particular</button>
+    </div>
+</header>
+
+<section class="main">
+    <!-- Formulário de pedido de contacto -->
+    <div class="card cut-16 reveal" id="formCard">
+        <div id="formWrap">
+            <h2>Pedir contacto</h2>
+            <p class="sub" id="formSub">Conta-nos o que a tua equipa precisa. Preparamos uma proposta à medida.</p>
+            <form id="contactForm" novalidate>
+                <div class="field"><label for="f-name">Nome <i>*</i></label><input id="f-name" name="name" autocomplete="name" required><span class="err"></span></div>
+                <div class="field"><label for="f-email">Email <i>*</i></label><input id="f-email" name="email" type="email" autocomplete="email" required><span class="err"></span></div>
+                <div class="field"><label for="f-phone">Telefone</label><input id="f-phone" name="phone" type="tel" autocomplete="tel" placeholder="Opcional"></div>
+                <div class="field">
+                    <label for="f-course">Curso de interesse</label>
+                    <select id="f-course" name="course">
+                        <option value="">Ainda não sei / vários</option>
+                        <option>Diagnóstico de Sistemas OBD-II</option>
+                        <option>Diagnóstico de Falhas Elétricas</option>
+                        <option>Scanner e Osciloscópio na Prática</option>
+                        <option>Introdução à Eletrónica Automóvel</option>
+                        <option>Redes CAN Bus no Automóvel</option>
+                        <option>Baterias e Sistemas de Carga</option>
+                        <option>Gestão de Oficina Moderna</option>
+                        <option>Atendimento e Fidelização de Clientes</option>
+                        <option>Orçamentação e Faturação</option>
+                    </select>
+                </div>
+                <div class="company" id="companyFields">
+                    <div class="field"><label for="f-company">Empresa / Oficina <i>*</i></label><input id="f-company" name="company" autocomplete="organization"><span class="err"></span></div>
+                    <div class="field">
+                        <label for="f-size">Nº de pessoas a formar</label>
+                        <select id="f-size" name="size"><option>1 – 5</option><option>6 – 20</option><option>21 – 50</option><option>Mais de 50</option></select>
+                    </div>
+                </div>
+                <div class="field full"><label for="f-msg">Mensagem <i>*</i></label><textarea id="f-msg" name="message" placeholder="Em que podemos ajudar?" required></textarea><span class="err"></span></div>
+                <label class="consent"><input type="checkbox" id="f-consent" required> <span>Aceito que a T.Academy use estes dados para responder ao meu pedido, de acordo com a política de privacidade.</span></label>
+                <div class="actions">
+                    <small>Respondemos em até 2 dias úteis.*</small>
+                    <button class="btn btn-accent cut-8" type="submit">Enviar pedido ▶</button>
+                </div>
+            </form>
+        </div>
+        <div class="success" id="success" hidden>
+            <div class="tick cut-8">✓</div>
+            <h2>Pedido enviado.</h2>
+            <p class="sub" id="successText">Obrigado! Vamos responder para o teu email em até 2 dias úteis.*</p>
+            <button class="btn btn-ghost cut-8" type="button" id="again">Enviar outro pedido</button>
+        </div>
+    </div>
+
+    <!-- Redes sociais + contactos diretos -->
+    <aside class="side">
+        <div class="card cut-16 reveal" style="--d:.08s">
+            <h2>Segue-nos</h2>
+            <p class="sub">Novidades, cursos novos e dicas de oficina.</p>
+            <div class="socials">
+                <a class="social cut-12" href="https://www.linkedin.com/company/t-academy/home/" target="_blank" rel="noopener">
+                    <span class="ic cut-8"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.5 3.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM3 9h3v12H3zM9 9h2.9v1.7h.1c.4-.8 1.4-1.9 3.1-1.9 3.3 0 3.9 2.2 3.9 5V21h-3v-6.2c0-1.5 0-3.3-2-3.3s-2.3 1.6-2.3 3.2V21H9z"/></svg></span>
+                    <span><b>LinkedIn</b><span>T.Academy</span></span><span class="go">↗</span>
+                </a>
+                <a class="social cut-12" href="https://www.instagram.com/gestao.de.talentos/" target="_blank" rel="noopener">
+                    <span class="ic cut-8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></span>
+                    <span><b>Instagram</b><span>@gestao.de.talentos</span></span><span class="go">↗</span>
+                </a>
+                <a class="social cut-12" href="https://www.facebook.com/gestao.talentos" target="_blank" rel="noopener">
+                    <span class="ic cut-8"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-8h2.7l.4-3.2h-3.1V7.8c0-.9.3-1.5 1.6-1.5h1.6V3.4c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1v2.4H7.6V13h2.7v8z"/></svg></span>
+                    <span><b>Facebook</b><span>/gestao.talentos</span></span><span class="go">↗</span>
+                </a>
+            </div>
+        </div>
+        <div class="dark-card cut-16 reveal" style="--d:.16s">
+            <div class="label">Contacto direto</div>
+            <dl>
+                <div><dt>EMAIL</dt><dd>geral@tacademy.pt*</dd></div>
+                <div><dt>TELEFONE</dt><dd>+351 000 000 000*</dd></div>
+                <div><dt>HORÁRIO</dt><dd>Dias úteis, 9h – 18h*</dd></div>
+            </dl>
+            <span class="note">* Dados de exemplo — vêm do .env na versão final.</span>
+        </div>
+    </aside>
+</section>
+
+<!-- FAQs -->
+<section class="faq" id="faq">
+    <div class="faq-in">
+        <div class="faq-top">
+            <div>
+                <div class="label">Perguntas frequentes</div>
+                <h2 class="h-display">Antes de falares connosco.</h2>
+            </div>
+            <div class="tabs cut-8" role="tablist" aria-label="Tipo de pergunta">
+                <button type="button" role="tab" data-tab="empresa" aria-selected="true">Empresas <span class="n" data-count="empresa"></span></button>
+                <button type="button" role="tab" data-tab="particular" aria-selected="false">Particulares <span class="n" data-count="particular"></span></button>
+            </div>
+        </div>
+        <label class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input type="search" id="faqSearch" placeholder="Procurar nas perguntas (ex.: certificado, fatura, telemóvel)" aria-label="Procurar nas perguntas frequentes">
+        </label>
+        <div id="faqList"></div>
+        <div class="faq-cta cut-12">
+            <b>Não encontraste a resposta?</b>
+            <a class="btn btn-dark cut-8" href="#formCard">Pedir contacto ▶</a>
+        </div>
+        <p class="proto-note">As FAQs são exemplos para afinar quando o fluxo da plataforma estiver fechado.</p>
+    </div>
+</section>
+
+<footer class="footer">
+    <div>
+        <img src="/images/brand/logo-tacademy-dark.png" alt="T.Academy" style="height:34px;width:auto;margin-bottom:16px">
+        <p>Formação e gestão de talentos para o setor automóvel.</p>
+    </div>
+    <div><h5>REDES SOCIAIS</h5>
+        <p><a href="https://www.linkedin.com/company/t-academy/home/" target="_blank" rel="noopener">LinkedIn</a></p>
+        <p><a href="https://www.instagram.com/gestao.de.talentos/" target="_blank" rel="noopener">Instagram</a></p>
+        <p><a href="https://www.facebook.com/gestao.talentos" target="_blank" rel="noopener">Facebook</a></p>
+    </div>
+    <div><h5>PLATAFORMA</h5><p><a href="/login">Entrar</a></p><p><a href="#faq">Perguntas frequentes</a></p></div>
+</footer>
+
+<div class="concept-switch"><a href="index.html">←</a><a href="a2-navbar.html">Landing</a><a class="on" href="contactos.html">Contactos</a></div>
+
+<script src="base.js"></script>
+<script>
+TA.chrome(); TA.reveals();
+
+/* ---------- FAQs de exemplo (a afinar) ---------- */
+const FAQ = {
+    empresa: [
+        ['Como inscrevo a minha equipa?', 'Envia-nos o pedido de contacto com o número de pessoas a formar. Criamos a conta da empresa e convidamos cada técnico por email — cada um entra com o seu acesso.'],
+        ['Consigo acompanhar o progresso dos técnicos?', 'Sim. A área de gestor mostra as aulas concluídas, os certificados obtidos e as tarefas de cada pessoa e da equipa toda.'],
+        ['Há preços para grupos?', 'Sim. O preço por pessoa baixa com o número de inscrições. Pede-nos uma proposta com o tamanho da equipa.'],
+        ['Emitem fatura com o NIF da empresa?', 'Sim. Indica os dados de faturação da empresa no pedido e a fatura sai em nome da empresa.'],
+        ['Podem criar formação à medida da nossa oficina?', 'Podemos adaptar trilhos de cursos às marcas e equipamentos com que trabalham. Fala connosco para avaliarmos.'],
+        ['Os cursos são certificados?', 'Cada curso concluído gera um certificado com código de verificação, que a empresa pode consultar na área de gestor.'],
+    ],
+    particular: [
+        ['Como compro um curso?', 'Escolhe o curso, cria conta e faz o pagamento online. O acesso fica disponível logo a seguir.'],
+        ['Durante quanto tempo tenho acesso ao curso?', 'Tens acesso ao curso e às atualizações do conteúdo enquanto a tua conta estiver ativa.'],
+        ['Recebo certificado no fim?', 'Sim. Ao concluir todas as aulas e quizzes recebes um certificado com código de verificação.'],
+        ['Preciso de experiência para começar?', 'Não. Cada curso indica o nível (iniciante, intermédio ou avançado) para escolheres o ponto de partida certo.'],
+        ['Posso aprender pelo telemóvel?', 'Sim. A plataforma funciona no telemóvel e no computador, e retomas sempre onde ficaste.'],
+        ['O que é uma «Aula com IA»?', 'É uma aula dada por um avatar de IA, que explica a matéria e responde às tuas dúvidas a qualquer hora.'],
+    ],
+};
+
+let who = 'empresa', tab = 'empresa';
+const list = document.getElementById('faqList'), search = document.getElementById('faqSearch');
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const hl = (s, q) => q ? esc(s).replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<mark>$1</mark>') : esc(s);
+const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+function renderFaq() {
+    const q = search.value.trim();
+    const match = ([p, a]) => !q || norm(p + ' ' + a).includes(norm(q));
+    document.querySelectorAll('[data-count]').forEach((n) => { n.textContent = FAQ[n.dataset.count].filter(match).length; });
+    const items = FAQ[tab].filter(match);
+    list.innerHTML = items.length
+        ? items.map(([p, a], i) => `<details class="cut-12"${q && i === 0 ? ' open' : ''}><summary>${hl(p, q)}<span class="pm cut-8">+</span></summary><div class="ans"><p>${hl(a, q)}</p></div></details>`).join('')
+        : `<div class="empty-faq cut-12">Sem resultados para «${esc(q)}» em ${tab === 'empresa' ? 'Empresas' : 'Particulares'}. Experimenta o outro separador ou pede contacto.</div>`;
+}
+document.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => {
+    tab = b.dataset.tab;
+    document.querySelectorAll('[data-tab]').forEach((x) => x.setAttribute('aria-selected', x === b));
+    renderFaq();
+}));
+search.addEventListener('input', renderFaq);
+
+/* ---------- Empresa / particular: adapta formulário e FAQs ---------- */
+const companyFields = document.getElementById('companyFields'), formSub = document.getElementById('formSub');
+function setWho(w) {
+    who = w;
+    document.querySelectorAll('[data-who]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.who === w));
+    companyFields.hidden = w !== 'empresa';
+    formSub.textContent = w === 'empresa'
+        ? 'Conta-nos o que a tua equipa precisa. Preparamos uma proposta à medida.'
+        : 'Tens dúvidas sobre um curso? Pergunta à vontade — respondemos por email.';
+    document.querySelector(`[data-tab="${w}"]`).click();
+}
+document.querySelectorAll('[data-who]').forEach((b) => b.addEventListener('click', () => setWho(b.dataset.who)));
+
+/* ---------- Validação e envio (no protótipo não envia nada) ---------- */
+const form = document.getElementById('contactForm');
+const check = (id, ok, msg) => { const f = document.getElementById(id).closest('.field'); f.classList.toggle('bad', !ok); f.querySelector('.err').textContent = ok ? '' : msg; return ok; };
+form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = (id) => document.getElementById(id).value.trim();
+    let ok = check('f-name', v('f-name').length > 1, 'Escreve o teu nome.');
+    ok = check('f-email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('f-email')), 'Escreve um email válido, ex.: nome@oficina.pt.') && ok;
+    if (who === 'empresa') ok = check('f-company', v('f-company').length > 1, 'Indica o nome da empresa ou oficina.') && ok;
+    ok = check('f-msg', v('f-msg').length > 5, 'Escreve a tua pergunta ou pedido.') && ok;
+    const consent = document.getElementById('f-consent');
+    if (!consent.checked) { consent.focus(); ok = false; consent.closest('.consent').style.color = 'var(--live)'; } else consent.closest('.consent').style.color = '';
+    if (!ok) { form.querySelector('.bad input, .bad textarea')?.focus(); return; }
+    document.getElementById('successText').textContent = `Obrigado, ${v('f-name').split(' ')[0]}! Vamos responder para ${v('f-email')} em até 2 dias úteis.*`;
+    document.getElementById('formWrap').hidden = true;
+    document.getElementById('success').hidden = false;
+});
+document.getElementById('again').addEventListener('click', () => {
+    form.reset(); document.getElementById('formWrap').hidden = false; document.getElementById('success').hidden = true;
+});
+
+setWho('empresa');
+</script>
+</body>
+</html>

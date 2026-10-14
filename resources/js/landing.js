@@ -28,19 +28,19 @@ function rng(a) {
 /* ---------- Navbar, barra de progresso e secção ativa ---------- */
 const nav = $('.nav');
 const bar = $('.progress');
+// Só as âncoras desta página (#...) marcam a secção ativa; "Contactos" é outra página
 const navLinks = $$('.nav ul a');
+const anchorLinks = navLinks.filter((a) => a.getAttribute('href').startsWith('#'));
 
 function paintChrome() {
     const max = document.documentElement.scrollHeight - innerHeight;
     bar.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
     let current = null;
-    navLinks.forEach((a) => {
+    anchorLinks.forEach((a) => {
         const s = $(a.getAttribute('href'));
         if (s && s.getBoundingClientRect().top < innerHeight * 0.4) current = a;
     });
-    // No fundo da página o rodapé (Contactos) é curto demais para chegar a 40% do ecrã
-    if (max > 0 && scrollY >= max - 2) current = navLinks.find((a) => a.getAttribute('href') === '#contactos') ?? current;
-    navLinks.forEach((a) => a.classList.toggle('on', a === current));
+    anchorLinks.forEach((a) => a.classList.toggle('on', a === current));
 }
 
 // Menu em telemóvel

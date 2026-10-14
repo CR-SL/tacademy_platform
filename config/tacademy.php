@@ -3,13 +3,47 @@
 return [
 
     /*
-     | Contactos mostrados na landing page (secção Contactos).
+     | Contactos mostrados nas páginas públicas (landing e /contactos).
      | Definir no .env; os que ficarem vazios não aparecem.
      */
     'contact' => [
         'email' => env('TACADEMY_CONTACT_EMAIL'),
         'phone' => env('TACADEMY_CONTACT_PHONE'),
         'address' => env('TACADEMY_CONTACT_ADDRESS'),
+        'hours' => env('TACADEMY_CONTACT_HOURS'),          // ex.: "Dias úteis, 9h – 18h"
+        'response_time' => env('TACADEMY_RESPONSE_TIME'),  // ex.: "2 dias úteis"
+    ],
+
+    /*
+     | Redes sociais (rodapé e página de contactos).
+     */
+    'social' => [
+        'linkedin' => ['label' => 'LinkedIn', 'handle' => 'T.Academy', 'url' => 'https://www.linkedin.com/company/t-academy/home/'],
+        'instagram' => ['label' => 'Instagram', 'handle' => '@gestao.de.talentos', 'url' => 'https://www.instagram.com/gestao.de.talentos/'],
+        'facebook' => ['label' => 'Facebook', 'handle' => '/gestao.talentos', 'url' => 'https://www.facebook.com/gestao.talentos'],
+    ],
+
+    /*
+     | Perguntas frequentes da página /contactos, por público.
+     | EXEMPLOS: a afinar quando o fluxo da plataforma (inscrições, pagamentos, certificados) estiver fechado.
+     */
+    'faqs' => [
+        'empresa' => [
+            ['Como inscrevo a minha equipa?', 'Envia-nos o pedido de contacto com o número de pessoas a formar. Criamos a conta da empresa e convidamos cada técnico por email — cada um entra com o seu acesso.'],
+            ['Consigo acompanhar o progresso dos técnicos?', 'Sim. A área de gestor mostra as aulas concluídas, os certificados obtidos e as tarefas de cada pessoa e da equipa toda.'],
+            ['Há preços para grupos?', 'Sim. O preço por pessoa baixa com o número de inscrições. Pede-nos uma proposta com o tamanho da equipa.'],
+            ['Emitem fatura com o NIF da empresa?', 'Sim. Indica os dados de faturação da empresa no pedido e a fatura sai em nome da empresa.'],
+            ['Podem criar formação à medida da nossa oficina?', 'Podemos adaptar trilhos de cursos às marcas e equipamentos com que trabalham. Fala connosco para avaliarmos.'],
+            ['Os cursos são certificados?', 'Cada curso concluído gera um certificado com código de verificação, que a empresa pode consultar na área de gestor.'],
+        ],
+        'particular' => [
+            ['Como compro um curso?', 'Escolhe o curso, cria conta e faz o pagamento online. O acesso fica disponível logo a seguir.'],
+            ['Durante quanto tempo tenho acesso ao curso?', 'Tens acesso ao curso e às atualizações do conteúdo enquanto a tua conta estiver ativa.'],
+            ['Recebo certificado no fim?', 'Sim. Ao concluir todas as aulas e quizzes recebes um certificado com código de verificação.'],
+            ['Preciso de experiência para começar?', 'Não. Cada curso indica o nível (iniciante, intermédio ou avançado) para escolheres o ponto de partida certo.'],
+            ['Posso aprender pelo telemóvel?', 'Sim. A plataforma funciona no telemóvel e no computador, e retomas sempre onde ficaste.'],
+            ['O que é uma «Aula com IA»?', 'É uma aula dada por um avatar de IA, que explica a matéria e responde às tuas dúvidas a qualquer hora.'],
+        ],
     ],
 
 ];

@@ -30,7 +30,6 @@ class LandingController extends Controller
                 'areas' => Category::whereHas('courses', fn ($q) => $q->where('status', 'published'))->count(),
                 'lessons' => Lesson::whereHas('module.course', fn ($q) => $q->where('status', 'published'))->count(),
             ],
-            'contact' => config('tacademy.contact'),
         ]);
     }
 }

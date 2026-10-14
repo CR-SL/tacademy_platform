@@ -3,7 +3,6 @@
     $loggedIn = auth()->check();
     $ctaHref = $loggedIn ? route('dashboard') : route('login');
     $ctaLabel = $loggedIn ? 'Ir para a plataforma' : 'Entrar';
-    $hasContact = collect($contact)->filter()->isNotEmpty();
 @endphp
 <!DOCTYPE html>
 <html lang="pt-PT">
@@ -31,7 +30,7 @@
     <script>document.documentElement.classList.add('js')</script>
     @vite(['resources/css/landing.css', 'resources/js/landing.js'])
 </head>
-<body class="landing">
+<body class="landing landing-home">
 
 <a class="skip" href="#quem-somos">Saltar para o conteúdo</a>
 
@@ -42,7 +41,7 @@
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav-links" data-menu data-in>Menu</button>
     <ul id="nav-links">
         <li data-in><a href="#quem-somos">Quem Somos</a></li>
-        <li data-in><a href="#contactos">Contactos</a></li>
+        <li data-in><a href="{{ route('contacts') }}">Contactos</a></li>
         <li data-in><a href="#cursos">Cursos</a></li>
     </ul>
     <a class="btn btn-accent cut-8" href="{{ $ctaHref }}" data-in>{{ $ctaLabel }} ▶</a>
@@ -155,28 +154,7 @@
     </section>
 </main>
 
-<footer class="footer" id="contactos">
-    <div>
-        <img src="/images/brand/logo-tacademy-dark.png" alt="T.Academy" width="144" height="34" class="footer-logo">
-        <p>Formação e gestão de talentos para o setor automóvel.</p>
-    </div>
-    <div>
-        <h2>CONTACTOS</h2>
-        @if ($hasContact)
-            @if ($contact['email'])<p><a href="mailto:{{ $contact['email'] }}">{{ $contact['email'] }}</a></p>@endif
-            @if ($contact['phone'])<p><a href="tel:{{ preg_replace('/\s+/', '', $contact['phone']) }}">{{ $contact['phone'] }}</a></p>@endif
-            @if ($contact['address'])<p>{{ $contact['address'] }}</p>@endif
-        @else
-            <p>Contactos em breve.</p>
-        @endif
-    </div>
-    <div>
-        <h2>PLATAFORMA</h2>
-        <p><a href="{{ $ctaHref }}">{{ $ctaLabel }}</a></p>
-        <p><a href="#cursos">Cursos</a></p>
-        <p class="copy">© {{ date('Y') }} T.Academy</p>
-    </div>
-</footer>
+@include('partials.public-footer')
 
 </body>
 </html>
