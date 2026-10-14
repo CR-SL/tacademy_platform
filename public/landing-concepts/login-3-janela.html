@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login 3 · A Janela — T.Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="login.css">
+<style>
+body { min-height: 100vh; background: var(--accent); overflow-x: hidden; }
+.top { position: relative; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: 22px clamp(16px, 4vw, 40px); }
+.top img { height: 26px; width: auto; filter: brightness(0); }
+.top .lg-back { color: #18181b; }
+.wrap { position: relative; min-height: calc(100vh - 80px); display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(360px, 440px); gap: clamp(20px, 4vw, 60px); align-items: center; max-width: 1280px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px) 60px; }
+
+/* O passarinho como janela recortada (máscara SVG) */
+.window { position: relative; width: min(100%, 600px); aspect-ratio: 152 / 170; justify-self: center; }
+.window .inside { position: absolute; inset: 0; background: #18181b; -webkit-mask: url(/images/brand/passarinho-silhueta.png) center / contain no-repeat; mask: url(/images/brand/passarinho-silhueta.png) center / contain no-repeat; overflow: hidden; }
+.rows { position: absolute; inset: -20% -40%; display: flex; flex-direction: column; justify-content: center; gap: 4px; transform: rotate(-12deg); will-change: transform; }
+.row { display: flex; gap: 28px; white-space: nowrap; font-family: var(--display); font-weight: 700; font-size: clamp(28px, 3.6vw, 52px); letter-spacing: .02em; color: #2c2f36; width: max-content; }
+.row span:nth-child(3n+1) { color: var(--accent); }
+.row.a { animation: slide 26s linear infinite; }
+.row.b { animation: slide 32s linear infinite reverse; }
+.row.c { animation: slide 22s linear infinite; }
+@keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.window .shadow { position: absolute; inset: 0; transform: translate(14px, 14px); background: #18181b; opacity: .12; -webkit-mask: url(/images/brand/passarinho-silhueta.png) center / contain no-repeat; mask: url(/images/brand/passarinho-silhueta.png) center / contain no-repeat; }
+.tagline { position: absolute; left: 0; bottom: -8px; font-family: var(--display); font-weight: 700; font-size: 14px; letter-spacing: .14em; color: #18181b; }
+
+/* Cartão escuro (HUD) */
+.card { --bg: #23262c; --ink: #f2f2f3; --muted: #9095a0; --line: #2f333a; --accent-ink: #F8B101; background: #18181b; color: var(--ink); padding: 32px; display: flex; flex-direction: column; gap: 22px; box-shadow: 0 30px 60px rgba(24, 24, 27, .25); }
+.hud { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.hud div { background: #23262c; padding: 10px 12px; }
+.hud b { display: block; font-family: var(--display); font-size: 20px; color: var(--accent); }
+.hud span { font-size: 11px; letter-spacing: .08em; color: var(--muted); font-family: var(--display); font-weight: 600; }
+
+@media (max-width: 900px) {
+    .wrap { grid-template-columns: 1fr; }
+    .window { width: 220px; }
+}
+@media (prefers-reduced-motion: reduce) { .row { animation: none !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+    <img src="/images/brand/logo-tacademy.png" alt="T.Academy">
+    <a class="lg-back" href="a2-navbar.html">← VOLTAR AO SITE</a>
+</header>
+<main class="wrap">
+    <div class="window" aria-hidden="true">
+        <div class="shadow"></div>
+        <div class="inside"><div class="rows" id="rows"></div></div>
+        <span class="tagline">GESTÃO DE TALENTOS · FORMAÇÃO AUTOMÓVEL</span>
+    </div>
+    <div class="card cut-16">
+        <div class="hud">
+            <div class="cut-8"><b>XP</b><span>SOBE DE NÍVEL</span></div>
+            <div class="cut-8"><b>3</b><span>TAREFAS HOJE</span></div>
+            <div class="cut-8"><b>IA</b><span>AULAS 24/7</span></div>
+        </div>
+        <div id="formSlot"></div>
+    </div>
+</main>
+
+<div class="concept-switch"><a href="index.html">←</a><a href="login-1-pecas.html">1 · Peças</a><a href="login-2-traco.html">2 · Traço</a><a class="on" href="login-3-janela.html">3 · Janela</a></div>
+
+<script src="base.js"></script>
+<script src="login.js"></script>
+<script>
+document.getElementById('formSlot').innerHTML = loginFormHTML('Entra na oficina.', 'As tuas tarefas e cursos estão à tua espera.');
+
+// Faixas de palavras dentro do pássaro (duplicadas para o movimento contínuo)
+const words = ['DIAGNÓSTICO', 'OBD-II', 'ELETRÓNICA', 'CAN BUS', 'OSCILOSCÓPIO', 'BATERIAS', 'GESTÃO', 'ATENDIMENTO', 'CERTIFICADO', 'AULA COM IA'];
+const rows = document.getElementById('rows');
+['a', 'b', 'c', 'a', 'b', 'c', 'a'].forEach((cls, i) => {
+    const list = [...words.slice(i % words.length), ...words.slice(0, i % words.length)];
+    const html = list.map((w) => `<span>${w}</span>`).join('');
+    rows.insertAdjacentHTML('beforeend', `<div class="row ${cls}">${html}${html}</div>`);
+});
+
+// O interior da janela mexe-se com o rato (parallax)
+TA.mouse((x, y) => { rows.style.transform = `rotate(-12deg) translate(${-x * 26}px, ${-y * 22}px)`; });
+
+const win = document.querySelector('.window');
+LoginDemo({
+    onSubmit: () => rows.querySelectorAll('.row').forEach((r) => (r.style.animationDuration = '4s')), // acelera ao entrar
+    onError: () => { rows.querySelectorAll('.row').forEach((r) => (r.style.animationDuration = '')); win.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-4deg)' }, { transform: 'rotate(4deg)' }, { transform: 'rotate(0)' }], { duration: 400 }); },
+    onSuccess: () => win.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(40px,-60px) scale(1.05)' }, { transform: 'translate(0,0)' }], { duration: 900, easing: 'cubic-bezier(.3,1.4,.5,1)' }),
+});
+</script>
+</body>
+</html>

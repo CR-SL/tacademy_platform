@@ -1,31 +1,27 @@
-import Checkbox from '@/Components/Checkbox';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import ThemeToggle from '@/Components/ThemeToggle';
+import '../../../css/login.css';
+import { BIRD_PATH } from '@/brand/birdPath';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-const FRAG_COUNT = 31;
-const BASE = '/images/logo3d';
+// Login — conceito 4b "Planta técnica (clara)".
+// O passarinho é desenhado como uma peça numa folha técnica; ao entrar, uma linha de verificação
+// varre o desenho e cai um carimbo: APROVADO (sucesso) ou REVER (erro).
+// Animações em requestAnimationFrame (só transform/opacity/stroke) e desligadas com prefers-reduced-motion.
 
-const clamp01 = (v) => Math.min(1, Math.max(0, v));
-const easeOutCubic = (p) => 1 - Math.pow(1 - p, 3);
+const easeInOut = (t) => (t < 0.5 ? 4 * t ** 3 : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const easeOut = (t) => 1 - Math.pow(1 - t, 3);
 
-// RNG determinístico para o espalhamento dos fragmentos (igual em cada carregamento)
-function mulberry32(a) {
-    return function () {
-        a |= 0;
-        a = (a + 0x6d2b79f5) | 0;
-        let t = Math.imul(a ^ (a >>> 15), 1 | a);
-        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
-
-function sub(p, start, end) {
-    return clamp01((p - start) / (end - start));
+function tween(dur, fn, ease = (t) => t, alive = () => true) {
+    return new Promise((done) => {
+        const t0 = performance.now();
+        const step = (now) => {
+            if (!alive()) return done(false);
+            const t = Math.min(1, (now - t0) / dur);
+            fn(ease(t));
+            t < 1 ? requestAnimationFrame(step) : done(true);
+        };
+        requestAnimationFrame(step);
+    });
 }
 
 export default function Login({ status, canResetPassword }) {
@@ -34,273 +30,247 @@ export default function Login({ status, canResetPassword }) {
         password: '',
         remember: false,
     });
+    const [showPass, setShowPass] = useState(false);
+    const [shake, setShake] = useState(false);
+
+    const svgRef = useRef(null);
+    const scanRef = useRef(null);
+    const okRef = useRef(null);
+    const noRef = useRef(null);
+    const mounted = useRef(true);
+    const scanning = useRef(false);
+
+    const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const alive = () => mounted.current;
+
+    // Desenho da folha ao abrir: guias → cotas → legendas → peça → tracejado → legenda da folha
+    useEffect(() => {
+        mounted.current = true;
+        const svg = svgRef.current;
+        const q = (s) => [...svg.querySelectorAll(s)];
+        const guides = q('[data-step=guides] .lp-ln');
+        const dims = q('[data-step=dims] .lp-ln');
+        const labels = svg.querySelector('[data-step=labels]');
+        const block = svg.querySelector('[data-step=block]');
+        const line = svg.querySelector('[data-part=line]');
+        const fill = svg.querySelector('[data-part=fill]');
+
+        const drawIn = (els, dur) => {
+            els.forEach((el) => Object.assign(el.style, { strokeDasharray: '100 100', strokeDashoffset: 100 }));
+            return tween(dur, (k) => els.forEach((el) => (el.style.strokeDashoffset = 100 - 100 * k)), easeInOut, alive);
+        };
+
+        (async () => {
+            if (reduced) {
+                labels.setAttribute('opacity', 1);
+                block.setAttribute('opacity', 1);
+                fill.style.opacity = 0.9;
+                return;
+            }
+            await drawIn(guides, 900);
+            await drawIn(dims, 500);
+            await tween(300, (k) => labels.setAttribute('opacity', k), undefined, alive);
+            await drawIn([line], 1800);
+            await tween(700, (k) => (fill.style.opacity = 0.9 * k), undefined, alive);
+            await tween(400, (k) => block.setAttribute('opacity', k), undefined, alive);
+        })();
+
+        return () => {
+            mounted.current = false;
+        };
+    }, [reduced]);
+
+    // Linha de verificação a varrer a peça enquanto o pedido está a ser enviado
+    const startScan = () => {
+        [okRef, noRef].forEach((r) => (r.current.style.opacity = 0));
+        if (reduced) return;
+        scanning.current = true;
+        const scan = scanRef.current;
+        const t0 = performance.now();
+        const step = (now) => {
+            if (!scanning.current || !mounted.current) {
+                scan.style.opacity = 0;
+                return;
+            }
+            const x = -30 + (((now - t0) / 1100) % 1) * 215;
+            scan.setAttribute('x1', x);
+            scan.setAttribute('x2', x);
+            scan.style.opacity = 0.9;
+            requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+    };
+
+    // Carimbo a cair sobre a folha
+    const stamp = (ref) => {
+        scanning.current = false;
+        const el = ref.current;
+        if (reduced) {
+            el.style.opacity = 1;
+            el.style.transform = 'rotate(-12deg) scale(1)';
+            return;
+        }
+        tween(380, (k) => {
+            el.style.opacity = Math.min(1, k * 2);
+            el.style.transform = `rotate(-12deg) scale(${1.6 - 0.6 * k})`;
+        }, easeOut, alive);
+    };
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('login'), { onFinish: () => reset('password') });
-    };
-
-    const wrapRef = useRef(null);
-    const stageRef = useRef(null);
-    const fragRefs = useRef([]);
-    const birdRef = useRef(null);
-    const nameRef = useRef(null);
-    const phraseRef = useRef(null);
-    const formRef = useRef(null);
-    const hintRef = useRef(null);
-
-    const reduced =
-        typeof window !== 'undefined' &&
-        window.matchMedia &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    // Parâmetros de voo de cada fragmento (vem da esquerda, com dispersão)
-    const frags = useMemo(() => {
-        const rnd = mulberry32(20260101);
-        return Array.from({ length: FRAG_COUNT }, (_, i) => {
-            const r1 = rnd(), r2 = rnd(), r3 = rnd();
-            return {
-                i,
-                dx: -(14 + r1 * 46), // % para a esquerda
-                dy: (r2 - 0.5) * 70, // % de dispersão vertical
-                rot: (r3 - 0.5) * 70, // graus
-                start: (i / FRAG_COUNT) * 0.5, // escalonado
-                dur: 0.42,
-            };
+        post(route('login'), {
+            onStart: startScan,
+            onSuccess: () => stamp(okRef),
+            onError: () => {
+                stamp(noRef);
+                setShake(false);
+                requestAnimationFrame(() => setShake(true));
+            },
+            onFinish: () => reset('password'),
         });
-    }, []);
-
-    const fragStyle = (cfg, p) => {
-        const e = easeOutCubic(sub(p, cfg.start, cfg.start + cfg.dur));
-        const inv = 1 - e;
-        return {
-            transform: `translate(${cfg.dx * inv}%, ${cfg.dy * inv}%) rotate(${cfg.rot * inv}deg)`,
-            opacity: e,
-        };
     };
-    const birdStyle = (p) => ({ opacity: sub(p, 0.74, 0.95) });
-    const nameStyle = (p) => {
-        const e = easeOutCubic(sub(p, 0.34, 0.8));
-        return { transform: `translateX(${(1 - e) * 55}%)`, opacity: e };
-    };
-    const phraseStyle = (p) => {
-        const e = easeOutCubic(sub(p, 0.72, 1));
-        return { transform: `translateY(${(1 - e) * 42}%)`, opacity: e };
-    };
-    const formStyle = (p) => {
-        const e = easeOutCubic(sub(p, 0.82, 1));
-        return { transform: `translateY(${(1 - e) * 24}px)`, opacity: e };
-    };
-    const hintStyle = (p) => ({ opacity: 1 - sub(p, 0, 0.12) });
-
-    const p0 = reduced ? 1 : 0;
-
-    useEffect(() => {
-        if (reduced) return; // estado final já aplicado via estilos iniciais
-
-        let raf = 0;
-        const apply = () => {
-            raf = 0;
-            const wrap = wrapRef.current;
-            if (!wrap) return;
-            const scrollable = wrap.offsetHeight - window.innerHeight;
-            const p = scrollable > 0 ? clamp01(-wrap.getBoundingClientRect().top / scrollable) : 0;
-
-            frags.forEach((cfg, idx) => {
-                const el = fragRefs.current[idx];
-                if (!el) return;
-                const s = fragStyle(cfg, p);
-                el.style.transform = s.transform;
-                el.style.opacity = s.opacity;
-            });
-            const setS = (el, s) => {
-                if (!el) return;
-                if (s.transform !== undefined) el.style.transform = s.transform;
-                el.style.opacity = s.opacity;
-            };
-            setS(birdRef.current, birdStyle(p));
-            setS(nameRef.current, nameStyle(p));
-            setS(phraseRef.current, phraseStyle(p));
-            setS(formRef.current, formStyle(p));
-            if (hintRef.current) hintRef.current.style.opacity = hintStyle(p).opacity;
-        };
-        const onScroll = () => {
-            if (!raf) raf = requestAnimationFrame(apply);
-        };
-        apply();
-        window.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', onScroll);
-        return () => {
-            window.removeEventListener('scroll', onScroll);
-            window.removeEventListener('resize', onScroll);
-            if (raf) cancelAnimationFrame(raf);
-        };
-    }, [frags, reduced]);
 
     return (
         <>
             <Head title="Entrar" />
-            <ThemeToggle className="fixed right-4 top-4 z-30 bg-surface" />
 
-            <div
-                ref={wrapRef}
-                className="relative bg-page text-ink"
-                style={{ height: reduced ? 'auto' : '240vh' }}
-            >
-                <div
-                    ref={stageRef}
-                    className={
-                        (reduced ? 'relative min-h-screen ' : 'sticky top-0 h-screen ') +
-                        'flex flex-col items-center justify-center overflow-hidden px-4'
-                    }
-                >
-                    <div className="relative z-10 flex w-full flex-col items-center gap-8">
-                        {/* Palco do logótipo */}
-                        <div
-                            className="relative w-full"
-                            style={{ maxWidth: 560, aspectRatio: '2884 / 1600' }}
-                        >
-                            {/* fragmentos do pássaro */}
-                            {frags.map((cfg) => (
-                                <img
-                                    key={cfg.i}
-                                    ref={(el) => (fragRefs.current[cfg.i] = el)}
-                                    src={`${BASE}/frag_${String(cfg.i).padStart(2, '0')}.png`}
-                                    alt=""
-                                    aria-hidden="true"
-                                    draggable="false"
-                                    className="pointer-events-none absolute inset-0 z-10 h-full w-full object-contain will-change-transform"
-                                    style={fragStyle(cfg, p0)}
-                                />
-                            ))}
-                            {/* pássaro inteiro (limpo) para o estado final sem linhas */}
-                            <img
-                                ref={birdRef}
-                                src={`${BASE}/bird_whole.png`}
-                                alt=""
-                                aria-hidden="true"
-                                draggable="false"
-                                className="pointer-events-none absolute inset-0 z-20 h-full w-full object-contain"
-                                style={birdStyle(p0)}
-                            />
-                            {/* nome */}
-                            <img
-                                ref={nameRef}
-                                src={`${BASE}/name.png`}
-                                alt="T.Academy"
-                                draggable="false"
-                                className="pointer-events-none absolute inset-0 z-20 h-full w-full object-contain will-change-transform"
-                                style={nameStyle(p0)}
-                            />
-                            {/* frase */}
-                            <img
-                                ref={phraseRef}
-                                src={`${BASE}/phrase.png`}
-                                alt="Gestão de Talentos"
-                                draggable="false"
-                                className="pointer-events-none absolute inset-0 z-20 h-full w-full object-contain will-change-transform"
-                                style={phraseStyle(p0)}
-                            />
-                        </div>
+            <div className="lp">
+                <header className="lp-top">
+                    {/* A landing é uma página Blade (não Inertia): link normal, para navegar de facto em vez de abrir numa janela */}
+                    <a href={route('home')}>
+                        <img src="/images/brand/logo-tacademy.png" alt="T.Academy" width="110" height="26" />
+                    </a>
+                    <a href={route('home')} className="lp-back">
+                        ← VOLTAR AO SITE
+                    </a>
+                </header>
 
-                        {/* Cartão de login */}
-                        <div
-                            ref={formRef}
-                            className="ta-cut-16 w-full max-w-md bg-surface p-6"
-                            style={formStyle(p0)}
-                        >
-                            <h1 className="mb-1 font-display text-2xl font-bold uppercase text-ink">Bem-vindo de volta</h1>
-                            <p className="mb-5 text-sm text-muted">
-                                Entra para continuar a tua formação.
-                            </p>
+                <main className="lp-wrap">
+                    {/* Folha técnica: decorativa */}
+                    <div className="lp-sheet" aria-hidden="true">
+                        <svg viewBox="-40 -30 260 250" ref={svgRef}>
+                            <defs>
+                                <pattern id="lp-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                                    <line x1="0" y1="0" x2="0" y2="4" stroke="#F8B101" strokeWidth=".7" opacity=".9" />
+                                </pattern>
+                                <marker id="lp-ar" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+                                    <path d="M0 0L6 3L0 6z" fill="#3F3F46" />
+                                </marker>
+                            </defs>
 
-                            {status && (
-                                <div className="mb-4 ta-cut-8 bg-accent px-3 py-2 text-sm font-semibold text-on-accent">
-                                    {status}
-                                </div>
-                            )}
+                            {/* linhas de construção */}
+                            <g data-step="guides">
+                                <line className="lp-ln lp-guide" x1="-30" y1="85" x2="185" y2="85" pathLength="100" />
+                                <line className="lp-ln lp-guide" x1="76" y1="-20" x2="76" y2="185" pathLength="100" />
+                                <circle className="lp-ln lp-guide" cx="122" cy="62" r="20" pathLength="100" />
+                                <circle className="lp-ln lp-guide" cx="76" cy="85" r="62" pathLength="100" />
+                                <line className="lp-ln lp-guide" x1="0" y1="58" x2="64" y2="4" pathLength="100" />
+                            </g>
 
-                            <form onSubmit={submit}>
-                                <div>
-                                    <InputLabel htmlFor="email" value="Email" />
-                                    <TextInput
+                            {/* cotas */}
+                            <g data-step="dims">
+                                <line className="lp-ln lp-dim" x1="0" y1="-14" x2="152" y2="-14" markerStart="url(#lp-ar)" markerEnd="url(#lp-ar)" pathLength="100" />
+                                <line className="lp-ln lp-dim" x1="168" y1="0" x2="168" y2="170" markerStart="url(#lp-ar)" markerEnd="url(#lp-ar)" pathLength="100" />
+                                <line className="lp-ln lp-dim" x1="122" y1="62" x2="136" y2="48" pathLength="100" />
+                            </g>
+                            <g data-step="labels" opacity="0">
+                                <text className="lp-txt strong" x="70" y="-18">152</text>
+                                <text className="lp-txt strong" x="172" y="88">170</text>
+                                <text className="lp-txt" x="138" y="46">R 20</text>
+                                <text className="lp-txt" x="-28" y="82">EIXO A</text>
+                                <text className="lp-txt" x="80" y="182">EIXO B</text>
+                                <text className="lp-txt" x="2" y="52">38°</text>
+                            </g>
+
+                            {/* a peça: o passarinho */}
+                            <path className="lp-hatch" data-part="fill" d={BIRD_PATH} />
+                            <path className="lp-ln lp-part" data-part="line" d={BIRD_PATH} pathLength="100" />
+
+                            {/* legenda da folha */}
+                            <g data-step="block" opacity="0">
+                                <rect x="96" y="190" width="120" height="26" fill="#ffffff" stroke="#3F3F46" strokeWidth=".4" />
+                                <line x1="96" y1="200" x2="216" y2="200" stroke="#3F3F46" strokeWidth=".3" />
+                                <text className="lp-txt strong" x="100" y="197">T.ACADEMY · PEÇA Nº 001</text>
+                                <text className="lp-txt" x="100" y="207">DES.: GESTÃO DE TALENTOS</text>
+                                <text className="lp-txt" x="100" y="213">ESCALA 1:1 · REV. {new Date().getFullYear()}</text>
+                            </g>
+
+                            <line className="lp-scan" ref={scanRef} x1="-30" y1="0" x2="-30" y2="185" />
+                        </svg>
+                        <div className="lp-stamp ok" ref={okRef}>APROVADO</div>
+                        <div className="lp-stamp no" ref={noRef}>REVER</div>
+                    </div>
+
+                    {/* Ficha de acesso */}
+                    <div className="lp-cardwrap">
+                        <span className="lp-card-tag">FICHA DE ACESSO · Nº 001</span>
+                        <div className={`lp-card ${shake ? 'lp-shake' : ''}`} onAnimationEnd={() => setShake(false)}>
+                            <form className="lp-form" onSubmit={submit} noValidate>
+                                <h1>Bem-vindo de volta.</h1>
+                                <p className="lp-lead">Confere os teus dados e entra na oficina.</p>
+
+                                {status && <div className="lp-status" role="status">{status}</div>}
+
+                                <div className="lp-field">
+                                    <label className="lp-label" htmlFor="email">Email</label>
+                                    <input
                                         id="email"
                                         type="email"
                                         name="email"
                                         value={data.email}
-                                        className="mt-1 block w-full"
+                                        className={`lp-input ${errors.email ? 'bad' : ''}`}
                                         autoComplete="username"
+                                        placeholder="nome@oficina.pt"
+                                        autoFocus
+                                        aria-invalid={!!errors.email}
+                                        aria-describedby={errors.email ? 'email-error' : undefined}
                                         onChange={(e) => setData('email', e.target.value)}
                                     />
-                                    <InputError message={errors.email} className="mt-2" />
                                 </div>
 
-                                <div className="mt-4">
-                                    <InputLabel htmlFor="password" value="Palavra-passe" />
-                                    <TextInput
-                                        id="password"
-                                        type="password"
-                                        name="password"
-                                        value={data.password}
-                                        className="mt-1 block w-full"
-                                        autoComplete="current-password"
-                                        onChange={(e) => setData('password', e.target.value)}
-                                    />
-                                    <InputError message={errors.password} className="mt-2" />
-                                </div>
-
-                                <div className="mt-4 flex items-center justify-between">
-                                    <label className="flex items-center">
-                                        <Checkbox
-                                            name="remember"
-                                            checked={data.remember}
-                                            onChange={(e) => setData('remember', e.target.checked)}
-                                        />
-                                        <span className="ms-2 text-sm text-muted">
-                                            Manter sessão iniciada
-                                        </span>
+                                <div className="lp-field">
+                                    <label className="lp-label" htmlFor="password">
+                                        Palavra-passe
+                                        {canResetPassword && <Link href={route('password.request')}>Esqueceste-te?</Link>}
                                     </label>
-
-                                    {canResetPassword && (
-                                        <Link
-                                            href={route('password.request')}
-                                            className="text-sm text-muted underline hover:text-accent-ink focus:outline-none"
-                                        >
-                                            Esqueceste-te da palavra-passe?
-                                        </Link>
-                                    )}
+                                    <div className="lp-pass">
+                                        <input
+                                            id="password"
+                                            type={showPass ? 'text' : 'password'}
+                                            name="password"
+                                            value={data.password}
+                                            className={`lp-input ${errors.password ? 'bad' : ''}`}
+                                            autoComplete="current-password"
+                                            onChange={(e) => setData('password', e.target.value)}
+                                        />
+                                        <button type="button" onClick={() => setShowPass((v) => !v)} aria-label={showPass ? 'Esconder palavra-passe' : 'Mostrar palavra-passe'}>
+                                            {showPass ? 'ESCONDER' : 'MOSTRAR'}
+                                        </button>
+                                    </div>
                                 </div>
 
-                                <div className="mt-6">
-                                    <PrimaryButton className="w-full" disabled={processing}>
-                                        Entrar
-                                    </PrimaryButton>
-                                </div>
+                                <label className="lp-remember">
+                                    <input type="checkbox" name="remember" checked={data.remember} onChange={(e) => setData('remember', e.target.checked)} />
+                                    Manter sessão iniciada
+                                </label>
 
-                                <p className="mt-6 text-center text-sm text-muted">
-                                    Ainda não tens conta?{' '}
-                                    <Link
-                                        href={route('register')}
-                                        className="font-semibold text-accent-ink hover:underline"
-                                    >
-                                        Criar conta
-                                    </Link>
+                                {(errors.email || errors.password) && (
+                                    <p className="lp-err" id="email-error" role="alert">
+                                        {errors.email || errors.password}
+                                    </p>
+                                )}
+
+                                <button className="lp-submit" type="submit" disabled={processing}>
+                                    {processing ? 'A verificar…' : 'Entrar ▶'}
+                                </button>
+
+                                <p className="lp-alt">
+                                    Ainda não tens conta? <Link href={route('register')}>Criar conta</Link>
                                 </p>
                             </form>
                         </div>
                     </div>
-
-                    {/* Indicador de scroll */}
-                    {!reduced && (
-                        <div
-                            ref={hintRef}
-                            className="pointer-events-none absolute bottom-6 left-1/2 z-10 -translate-x-1/2 text-center font-display text-[12px] font-semibold uppercase tracking-[0.1em] text-muted"
-                            style={hintStyle(p0)}
-                        >
-                            Faz scroll ↓
-                        </div>
-                    )}
-                </div>
+                </main>
             </div>
         </>
     );

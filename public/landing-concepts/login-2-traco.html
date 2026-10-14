@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login 2 · O Traço — T.Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="login.css">
+<style>
+body { min-height: 100vh; background: var(--bg); }
+body::before { content: ""; position: fixed; inset: 0; background: radial-gradient(#d9d6ce 1.1px, transparent 1.3px) 0 0 / 24px 24px; opacity: .6; pointer-events: none; }
+.top { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 22px clamp(16px, 4vw, 40px); }
+.top img { height: 26px; width: auto; }
+.wrap { position: relative; z-index: 1; min-height: calc(100vh - 80px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 440px); gap: clamp(24px, 6vw, 90px); align-items: center; max-width: 1180px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px) 60px; }
+
+/* O passarinho em traço */
+.bird-col { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
+.bird { width: min(100%, 420px); aspect-ratio: 152 / 170; overflow: visible; }
+/* Animado em JS (requestAnimationFrame): desenho do contorno → preenchimento; traço a girar enquanto entra */
+.bird path { fill: var(--accent); fill-opacity: 0; stroke: var(--accent); stroke-width: 1.2; stroke-linejoin: round; stroke-dasharray: 100 100; stroke-dashoffset: 100; }
+.bird-col h2 { font-family: var(--display); font-size: clamp(30px, 3.6vw, 48px); line-height: 1.05; margin: 0; max-width: 460px; }
+.bird-col h2 em { font-style: normal; color: var(--accent-ink); }
+.bird-col p { color: var(--muted); font-size: 18px; margin: 0; max-width: 420px; }
+
+.card { background: var(--surface); padding: 34px; box-shadow: 0 20px 50px rgba(24, 24, 27, .06); }
+
+@media (max-width: 900px) {
+    .wrap { grid-template-columns: 1fr; }
+    .bird { width: 150px; }
+    .bird-col h2 { font-size: 30px; }
+}
+
+</style>
+</head>
+<body>
+<header class="top">
+    <img src="/images/brand/logo-tacademy.png" alt="T.Academy">
+    <a class="lg-back" href="a2-navbar.html">← VOLTAR AO SITE</a>
+</header>
+<main class="wrap">
+    <div class="bird-col">
+        <svg class="bird" id="bird" viewBox="-1 0 154 171" aria-hidden="true"><path id="birdPath" pathLength="100"/></svg>
+        <h2>Um traço de cada vez, <em>até levantares voo.</em></h2>
+        <p>Retoma a aula onde ficaste, cumpre as tarefas do dia e soma mais uma peça ao teu percurso.</p>
+    </div>
+    <div class="card cut-16" id="formSlot"></div>
+</main>
+
+<div class="concept-switch"><a href="index.html">←</a><a href="login-1-pecas.html">1 · Peças</a><a class="on" href="login-2-traco.html">2 · Traço</a><a href="login-3-janela.html">3 · Janela</a></div>
+
+<script src="base.js"></script>
+<script src="bird-path.js"></script>
+<script src="login.js"></script>
+<script>
+document.getElementById('formSlot').innerHTML = loginFormHTML();
+const bird = document.getElementById('bird');
+const path = document.getElementById('birdPath');
+path.setAttribute('d', BIRD_PATH);
+const reduced = TA.reduced;
+const easeInOut = (t) => (t < 0.5 ? 4 * t ** 3 : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+// Pequeno motor de animação: chama fn(0..1) durante dur ms
+let job = 0;
+function tween(dur, fn, ease = (t) => t) {
+    const id = ++job, t0 = performance.now();
+    return new Promise((done) => {
+        const step = (now) => {
+            if (id !== job) return done(false);
+            const t = Math.min(1, (now - t0) / dur);
+            fn(ease(t));
+            t < 1 ? requestAnimationFrame(step) : done(true);
+        };
+        requestAnimationFrame(step);
+    });
+}
+const style = (o) => Object.assign(path.style, o);
+
+// 1. Ao abrir: o contorno desenha-se e depois enche-se de amarelo
+async function intro() {
+    if (reduced) return style({ strokeDashoffset: 0, fillOpacity: 1 });
+    style({ strokeDasharray: '100 100', strokeWidth: 1.2 });
+    if (await tween(2200, (k) => style({ strokeDashoffset: 100 - 100 * k }), easeInOut))
+        await tween(800, (k) => style({ fillOpacity: k }));
+}
+
+// 2. A entrar: o traço gira à volta do pássaro (indicador de carregamento)
+function loading() {
+    const id = ++job, t0 = performance.now();
+    style({ fillOpacity: 0, strokeDasharray: '22 78', strokeWidth: 2.2 });
+    const step = (now) => {
+        if (id !== job) return;
+        style({ strokeDashoffset: 100 - ((now - t0) / 11) % 100 });
+        requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+}
+
+// 3. Fim: pássaro cheio; salta (sucesso) ou abana (erro)
+function filled() { style({ strokeDasharray: 'none', strokeDashoffset: 0, strokeWidth: 1.2 }); }
+function success() { filled(); tween(700, (k) => { style({ fillOpacity: Math.min(1, k * 3) }); bird.style.transform = `translateY(${-Math.sin(Math.PI * k) * 18}px) scale(${1 + Math.sin(Math.PI * k) * 0.06})`; }); }
+function failure() { filled(); tween(450, (k) => { style({ fillOpacity: 1 }); bird.style.transform = `translateX(${Math.sin(k * Math.PI * 4) * 10 * (1 - k)}px) rotate(${Math.sin(k * Math.PI * 4) * 3 * (1 - k)}deg)`; }); }
+
+intro();
+LoginDemo({ onSubmit: loading, onError: failure, onSuccess: success });
+</script>
+</body>
+</html>

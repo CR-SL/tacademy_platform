@@ -1,0 +1,25 @@
+/* Protótipos do login — partes comuns (formulário, barra de conceitos) */
+.lg-form { display: flex; flex-direction: column; gap: 16px; }
+.lg-form h1 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 3.4vw, 42px); line-height: 1.05; margin: 0; }
+.lg-form .lead { margin: -6px 0 6px; color: var(--muted); }
+.lg-field { display: flex; flex-direction: column; gap: 6px; }
+.lg-field label { font-family: var(--display); font-weight: 600; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
+.lg-field label a { color: var(--accent-ink); text-transform: none; letter-spacing: 0; font-family: var(--body); font-weight: 600; font-size: 13px; }
+.lg-field input { font: inherit; font-size: 16px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); padding: 13px 14px; outline: none; transition: border-color .2s, box-shadow .2s; }
+.lg-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.lg-pass { position: relative; }
+.lg-pass input { width: 100%; padding-right: 72px; }
+.lg-pass button { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 0; background: none; font-family: var(--display); font-weight: 600; font-size: 12px; color: var(--muted); cursor: pointer; letter-spacing: .06em; }
+.lg-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 14px; color: var(--muted); }
+.lg-row label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.lg-row input { accent-color: var(--accent); width: 16px; height: 16px; }
+.lg-submit { width: 100%; justify-content: center; padding: 15px 18px; font-size: 15px; }
+.lg-submit[disabled] { opacity: .7; cursor: progress; }
+.lg-alt { text-align: center; font-size: 15px; color: var(--muted); margin: 4px 0 0; }
+.lg-alt a { color: var(--accent-ink); font-weight: 600; }
+.lg-err { color: #E5484D; font-size: 14px; min-height: 0; }
+.lg-back { font-family: var(--display); font-weight: 600; font-size: 13px; letter-spacing: .06em; color: var(--muted); }
+.lg-back:hover { color: var(--ink); }
+@keyframes lg-shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+.shake { animation: lg-shake .4s ease; }
+.demo-note { font-size: 12px; color: var(--muted); text-align: center; }

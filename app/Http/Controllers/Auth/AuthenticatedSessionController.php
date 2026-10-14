@@ -47,6 +47,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        // Depois de sair, volta ao login (página Inertia) com uma confirmação
+        return redirect()->route('login')->with('status', 'Sessão terminada. Até breve!');
     }
 }

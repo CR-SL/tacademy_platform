@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login 4b · Planta Técnica (claro) — T.Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="login.css">
+<style>
+/* Desenho técnico: fundo grafite com quadrícula, traço amarelo */
+body { min-height: 100vh; background: #F4F3EF; color: #18181b;
+  background-image:
+    linear-gradient(rgba(24,24,27,.09) 1px, transparent 1px), linear-gradient(90deg, rgba(24,24,27,.09) 1px, transparent 1px),
+    linear-gradient(rgba(24,24,27,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(24,24,27,.04) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px; }
+.top { display: flex; justify-content: space-between; align-items: center; padding: 22px clamp(16px, 4vw, 40px); }
+.top img { height: 26px; width: auto; }
+.top .lg-back { color: #66666d; }
+.wrap { min-height: calc(100vh - 80px); display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(360px, 430px); gap: clamp(20px, 5vw, 70px); align-items: center; max-width: 1280px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px) 60px; }
+
+.sheet { position: relative; width: 100%; max-width: 640px; justify-self: center; }
+.sheet svg { width: 100%; height: auto; overflow: visible; display: block; }
+.ln { fill: none; stroke: #3f3f46; stroke-linecap: round; stroke-linejoin: round; }
+.guide { stroke-width: .3; stroke-dasharray: 3 2; opacity: .5; }
+.dim { stroke-width: .4; opacity: .8; }
+.part { stroke: #F8B101; stroke-width: 1.1; }
+.hatch { fill: url(#hatch); opacity: 0; }
+.txt { fill: #66666d; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 5px; letter-spacing: .5px; }
+.txt.y { fill: #18181b; }
+.scan { stroke: #946A00; stroke-width: .6; opacity: 0; }
+.stamp { position: absolute; right: 6%; bottom: 20%; padding: 8px 14px; border: 3px solid currentColor; font-family: var(--display); font-weight: 700; font-size: 26px; letter-spacing: .12em; transform: rotate(-12deg) scale(1.6); opacity: 0; pointer-events: none; }
+.stamp.ok { color: #946A00; }
+.stamp.no { color: #E5484D; }
+
+/* Ficha de acesso */
+.card { background: #ffffff; border: 1px solid #d8d6cf; padding: 30px; position: relative; box-shadow: 0 18px 40px rgba(24, 24, 27, .06); }
+.card::before { content: "FICHA DE ACESSO · Nº 001"; position: absolute; top: -10px; left: 22px; padding: 0 8px; background: #F4F3EF; font-family: var(--display); font-weight: 600; font-size: 11px; letter-spacing: .14em; color: #946A00; }
+.card .lg-form h1 { font-size: 34px; }
+
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } .sheet { max-width: 360px; } }
+</style>
+</head>
+<body>
+<header class="top">
+    <img src="/images/brand/logo-tacademy.png" alt="T.Academy">
+    <a class="lg-back" href="a2-navbar.html">← VOLTAR AO SITE</a>
+</header>
+<main class="wrap">
+    <div class="sheet" aria-hidden="true">
+        <svg viewBox="-40 -30 260 250" id="plan">
+            <defs>
+                <pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="4" stroke="#F8B101" stroke-width=".7" opacity=".9"/></pattern>
+                <marker id="ar" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L6 3L0 6z" fill="#3f3f46"/></marker>
+            </defs>
+            <!-- linhas de construção -->
+            <g data-step="guides">
+                <line class="ln guide" x1="-30" y1="85" x2="185" y2="85" pathLength="100"/>
+                <line class="ln guide" x1="76" y1="-20" x2="76" y2="185" pathLength="100"/>
+                <circle class="ln guide" cx="122" cy="62" r="20" pathLength="100"/>
+                <circle class="ln guide" cx="76" cy="85" r="62" pathLength="100"/>
+                <line class="ln guide" x1="0" y1="58" x2="64" y2="4" pathLength="100"/>
+            </g>
+            <!-- cotas -->
+            <g data-step="dims">
+                <line class="ln dim" x1="0" y1="-14" x2="152" y2="-14" marker-start="url(#ar)" marker-end="url(#ar)" pathLength="100"/>
+                <line class="ln dim" x1="168" y1="0" x2="168" y2="170" marker-start="url(#ar)" marker-end="url(#ar)" pathLength="100"/>
+                <line class="ln dim" x1="122" y1="62" x2="136" y2="48" pathLength="100"/>
+            </g>
+            <g data-step="labels" opacity="0">
+                <text class="txt y" x="70" y="-18">152</text>
+                <text class="txt y" x="172" y="88">170</text>
+                <text class="txt" x="138" y="46">R 20</text>
+                <text class="txt" x="-28" y="82">EIXO A</text>
+                <text class="txt" x="80" y="182">EIXO B</text>
+                <text class="txt" x="2" y="52">38°</text>
+            </g>
+            <!-- a peça: o passarinho -->
+            <path class="hatch" id="birdFill"/>
+            <path class="ln part" id="birdLine" pathLength="100"/>
+            <!-- legenda da folha -->
+            <g data-step="block" opacity="0">
+                <rect x="96" y="190" width="120" height="26" fill="#ffffff" stroke="#3f3f46" stroke-width=".4"/>
+                <line x1="96" y1="200" x2="216" y2="200" stroke="#3f3f46" stroke-width=".3"/>
+                <text class="txt y" x="100" y="197">T.ACADEMY · PEÇA Nº 001</text>
+                <text class="txt" x="100" y="207">DES.: GESTÃO DE TALENTOS</text>
+                <text class="txt" x="100" y="213">ESCALA 1:1 · REV. 2026</text>
+            </g>
+            <line class="scan" id="scan" x1="-30" y1="0" x2="-30" y2="185"/>
+        </svg>
+        <div class="stamp ok" id="stampOk">APROVADO</div>
+        <div class="stamp no" id="stampNo">REVER</div>
+    </div>
+    <div class="card cut-16" id="formSlot"></div>
+</main>
+
+<div class="concept-switch"><a href="index.html">←</a><a href="login-2-traco.html">2 · Traço</a><a href="login-4-planta.html">4 · Planta</a><a class="on" href="login-4b-planta-claro.html">4b · Planta clara</a><a href="login-5-osciloscopio.html">5 · Osciloscópio</a></div>
+
+<script src="base.js"></script>
+<script src="bird-path.js"></script>
+<script src="login.js"></script>
+<script>
+document.getElementById('formSlot').innerHTML = loginFormHTML('Bem-vindo de volta.', 'Confere os teus dados e entra na oficina.');
+const reduced = TA.reduced;
+const $ = (s) => document.querySelector(s);
+const line = $('#birdLine'), fill = $('#birdFill'), scan = $('#scan');
+line.setAttribute('d', BIRD_PATH); fill.setAttribute('d', BIRD_PATH);
+const easeInOut = (t) => (t < 0.5 ? 4 * t ** 3 : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+// Animações em JS (requestAnimationFrame)
+const tween = (dur, fn, ease = (t) => t) => new Promise((done) => {
+    const t0 = performance.now();
+    const step = (now) => { const t = Math.min(1, (now - t0) / dur); fn(ease(t)); t < 1 ? requestAnimationFrame(step) : done(); };
+    requestAnimationFrame(step);
+});
+const drawIn = (els, dur) => {
+    els.forEach((el) => Object.assign(el.style, { strokeDasharray: '100 100', strokeDashoffset: 100 }));
+    return tween(dur, (k) => els.forEach((el) => (el.style.strokeDashoffset = 100 - 100 * k)), easeInOut);
+};
+
+// Ao abrir: guias → cotas → peça (traço) → tracejado de corte → legenda
+async function plot() {
+    const guides = [...document.querySelectorAll('[data-step=guides] .ln')];
+    const dims = [...document.querySelectorAll('[data-step=dims] .ln')];
+    if (reduced) { [...guides, ...dims, line].forEach((e) => (e.style.strokeDashoffset = 0)); fill.style.opacity = .9; document.querySelectorAll('[data-step=labels],[data-step=block]').forEach((g) => g.setAttribute('opacity', 1)); return; }
+    await drawIn(guides, 900);
+    await drawIn(dims, 500);
+    await tween(300, (k) => $('[data-step=labels]').setAttribute('opacity', k));
+    await drawIn([line], 1800);
+    await tween(700, (k) => (fill.style.opacity = .9 * k));
+    await tween(400, (k) => $('[data-step=block]').setAttribute('opacity', k));
+}
+plot();
+
+// A entrar: linha de verificação varre a peça
+let scanning = false;
+function startScan() {
+    scanning = true;
+    hideStamps();
+    const loop = (t0) => (now) => {
+        if (!scanning) { scan.style.opacity = 0; return; }
+        const x = -30 + ((now - t0) / 1100 % 1) * 215;
+        scan.setAttribute('x1', x); scan.setAttribute('x2', x); scan.style.opacity = .9;
+        requestAnimationFrame(loop(t0));
+    };
+    requestAnimationFrame((now) => loop(now)(now));
+}
+function hideStamps() { ['#stampOk', '#stampNo'].forEach((s) => ($(s).style.opacity = 0)); }
+// Carimbo: cai sobre a folha
+function stamp(sel) {
+    scanning = false;
+    const el = $(sel);
+    tween(380, (k) => { el.style.opacity = Math.min(1, k * 2); el.style.transform = `rotate(-12deg) scale(${1.6 - .6 * k})`; }, (t) => 1 - Math.pow(1 - t, 3));
+}
+
+LoginDemo({ onSubmit: startScan, onSuccess: () => stamp('#stampOk'), onError: () => stamp('#stampNo') });
+</script>
+</body>
+</html>

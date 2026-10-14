@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login 5 · Osciloscópio — T.Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="login.css">
+<style>
+body { min-height: 100vh; background: var(--bg); overflow-x: hidden; }
+.top { position: relative; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: 22px clamp(16px, 4vw, 40px); }
+.top img { height: 26px; width: auto; }
+
+/* Ecrã do osciloscópio: faixa a toda a largura com a onda */
+.scope { position: relative; height: 44vh; min-height: 300px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background-color: var(--surface);
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 10% 25%; background-position: center; }
+.scope svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.wave { fill: none; stroke: #F8B101; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.wave.fault { stroke: #E5484D; }
+.bird-line { fill: #F8B101; fill-opacity: 0; stroke: #F8B101; stroke-width: 1.4; }
+.readout { position: absolute; z-index: 2; font-family: var(--display); font-weight: 600; font-size: 12px; letter-spacing: .1em; color: var(--muted); display: flex; gap: 18px; }
+.readout b { color: var(--ink); font-size: 15px; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+.readout.tl { left: clamp(16px, 4vw, 40px); top: 14px; }
+.readout.tr { right: clamp(16px, 4vw, 40px); top: 14px; }
+.readout.bl { left: clamp(16px, 4vw, 40px); bottom: 12px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #F8B101; display: inline-block; margin-right: 6px; }
+.status-dot.fault { background: #E5484D; }
+
+/* Formulário por baixo do ecrã */
+.below { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 430px); gap: clamp(20px, 5vw, 70px); max-width: 1180px; margin: -60px auto 0; padding: 0 clamp(16px, 4vw, 40px) 60px; position: relative; z-index: 2; align-items: start; }
+.pitch { padding-top: 96px; }
+.pitch h2 { font-family: var(--display); font-size: clamp(30px, 3.6vw, 46px); line-height: 1.05; margin: 0; }
+.pitch h2 em { font-style: normal; color: var(--accent-ink); }
+.pitch p { color: var(--muted); font-size: 18px; max-width: 440px; }
+.card { background: var(--surface); padding: 32px; box-shadow: 0 20px 50px rgba(24, 24, 27, .08); }
+
+@media (max-width: 900px) { .below { grid-template-columns: 1fr; margin-top: 20px; } .pitch { padding-top: 0; } .scope { height: 34vh; } }
+</style>
+</head>
+<body>
+<header class="top">
+    <img src="/images/brand/logo-tacademy.png" alt="T.Academy">
+    <a class="lg-back" href="a2-navbar.html">← VOLTAR AO SITE</a>
+</header>
+
+<section class="scope" aria-hidden="true">
+    <div class="readout tl"><span>CH1 <b>T.ACADEMY</b></span><span>5 ms/div</span></div>
+    <div class="readout tr"><span>RPM <b id="rpm">850</b></span><span><span class="status-dot" id="dot"></span><b id="status">RALENTI</b></span></div>
+    <div class="readout bl"><span>DIAGNÓSTICO · SINAL DE ENTRADA</span></div>
+    <svg id="scopeSvg">
+        <path class="wave" id="waveL"/>
+        <path class="wave" id="waveR"/>
+        <g id="birdG"><path class="bird-line" id="birdPath"/></g>
+    </svg>
+</section>
+
+<main class="below">
+    <div class="pitch">
+        <h2>Liga o motor <em>e retoma onde ficaste.</em></h2>
+        <p>Cada letra que escreves põe o sinal a trabalhar. Os teus cursos, tarefas e certificados estão do outro lado.</p>
+    </div>
+    <div class="card cut-16" id="formSlot"></div>
+</main>
+
+<div class="concept-switch"><a href="index.html">←</a><a href="login-2-traco.html">2 · Traço</a><a href="login-4-planta.html">4 · Planta</a><a class="on" href="login-5-osciloscopio.html">5 · Osciloscópio</a></div>
+
+<script src="base.js"></script>
+<script src="bird-path.js"></script>
+<script src="login.js"></script>
+<script>
+document.getElementById('formSlot').innerHTML = loginFormHTML();
+const reduced = TA.reduced;
+const $ = (s) => document.querySelector(s);
+const svg = $('#scopeSvg'), waveL = $('#waveL'), waveR = $('#waveR'), birdG = $('#birdG'), bird = $('#birdPath');
+bird.setAttribute('d', BIRD_PATH);
+
+// Estado do "motor"
+let energy = 0;        // impulsos das teclas (decai)
+let rev = 0;           // rotação alvo: 0 ralenti · 1 a entrar
+let revNow = 0;
+let fault = 0;         // falha de ignição (erro)
+let settle = 0;        // 1 = motor estável (sucesso): a onda acalma e o pássaro acende
+let phase = 0;
+
+// Cada tecla dá um impulso ao sinal
+document.addEventListener('input', (e) => { if (e.target.matches('.lg-field input')) energy = Math.min(1.6, energy + .45); });
+
+function frame(now) {
+    const W = svg.clientWidth, H = svg.clientHeight, mid = H * .52;
+    // pássaro ao centro, com a altura de 70% do ecrã
+    const bh = H * .7, bw = bh * 152 / 170, bx = W / 2 - bw / 2, by = mid - bh * .55;
+    birdG.setAttribute('transform', `translate(${bx} ${by}) scale(${bh / 170})`);
+
+    revNow += (rev - revNow) * .04;
+    energy *= .94; fault *= .95;
+    const speed = .9 + revNow * 5 + energy * 2;
+    phase += speed * .05;
+    const amp = H * (.06 + energy * .12 + revNow * .1) * (1 - settle * .85);
+    const freq = .018 + revNow * .03;
+
+    // Onda: harmónicas + picos de "ignição" + ruído de falha
+    const y = (x) => {
+        let v = Math.sin(x * freq + phase) * .7 + Math.sin(x * freq * 2.7 + phase * 1.6) * .25;
+        const spike = Math.pow(Math.max(0, Math.sin(x * freq * .5 + phase * .5)), 24) * 1.8; // pico de ignição
+        v += spike * (1 - settle);
+        v += fault * (Math.random() - .5) * 3;
+        return mid + v * amp;
+    };
+    const seg = (x0, x1) => { let d = ''; for (let x = x0; x <= x1; x += 4) d += (d ? 'L' : 'M') + x.toFixed(1) + ' ' + y(x).toFixed(1); return d; };
+    waveL.setAttribute('d', seg(0, bx + bw * .02));
+    waveR.setAttribute('d', seg(bx + bw * .98, W));
+
+    // O pássaro "acende" quando o motor estabiliza; vibra com a energia
+    bird.style.fillOpacity = settle;
+    const shake = (energy * 1.5 + fault * 6) * (Math.random() - .5);
+    birdG.setAttribute('transform', `translate(${bx + shake} ${by + shake * .6}) scale(${bh / 170})`);
+
+    // Leituras
+    const rpm = Math.round(850 + revNow * 2400 + energy * 600);
+    $('#rpm').textContent = rpm.toLocaleString('pt-PT');
+    if (!reduced) requestAnimationFrame(frame);
+}
+if (!reduced) requestAnimationFrame(frame);
+else { settle = 1; frame(0); } // estático: onda calma e pássaro aceso
+
+const setStatus = (txt, isFault) => { $('#status').textContent = txt; $('#dot').classList.toggle('fault', !!isFault); [waveL, waveR].forEach((w) => w.classList.toggle('fault', !!isFault)); };
+
+LoginDemo({
+    onSubmit: () => { rev = 1; settle = 0; setStatus('A ARRANCAR…'); },
+    onError: () => { rev = 0; fault = 1; setStatus('FALHA DE IGNIÇÃO', true); setTimeout(() => setStatus('RALENTI'), 2200); },
+    onSuccess: () => {
+        rev = .35; setStatus('MOTOR ESTÁVEL');
+        const t0 = performance.now();
+        const go = (now) => { settle = Math.min(1, (now - t0) / 900); if (settle < 1) requestAnimationFrame(go); };
+        requestAnimationFrame(go);
+    },
+});
+</script>
+</body>
+</html>
