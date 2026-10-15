@@ -10,11 +10,31 @@ class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_login_screen_can_be_rendered(): void
+    public function test_login_url_goes_to_the_landing(): void
     {
-        $response = $this->get('/login');
+        // Já não há página de login: /login leva à landing, onde o login se faz pelo botão "Entrar"
+        $this->get('/login')->assertRedirect(route('home'));
+    }
 
-        $response->assertStatus(200);
+    public function test_the_landing_login_box_is_hidden_until_opened(): void
+    {
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('data-login-open', false)
+            ->assertSee('data-login-pop', false)
+            ->assertDontSee('data-open-on-load', false)
+            ->assertSee('Entra na oficina.');
+    }
+
+    public function test_failed_login_from_the_box_returns_json_errors(): void
+    {
+        $user = User::factory()->create();
+
+        $this->postJson('/login', ['email' => $user->email, 'password' => 'errada'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('email');
+
+        $this->assertGuest();
     }
 
     public function test_users_can_authenticate_using_the_login_screen(): void
@@ -51,5 +71,19 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
         $response->assertRedirect(route('login'));
         $response->assertSessionHas('status');
+        $response->assertSessionHas('login_open');
+    }
+
+    public function test_after_logout_the_landing_opens_the_login_box_with_the_message(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post('/logout');
+        $this->followingRedirects()->get('/login')
+            ->assertSee('data-open-on-load', false)
+            ->assertSee('Sessão terminada. Até breve!');
+
+        // Uma visita normal à landing começa com a caixa fechada
+        $this->get('/')->assertDontSee('data-open-on-load', false);
     }
 }

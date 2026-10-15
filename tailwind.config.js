@@ -13,9 +13,10 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                // Identidade Visual v3 · 4b: Barlow (texto) + Chakra Petch (títulos, números, rótulos)
-                sans: ['Barlow', ...defaultTheme.fontFamily.sans],
-                display: ['"Chakra Petch"', ...defaultTheme.fontFamily.sans],
+                // Outfit (títulos, números, rótulos) + Geist (texto) + Geist Mono (etiquetas e dados)
+                sans: ['Geist', ...defaultTheme.fontFamily.sans],
+                display: ['Outfit', ...defaultTheme.fontFamily.sans],
+                mono: ['"Geist Mono"', ...defaultTheme.fontFamily.mono],
             },
             colors: {
                 // Tokens em resources/css/app.css (mudam com o tema claro/escuro)

@@ -43,7 +43,7 @@ window.TA = (() => {
             if (bar) bar.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
             let current = null;
             links.forEach((a) => {
-                const s = document.querySelector(a.getAttribute('href'));
+                const h = a.getAttribute('href'); const s = /^#[\w-]+$/.test(h) ? document.querySelector(h) : null; // só âncoras válidas
                 if (s && s.getBoundingClientRect().top < innerHeight * 0.4) current = a;
             });
             links.forEach((a) => a.classList.toggle('on', a === current));

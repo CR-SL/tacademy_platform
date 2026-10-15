@@ -3,12 +3,18 @@
     $loggedIn = auth()->check();
     $ctaHref = $loggedIn ? route('dashboard') : route('login');
     $ctaLabel = $loggedIn ? 'Ir para a plataforma' : 'Entrar';
+    // Caixa de login do botão "Entrar": começa sempre fechada e só abre ao carregar no botão.
+    // Exceção: sem JavaScript o botão não a consegue abrir, por isso aí mostra-se quando há erros ou uma mensagem.
+    $loginNoJsOpen = ! $loggedIn && ($errors->any() || session('status'));
+    // Depois do logout a caixa abre sozinha com a mensagem "Sessão terminada"
+    $loginOpenAfterLogout = ! $loggedIn && session('login_open');
 @endphp
 <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>T.Academy · Formação para técnicos de oficina automóvel</title>
     <meta name="description" content="A T.Academy forma técnicos de oficina automóvel com cursos práticos, aulas com IA, tarefas e certificados. Diagnóstico, eletrónica, redes CAN e gestão de oficina.">
     <link rel="canonical" href="{{ url('/') }}">
@@ -21,7 +27,11 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    @if ($loginNoJsOpen)
+        <noscript><style>.login-pop[hidden] { display: block !important; }</style></noscript>
+    @endif
 
     {{-- Pré-carregar as peças do pássaro para a montagem do hero --}}
     <link rel="preload" as="image" href="/images/logo3d/bird_whole.png">
@@ -44,8 +54,36 @@
         <li data-in><a href="{{ route('contacts') }}">Contactos</a></li>
         <li data-in><a href="#cursos">Cursos</a></li>
     </ul>
-    <a class="btn btn-accent cut-8" href="{{ $ctaHref }}" data-in>{{ $ctaLabel }} ▶</a>
+    <a class="btn btn-accent cut-8" href="{{ $ctaHref }}" data-in @guest data-login-open aria-haspopup="dialog" aria-expanded="false" aria-controls="login-pop" @endguest>{{ $ctaLabel }} ▶</a>
 </nav>
+
+@guest
+    {{-- Login: o botão "Entrar" cresce e transforma-se nesta caixa (landing.js). Sem JS é um formulário normal. --}}
+    <div class="login-pop" id="login-pop" role="dialog" aria-modal="false" aria-labelledby="login-pop-title" data-login-pop @if ($loginOpenAfterLogout) data-open-on-load @endif hidden>
+        <button class="login-pop-close" type="button" aria-label="Fechar" data-login-close>×</button>
+        <div class="login-pop-in">
+            <h2 id="login-pop-title">Entra na oficina.</h2>
+            @if (session('status'))
+                <p class="login-pop-status" role="status">{{ session('status') }}</p>
+            @endif
+            <form method="POST" action="{{ route('login') }}" novalidate data-login-form>
+                @csrf
+                <div class="login-pop-field">
+                    <label for="lp-email">Email</label>
+                    <input id="lp-email" name="email" type="email" value="{{ old('email') }}" autocomplete="username" placeholder="nome@oficina.pt" required @error('email') class="bad" aria-invalid="true" @enderror>
+                </div>
+                <div class="login-pop-field">
+                    <label for="lp-password">Palavra-passe <a href="{{ route('password.request') }}">Esqueceste-te?</a></label>
+                    <input id="lp-password" name="password" type="password" autocomplete="current-password" required>
+                </div>
+                <label class="login-pop-remember"><input type="checkbox" name="remember" value="1" @checked(old('remember'))> Manter sessão iniciada</label>
+                <p class="login-pop-err" role="alert" data-login-err>{{ $errors->first('email') ?: $errors->first('password') }}</p>
+                <button class="btn cut-8 login-pop-go" type="submit">Entrar ▶</button>
+                <p class="login-pop-alt">Sem conta? <a href="{{ route('register') }}">Criar conta</a></p>
+            </form>
+        </div>
+    </div>
+@endguest
 <div class="progress" aria-hidden="true"></div>
 
 <main>

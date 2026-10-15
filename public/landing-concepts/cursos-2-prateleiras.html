@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cursos 2 · Prateleiras — T.Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="cursos.css">
+<style>
+/* Índice de áreas, preso por baixo da navbar */
+.index { position: sticky; top: 66px; z-index: 20; background: color-mix(in srgb, var(--bg) 92%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.index-in { max-width: 1240px; margin: 0 auto; padding: 12px var(--gutter); display: flex; gap: 6px; align-items: center; overflow-x: auto; scrollbar-width: none; }
+.index-in::-webkit-scrollbar { display: none; }
+.index a { flex: none; display: inline-flex; gap: 8px; align-items: center; padding: 8px 12px; font-family: var(--display); font-weight: 600; font-size: 13px; letter-spacing: .04em; color: var(--muted); border-bottom: 2px solid transparent; }
+.index a svg { width: 16px; height: 16px; }
+.index a.on, .index a:hover { color: var(--ink); border-color: var(--accent); }
+.index .sep { flex: 1; }
+.index .lv { flex: none; }
+
+.shelf { max-width: 1240px; margin: 0 auto; padding: 34px 0 10px; scroll-margin-top: 130px; }
+.shelf-head { padding: 0 var(--gutter); display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.shelf-head h2 { font-family: var(--display); font-size: clamp(24px, 2.6vw, 32px); margin: 0; display: flex; align-items: center; gap: 12px; }
+.shelf-head h2 .ic { width: 40px; height: 40px; background: var(--ink); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; }
+.shelf-head h2 .ic svg { width: 22px; height: 22px; }
+.shelf-head h2 small { font-size: 14px; color: var(--muted); font-weight: 600; }
+.arrows { display: flex; gap: 6px; }
+.arrows button { width: 40px; height: 40px; border: 1px solid var(--line); background: var(--surface); font-family: var(--display); font-weight: 700; font-size: 18px; cursor: pointer; }
+.arrows button:disabled { opacity: .35; cursor: default; }
+.track { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 var(--gutter); padding: 6px var(--gutter) 22px; scrollbar-width: thin; }
+.track > * { scroll-snap-align: start; flex: none; }
+
+/* Cartão de destaque: fotografia inteira com o texto por cima */
+.feat { width: 420px; height: 360px; position: relative; color: #fff; overflow: hidden; background: #18181b; cursor: pointer; }
+.feat .ph { position: absolute; inset: 0; background-size: cover; background-position: center; transition: transform .7s cubic-bezier(.2, .8, .2, 1); }
+.feat::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(24, 24, 27, 0) 25%, rgba(24, 24, 27, .92)); }
+.feat:hover .ph { transform: scale(1.06); }
+.feat .in { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; padding: 22px; display: flex; flex-direction: column; gap: 8px; }
+.feat .badge { position: absolute; z-index: 2; left: 18px; top: 16px; display: flex; gap: 6px; }
+.feat .badge .code { background: var(--accent); color: var(--on-accent); font-family: var(--display); font-weight: 700; font-size: 12px; letter-spacing: .12em; padding: 3px 7px; }
+.feat .mono { color: #c9c9cf; }
+.feat h3 { font-family: var(--display); font-size: 28px; line-height: 1.05; margin: 0; }
+.feat p { margin: 0; color: #d4d4d8; font-size: 15px; }
+.feat .row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 13px; color: #c9c9cf; }
+
+/* Cartão normal: compacto */
+.mini { width: 260px; height: 360px; background: var(--surface); display: flex; flex-direction: column; cursor: pointer; transition: transform .3s cubic-bezier(.3, 1.5, .5, 1), box-shadow .3s; }
+.mini:hover { transform: translateY(-6px); box-shadow: 0 18px 36px rgba(24, 24, 27, .1); }
+.mini .vis { height: 150px; }
+.mini:hover .vis .ph { transform: scale(1.06); }
+.mini .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.mini h3 { font-family: var(--display); font-size: 19px; line-height: 1.1; margin: 0; }
+.mini .desc { margin: 0; color: var(--muted); font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mini .foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); }
+
+@media (max-width: 640px) { .feat { width: 82vw; } .mini { width: 70vw; } }
+</style>
+</head>
+<body>
+<nav class="nav">
+    <a href="a2-navbar.html"><img src="/images/brand/logo-tacademy.png" alt="T.Academy"></a>
+    <ul><li><a href="#">Quem Somos</a></li><li><a href="contactos.html">Contactos</a></li><li><a class="on" href="#">Cursos</a></li></ul>
+    <a class="btn btn-accent cut-8" href="login-popover.html">Entrar ▶</a>
+</nav>
+
+<header class="c-head">
+    <div>
+        <p class="label">Catálogo</p>
+        <h1 class="h-display">Cursos por área</h1>
+        <p>Do diagnóstico à carroçaria — escolhe a prateleira e percorre os cursos.</p>
+    </div>
+    <div class="count"><b id="n">0</b>cursos em <span id="na">0</span> áreas</div>
+</header>
+
+<nav class="index" aria-label="Áreas"><div class="index-in" id="index"></div></nav>
+<main id="shelves"></main>
+<p class="note">* Cursos marcados «EXEMPLO» não existem na plataforma — servem só para ver o catálogo com mais áreas.</p>
+
+<section class="cta-band"><h2 class="h-display">Formação para a tua <em>equipa inteira</em>?</h2><a class="btn btn-accent cut-8" href="contactos.html">Pedir proposta ▶</a></section>
+
+<div class="concept-switch"><a href="index.html">←</a><a href="cursos-1-grelha.html">1 · Grelha</a><a class="on" href="cursos-2-prateleiras.html">2 · Prateleiras</a><a href="cursos-3-ficha.html">3 · Ficha técnica</a></div>
+
+<script src="base.js"></script>
+<script src="cursos-data.js"></script>
+<script>
+TA.chrome();
+const $ = (s, r = document) => r.querySelector(s);
+let lvl = 'all';
+const lvBars = (c) => `<span class="lvl" title="${LEVELS[c.lvl][0]}">${[1, 2, 3].map((n) => `<span class="${n <= LEVELS[c.lvl][1] ? 'on' : ''}"></span>`).join('')}</span>`;
+
+function render() {
+    const list = CURSOS.filter((c) => lvl === 'all' || c.lvl === lvl);
+    const areas = Object.keys(AREAS).filter((a) => list.some((c) => c.area === a));
+    $('#n').textContent = list.length; $('#na').textContent = areas.length;
+
+    $('#index').innerHTML = areas.map((a) => `<a href="#area-${a}" data-a="${a}">${areaIcon(a)}${AREAS[a].name}</a>`).join('')
+        + `<span class="sep"></span><span class="chips lv">${[['all', 'Todos os níveis'], ...Object.entries(LEVELS).map(([k, [n]]) => [k, n])].map(([k, n]) => `<button class="chip cut-8" data-lvl="${k}" aria-pressed="${lvl === k}">${n}</button>`).join('')}</span>`;
+
+    $('#shelves').innerHTML = areas.map((a) => {
+        const items = list.filter((c) => c.area === a);
+        const [first, ...rest] = [...items].sort((x, y) => (y.ai - x.ai) || (x.ex - y.ex)); // destaque: com IA primeiro, depois cursos reais
+        return `<section class="shelf" id="area-${a}">
+            <div class="shelf-head">
+                <h2><span class="ic cut-8">${areaIcon(a)}</span>${AREAS[a].name} <small>${items.length} ${items.length === 1 ? 'curso' : 'cursos'}</small></h2>
+                <div class="arrows"><button type="button" data-dir="-1" aria-label="Anteriores">‹</button><button type="button" data-dir="1" aria-label="Seguintes">›</button></div>
+            </div>
+            <div class="track">
+                <article class="feat cut-16" tabindex="0">
+                    <span class="ph" style="background-image:url(${first.img})"></span>
+                    <span class="badge"><span class="code">${first.code}</span>${first.ai ? '<span class="ai-tag cut-8">✦ AULA COM IA</span>' : ''}${first.ex ? '<span class="ex-tag" style="color:#fff">EXEMPLO</span>' : ''}</span>
+                    <div class="in">
+                        <span class="mono">${LEVELS[first.lvl][0]} · ${dur(first.min)} · ${first.mods} módulos</span>
+                        <h3>${first.t}</h3>
+                        <p>${first.desc}</p>
+                        <div class="row"><span>${first.lessons} aulas</span><span class="price cut-8">${euro(first.price)}</span></div>
+                    </div>
+                </article>
+                ${rest.map((c) => `
+                <article class="mini cut-12" tabindex="0">
+                    <div class="vis photo"><span class="ph" style="background-image:url(${c.img})"></span><span class="code">${c.code}</span><span class="tags" style="position:absolute;right:10px;top:10px;display:flex;gap:6px">${c.ai ? '<span class="ai-tag cut-8">✦ IA</span>' : ''}${c.ex ? '<span class="ex-tag" style="color:#fff">EXEMPLO</span>' : ''}</span></div>
+                    <div class="body">
+                        <span class="mono">${LEVELS[c.lvl][0]}</span>
+                        <h3>${c.t}</h3>
+                        <p class="desc">${c.desc}</p>
+                        <div class="foot"><span>${lvBars(c)} ${dur(c.min)}</span><span class="price cut-8">${euro(c.price)}</span></div>
+                    </div>
+                </article>`).join('')}
+            </div>
+        </section>`;
+    }).join('');
+    updateArrows();
+}
+
+// Setas das prateleiras
+function updateArrows() {
+    document.querySelectorAll('.shelf').forEach((s) => {
+        const t = $('.track', s), [prev, next] = s.querySelectorAll('[data-dir]');
+        prev.disabled = t.scrollLeft < 4; next.disabled = t.scrollLeft + t.clientWidth >= t.scrollWidth - 4;
+    });
+}
+document.addEventListener('click', (e) => {
+    const d = e.target.closest('[data-dir]');
+    if (d) { const t = $('.track', d.closest('.shelf')); t.scrollBy({ left: +d.dataset.dir * t.clientWidth * 0.8, behavior: TA.reduced ? 'auto' : 'smooth' }); }
+    const l = e.target.closest('[data-lvl]');
+    if (l) { lvl = l.dataset.lvl; render(); }
+});
+document.addEventListener('scroll', (e) => { if (e.target.classList?.contains('track')) updateArrows(); }, true);
+
+// Área ativa no índice conforme o scroll
+addEventListener('scroll', () => {
+    let cur = null;
+    document.querySelectorAll('.shelf').forEach((s) => { if (s.getBoundingClientRect().top < innerHeight * .45) cur = s.id.replace('area-', ''); });
+    document.querySelectorAll('#index a').forEach((a) => a.classList.toggle('on', a.dataset.a === cur));
+}, { passive: true });
+addEventListener('resize', updateArrows);
+render();
+</script>
+</body>
+</html>

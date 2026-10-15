@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cursos 3 · Ficha técnica — T.Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="cursos.css">
+<style>
+.layout { max-width: 1240px; margin: 0 auto; padding: 0 var(--gutter) 40px; display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 26px; align-items: start; }
+
+/* Filtros laterais */
+.side { position: sticky; top: 86px; background: var(--surface); padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+.side h2 { font-family: var(--display); font-size: 13px; letter-spacing: .12em; color: var(--muted); margin: 0 0 8px; }
+.opt { display: flex; align-items: center; gap: 9px; padding: 5px 0; cursor: pointer; font-size: 15px; }
+.opt input { accent-color: var(--accent); width: 16px; height: 16px; }
+.opt svg { width: 16px; height: 16px; color: var(--muted); }
+.opt i { margin-left: auto; font-style: normal; font-family: var(--display); font-size: 12px; color: var(--muted); }
+.range { width: 100%; accent-color: var(--accent); }
+.range-val { font-family: var(--display); font-weight: 700; font-size: 14px; }
+.reset { border: 0; background: none; padding: 0; color: var(--accent-ink); font-weight: 600; cursor: pointer; text-align: left; font: inherit; font-size: 14px; }
+
+/* Lista tipo catálogo de peças */
+.list { background: var(--surface); }
+.thead, .row { display: grid; grid-template-columns: 74px minmax(0, 1fr) 150px 96px 84px 108px 28px; gap: 14px; align-items: center; padding: 0 18px; }
+.thead { height: 46px; border-bottom: 2px solid var(--ink); font-family: var(--display); font-weight: 600; font-size: 12px; letter-spacing: .1em; color: var(--muted); }
+.thead button { border: 0; background: none; padding: 0; font: inherit; color: inherit; letter-spacing: inherit; cursor: pointer; text-align: left; display: inline-flex; gap: 4px; align-items: center; }
+.thead button[aria-sort="ascending"]::after { content: "▲"; font-size: 9px; color: var(--accent-ink); }
+.thead button[aria-sort="descending"]::after { content: "▼"; font-size: 9px; color: var(--accent-ink); }
+.item { border-bottom: 1px solid var(--line); }
+.row { min-height: 72px; cursor: pointer; transition: background .2s; }
+.row:hover, .item.open .row { background: color-mix(in srgb, var(--accent) 9%, var(--surface)); }
+.row .no { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: .08em; }
+.row .tt { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.row .th { width: 54px; height: 40px; flex: none; background-size: cover; background-position: center; }
+.row .tt b { font-family: var(--display); font-size: 17px; line-height: 1.15; display: block; }
+.row .tt small { display: flex; gap: 6px; margin-top: 3px; }
+.row .ar { display: flex; gap: 7px; align-items: center; font-size: 14px; color: var(--muted); }
+.row .ar svg { width: 16px; height: 16px; flex: none; }
+.row .du { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.row .pm { width: 26px; height: 26px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 700; transition: transform .3s, background .2s; }
+.item.open .pm { transform: rotate(45deg); background: var(--accent); }
+
+/* Detalhe aberto */
+.detail { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; padding: 6px 18px 24px 106px; }
+.detail .big { height: 190px; background-size: cover; background-position: center; position: relative; }
+.detail .big .code { position: absolute; left: 10px; top: 10px; background: var(--accent); color: var(--on-accent); font-family: var(--display); font-weight: 700; font-size: 12px; letter-spacing: .12em; padding: 3px 7px; }
+.detail p { margin: 0 0 14px; color: var(--muted); font-size: 16px; max-width: 560px; }
+.specs { display: grid; grid-template-columns: repeat(4, auto); gap: 6px 22px; justify-content: start; margin-bottom: 18px; }
+.specs dt { font-family: var(--display); font-size: 11px; letter-spacing: .1em; color: var(--muted); }
+.specs dd { margin: 0; font-family: var(--display); font-weight: 700; font-size: 18px; }
+.detail .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-ghost { background: transparent; color: var(--ink) !important; box-shadow: inset 0 0 0 1px var(--line); }
+
+@media (max-width: 1000px) {
+    .layout { grid-template-columns: 1fr; }
+    .side { position: static; }
+    .thead { display: none; }
+    .row { grid-template-columns: 60px minmax(0, 1fr) auto 28px; }
+    .row .ar, .row .du, .row .lvc { display: none; }
+    .detail { grid-template-columns: 1fr; padding: 6px 18px 22px; }
+}
+</style>
+</head>
+<body>
+<nav class="nav">
+    <a href="a2-navbar.html"><img src="/images/brand/logo-tacademy.png" alt="T.Academy"></a>
+    <ul><li><a href="#">Quem Somos</a></li><li><a href="contactos.html">Contactos</a></li><li><a class="on" href="#">Cursos</a></li></ul>
+    <a class="btn btn-accent cut-8" href="login-popover.html">Entrar ▶</a>
+</nav>
+
+<header class="c-head">
+    <div>
+        <p class="label">Catálogo técnico</p>
+        <h1 class="h-display">Cursos</h1>
+        <p>Cada curso é uma peça do teu percurso. Filtra, compara e abre a ficha para ver o detalhe.</p>
+    </div>
+    <div class="count"><b id="n">0</b>de <span id="total">0</span> cursos</div>
+</header>
+
+<div class="layout">
+    <aside class="side cut-16" aria-label="Filtros">
+        <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="q" placeholder="Procurar" aria-label="Procurar curso"></label>
+        <div><h2>ÁREA</h2><div id="fArea"></div></div>
+        <div><h2>NÍVEL</h2><div id="fLvl"></div></div>
+        <div><h2>PREÇO MÁXIMO</h2><input class="range" type="range" id="fPrice" min="20" max="150" step="5" value="150" aria-label="Preço máximo"><span class="range-val" id="priceVal"></span></div>
+        <label class="opt"><input type="checkbox" id="fAi"> Só com aulas de IA</label>
+        <button class="reset" id="reset" type="button">Limpar filtros</button>
+    </aside>
+
+    <section>
+        <div class="list cut-16">
+            <div class="thead" role="row">
+                <span>Nº</span>
+                <button data-sort="t" aria-sort="none">CURSO</button>
+                <button data-sort="area" aria-sort="none">ÁREA</button>
+                <button data-sort="lvl" aria-sort="none">NÍVEL</button>
+                <button data-sort="min" aria-sort="none">DURAÇÃO</button>
+                <button data-sort="price" aria-sort="none">PREÇO</button>
+                <span></span>
+            </div>
+            <div id="rows"></div>
+        </div>
+        <p class="note" style="padding:14px 0 0">* Cursos marcados «EXEMPLO» não existem na plataforma — servem só para ver o catálogo com mais áreas.</p>
+    </section>
+</div>
+
+<section class="cta-band"><h2 class="h-display">Formação para a tua <em>equipa inteira</em>?</h2><a class="btn btn-accent cut-8" href="contactos.html">Pedir proposta ▶</a></section>
+
+<div class="concept-switch"><a href="index.html">←</a><a href="cursos-1-grelha.html">1 · Grelha</a><a href="cursos-2-prateleiras.html">2 · Prateleiras</a><a class="on" href="cursos-3-ficha.html">3 · Ficha técnica</a></div>
+
+<script src="base.js"></script>
+<script src="cursos-data.js"></script>
+<script>
+TA.chrome();
+const $ = (s) => document.querySelector(s);
+const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const st = { areas: new Set(), lvls: new Set(), price: 150, ai: false, q: '', sort: null, dir: 1, open: null };
+const lvBars = (c) => `<span class="lvl" title="${LEVELS[c.lvl][0]}">${[1, 2, 3].map((n) => `<span class="${n <= LEVELS[c.lvl][1] ? 'on' : ''}"></span>`).join('')}</span>`;
+$('#total').textContent = CURSOS.length;
+
+const ok = (c, skip) => (skip === 'area' || !st.areas.size || st.areas.has(c.area)) && (skip === 'lvl' || !st.lvls.size || st.lvls.has(c.lvl))
+    && c.price <= st.price && (!st.ai || c.ai) && (!st.q || norm(c.t + ' ' + c.desc).includes(norm(st.q)));
+
+function filters() {
+    $('#fArea').innerHTML = Object.entries(AREAS).map(([k, a]) => `<label class="opt"><input type="checkbox" data-area="${k}" ${st.areas.has(k) ? 'checked' : ''}>${areaIcon(k)}${a.name}<i>${CURSOS.filter((c) => c.area === k && ok(c, 'area')).length}</i></label>`).join('');
+    $('#fLvl').innerHTML = Object.entries(LEVELS).map(([k, [n, v]]) => `<label class="opt"><input type="checkbox" data-lvl="${k}" ${st.lvls.has(k) ? 'checked' : ''}>${n}<i>${CURSOS.filter((c) => c.lvl === k && ok(c, 'lvl')).length}</i></label>`).join('');
+    $('#priceVal').textContent = 'até ' + euro(st.price);
+}
+
+function render() {
+    let list = CURSOS.filter((c) => ok(c));
+    if (st.sort) list.sort((a, b) => {
+        const k = st.sort, va = k === 'lvl' ? LEVELS[a.lvl][1] : k === 'area' ? AREAS[a.area].name : a[k], vb = k === 'lvl' ? LEVELS[b.lvl][1] : k === 'area' ? AREAS[b.area].name : b[k];
+        return (typeof va === 'string' ? va.localeCompare(vb, 'pt') : va - vb) * st.dir;
+    });
+    $('#n').textContent = list.length;
+    filters();
+    document.querySelectorAll('[data-sort]').forEach((b) => b.setAttribute('aria-sort', b.dataset.sort === st.sort ? (st.dir > 0 ? 'ascending' : 'descending') : 'none'));
+    $('#rows').innerHTML = list.length ? list.map((c) => `
+        <div class="item ${st.open === c.code ? 'open' : ''}">
+            <div class="row" role="button" tabindex="0" aria-expanded="${st.open === c.code}" data-open="${c.code}">
+                <span class="no">${c.code}</span>
+                <span class="tt"><span class="th cut-8" style="background-image:url(${c.img})"></span><span><b>${c.t}</b><small>${c.ai ? '<span class="ai-tag cut-8">✦ IA</span>' : ''}${c.ex ? '<span class="ex-tag">EXEMPLO</span>' : ''}</small></span></span>
+                <span class="ar">${areaIcon(c.area)}${AREAS[c.area].name}</span>
+                <span class="lvc">${lvBars(c)}</span>
+                <span class="du">${dur(c.min)}</span>
+                <span><span class="price cut-8">${euro(c.price)}</span></span>
+                <span class="pm cut-8" aria-hidden="true">+</span>
+            </div>
+            ${st.open === c.code ? `
+            <div class="detail">
+                <div class="big cut-12" style="background-image:url(${c.img})"><span class="code">${c.code}</span></div>
+                <div>
+                    <p>${c.desc}</p>
+                    <dl class="specs"><div><dt>NÍVEL</dt><dd>${LEVELS[c.lvl][0]}</dd></div><div><dt>DURAÇÃO</dt><dd>${dur(c.min)}</dd></div><div><dt>MÓDULOS</dt><dd>${c.mods}</dd></div><div><dt>AULAS</dt><dd>${c.lessons}</dd></div></dl>
+                    <div class="actions"><a class="btn btn-accent cut-8" href="#">Comprar · ${euro(c.price)} ▶</a><a class="btn btn-ghost cut-8" href="contactos.html">Pedir para a equipa</a></div>
+                </div>
+            </div>` : ''}
+        </div>`).join('') : `<div class="empty">Nenhum curso com estes filtros. <button class="reset" type="button" data-reset>Limpar filtros</button></div>`;
+}
+
+document.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t.dataset.area) { t.checked ? st.areas.add(t.dataset.area) : st.areas.delete(t.dataset.area); render(); }
+    if (t.dataset.lvl) { t.checked ? st.lvls.add(t.dataset.lvl) : st.lvls.delete(t.dataset.lvl); render(); }
+    if (t.id === 'fAi') { st.ai = t.checked; render(); }
+});
+$('#fPrice').addEventListener('input', (e) => { st.price = +e.target.value; render(); });
+$('#q').addEventListener('input', (e) => { st.q = e.target.value.trim(); render(); });
+const resetAll = () => { st.areas.clear(); st.lvls.clear(); st.price = 150; st.ai = false; st.q = ''; $('#fPrice').value = 150; $('#fAi').checked = false; $('#q').value = ''; render(); };
+document.addEventListener('click', (e) => {
+    const s = e.target.closest('[data-sort]');
+    if (s) { st.dir = st.sort === s.dataset.sort ? -st.dir : 1; st.sort = s.dataset.sort; render(); }
+    const o = e.target.closest('[data-open]');
+    if (o) { st.open = st.open === o.dataset.open ? null : o.dataset.open; render(); }
+    if (e.target.closest('#reset, [data-reset]')) resetAll();
+});
+document.addEventListener('keydown', (e) => { const o = e.target.closest?.('[data-open]'); if (o && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); o.click(); } });
+st.open = CURSOS[0].code; // a primeira ficha aberta para mostrar o detalhe
+render();
+</script>
+</body>
+</html>

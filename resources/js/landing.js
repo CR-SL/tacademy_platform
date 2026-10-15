@@ -269,3 +269,143 @@ addEventListener('resize', () => { sizeCourses(); request(); });
 addEventListener('load', () => { sizeCourses(); request(); });
 sizeCourses();
 frame();
+
+/* ---------- Login: o botão "Entrar" cresce e transforma-se numa caixa ---------- */
+const loginBtn = $('[data-login-open]');
+const loginPop = $('[data-login-pop]');
+if (loginBtn && loginPop) {
+    const inner = $('.login-pop-in', loginPop);
+    const closeBtn = $('[data-login-close]', loginPop);
+    const form = $('[data-login-form]', loginPop);
+    const errEl = $('[data-login-err]', loginPop);
+    const goBtn = $('.login-pop-go', loginPop);
+    const emailIn = $('#lp-email', loginPop);
+    let isOpen = false;
+    let busy = false;
+
+    const easeInOut = (t) => (t < 0.5 ? 4 * t ** 3 : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    const tween = (dur, fn, easing = easeInOut) =>
+        new Promise((done) => {
+            if (reduced) { fn(1); return done(); }
+            const t0 = performance.now();
+            const step = (now) => {
+                const t = Math.min(1, (now - t0) / dur);
+                fn(easing(t));
+                t < 1 ? requestAnimationFrame(step) : done();
+            };
+            requestAnimationFrame(step);
+        });
+    const cut = (n) => `polygon(${n}px 0, 100% 0, 100% calc(100% - ${n}px), calc(100% - ${n}px) 100%, 0 100%, 0 ${n}px)`;
+
+    // A caixa nasce exatamente no sítio e tamanho do botão e cresce até ao tamanho final
+    async function openLogin() {
+        if (isOpen || busy) return;
+        busy = true;
+        isOpen = true;
+        const b = loginBtn.getBoundingClientRect();
+        loginPop.hidden = false;
+        const W = Math.min(300, innerWidth - 24);
+        const H = inner.scrollHeight;
+        Object.assign(loginPop.style, { top: `${b.top}px`, right: `${innerWidth - b.right}px`, width: `${b.width}px`, height: `${b.height}px` });
+        inner.style.opacity = 0;
+        closeBtn.style.opacity = 0;
+        loginBtn.style.visibility = 'hidden';
+        loginBtn.setAttribute('aria-expanded', 'true');
+        await tween(380, (k) => {
+            loginPop.style.width = `${b.width + (W - b.width) * k}px`;
+            loginPop.style.height = `${b.height + (H - b.height) * k}px`;
+            loginPop.style.clipPath = cut(8 + 8 * k);
+        });
+        loginPop.style.height = 'auto';
+        await tween(200, (k) => { inner.style.opacity = k; closeBtn.style.opacity = k; }, (t) => t);
+        busy = false;
+        emailIn.focus();
+    }
+
+    // Ao fechar, encolhe outra vez até ser o botão
+    async function closeLogin() {
+        if (!isOpen || busy) return;
+        busy = true;
+        const b = loginBtn.getBoundingClientRect();
+        const W = loginPop.offsetWidth, H = loginPop.offsetHeight;
+        inner.style.opacity = 0;
+        closeBtn.style.opacity = 0;
+        await tween(260, (k) => {
+            loginPop.style.width = `${W + (b.width - W) * k}px`;
+            loginPop.style.height = `${H + (b.height - H) * k}px`;
+            loginPop.style.clipPath = cut(16 - 8 * k);
+        });
+        loginPop.hidden = true;
+        loginBtn.style.visibility = '';
+        loginBtn.setAttribute('aria-expanded', 'false');
+        isOpen = false;
+        busy = false;
+        loginBtn.focus();
+    }
+
+    loginBtn.addEventListener('click', (e) => {
+        e.preventDefault(); // com JS não vai para /login: abre a caixa
+        isOpen ? closeLogin() : openLogin();
+    });
+    closeBtn.addEventListener('click', closeLogin);
+    addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLogin(); });
+    addEventListener('pointerdown', (e) => {
+        if (isOpen && !loginPop.contains(e.target) && !loginBtn.contains(e.target)) closeLogin();
+    });
+    // Se a janela mudar de tamanho, a caixa acompanha o botão
+    addEventListener('resize', () => {
+        if (!isOpen) return;
+        const b = loginBtn.getBoundingClientRect();
+        loginPop.style.right = `${innerWidth - b.right}px`;
+    });
+
+    // Depois do logout a caixa abre sozinha (com a mensagem "Sessão terminada"); nos outros casos começa fechada
+    if (loginPop.hasAttribute('data-open-on-load')) requestAnimationFrame(() => openLogin());
+
+    // Envio sem sair da página; o servidor responde com erros (422) ou redireciona para a plataforma
+    const showError = (msg) => {
+        errEl.textContent = msg;
+        emailIn.classList.add('bad');
+        emailIn.setAttribute('aria-invalid', 'true');
+        loginPop.classList.remove('shake');
+        void loginPop.offsetWidth;
+        loginPop.classList.add('shake');
+    };
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errEl.textContent = '';
+        emailIn.classList.remove('bad');
+        emailIn.removeAttribute('aria-invalid');
+        const label = goBtn.textContent;
+        goBtn.disabled = true;
+        goBtn.textContent = 'A verificar…';
+        try {
+            const res = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+            });
+            if (res.status === 422) {
+                const data = await res.json();
+                showError(data.errors?.email?.[0] || data.errors?.password?.[0] || data.message);
+            } else if (res.ok) {
+                goBtn.textContent = 'A entrar… ✓';
+                location.href = res.url; // página pedida antes do login ou o dashboard
+                return;
+            } else {
+                form.submit(); // sessão expirada (419) ou outro erro: envio normal
+                return;
+            }
+        } catch {
+            form.submit();
+            return;
+        }
+        goBtn.disabled = false;
+        goBtn.textContent = label;
+    });
+}
