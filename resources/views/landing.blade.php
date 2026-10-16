@@ -27,6 +27,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    {{-- Só as letras da palavra de fundo do hero ("T.ACADEMY") --}}
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@700&text=T.ACDEMY&display=swap" rel="stylesheet">
 
     @if ($loginNoJsOpen)
         <noscript><style>.login-pop[hidden] { display: block !important; }</style></noscript>

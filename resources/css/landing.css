@@ -63,7 +63,7 @@ body.landing { margin: 0; background: var(--bg); color: var(--ink); font-family:
 .hero { height: 400vh; position: relative; }
 .stage { position: sticky; top: 0; height: 100vh; min-height: 560px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .grid-bg { position: absolute; inset: -20% 0; background: radial-gradient(#cfccc4 1.2px, transparent 1.4px) 0 0 / 26px 26px; opacity: .7; will-change: transform; }
-.ghost { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--display); font-weight: 700; font-size: 26vw; line-height: 1; color: transparent; -webkit-text-stroke: 1px #dcd9d1; white-space: nowrap; will-change: transform; user-select: none; }
+.ghost { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: 'Chakra Petch', var(--display); font-weight: 700; font-size: 26vw; line-height: 1; color: transparent; -webkit-text-stroke: 1px #dcd9d1; white-space: nowrap; will-change: transform; user-select: none; }
 .logo { position: relative; width: min(88vw, 760px); aspect-ratio: 2884 / 1600; }
 .logo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; will-change: transform, opacity; pointer-events: none; }
 .hero-copy { position: absolute; left: 0; right: 0; text-align: center; padding: 0 20px; will-change: transform, opacity; }
