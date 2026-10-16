@@ -25,7 +25,7 @@
     <div>
         <h2>PLATAFORMA</h2>
         <p><a href="{{ $loggedIn ? route('dashboard') : route('login') }}">{{ $loggedIn ? 'Ir para a plataforma' : 'Entrar' }}</a></p>
-        <p><a href="{{ route('home') }}#cursos">Cursos</a></p>
+        <p><a href="{{ route('courses') }}">Cursos</a></p>
         <p class="copy">© {{ date('Y') }} T.Academy</p>
     </div>
 </footer>

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Secção Cursos · exemplos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+    --accent: #F8B101; --accent-ink: #946A00; --on-accent: #18181B;
+    --bg: #F4F3EF; --surface: #FFFFFF; --ink: #18181B; --muted: #66666D; --line: #E4E2DC;
+    --dark: #18181B; --dark-ink: #F2F2F3; --dark-muted: #9095A0;
+    --display: 'Outfit', system-ui, sans-serif; --body: 'Geist', system-ui, sans-serif; --mono: 'Geist Mono', ui-monospace, monospace;
+    --gutter: clamp(16px, 6vw, 80px);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.5; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.cut-8 { clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+.cut-12 { clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px); }
+.cut-16 { clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px); }
+.label { margin: 0; font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); }
+.h-display { font-family: var(--display); font-weight: 700; line-height: 1.02; letter-spacing: -.01em; margin: 0; }
+.btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 22px; font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; transition: transform .15s, filter .2s, gap .2s; }
+.btn:hover { gap: 16px; filter: brightness(1.05); }
+.btn-accent { background: var(--accent); color: var(--on-accent); }
+.btn-dark { background: var(--dark); color: var(--accent); }
+
+/* Barra de escolha (só no protótipo) */
+.switch { position: sticky; top: 0; z-index: 20; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 12px var(--gutter); background: #18181Bee; color: #fff; font-family: var(--display); }
+.switch b { margin-right: 8px; font-size: 13px; letter-spacing: .1em; color: var(--accent); }
+.switch button { font: 600 14px var(--display); padding: 8px 14px; border: 1px solid #ffffff33; background: transparent; color: #fff; cursor: pointer; }
+.switch button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.switch small { margin-left: auto; color: #aaa; font-size: 13px; }
+
+/* Contexto: fim do "O que fazemos" e início do CTA, iguais à landing */
+.what { padding: 10vh var(--gutter); background: var(--surface); }
+.what .in { max-width: 1180px; margin: 0 auto; }
+.what .h-display { font-size: clamp(30px, 3.6vw, 48px); margin-top: 10px; }
+.what .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 40px; }
+.what .step { background: var(--bg); padding: 22px; }
+.what .step .n { width: 52px; height: 52px; background: var(--accent); font: 700 22px var(--display); display: flex; align-items: center; justify-content: center; }
+.what .step h3 { font-family: var(--display); margin: 14px 0 0; }
+.ctx { opacity: .55; }
+.cta { background: var(--accent); color: var(--on-accent); padding: 14vh var(--gutter); text-align: center; }
+.cta .label { color: var(--on-accent); }
+.cta .h-display { font-size: clamp(40px, 7vw, 104px); margin-top: 10px; }
+
+.opt { display: none; }
+.opt.on { display: block; }
+.note { max-width: 1180px; margin: 0 auto; padding: 0 var(--gutter); }
+
+/* ===== A · BANDA ESCURA ===== */
+.a { background: var(--dark); color: var(--dark-ink); padding: 12vh var(--gutter); position: relative; overflow: hidden; }
+.a::before { content: ""; position: absolute; inset: 0; background: radial-gradient(#ffffff14 1.2px, transparent 1.4px) 0 0 / 26px 26px; }
+.a .in { position: relative; max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 1fr; gap: 6vw; align-items: end; }
+.a .label { color: var(--accent); }
+.a .h-display { font-size: clamp(38px, 5.4vw, 76px); margin-top: 12px; }
+.a .h-display em { font-style: normal; color: var(--accent); }
+.a p.lead { color: var(--dark-muted); font-size: 19px; max-width: 480px; margin: 18px 0 0; }
+.a .side { display: flex; flex-direction: column; gap: 22px; }
+.a .areas { display: flex; flex-direction: column; border-top: 1px solid #ffffff22; }
+.a .areas a { display: flex; align-items: baseline; gap: 14px; padding: 16px 0; border-bottom: 1px solid #ffffff22; font: 600 20px var(--display); transition: color .2s, padding .25s; }
+.a .areas a small { font: 400 13px var(--mono); color: var(--dark-muted); }
+.a .areas a span.arr { margin-left: auto; color: var(--accent); opacity: 0; transform: translateX(-8px); transition: .25s; }
+.a .areas a:hover { color: var(--accent); padding-left: 8px; }
+.a .areas a:hover span.arr { opacity: 1; transform: none; }
+.a .btn { align-self: flex-start; }
+
+/* ===== B · TRÊS ÁREAS (fotos) ===== */
+.b { padding: 14vh var(--gutter); }
+.b .in { max-width: 1180px; margin: 0 auto; }
+.b .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-bottom: 40px; }
+.b .h-display { font-size: clamp(34px, 4.4vw, 60px); margin-top: 10px; }
+.b .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.b .tile { position: relative; aspect-ratio: 4 / 5; overflow: hidden; color: #fff; }
+.b .tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .8s cubic-bezier(.2, .8, .2, 1); }
+.b .tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, #0000 35%, #000c 100%); }
+.b .tile .txt { position: absolute; left: 22px; right: 22px; bottom: 22px; z-index: 1; display: flex; flex-direction: column; gap: 6px; }
+.b .tile .n { font: 500 12px var(--mono); letter-spacing: .08em; color: var(--accent); }
+.b .tile h3 { margin: 0; font: 700 28px/1.05 var(--display); }
+.b .tile .go { margin-top: 8px; font: 700 13px var(--display); letter-spacing: .08em; text-transform: uppercase; display: inline-flex; gap: 8px; transition: gap .25s, color .2s; }
+.b .tile:hover img { transform: scale(1.06); }
+.b .tile:hover .go { gap: 14px; color: var(--accent); }
+
+/* ===== C · FITA DE FOTOS ===== */
+.c { padding: 14vh 0; overflow: hidden; text-align: center; }
+.c .label, .c .h-display, .c p.lead { padding: 0 var(--gutter); }
+.c .h-display { font-size: clamp(38px, 5.4vw, 76px); margin-top: 10px; }
+.c p.lead { color: var(--muted); font-size: 19px; max-width: 560px; margin: 16px auto 30px; }
+.c .reel { margin-top: 56px; display: flex; flex-direction: column; gap: 16px; }
+.c .row { display: flex; gap: 16px; width: max-content; }
+.c .row img { width: 260px; height: 180px; object-fit: cover; }
+.c .row img:nth-child(3n) { filter: grayscale(1) contrast(1.05); }
+@media (prefers-reduced-motion: no-preference) {
+    .c .row { animation: reel 60s linear infinite; }
+    .c .row.r2 { animation-direction: reverse; animation-duration: 75s; }
+    .c .reel:hover .row { animation-play-state: paused; }
+}
+@keyframes reel { to { transform: translateX(-50%); } }
+
+@media (max-width: 860px) {
+    .a .in { grid-template-columns: 1fr; }
+    .b .tiles { grid-template-columns: 1fr; }
+    .b .tile { aspect-ratio: 16 / 10; }
+    .what .steps { grid-template-columns: 1fr; }
+    .c .row img { width: 180px; height: 126px; }
+}
+</style>
+</head>
+<body>
+
+<div class="switch" role="group" aria-label="Escolher exemplo">
+    <b>CURSOS NA LANDING</b>
+    <button type="button" data-o="a" aria-pressed="true">A · Banda escura</button>
+    <button type="button" data-o="b">B · Três áreas</button>
+    <button type="button" data-o="c">C · Fita de fotos</button>
+    <small>Os links levam ao /cursos real</small>
+</div>
+
+<section class="what ctx" aria-hidden="true">
+    <div class="in">
+        <p class="label">O que fazemos</p>
+        <h2 class="h-display">Do primeiro diagnóstico ao certificado.</h2>
+        <div class="steps">
+            <div class="step cut-16"><div class="n cut-8">01</div><h3>Aprende</h3></div>
+            <div class="step cut-16"><div class="n cut-8">02</div><h3>Pratica</h3></div>
+            <div class="step cut-16"><div class="n cut-8">03</div><h3>Certifica</h3></div>
+        </div>
+    </div>
+</section>
+
+<!-- A · Banda escura: título + lista das 3 áreas + botão -->
+<section class="opt a on" data-opt="a">
+    <div class="in">
+        <div>
+            <p class="label">Cursos</p>
+            <h2 class="h-display">Escolhe a <em>próxima peça.</em></h2>
+            <p class="lead">9 cursos práticos em 3 áreas — com vídeo, quizzes e aulas com avatar de IA.</p>
+        </div>
+        <div class="side">
+            <nav class="areas" aria-label="Áreas de formação">
+                <a href="/cursos?area=diagnostico-automovel">Diagnóstico Automóvel <small>3 cursos</small><span class="arr">→</span></a>
+                <a href="/cursos?area=eletronica-automovel">Eletrónica Automóvel <small>3 cursos</small><span class="arr">→</span></a>
+                <a href="/cursos?area=gestao-de-oficina">Gestão de Oficina <small>3 cursos</small><span class="arr">→</span></a>
+            </nav>
+            <a class="btn btn-accent cut-8" href="/cursos">Ver todos os cursos <span aria-hidden="true">→</span></a>
+        </div>
+    </div>
+</section>
+
+<!-- B · Três áreas com fotografia -->
+<section class="opt b" data-opt="b">
+    <div class="in">
+        <div class="head">
+            <div>
+                <p class="label">Cursos</p>
+                <h2 class="h-display">Escolhe a próxima peça.</h2>
+            </div>
+            <a class="btn btn-dark cut-8" href="/cursos">Ver os 9 cursos <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="tiles">
+            <a class="tile cut-16" href="/cursos?area=diagnostico-automovel">
+                <img src="/images/cursos/scanner-osciloscopio.jpg" alt="">
+                <span class="txt"><span class="n">3 CURSOS</span><h3>Diagnóstico Automóvel</h3><span class="go">Explorar <span aria-hidden="true">→</span></span></span>
+            </a>
+            <a class="tile cut-16" href="/cursos?area=eletronica-automovel">
+                <img src="/images/cursos/eletronica-intro.jpg" alt="">
+                <span class="txt"><span class="n">3 CURSOS</span><h3>Eletrónica Automóvel</h3><span class="go">Explorar <span aria-hidden="true">→</span></span></span>
+            </a>
+            <a class="tile cut-16" href="/cursos?area=gestao-de-oficina">
+                <img src="/images/cursos/gestao-oficina.jpg" alt="">
+                <span class="txt"><span class="n">3 CURSOS</span><h3>Gestão de Oficina</h3><span class="go">Explorar <span aria-hidden="true">→</span></span></span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- C · Título centrado + botão + duas fitas de fotos em movimento lento -->
+<section class="opt c" data-opt="c">
+    <p class="label">Cursos</p>
+    <h2 class="h-display">Escolhe a próxima peça.</h2>
+    <p class="lead">Do OBD-II à gestão da oficina: 9 cursos práticos, ao teu ritmo.</p>
+    <a class="btn btn-accent cut-8" href="/cursos">Explorar o catálogo <span aria-hidden="true">→</span></a>
+    <div class="reel" aria-hidden="true">
+        <div class="row r1" data-row="obd-ii,can-bus,gestao-oficina,baterias-carga,atendimento,falhas-eletricas"></div>
+        <div class="row r2" data-row="scanner-osciloscopio,orcamentacao,eletronica-intro,cta-motor,cta-oficina,adas"></div>
+    </div>
+</section>
+
+<section class="cta ctx" aria-hidden="true">
+    <p class="label">Pronto para levantar voo?</p>
+    <h2 class="h-display">Começa hoje.</h2>
+</section>
+
+<script>
+// Fitas: duplica as fotos para o loop contínuo
+document.querySelectorAll('[data-row]').forEach((r) => {
+    const imgs = r.dataset.row.split(',').map((n) => `<img src="/images/cursos/${n}.jpg" alt="" class="cut-8">`).join('');
+    r.innerHTML = imgs + imgs;
+});
+const btns = document.querySelectorAll('[data-o]');
+btns.forEach((b) => b.addEventListener('click', () => {
+    btns.forEach((x) => x.setAttribute('aria-pressed', x === b));
+    document.querySelectorAll('[data-opt]').forEach((s) => s.classList.toggle('on', s.dataset.opt === b.dataset.o));
+}));
+</script>
+</body>
+</html>

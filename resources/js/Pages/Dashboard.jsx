@@ -99,7 +99,7 @@ function ContinueCard({ course }) {
                     Ainda não começaste nenhum curso
                 </span>
                 <Link
-                    href="/cursos"
+                    href="/plataforma/cursos"
                     className="ta-cut-8 ta-press self-start bg-on-accent px-4 py-[9px] font-display text-sm font-bold text-accent"
                 >
                     VER CURSOS ▶

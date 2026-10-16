@@ -24,6 +24,31 @@ return [
     ],
 
     /*
+     | Fotografia de cada curso no catálogo público (/cursos), pelo slug do curso.
+     | Se o curso tiver thumbnail_url preenchido (backoffice), esse tem prioridade.
+     | Imagens em public/images/cursos/ (escolhidas da pasta /assets).
+     */
+    'course_images' => [
+        'diagnostico-de-sistemas-obd-ii' => '/images/cursos/obd-ii.jpg',
+        'introducao-a-eletronica-automovel' => '/images/cursos/eletronica-intro.jpg',
+        'diagnostico-de-falhas-eletricas' => '/images/cursos/falhas-eletricas.jpg',
+        'scanner-e-osciloscopio-na-pratica' => '/images/cursos/scanner-osciloscopio.jpg',
+        'redes-can-bus-no-automovel' => '/images/cursos/can-bus.jpg',
+        'baterias-e-sistemas-de-carga' => '/images/cursos/baterias-carga.jpg',
+        'gestao-de-oficina-moderna' => '/images/cursos/gestao-oficina.jpg',
+        'atendimento-e-fidelizacao-de-clientes' => '/images/cursos/atendimento.jpg',
+        'orcamentacao-e-faturacao' => '/images/cursos/orcamentacao.jpg',
+    ],
+    'course_image_fallback' => '/images/cursos/cta-oficina.jpg',
+
+    // Fotografia de cada área na secção "Cursos" da landing (slug da categoria → imagem).
+    'area_images' => [
+        'diagnostico-automovel' => '/images/cursos/scanner-osciloscopio.jpg',
+        'eletronica-automovel' => '/images/cursos/eletronica-intro.jpg',
+        'gestao-de-oficina' => '/images/cursos/gestao-oficina.jpg',
+    ],
+
+    /*
      | Perguntas frequentes da página /contactos, por público.
      | EXEMPLOS: a afinar quando o fluxo da plataforma (inscrições, pagamentos, certificados) estiver fechado.
      */

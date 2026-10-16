@@ -35,7 +35,7 @@
     <ul id="nav-links">
         <li><a href="{{ route('home') }}#quem-somos">Quem Somos</a></li>
         <li><a class="on" href="{{ route('contacts') }}" aria-current="page">Contactos</a></li>
-        <li><a href="{{ route('home') }}#cursos">Cursos</a></li>
+        <li><a href="{{ route('courses') }}">Cursos</a></li>
     </ul>
     <a class="btn btn-accent cut-8" href="{{ $ctaHref }}">{{ $ctaLabel }} ▶</a>
 </nav>

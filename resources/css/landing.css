@@ -106,21 +106,22 @@ body.landing { margin: 0; background: var(--bg); color: var(--ink); font-family:
 .step h3 { font-family: var(--display); font-size: 24px; margin: 6px 0 0; }
 .step p { margin: 0; color: var(--muted); }
 
-/* ===== 4 · CURSOS (horizontal pinned) ===== */
-.courses { position: relative; }
-.courses .sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 34px; }
-.courses .head { padding: 0 var(--gutter); display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+/* ===== 4 · CURSOS (três áreas com fotografia → /cursos) ===== */
+.courses { padding: 14vh var(--gutter); }
+.courses .head { max-width: 1180px; margin: 0 auto 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 24px; }
 .courses .h-display { font-size: clamp(34px, 4.4vw, 60px); margin-top: 10px; }
-.counter { font-family: var(--display); font-weight: 700; font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.track { display: flex; gap: 22px; padding: 0 var(--gutter); will-change: transform; }
-.course-card { flex: 0 0 auto; width: 300px; background: var(--surface); padding: 14px; display: flex; flex-direction: column; gap: 10px; transition: transform .3s cubic-bezier(.3, 1.5, .5, 1); }
-.course-card:hover, .course-card:focus-visible { transform: translateY(-8px) rotate(-1deg); }
-.course-card .thumb { height: 150px; display: flex; align-items: center; justify-content: center; position: relative; color: var(--ink); background: repeating-linear-gradient(135deg, color-mix(in oklch, var(--accent) 30%, #fff) 0 9px, color-mix(in oklch, var(--accent) 12%, #fff) 9px 18px); }
-.course-card .thumb svg { width: 40px; height: 40px; }
-.course-card .tag { position: absolute; left: 8px; top: 8px; padding: 3px 8px; background: var(--dark); color: var(--accent); font-family: var(--display); font-weight: 700; font-size: 11px; letter-spacing: .08em; }
-.course-card h3 { margin: 2px 0 0; font-size: 18px; line-height: 1.25; font-weight: 600; }
-.course-card .meta { font-size: 14px; color: var(--muted); }
-.course-card .price { font-family: var(--display); font-weight: 700; font-size: 18px; color: var(--accent-ink); margin-top: auto; }
+.courses .btn { padding: 14px 22px; font-size: 15px; gap: 10px; transition: transform .15s, filter .2s, gap .2s; }
+.courses .btn:hover { gap: 16px; }
+.area-tiles { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.area-tile { position: relative; aspect-ratio: 4 / 5; overflow: hidden; color: #fff; background: var(--dark); }
+.landing .area-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .8s cubic-bezier(.2, .8, .2, 1); }
+.area-tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, #0000 35%, #000c 100%); }
+.area-tile .txt { position: absolute; left: 22px; right: 22px; bottom: 22px; z-index: 1; display: flex; flex-direction: column; gap: 6px; }
+.area-tile .n { font: 500 12px var(--mono); letter-spacing: .08em; color: var(--accent); }
+.area-tile h3 { margin: 0; font: 700 28px/1.05 var(--display); }
+.area-tile .go { margin-top: 8px; font: 700 13px var(--display); letter-spacing: .08em; text-transform: uppercase; display: inline-flex; gap: 8px; transition: gap .25s, color .2s; }
+.area-tile:hover img, .area-tile:focus-visible img { transform: scale(1.06); }
+.area-tile:hover .go, .area-tile:focus-visible .go { gap: 14px; color: var(--accent); }
 .empty { color: var(--muted); }
 
 /* ===== 5 · CTA ===== */
@@ -153,9 +154,10 @@ body.landing { margin: 0; background: var(--bg); color: var(--ink); font-family:
     .steps svg { display: none; }
     .footer { grid-template-columns: 1fr; }
     .courses .head { flex-direction: column; align-items: flex-start; }
+    .area-tiles { grid-template-columns: 1fr; }
+    .area-tile { aspect-ratio: 16 / 10; }
 }
 @media (max-width: 520px) {
-    .course-card { width: 78vw; }
     .hero { height: 320vh; }
 }
 
@@ -296,7 +298,5 @@ body.landing { margin: 0; background: var(--bg); color: var(--ink); font-family:
     .hero-copy { position: static; }
     .js .hero-copy.bottom { opacity: 1; }
     .scroll-hint, .skill-chip { display: none; }
-    .courses { height: auto !important; }
-    .courses .sticky { position: static; height: auto; padding: 14vh 0; }
-    .track { overflow-x: auto; padding-bottom: 12px; }
+    .area-tile img, .area-tile .go { transition: none; }
 }

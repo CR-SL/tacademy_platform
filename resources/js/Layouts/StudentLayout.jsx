@@ -7,7 +7,7 @@ import { CatalogIcon, GoalsIcon, TeamIcon } from '@/Components/NavIcons';
 // Navegação da topbar (direção 4b). '#' = secção ainda por construir.
 const navItems = [
     { key: 'tasks', label: 'Tarefas', href: '/dashboard', Icon: GoalsIcon },
-    { key: 'courses', label: 'Cursos', href: '/cursos', Icon: CatalogIcon },
+    { key: 'courses', label: 'Cursos', href: '/plataforma/cursos', Icon: CatalogIcon },
     { key: 'team', label: 'Equipa', href: '#', Icon: TeamIcon },
 ];
 

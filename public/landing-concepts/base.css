@@ -10,8 +10,9 @@
     --muted: #66666D;
     --line: #E4E2DC;
     --track: #E8E6E0;
-    --display: 'Chakra Petch', system-ui, sans-serif;
-    --body: 'Barlow', system-ui, sans-serif;
+    --display: 'Outfit', system-ui, sans-serif;
+    --body: 'Geist', system-ui, sans-serif;
+    --mono: 'Geist Mono', ui-monospace, monospace;
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }

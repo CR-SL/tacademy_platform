@@ -225,17 +225,6 @@ function paintSpeeds() {
 const steps = $('[data-steps]');
 const stepLine = $('[data-step-line]');
 
-/* ---------- 4 · Cursos: scroll vertical → horizontal ---------- */
-const coursesSec = $('[data-courses]');
-const track = $('[data-track]');
-const counter = $('[data-counter]');
-const cards = track.children.length;
-function sizeCourses() {
-    if (reduced) return;
-    const extra = Math.max(0, track.scrollWidth - innerWidth);
-    coursesSec.style.height = `${extra + innerHeight * 1.2}px`;
-}
-
 /* ---------- 5 · CTA ---------- */
 const birdBig = $('[data-bird-big]');
 
@@ -249,13 +238,6 @@ function frame() {
     const sr = steps.getBoundingClientRect();
     stepLine.style.strokeDashoffset = 1 - clamp((innerHeight * 0.8 - sr.top) / (sr.height + innerHeight * 0.2));
 
-    const cp = pinProgress(coursesSec);
-    track.style.transform = `translateX(${-cp * Math.max(0, track.scrollWidth - innerWidth)}px)`;
-    if (cards) {
-        const i = Math.min(cards, 1 + Math.round(cp * (cards - 1)));
-        counter.textContent = `${String(i).padStart(2, '0')} / ${String(cards).padStart(2, '0')}`;
-    }
-
     const k = birdBig.parentElement.getBoundingClientRect().top / innerHeight;
     birdBig.style.transform = `translate(${k * -80}px, ${k * 120}px) rotate(${k * -12}deg)`;
 }
@@ -265,9 +247,8 @@ const request = () => {
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; frame(); });
 };
 addEventListener('scroll', request, { passive: true });
-addEventListener('resize', () => { sizeCourses(); request(); });
-addEventListener('load', () => { sizeCourses(); request(); });
-sizeCourses();
+addEventListener('resize', request);
+addEventListener('load', request);
 frame();
 
 /* ---------- Login: o botão "Entrar" cresce e transforma-se numa caixa ---------- */

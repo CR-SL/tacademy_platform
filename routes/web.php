@@ -5,11 +5,15 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicCourseController;
 use Illuminate\Support\Facades\Route;
 
 // Landing page pública (Blade). /home é um atalho para a mesma página.
 Route::get('/', LandingController::class)->name('home');
 Route::permanentRedirect('/home', '/');
+
+// Catálogo público de cursos (Blade)
+Route::get('/cursos', PublicCourseController::class)->name('courses');
 
 // Contactos (público): formulário com limite de 5 envios por minuto por IP
 Route::get('/contactos', [ContactController::class, 'show'])->name('contacts');
@@ -21,7 +25,8 @@ Route::get('/dashboard', DashboardController::class)
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-Route::get('/cursos', CatalogController::class)
+// Catálogo dentro da plataforma (com sessão). O /cursos é o catálogo público.
+Route::get('/plataforma/cursos', CatalogController::class)
     ->middleware(['auth', 'verified'])
     ->name('catalog');
 

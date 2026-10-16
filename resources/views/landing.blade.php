@@ -1,5 +1,4 @@
 @php
-    $levels = ['iniciante' => 'Iniciante', 'intermedio' => 'Intermédio', 'avancado' => 'Avançado'];
     $loggedIn = auth()->check();
     $ctaHref = $loggedIn ? route('dashboard') : route('login');
     $ctaLabel = $loggedIn ? 'Ir para a plataforma' : 'Entrar';
@@ -52,7 +51,7 @@
     <ul id="nav-links">
         <li data-in><a href="#quem-somos">Quem Somos</a></li>
         <li data-in><a href="{{ route('contacts') }}">Contactos</a></li>
-        <li data-in><a href="#cursos">Cursos</a></li>
+        <li data-in><a href="{{ route('courses') }}">Cursos</a></li>
     </ul>
     <a class="btn btn-accent cut-8" href="{{ $ctaHref }}" data-in @guest data-login-open aria-haspopup="dialog" aria-expanded="false" aria-controls="login-pop" @endguest>{{ $ctaLabel }} ▶</a>
 </nav>
@@ -152,33 +151,28 @@
         </div>
     </section>
 
-    {{-- 4 · CURSOS (scroll horizontal) --}}
-    <section class="courses" id="cursos" data-courses>
-        <div class="sticky">
-            <div class="head">
-                <div>
-                    <p class="label">Cursos</p>
-                    <h2 class="h-display">Escolhe a próxima peça.</h2>
-                </div>
-                <div class="counter" data-counter aria-hidden="true">01 / {{ str_pad($courses->count(), 2, '0', STR_PAD_LEFT) }}</div>
+    {{-- 4 · CURSOS (uma fotografia por área → catálogo /cursos) --}}
+    <section class="courses" id="cursos">
+        <div class="head">
+            <div>
+                <p class="label reveal">Cursos</p>
+                <h2 class="h-display reveal" style="--d:.08s">Escolhe o próximo curso.</h2>
             </div>
-            <div class="track" data-track>
-                @forelse ($courses as $course)
-                    <a class="course-card cut-12" href="{{ $loggedIn ? '/cursos' : route('login') }}">
-                        <div class="thumb cut-8">
-                            @if ($course->ai_count > 0)
-                                <span class="tag cut-8">AULA COM IA</span>
-                            @endif
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5c2-1 5-1 7 0v14c-2-1-5-1-7 0V5z"/><path d="M20 5c-2-1-5-1-7 0v14c2-1 5-1 7 0V5z"/></svg>
-                        </div>
-                        <h3>{{ $course->title }}</h3>
-                        <div class="meta">{{ $course->category?->name }} · {{ $levels[$course->level] ?? $course->level }} · {{ $course->duration_minutes }} min</div>
-                        <div class="price">{{ $course->price > 0 ? number_format($course->price, 2, ',', ' ').' €' : 'Grátis' }}</div>
-                    </a>
-                @empty
-                    <p class="empty">Novos cursos a caminho.</p>
-                @endforelse
-            </div>
+            <a class="btn btn-dark cut-8 reveal" style="--d:.16s" href="{{ route('courses') }}">Ver os {{ $stats['courses'] }} cursos <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="area-tiles">
+            @forelse ($areas as $area)
+                <a class="area-tile cut-16 reveal" style="--d:{{ $loop->index * 0.12 }}s" href="{{ route('courses', ['area' => $area['slug']]) }}">
+                    <img src="{{ $area['image'] }}" alt="" loading="lazy">
+                    <span class="txt">
+                        <span class="n">{{ $area['count'] }} {{ $area['count'] === 1 ? 'CURSO' : 'CURSOS' }}</span>
+                        <h3>{{ $area['name'] }}</h3>
+                        <span class="go">Explorar <span aria-hidden="true">→</span></span>
+                    </span>
+                </a>
+            @empty
+                <p class="empty">Novos cursos a caminho.</p>
+            @endforelse
         </div>
     </section>
 
