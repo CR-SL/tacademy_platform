@@ -31,6 +31,7 @@ class LessonResource extends Resource
 
     private const CONTENT_TYPES = [
         'video_upload' => 'Vídeo (upload)',
+        'video_link' => 'Vídeo (link)',
         'avatar' => 'Avatar dinâmico',
         'live' => 'Aula ao vivo',
         'quiz' => 'Quiz',

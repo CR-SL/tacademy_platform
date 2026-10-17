@@ -66,3 +66,13 @@ export function TeamIcon(props) {
         </svg>
     );
 }
+
+export function CreateCourseIcon(props) {
+    return (
+        <svg {...base} {...props}>
+            <path d="M4 5c2-1 5-1 7 0v14c-2-1-5-1-7 0V5z" />
+            <path d="M20 12V5c-2-1-5-1-7 0v14c.6-.3 1.3-.5 2-.6" />
+            <path d="M19 15v6M16 18h6" />
+        </svg>
+    );
+}

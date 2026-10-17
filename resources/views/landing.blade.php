@@ -184,7 +184,7 @@
         <p class="label">Pronto para levantar voo?</p>
         <h2 class="h-display">Começa hoje.</h2>
         <p class="cta-text">Entra na plataforma e retoma onde ficaste — ou fala connosco para formar a tua equipa.</p>
-        <a class="btn btn-dark cut-8" href="{{ $ctaHref }}">{{ $loggedIn ? 'Ir para a plataforma' : 'Entrar na plataforma' }} ▶</a>
+        <a class="btn btn-dark cut-8" href="{{ $ctaHref }}" @guest data-login-trigger aria-haspopup="dialog" aria-controls="login-pop" @endguest>{{ $loggedIn ? 'Ir para a plataforma' : 'Entrar na plataforma' }} ▶</a>
     </section>
 </main>
 

@@ -2,14 +2,25 @@ import { Link, usePage } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
 import Logo from '@/Components/Logo';
 import ThemeToggle from '@/Components/ThemeToggle';
-import { CatalogIcon, GoalsIcon, TeamIcon } from '@/Components/NavIcons';
+import { CatalogIcon, CreateCourseIcon, GoalsIcon, TeamIcon } from '@/Components/NavIcons';
 
 // Navegação da topbar (direção 4b). '#' = secção ainda por construir.
-const navItems = [
+const baseNav = [
     { key: 'tasks', label: 'Tarefas', href: '/dashboard', Icon: GoalsIcon },
     { key: 'courses', label: 'Cursos', href: '/plataforma/cursos', Icon: CatalogIcon },
     { key: 'team', label: 'Equipa', href: '#', Icon: TeamIcon },
 ];
+
+// "Os meus cursos" só aparece a formadores e admins
+function navFor(role) {
+    if (role === 'formador') {
+        return [...baseNav, { key: 'builder', label: 'Os meus cursos', short: 'Criar', href: '/formador/cursos', Icon: CreateCourseIcon, tag: 'Formador' }];
+    }
+    if (role === 'admin') {
+        return [...baseNav, { key: 'builder', label: 'Gerir cursos', short: 'Gerir', href: '/formador/cursos', Icon: CreateCourseIcon, tag: 'Admin' }];
+    }
+    return baseNav;
+}
 
 export function initials(name = '') {
     return name
@@ -29,6 +40,7 @@ export default function StudentLayout({ xp = null, children }) {
     const { auth } = usePage().props;
     const currentUrl = usePage().url;
     const user = auth?.user ?? {};
+    const navItems = navFor(auth?.role);
 
     const isActive = (href) =>
         href !== '#' &&
@@ -48,13 +60,18 @@ export default function StudentLayout({ xp = null, children }) {
                                 key={item.key}
                                 href={item.href}
                                 title={item.href === '#' ? 'Em breve' : undefined}
-                                className={
+                                className={`inline-flex items-center gap-2 ${
                                     isActive(item.href)
                                         ? 'border-b-2 border-accent pb-1 text-accent-ink'
-                                        : 'border-b-2 border-transparent pb-1 text-muted transition-colors hover:text-ink'
-                                }
+                                        : `border-b-2 border-transparent pb-1 transition-colors hover:text-ink ${item.tag ? 'text-ink' : 'text-muted'}`
+                                }`}
                             >
                                 {item.label}
+                                {item.tag && (
+                                    <span className="bg-ink px-1.5 py-0.5 font-mono text-[9.5px] font-semibold tracking-[0.08em] text-accent">
+                                        {item.tag.toUpperCase()}
+                                    </span>
+                                )}
                             </Link>
                         ))}
                     </nav>
@@ -105,7 +122,7 @@ export default function StudentLayout({ xp = null, children }) {
 
             {/* Bottom tab bar (mobile) — mesma navegação da topbar */}
             <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-line bg-surface px-2 py-1.5 md:hidden">
-                {navItems.map(({ key, label, href, Icon }) => (
+                {navItems.map(({ key, label, short, href, Icon }) => (
                     <Link
                         key={key}
                         href={href}
@@ -115,7 +132,7 @@ export default function StudentLayout({ xp = null, children }) {
                         }`}
                     >
                         <Icon className="h-5 w-5" />
-                        {label}
+                        {short ?? label}
                     </Link>
                 ))}
             </nav>

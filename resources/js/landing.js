@@ -328,6 +328,11 @@ if (loginBtn && loginPop) {
         e.preventDefault(); // com JS não vai para /login: abre a caixa
         isOpen ? closeLogin() : openLogin();
     });
+    // Outros botões da página (ex.: "Entrar na plataforma" no fim) abrem a mesma caixa
+    $$('[data-login-trigger]').forEach((el) => el.addEventListener('click', (e) => {
+        e.preventDefault();
+        openLogin();
+    }));
     closeBtn.addEventListener('click', closeLogin);
     addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLogin(); });
     addEventListener('pointerdown', (e) => {

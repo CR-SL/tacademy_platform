@@ -3,6 +3,7 @@
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Instructor\CourseBuilderController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicCourseController;
@@ -29,6 +30,21 @@ Route::get('/dashboard', DashboardController::class)
 Route::get('/plataforma/cursos', CatalogController::class)
     ->middleware(['auth', 'verified'])
     ->name('catalog');
+
+// "Os meus cursos": só formadores e admins (CoursePolicy + Gate::before do admin)
+Route::middleware(['auth', 'verified', 'can:viewAny,App\Models\Course'])
+    ->prefix('formador')->name('instructor.')->controller(CourseBuilderController::class)
+    ->group(function () {
+        Route::get('/cursos', 'index')->name('courses.index');
+        Route::get('/cursos/novo', 'create')->name('courses.create');
+        Route::post('/cursos', 'store')->name('courses.store');
+        Route::get('/cursos/{course}/editar', 'edit')->name('courses.edit');
+        Route::put('/cursos/{course}', 'update')->name('courses.update');
+        Route::post('/cursos/{course}/publicar', 'publish')->name('courses.publish');
+        Route::post('/cursos/{course}/rascunho', 'unpublish')->name('courses.unpublish');
+        Route::delete('/cursos/{course}', 'destroy')->name('courses.destroy');
+        Route::post('/uploads', 'upload')->middleware('throttle:60,1')->name('uploads');
+    });
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

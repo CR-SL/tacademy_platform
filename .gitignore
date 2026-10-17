@@ -1,4 +1,5 @@
 node_modules/
+public/landing-concepts/
 dist/
 .env.*
 !.env.example
