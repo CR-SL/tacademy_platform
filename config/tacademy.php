@@ -6,6 +6,9 @@ return [
      | Contactos mostrados nas páginas públicas (landing e /contactos).
      | Definir no .env; os que ficarem vazios não aparecem.
      */
+    // Desenvolvimento/testes: todos os emails da plataforma são entregues só a este endereço.
+    'mail_always_to' => env('MAIL_ALWAYS_TO'),
+
     'contact' => [
         'email' => env('TACADEMY_CONTACT_EMAIL'),
         'phone' => env('TACADEMY_CONTACT_PHONE'),

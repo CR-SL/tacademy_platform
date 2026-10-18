@@ -10,7 +10,8 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         // Um papel por utilizador (role_id). Autorização via Gates/Policies nativos.
-        foreach (['aluno', 'formador', 'admin', 'gestor'] as $name) {
+        // team_leader = responsável da equipa da empresa; gestor_cursos = equipa interna que gere pedidos e equipas
+        foreach (['aluno', 'formador', 'admin', 'team_leader', 'gestor_cursos'] as $name) {
             Role::firstOrCreate(['name' => $name]);
         }
     }

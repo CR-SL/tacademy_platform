@@ -16,6 +16,7 @@ class Enrollment extends Model
     protected $fillable = [
         'user_id',
         'course_id',
+        'company_id',
         'source',
         'payment_id',
         'status',
@@ -39,5 +40,11 @@ class Enrollment extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    /** Equipa que deu acesso ao curso (null = compra a título pessoal). */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 }

@@ -27,6 +27,7 @@ class ContactRequestForm extends FormRequest
             'team_size' => ['nullable', Rule::in(array_keys(ContactRequest::TEAM_SIZES))],
             'course_id' => ['nullable', Rule::exists('courses', 'id')->where('status', 'published')],
             'message' => ['required', 'string', 'min:5', 'max:3000'],
+            'participants' => ['nullable', 'string', 'max:6000'], // empresa: "nome, email" por linha
             'consent' => ['accepted'],
             // Armadilha para bots: campo escondido que tem de vir vazio
             'website' => ['prohibited'],

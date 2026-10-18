@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\ContactRequest;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -33,12 +34,24 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
-                // Perfil (aluno, formador, gestor, admin): mostra "Os meus cursos" na navbar
+                // Perfil (aluno, formador, team_leader, gestor_cursos, admin): mostra "Os meus cursos" na navbar
                 'role' => $request->user()?->role?->name,
             ],
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
             ],
+            // Sino do Gestor de Cursos/admin: pedidos novos
+            'staffInbox' => fn () => $request->user()?->isCourseStaff()
+                ? [
+                    'count' => ContactRequest::where('status', 'novo')->count(),
+                    'items' => ContactRequest::where('status', 'novo')->latest()->limit(6)->get()->map(fn ($r) => [
+                        'id' => $r->id,
+                        'kind' => ContactRequest::KINDS[$r->kind] ?? $r->kind,
+                        'who' => $r->company ?: $r->name,
+                        'ago' => $r->created_at?->diffForHumans(),
+                    ]),
+                ]
+                : null,
         ];
     }
 }

@@ -99,7 +99,7 @@
                         <select id="f-course" name="course_id">
                             <option value="">Ainda não sei / vários</option>
                             @foreach ($courses as $course)
-                                <option value="{{ $course->id }}" @selected(old('course_id') == $course->id)>{{ $course->title }}</option>
+                                <option value="{{ $course->id }}" @selected(old('course_id', request('curso')) == $course->id)>{{ $course->title }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -117,6 +117,11 @@
                                     <option value="{{ $value }}" @selected(old('team_size') === $value)>{{ $label }}</option>
                                 @endforeach
                             </select>
+                        </div>
+                        <div class="field full @error('participants') bad @enderror">
+                            <label for="f-people">Alunos a incluir <span style="font-weight:400;text-transform:none;letter-spacing:0">(opcional — um por linha: nome, email)</span></label>
+                            <textarea id="f-people" name="participants" rows="4" maxlength="6000" placeholder="Rui Silva, rui@oficina.pt&#10;Marta Costa, marta@oficina.pt">{{ old('participants') }}</textarea>
+                            @error('participants')<span class="err">{{ $message }}</span>@enderror
                         </div>
                     </div>
 

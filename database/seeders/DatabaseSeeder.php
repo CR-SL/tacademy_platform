@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             DemoContentSeeder::class,
+            DemoTeamsSeeder::class, // equipas, pedidos e progresso fictícios para demonstração
         ]);
     }
 }

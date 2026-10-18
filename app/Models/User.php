@@ -80,6 +80,17 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasRole('admin');
     }
 
+    /** Gestor de cursos ou admin: gere pedidos e equipas. */
+    public function isCourseStaff(): bool
+    {
+        return in_array($this->role?->name, ['gestor_cursos', 'admin'], true);
+    }
+
+    public function isTeamLeader(): bool
+    {
+        return $this->hasRole('team_leader') && $this->company_id !== null;
+    }
+
     public function canAccessPanel(Panel $panel): bool
     {
         // Só admin e formador entram no backoffice Filament.

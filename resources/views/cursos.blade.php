@@ -111,6 +111,16 @@
 <script>
     window.TA_COURSES = @json($courses);
     window.TA_ENROL = { href: @json($loggedIn ? route('dashboard') : route('login')), label: @json($loggedIn ? 'Ir para a plataforma' : 'Inscrever-me') };
+    // Compra a título pessoal (simulada) e pedido de proposta para empresas
+    window.TA_BUY = {
+        loggedIn: @json($loggedIn),
+        csrf: @json(csrf_token()),
+        owned: @json($owned),
+        pending: @json($pending),
+        platform: @json(route('catalog')),
+        contact: @json(route('contacts')),
+        notice: @json(session('purchase')),
+    };
 </script>
 </body>
 </html>

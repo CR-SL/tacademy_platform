@@ -106,6 +106,18 @@ const drawer = $('[data-drawer]');
 const detailScrim = $('[data-detail-scrim]');
 const enrol = window.TA_ENROL || { href: '/login', label: 'Inscrever-me' };
 
+// Botão do rodapé do detalhe: entrar, comprar (simulado), compra pendente ou ir para o curso
+const buy = window.TA_BUY || { loggedIn: false, owned: [], pending: [] };
+function footAction(c) {
+    if (!buy.loggedIn) return `<a class="cc-cta" href="${esc(enrol.href)}">${esc(enrol.label)}<span aria-hidden="true">→</span></a>`;
+    if (buy.owned.includes(c.id)) return `<a class="cc-cta" href="${esc(buy.platform)}">Ir para o curso<span aria-hidden="true">→</span></a>`;
+    if (buy.pending.includes(c.id)) return '<span class="cc-cta cc-wait">A aguardar autorização</span>';
+    return `<form method="post" action="/cursos/${encodeURIComponent(c.slug)}/comprar">
+        <input type="hidden" name="_token" value="${esc(buy.csrf)}">
+        <button class="cc-cta" type="submit">Comprar curso<span aria-hidden="true">→</span></button>
+    </form>`;
+}
+
 function openDetail(c, { push = true } = {}) {
     lastFocus = document.activeElement;
     const program = (c.modules || []).map((m, n) => `
@@ -137,8 +149,9 @@ function openDetail(c, { push = true } = {}) {
         </div>
         <div class="cc-d-foot">
             <span><small>PREÇO</small><b>${euro(c.price)}</b></span>
-            <a class="cc-cta" href="${esc(enrol.href)}">${esc(enrol.label)}<span aria-hidden="true">→</span></a>
-        </div>`;
+            ${footAction(c)}
+        </div>
+        ${buy.loggedIn ? '' : `<p class="cc-team">Para a sua equipa? <a href="${esc(buy.contact)}?curso=${c.id}#pedir-contacto">Pedir proposta para empresas →</a></p>`}`;
     drawer.hidden = false;
     detailScrim.hidden = false;
     document.body.style.overflow = 'hidden';
@@ -190,3 +203,13 @@ applyFilters();
 // Link direto para um curso (/cursos?curso=slug)
 const fromUrl = params.get('curso');
 if (fromUrl && bySlug[fromUrl]) openDetail(bySlug[fromUrl], { push: false });
+
+// Aviso depois de uma compra (vem da sessão)
+if (buy.notice) {
+    const n = document.createElement('div');
+    n.className = 'cc-notice';
+    n.setAttribute('role', 'status');
+    n.textContent = buy.notice;
+    document.body.appendChild(n);
+    setTimeout(() => n.remove(), 6000);
+}

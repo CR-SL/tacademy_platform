@@ -76,9 +76,13 @@ class ContactRequestResource extends Resource
                     ->formatStateUsing(fn (string $state) => ContactRequest::STATUSES[$state] ?? $state)
                     ->color(fn (string $state) => match ($state) {
                         'novo' => 'warning',
-                        'em_contacto' => 'info',
+                        'em_esclarecimento', 'aguardar_pagamento' => 'info',
+                        'pago', 'equipa_criada' => 'success',
                         default => 'gray',
                     }),
+                Tables\Columns\TextColumn::make('kind')
+                    ->label('Pedido')
+                    ->formatStateUsing(fn (string $state) => ContactRequest::KINDS[$state] ?? $state),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipo')
                     ->formatStateUsing(fn (string $state) => ContactRequest::TYPES[$state] ?? $state),

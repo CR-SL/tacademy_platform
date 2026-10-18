@@ -16,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        $middleware->alias(['role' => \App\Http\Middleware\EnsureRole::class]);
+
         // Railway (e outros PaaS) termina o HTTPS num proxy à frente da app.
         $middleware->trustProxies(at: '*');
     })

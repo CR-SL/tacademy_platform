@@ -96,7 +96,7 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
-            'expire' => 60,
+            'expire' => 4320, // 3 dias: também serve o convite de quem entra numa equipa
             'throttle' => 60,
         ],
     ],

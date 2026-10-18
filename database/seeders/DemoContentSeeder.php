@@ -58,6 +58,16 @@ class DemoContentSeeder extends Seeder
         );
 
         User::firstOrCreate(
+            ['email' => 'gestorcursos@tacademy.pt'],
+            [
+                'role_id' => $roles['gestor_cursos'],
+                'name' => 'Sónia Gestora',
+                'password' => $password,
+                'email_verified_at' => now(),
+            ]
+        );
+
+        User::firstOrCreate(
             ['email' => 'aluno2@tacademy.pt'],
             [
                 'role_id' => $roles['aluno'],

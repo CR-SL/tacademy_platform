@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\ContactRequest;
 use App\Models\Course;
 use Illuminate\Contracts\View\View;
 
@@ -60,9 +61,18 @@ class PublicCourseController extends Controller
             ->orderBy('name')
             ->get(['slug', 'name']);
 
+        // Quem tem sessão: que cursos já tem e que compras aguardam autorização
+        $user = request()->user();
+        $owned = $user ? $user->enrollments()->pluck('course_id') : collect();
+        $pending = $user
+            ? ContactRequest::where('user_id', $user->id)->where('kind', 'compra')->whereIn('status', ContactRequest::OPEN)->pluck('course_id')
+            : collect();
+
         return view('cursos', [
             'courses' => $items,
             'areas' => $areas,
+            'owned' => $owned->values(),
+            'pending' => $pending->filter()->values(),
         ]);
     }
 }
