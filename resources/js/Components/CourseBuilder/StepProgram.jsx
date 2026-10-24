@@ -14,7 +14,7 @@ export const LESSON_TYPES = {
 const LEGACY = { video_upload: { label: 'Vídeo (upload)', short: '▶', cls: 'bg-ink text-accent' }, live: { label: 'Ao vivo', short: '●', cls: 'bg-surface2' } };
 const typeOf = (t) => LESSON_TYPES[t] ?? LEGACY[t] ?? LESSON_TYPES.video_link;
 
-export const blankLesson = () => ({ key: newKey(), id: null, title: '', type: 'video_link', url: '', minutes: '', body: '', attachments: [], quiz: [] });
+export const blankLesson = () => ({ key: newKey(), id: null, title: '', type: 'video_link', url: '', minutes: '', body: '', attachments: [], quiz: [], checks: [] });
 const blankQuestion = () => ({ question: '', options: ['', ''], correct: 0 });
 
 // Passo 2 · Programa: módulos e aulas, por ordem.
@@ -213,6 +213,8 @@ function LessonEditor({ l, set, upload }) {
                 </Field>
             )}
 
+            {(l.type === 'video_link' || l.type === 'video_upload') && <ChecksEditor l={l} set={set} />}
+
             {l.type === 'text' && (
                 <Field label="Conteúdo" htmlFor={`${id}-b`} required>
                     <textarea id={`${id}-b`} rows={7} className={inputCls} value={l.body} placeholder="Escreve aqui a aula…"
@@ -228,6 +230,55 @@ function LessonEditor({ l, set, upload }) {
                 upload={upload}
                 main={l.type === 'document'}
             />
+        </div>
+    );
+}
+
+const blankCheck = () => ({ question: '', options: ['', '', ''], correct: 0, explanation: '' });
+
+// Perguntas rápidas no fim do vídeo: o aluno tem de responder para concluir a aula, mas não precisa de acertar
+function ChecksEditor({ l, set }) {
+    const checks = l.checks ?? [];
+    return (
+        <div className="mb-5 flex flex-col gap-1.5">
+            <span className="font-display text-[13px] font-semibold uppercase tracking-[0.04em]">
+                Perguntas rápidas
+                <span className="ml-1 font-sans text-xs font-normal normal-case tracking-normal text-muted">
+                    (2 a 3, no fim do vídeo — o aluno tem de responder, mas não conta para a nota)
+                </span>
+            </span>
+            {checks.map((q, qi) => (
+                <div key={qi} className="ta-cut-8 bg-page p-3.5">
+                    <div className="flex gap-2">
+                        <input className={inputCls} value={q.question} maxLength={500} placeholder={`Pergunta ${qi + 1}`} aria-label={`Pergunta rápida ${qi + 1}`}
+                            onChange={(e) => set((x) => { x.checks[qi].question = e.target.value; })} />
+                        <IconButton label="Remover pergunta" danger onClick={() => set((x) => { x.checks.splice(qi, 1); })}>✕</IconButton>
+                    </div>
+                    {q.options.map((o, oi) => (
+                        <div key={oi} className="mt-1.5 flex items-center gap-2">
+                            <input className={inputCls} value={o} maxLength={300} placeholder={`Opção ${oi + 1}`} aria-label={`Pergunta rápida ${qi + 1}, opção ${oi + 1}`}
+                                onChange={(e) => set((x) => { x.checks[qi].options[oi] = e.target.value; })} />
+                            <label className="flex items-center gap-1 whitespace-nowrap text-xs text-muted">
+                                <input type="radio" name={`chk-${l.key}-${qi}`} checked={q.correct === oi} className="text-accent focus:ring-accent"
+                                    onChange={() => set((x) => { x.checks[qi].correct = oi; })} />
+                                certa
+                            </label>
+                        </div>
+                    ))}
+                    {q.options.length < 4 && <AddLink onClick={() => set((x) => { x.checks[qi].options.push(''); })}>+ Opção</AddLink>}
+                    <input className={`${inputCls} mt-1.5`} value={q.explanation ?? ''} maxLength={500} placeholder="Explicação mostrada depois de responder (opcional)"
+                        aria-label={`Explicação da pergunta rápida ${qi + 1}`} onChange={(e) => set((x) => { x.checks[qi].explanation = e.target.value; })} />
+                </div>
+            ))}
+            <div className="flex flex-wrap items-center gap-4">
+                {checks.length < 5 && (
+                    <AddLink onClick={() => set((x) => { x.checks = [...(x.checks ?? []), blankCheck()]; })}>+ Adicionar pergunta rápida</AddLink>
+                )}
+                <button type="button" disabled title="Em breve: a IA gera as perguntas a partir do vídeo"
+                    className="cursor-not-allowed py-1.5 font-display text-[13.5px] font-semibold text-muted">
+                    ✦ Gerar com IA <span className="font-sans text-xs font-normal">(em breve)</span>
+                </button>
+            </div>
         </div>
     );
 }

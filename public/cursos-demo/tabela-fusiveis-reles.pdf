@@ -1,0 +1,53 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 1616 >>
+stream
+BT /F2 20 Tf 50 790 Td (Fusíveis de lâmina e relés: guia rápido) Tj ET
+0.97 0.69 0 rg 50 772 495 3 re f 0 0 0 rg
+BT /F2 12 Tf 50 745 Td (Cores e calibres dos fusíveis de lâmina \(normalizados\)) Tj ET
+BT /F1 10.5 Tf 50 725 Td (• Castanho claro: 5 A      • Castanho: 7,5 A      • Vermelho: 10 A) Tj ET
+BT /F1 10.5 Tf 50 709 Td (• Azul: 15 A                 • Amarelo: 20 A         • Branco/transparente: 25 A) Tj ET
+BT /F1 10.5 Tf 50 693 Td (• Verde: 30 A                • Laranja: 40 A) Tj ET
+BT /F2 12 Tf 50 667 Td (Regras de substituição) Tj ET
+BT /F1 10.5 Tf 50 647 Td (• Substituir sempre por um fusível do mesmo calibre — nunca superior.) Tj ET
+BT /F1 10.5 Tf 50 631 Td (• Um fusível que volta a queimar indica um curto-circuito ou consumo anormal: diagnosticar.) Tj ET
+BT /F1 10.5 Tf 50 615 Td (• Testar com o multímetro em continuidade ou medindo tensão nos dois pontos de teste.) Tj ET
+BT /F2 12 Tf 50 589 Td (Relé de 4 pinos \(numeração DIN\)) Tj ET
+BT /F1 10.5 Tf 50 569 Td (• 85 e 86: bobina \(comando\).   • 30: alimentação.   • 87: saída para o consumidor.) Tj ET
+BT /F1 10.5 Tf 50 553 Td (• Relé de 5 pinos: o 87a fica ligado ao 30 quando a bobina está desligada.) Tj ET
+BT /F2 12 Tf 50 527 Td (Teste rápido de um relé) Tj ET
+BT /F1 10.5 Tf 50 507 Td (1. Medir a resistência da bobina \(85-86\): tipicamente entre 50 e 120 ohm.) Tj ET
+BT /F1 10.5 Tf 50 491 Td (2. Alimentar a bobina com 12 V e ouvir o "clique".) Tj ET
+BT /F1 10.5 Tf 50 475 Td (3. Com a bobina alimentada, confirmar continuidade entre 30 e 87.) Tj ET
+BT /F1 8 Tf 50 40 Td (T.Academy · Material de apoio do curso de demonstração) Tj ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000000348 00000 n 
+0000000450 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+2117
+%%EOF

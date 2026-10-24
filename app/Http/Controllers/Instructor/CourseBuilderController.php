@@ -169,7 +169,7 @@ class CourseBuilderController extends Controller
             'is_free' => ['boolean'],
             'price' => ['nullable', 'numeric', 'min:0', 'max:99999'],
             'access_months' => ['nullable', Rule::in(CourseBuilder::ACCESS_MONTHS)],
-            'sequential' => ['boolean'],
+            'unlock_window' => ['integer', Rule::in(CourseBuilder::UNLOCK_WINDOWS)],
             'certificate_enabled' => ['boolean'],
             'certificate_min_progress' => ['integer', 'between:0,100'],
             'certificate_min_score' => ['integer', 'between:0,100'],
@@ -195,6 +195,12 @@ class CourseBuilderController extends Controller
             'modules.*.lessons.*.quiz.*.options' => ['array', 'max:8'],
             'modules.*.lessons.*.quiz.*.options.*' => ['nullable', 'string', 'max:300'],
             'modules.*.lessons.*.quiz.*.correct' => ['integer', 'min:0'],
+            'modules.*.lessons.*.checks' => ['array', 'max:5'],
+            'modules.*.lessons.*.checks.*.question' => ['nullable', 'string', 'max:500'],
+            'modules.*.lessons.*.checks.*.options' => ['array', 'max:4'],
+            'modules.*.lessons.*.checks.*.options.*' => ['nullable', 'string', 'max:300'],
+            'modules.*.lessons.*.checks.*.correct' => ['integer', 'min:0'],
+            'modules.*.lessons.*.checks.*.explanation' => ['nullable', 'string', 'max:500'],
         ]);
     }
 }

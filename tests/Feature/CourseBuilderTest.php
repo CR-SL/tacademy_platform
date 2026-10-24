@@ -49,7 +49,7 @@ class CourseBuilderTest extends TestCase
             'is_free' => false,
             'price' => '79.90',
             'access_months' => 12,
-            'sequential' => true,
+            'unlock_window' => 3,
             'certificate_enabled' => true,
             'certificate_min_progress' => 100,
             'certificate_min_score' => 70,
@@ -57,7 +57,10 @@ class CourseBuilderTest extends TestCase
             'modules' => [[
                 'key' => 'nA', 'id' => null, 'title' => 'Como funciona', 'description' => '',
                 'lessons' => [
-                    ['key' => 'nB', 'id' => null, 'title' => 'Introdução', 'type' => 'video_link', 'url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'minutes' => 12, 'body' => '', 'attachments' => [], 'quiz' => []],
+                    ['key' => 'nB', 'id' => null, 'title' => 'Introdução', 'type' => 'video_link', 'url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'minutes' => 12, 'body' => '', 'attachments' => [], 'quiz' => [], 'checks' => [
+                        ['question' => 'O que é o common rail?', 'options' => ['Um coletor de alta pressão', 'Um filtro', ''], 'correct' => 0, 'explanation' => 'Alimenta todos os injetores.'],
+                        ['question' => '', 'options' => ['a', 'b'], 'correct' => 0, 'explanation' => ''],
+                    ]],
                     ['key' => 'nC', 'id' => null, 'title' => 'Pergunta ao avatar', 'type' => 'avatar', 'url' => 'https://avatar.exemplo.pt/s/1', 'minutes' => 8, 'body' => '', 'attachments' => [], 'quiz' => []],
                     ['key' => 'nD', 'id' => null, 'title' => 'Teste', 'type' => 'quiz', 'url' => '', 'minutes' => 5, 'body' => '', 'attachments' => [], 'quiz' => [
                         ['question' => 'Pressão em ralenti?', 'options' => ['50 bar', '300 bar'], 'correct' => 1],
@@ -95,6 +98,13 @@ class CourseBuilderTest extends TestCase
         $this->assertCount(3, $course->lessons);
         $this->assertSame('https://avatar.exemplo.pt/s/1', $course->lessons()->where('content_type', 'avatar')->value('avatar_ref'));
         $this->assertSame($res->json('lessons.nB'), $course->sample_lesson_id);
+
+        $this->assertSame(3, $course->unlock_window);
+        // Perguntas rápidas do vídeo: as vazias são ignoradas e as opções vazias retiradas
+        $checks = $course->lessons()->where('content_type', 'video_link')->first()->checks;
+        $this->assertCount(1, $checks);
+        $this->assertSame(['Um coletor de alta pressão', 'Um filtro'], $checks->first()->options);
+        $this->assertSame('Alimenta todos os injetores.', $checks->first()->explanation);
 
         $quiz = $course->lessons()->where('content_type', 'quiz')->first()->quiz;
         $this->assertSame('300 bar', $quiz->questions->first()->options->firstWhere('is_correct', true)->option_text);

@@ -22,6 +22,7 @@ class LessonAttachment extends Model
 
     public function url(): string
     {
-        return Storage::disk('public')->url($this->path);
+        // Caminho começado por "/" = ficheiro fixo do projeto em public/ (ex.: materiais do curso de demonstração)
+        return str_starts_with($this->path, '/') ? $this->path : Storage::disk('public')->url($this->path);
     }
 }

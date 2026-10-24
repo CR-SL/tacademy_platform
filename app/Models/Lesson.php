@@ -44,6 +44,12 @@ class Lesson extends Model
         return $this->hasMany(LessonAttachment::class)->orderBy('order_index');
     }
 
+    /** Perguntas rápidas do fim da aula (aulas de vídeo). */
+    public function checks(): HasMany
+    {
+        return $this->hasMany(LessonCheck::class)->orderBy('order_index');
+    }
+
     public function quiz(): HasOne
     {
         return $this->hasOne(Quiz::class);

@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             DemoContentSeeder::class,
             DemoTeamsSeeder::class, // equipas, pedidos e progresso fictícios para demonstração
+            DemoCourseSeeder::class, // curso completo de demonstração (Mecânica Automóvel)
         ]);
     }
 }

@@ -42,9 +42,18 @@ export default function StepPrice({ c, update }) {
                         onChange={(v) => update((d) => { d.access_months = v; })}
                     />
                 </Field>
-                <Toggle checked={c.sequential} onChange={(v) => update((d) => { d.sequential = v; })} title="Aulas por ordem">
-                    Cada aula só abre depois de o aluno terminar a anterior.
-                </Toggle>
+                <Field label="Aulas desbloqueadas de cada vez" help={c.unlock_window === 0
+                    ? 'O aluno pode fazer as aulas pela ordem que quiser.'
+                    : c.unlock_window === 1
+                        ? 'Ordem estrita: cada aula só abre depois de o aluno concluir a anterior.'
+                        : `Ficam sempre ${c.unlock_window} aulas por fazer abertas; ao concluir uma, abre a seguinte. Os testes de módulo contam como aulas.`}>
+                    <Seg
+                        label="Aulas desbloqueadas de cada vez"
+                        options={[[1, '1 (por ordem)'], [3, '3'], [5, '5'], [0, 'Todas']]}
+                        value={c.unlock_window}
+                        onChange={(v) => update((d) => { d.unlock_window = v; })}
+                    />
+                </Field>
                 <Toggle checked={c.certificate_enabled} onChange={(v) => update((d) => { d.certificate_enabled = v; })} title="Emitir certificado">
                     O aluno recebe um certificado T.Academy ao concluir.
                 </Toggle>

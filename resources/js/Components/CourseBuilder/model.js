@@ -22,14 +22,14 @@ export function blankCourse() {
         is_free: false,
         price: '',
         access_months: null,
-        sequential: true,
+        unlock_window: 5, // aulas desbloqueadas de cada vez (0 = todas)
         certificate_enabled: true,
         certificate_min_progress: 100,
         certificate_min_score: 70,
         sample_lesson_key: '',
         modules: [{
             key: newKey(), id: null, title: '', description: '',
-            lessons: [{ key: newKey(), id: null, title: '', type: 'video_link', url: '', minutes: '', body: '', attachments: [], quiz: [] }],
+            lessons: [{ key: newKey(), id: null, title: '', type: 'video_link', url: '', minutes: '', body: '', attachments: [], quiz: [], checks: [] }],
         }],
     };
 }

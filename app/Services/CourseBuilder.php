@@ -25,6 +25,9 @@ class CourseBuilder
 
     public const ACCESS_MONTHS = [3, 6, 12];
 
+    /** Aulas desbloqueadas de cada vez (0 = todas). */
+    public const UNLOCK_WINDOWS = [1, 3, 5, 0];
+
     public const SHORT_MAX = 160;
 
     /** Pasta (disco public) onde ficam capas e anexos carregados no editor. */
@@ -33,7 +36,7 @@ class CourseBuilder
     /** Curso no formato do editor (React). */
     public function toEditor(Course $course): array
     {
-        $course->load(['modules.lessons.attachments', 'modules.lessons.quiz.questions.options']);
+        $course->load(['modules.lessons.attachments', 'modules.lessons.checks', 'modules.lessons.quiz.questions.options']);
 
         return [
             'ulid' => $course->ulid,
@@ -52,7 +55,7 @@ class CourseBuilder
             'is_free' => $course->is_free,
             'price' => $course->is_free || (float) $course->price === 0.0 ? '' : (string) $course->price,
             'access_months' => $course->access_months,
-            'sequential' => $course->sequential,
+            'unlock_window' => $course->unlock_window,
             'certificate_enabled' => $course->certificate_enabled,
             'certificate_min_progress' => $course->certificate_min_progress,
             'certificate_min_score' => $course->certificate_min_score,
@@ -80,6 +83,9 @@ class CourseBuilder
                             'correct' => max(0, $q->options->search(fn ($o) => $o->is_correct)),
                         ])->values()->all()
                         : [],
+                    'checks' => $l->checks->map(fn ($c) => [
+                        'question' => $c->question, 'options' => $c->options, 'correct' => $c->correct, 'explanation' => $c->explanation ?? '',
+                    ])->values()->all(),
                 ])->values()->all(),
             ])->values()->all(),
         ];
@@ -107,7 +113,7 @@ class CourseBuilder
                 'is_free' => $isFree,
                 'price' => $isFree ? 0 : (float) ($data['price'] ?? 0),
                 'access_months' => $data['access_months'] ?? null,
-                'sequential' => (bool) ($data['sequential'] ?? true),
+                'unlock_window' => $data['unlock_window'] ?? 5,
                 'certificate_enabled' => (bool) ($data['certificate_enabled'] ?? true),
                 'certificate_min_progress' => $data['certificate_min_progress'] ?? 100,
                 'certificate_min_score' => $data['certificate_min_score'] ?? 70,
@@ -157,6 +163,7 @@ class CourseBuilder
 
                     $this->syncAttachments($lesson, $l['attachments'] ?? []);
                     $this->syncQuiz($lesson, $type === 'quiz' ? ($l['quiz'] ?? []) : null);
+                    $this->syncChecks($lesson, in_array($type, ['video_link', 'video_upload'], true) ? ($l['checks'] ?? []) : []);
                 }
             }
 
@@ -184,7 +191,7 @@ class CourseBuilder
      */
     public function publishProblems(Course $course): array
     {
-        $course->load(['modules.lessons.attachments', 'modules.lessons.quiz.questions.options']);
+        $course->load(['modules.lessons.attachments', 'modules.lessons.checks', 'modules.lessons.quiz.questions.options']);
         $lessons = $course->modules->flatMap->lessons;
         $problems = [];
 
@@ -243,6 +250,12 @@ class CourseBuilder
         $keep = [];
         foreach (array_values($items) as $i => $a) {
             $path = $a['path'] ?? '';
+            // Ficheiros fixos do projeto (ex.: materiais do curso de demonstração em /cursos-demo/) mantêm-se tal como estão
+            if ($current->has($path) && str_starts_with($path, '/')) {
+                $keep[] = $path;
+                $current[$path]->update(['order_index' => $i]);
+                continue;
+            }
             if (! str_starts_with($path, self::UPLOAD_DIR.'/anexos/')) continue; // só ficheiros carregados pelo editor
             $keep[] = $path;
             if ($current->has($path)) {
@@ -257,9 +270,26 @@ class CourseBuilder
             }
         }
         $current->except($keep)->each(function (LessonAttachment $a) {
-            Storage::disk('public')->delete($a->path);
+            if (! str_starts_with($a->path, '/')) Storage::disk('public')->delete($a->path); // ficheiros do projeto não se apagam
             $a->delete();
         });
+    }
+
+    /** Substitui as perguntas rápidas do fim da aula (só aulas de vídeo; perguntas vazias são ignoradas). */
+    private function syncChecks(Lesson $lesson, array $checks): void
+    {
+        $lesson->checks()->delete();
+        foreach (array_values(array_filter($checks, fn ($c) => trim($c['question'] ?? '') !== '')) as $i => $c) {
+            $options = array_values(array_filter(array_map(fn ($o) => trim((string) $o), $c['options'] ?? []), fn ($o) => $o !== ''));
+            if (count($options) < 2) continue;
+            $lesson->checks()->create([
+                'question' => trim($c['question']),
+                'options' => $options,
+                'correct' => min((int) ($c['correct'] ?? 0), count($options) - 1),
+                'explanation' => trim($c['explanation'] ?? '') ?: null,
+                'order_index' => $i,
+            ]);
+        }
     }
 
     /** Substitui as perguntas do quiz da aula (null = a aula já não é quiz). */
