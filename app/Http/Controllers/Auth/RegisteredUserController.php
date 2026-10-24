@@ -38,9 +38,9 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        // Quem se regista publicamente é sempre aluno.
+        // Quem se regista publicamente é sempre aluno (o perfil é criado se ainda não existir).
         $user = User::create([
-            'role_id' => Role::where('name', 'aluno')->value('id'),
+            'role_id' => Role::firstOrCreate(['name' => 'aluno'])->id,
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),

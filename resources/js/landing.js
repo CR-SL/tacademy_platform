@@ -1,5 +1,6 @@
 // Landing page pública — conceito A "As Peças".
 // Parallax e storytelling ligados ao scroll, sem dependências. Só anima transform/opacity.
+import './smooth-scroll';
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));

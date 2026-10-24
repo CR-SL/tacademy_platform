@@ -1,5 +1,6 @@
 // Catálogo público de cursos (/cursos): separadores por área, pesquisa e aba lateral com o detalhe.
 // Os cartões vêm no HTML; os dados do detalhe vêm de window.TA_COURSES (controller).
+import './smooth-scroll';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];

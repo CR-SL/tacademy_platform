@@ -1,5 +1,6 @@
 // Página de contactos: empresa/particular, separadores e pesquisa das FAQs, menu em telemóvel.
 // A página funciona sem JS (formulário normal + todas as FAQs visíveis); isto só melhora a experiência.
+import './smooth-scroll';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
