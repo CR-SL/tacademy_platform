@@ -17,6 +17,12 @@ class PublicCourseController extends Controller
 
     public function __invoke(): View
     {
+        return view('cursos', self::catalog());
+    }
+
+    /** Dados do catálogo: o público (/cursos) e o da plataforma (/plataforma/cursos) mostram o mesmo. */
+    public static function catalog(): array
+    {
         $courses = Course::with([
             'category',
             'instructor',
@@ -68,11 +74,11 @@ class PublicCourseController extends Controller
             ? ContactRequest::where('user_id', $user->id)->where('kind', 'compra')->whereIn('status', ContactRequest::OPEN)->pluck('course_id')
             : collect();
 
-        return view('cursos', [
+        return [
             'courses' => $items,
             'areas' => $areas,
             'owned' => $owned->values(),
             'pending' => $pending->filter()->values(),
-        ]);
+        ];
     }
 }

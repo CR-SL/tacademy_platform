@@ -8,8 +8,8 @@ import { CatalogIcon, CreateCourseIcon, GoalsIcon, RequestsIcon, TeamIcon } from
 // Navegação da topbar (direção 4b)
 const baseNav = [
     { key: 'tasks', label: 'Tarefas', href: '/dashboard', Icon: GoalsIcon },
-    // Catálogo público (Blade, com "Comprar curso"); fica ativo também nas páginas do curso e da aula
-    { key: 'courses', label: 'Cursos', href: '/cursos', external: true, activeOn: '/plataforma/cursos', Icon: CatalogIcon },
+    // Catálogo dentro da plataforma (igual ao /cursos da landing); fica ativo também nas páginas do curso e da aula
+    { key: 'courses', label: 'Cursos', href: '/plataforma/cursos', Icon: CatalogIcon },
 ];
 const requestsItem = { key: 'requests', label: 'Pedidos', href: '/gestao/pedidos', Icon: RequestsIcon, badge: true };
 const teamsItem = { key: 'teams', label: 'Equipas', href: '/gestao/equipas', Icon: TeamIcon };

@@ -147,3 +147,36 @@
 .cc-team { flex: none; margin: 0; padding: 10px 32px 16px; background: #fff; font-size: 13px; color: var(--cc-mut); }
 .cc-team a { color: var(--cc-ink); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
 .cc-notice { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 80; max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 12px; background: var(--cc-ink); color: #fff; font-size: 14px; box-shadow: 0 10px 30px #0003; }
+
+/*
+ | O mesmo catálogo dentro da plataforma (Pages/Catalog.jsx, /plataforma/cursos).
+ | Usa as cores do tema da plataforma, para funcionar também no modo escuro.
+ */
+.cc-app {
+    --display: 'Outfit', system-ui, sans-serif;
+    --body: 'Geist', system-ui, sans-serif;
+    --mono: 'Geist Mono', ui-monospace, monospace;
+    --accent: var(--color-accent);
+    --cc-paper: var(--color-bg);
+    --cc-ink: var(--color-ink);
+    --cc-mut: var(--color-muted);
+    --cc-soft: var(--color-surface2);
+    --cc-line: var(--color-line);
+    --cc-body: var(--color-ink);
+    --cc-ease: cubic-bezier(.32, .72, 0, 1);
+    font-family: var(--body);
+    line-height: 1.6;
+}
+.cc-app .cc { padding: 8px 0 48px; }
+.cc-app .cc-top { margin-bottom: 32px; }
+.cc-app .cc-sbtn:hover { background: var(--color-surface2); }
+.cc-app .cc-drawer { background: var(--color-bg); }
+.cc-app .cc-stats span, .cc-app .cc-prog-box, .cc-app .cc-d-foot, .cc-app .cc-sugg .cc-chip { background: var(--color-surface); }
+.cc-app .cc-sugg .cc-chip:hover { background: var(--color-surface2); }
+.cc-app .cc-cta, .cc-app .cc-pill { background: var(--color-ink); color: var(--color-bg) !important; }
+.cc-app .cc-cta:hover, .cc-app .cc-pill:hover { background: color-mix(in srgb, var(--color-ink) 86%, var(--color-bg)); }
+.cc-app button.cc-cta { border: 0; cursor: pointer; font: inherit; font-size: 15px; font-weight: 500; }
+.cc-app button.cc-cta:disabled { cursor: wait; opacity: .7; }
+.cc-app .cc-cta.cc-wait { background: var(--color-surface2); color: var(--color-muted) !important; }
+/* Texto escuro sobre o amarelo e sobre as fotografias, nos dois temas */
+.cc-app .cc-cta span, .cc-app .cc-price, .cc-app .cc-tag, .cc-app .cc-ai, .cc-app .cc-badge, .cc-app .cc-d-hero .cc-x { color: #18181B; }
