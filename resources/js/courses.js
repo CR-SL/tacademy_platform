@@ -111,7 +111,7 @@ const enrol = window.TA_ENROL || { href: '/login', label: 'Inscrever-me' };
 const buy = window.TA_BUY || { loggedIn: false, owned: [], pending: [] };
 function footAction(c) {
     if (!buy.loggedIn) return `<a class="cc-cta" href="${esc(enrol.href)}">${esc(enrol.label)}<span aria-hidden="true">→</span></a>`;
-    if (buy.owned.includes(c.id)) return `<a class="cc-cta" href="${esc(buy.platform)}">Ir para o curso<span aria-hidden="true">→</span></a>`;
+    if (buy.owned.includes(c.id)) return `<a class="cc-cta" href="${esc(buy.platform)}/${encodeURIComponent(c.slug)}">Ir para o curso<span aria-hidden="true">→</span></a>`;
     if (buy.pending.includes(c.id)) return '<span class="cc-cta cc-wait">A aguardar autorização</span>';
     return `<form method="post" action="/cursos/${encodeURIComponent(c.slug)}/comprar">
         <input type="hidden" name="_token" value="${esc(buy.csrf)}">

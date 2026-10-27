@@ -89,7 +89,7 @@ class DashboardController extends Controller
 
         return [
             'title' => $course->title,
-            'url' => '/cursos/'.$course->ulid,
+            'url' => '/plataforma/cursos/'.$course->slug,
             'has_ai' => $course->lessons()->where('content_type', 'avatar')->exists(),
             'modules' => $modules,
             'current_module' => ($current ?? max(count($modules) - 1, 0)) + 1,

@@ -8,7 +8,8 @@ import { CatalogIcon, CreateCourseIcon, GoalsIcon, RequestsIcon, TeamIcon } from
 // Navegação da topbar (direção 4b)
 const baseNav = [
     { key: 'tasks', label: 'Tarefas', href: '/dashboard', Icon: GoalsIcon },
-    { key: 'courses', label: 'Cursos', href: '/plataforma/cursos', Icon: CatalogIcon },
+    // Catálogo público (Blade, com "Comprar curso"); fica ativo também nas páginas do curso e da aula
+    { key: 'courses', label: 'Cursos', href: '/cursos', external: true, activeOn: '/plataforma/cursos', Icon: CatalogIcon },
 ];
 const requestsItem = { key: 'requests', label: 'Pedidos', href: '/gestao/pedidos', Icon: RequestsIcon, badge: true };
 const teamsItem = { key: 'teams', label: 'Equipas', href: '/gestao/equipas', Icon: TeamIcon };
@@ -105,9 +106,12 @@ export default function StudentLayout({ xp = null, children }) {
     const user = auth?.user ?? {};
     const navItems = navFor(auth?.role);
 
-    const isActive = (href) =>
-        href !== '#' &&
-        (currentUrl === href || currentUrl.startsWith(href + '/') || currentUrl.startsWith(href + '?'));
+    const isActive = ({ href, activeOn }) => {
+        const base = activeOn ?? href;
+        return base !== '#' && (currentUrl === base || currentUrl.startsWith(base + '/') || currentUrl.startsWith(base + '?'));
+    };
+    // Páginas fora do Inertia (catálogo público) abrem com um link normal
+    const NavLink = (item) => (item.external ? 'a' : Link);
 
     return (
         <div className="min-h-screen bg-page text-ink">
@@ -118,13 +122,15 @@ export default function StudentLayout({ xp = null, children }) {
                     </Link>
 
                     <nav className="hidden gap-6 font-display text-[15px] font-semibold uppercase tracking-[0.04em] md:flex">
-                        {navItems.map((item) => (
-                            <Link
+                        {navItems.map((item) => {
+                            const L = NavLink(item);
+                            return (
+                            <L
                                 key={item.key}
                                 href={item.href}
                                 title={item.href === '#' ? 'Em breve' : undefined}
                                 className={`inline-flex items-center gap-2 ${
-                                    isActive(item.href)
+                                    isActive(item)
                                         ? 'border-b-2 border-accent pb-1 text-accent-ink'
                                         : `border-b-2 border-transparent pb-1 transition-colors hover:text-ink ${item.tag ? 'text-ink' : 'text-muted'}`
                                 }`}
@@ -136,8 +142,9 @@ export default function StudentLayout({ xp = null, children }) {
                                         {item.tag.toUpperCase()}
                                     </span>
                                 )}
-                            </Link>
-                        ))}
+                            </L>
+                            );
+                        })}
                     </nav>
 
                     <div className="ml-auto flex items-center gap-3">
@@ -188,20 +195,24 @@ export default function StudentLayout({ xp = null, children }) {
 
             {/* Bottom tab bar (mobile) — mesma navegação da topbar */}
             <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-line bg-surface px-2 py-1.5 md:hidden">
-                {navItems.map(({ key, label, short, href, Icon, badge }) => (
-                    <Link
-                        key={key}
-                        href={href}
-                        aria-label={label}
-                        className={`relative flex flex-col items-center gap-0.5 px-2 py-1 font-display text-[11px] font-semibold uppercase tracking-[0.04em] ${
-                            isActive(href) ? 'text-accent-ink' : 'text-muted'
-                        }`}
-                    >
-                        <Icon className="h-5 w-5" />
-                        {badge && <Badge n={staffInbox?.count} className="absolute -top-1 right-0" />}
-                        {short ?? label}
-                    </Link>
-                ))}
+                {navItems.map((item) => {
+                    const { key, label, short, href, Icon, badge } = item;
+                    const L = NavLink(item);
+                    return (
+                        <L
+                            key={key}
+                            href={href}
+                            aria-label={label}
+                            className={`relative flex flex-col items-center gap-0.5 px-2 py-1 font-display text-[11px] font-semibold uppercase tracking-[0.04em] ${
+                                isActive(item) ? 'text-accent-ink' : 'text-muted'
+                            }`}
+                        >
+                            <Icon className="h-5 w-5" />
+                            {badge && <Badge n={staffInbox?.count} className="absolute -top-1 right-0" />}
+                            {short ?? label}
+                        </L>
+                    );
+                })}
             </nav>
         </div>
     );

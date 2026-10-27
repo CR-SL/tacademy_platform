@@ -26,7 +26,7 @@ class CatalogController extends Controller
                     'level' => $course->level,
                     'duration_minutes' => $course->duration_minutes,
                     'price' => (float) $course->price,
-                    'url' => '/cursos/'.$course->ulid,
+                    'url' => '/plataforma/cursos/'.$course->slug,
                     'has_ai' => $course->lessons()->where('content_type', 'avatar')->exists(),
                     'category' => ['color_hex' => $category->color_hex],
                 ]),

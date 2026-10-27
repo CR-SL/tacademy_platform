@@ -68,6 +68,16 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                     {error && <p role="alert" className="mb-3 text-sm text-live">{error}</p>}
 
                     <div className="flex flex-wrap gap-2.5">
+                        {c.ulid && c.slug && (
+                            <a
+                                href={`/plataforma/cursos/${c.slug}`}
+                                target="_blank"
+                                rel="noopener"
+                                className="ta-cut-8 px-4 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] shadow-[inset_0_0_0_1px_var(--color-line)] hover:bg-page"
+                            >
+                                👁 Ver como aluno
+                            </a>
+                        )}
                         {published && c.slug && (
                             <a
                                 href={`/cursos?curso=${c.slug}`}

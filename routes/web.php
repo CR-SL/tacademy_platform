@@ -5,6 +5,8 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Instructor\CourseBuilderController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\Learn\CourseController as LearnCourseController;
+use App\Http\Controllers\Learn\LessonController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicCourseController;
 use App\Http\Controllers\PurchaseController;
@@ -34,6 +36,18 @@ Route::get('/dashboard', DashboardController::class)
 Route::get('/plataforma/cursos', CatalogController::class)
     ->middleware(['auth', 'verified'])
     ->name('catalog');
+
+// Página do curso e da aula do aluno
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/plataforma/cursos/{course:slug}', LearnCourseController::class)->name('learn.course');
+    Route::get('/plataforma/cursos/{course:slug}/aulas/{lesson}', [LessonController::class, 'show'])->name('learn.lesson');
+    Route::middleware('throttle:120,1')->prefix('plataforma/aulas/{lesson}')->name('learn.')->group(function () {
+        Route::post('/progresso', [LessonController::class, 'progress'])->name('progress');
+        Route::post('/perguntas/{check}', [LessonController::class, 'check'])->name('check');
+        Route::post('/concluir', [LessonController::class, 'complete'])->name('complete');
+        Route::post('/quiz', [LessonController::class, 'quiz'])->name('quiz');
+    });
+});
 
 // "Os meus cursos": só formadores e admins (CoursePolicy + Gate::before do admin)
 Route::middleware(['auth', 'verified', 'can:viewAny,App\Models\Course'])

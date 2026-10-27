@@ -18,6 +18,10 @@ class LessonProgress extends Model
         'status',
         'progress_percent',
         'last_position_seconds',
+        'watched_map',
+        'watched_seconds',
+        'video_duration_seconds',
+        'check_answers',
         'completed_at',
     ];
 
@@ -27,6 +31,9 @@ class LessonProgress extends Model
             'completed_at' => 'datetime',
             'progress_percent' => 'integer',
             'last_position_seconds' => 'integer',
+            'watched_seconds' => 'integer',
+            'video_duration_seconds' => 'integer',
+            'check_answers' => 'array',
         ];
     }
 

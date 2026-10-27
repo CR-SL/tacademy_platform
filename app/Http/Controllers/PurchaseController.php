@@ -18,15 +18,16 @@ class PurchaseController extends Controller
     {
         abort_unless($course->status === 'published', 404);
         $user = $request->user();
-        $back = redirect()->to(route('courses', ['curso' => $course->slug]));
+        // Volta à página de onde veio (catálogo público ou página do curso na plataforma), com o aviso nos dois formatos
+        $back = fn (string $msg) => redirect()->back(fallback: route('courses', ['curso' => $course->slug]))->with('purchase', $msg)->with('status', $msg);
 
         if ($user->enrollments()->where('course_id', $course->id)->exists()) {
-            return $back->with('purchase', 'Já tens acesso a este curso.');
+            return $back('Já tens acesso a este curso.');
         }
         $pending = ContactRequest::where('user_id', $user->id)->where('course_id', $course->id)
             ->where('kind', 'compra')->whereIn('status', ContactRequest::OPEN)->exists();
         if ($pending) {
-            return $back->with('purchase', 'A tua compra já está registada e aguarda autorização.');
+            return $back('A tua compra já está registada e aguarda autorização.');
         }
 
         $r = ContactRequest::create([
@@ -42,6 +43,6 @@ class PurchaseController extends Controller
         $r->messages()->create(['user_id' => $user->id, 'author' => $user->name, 'body' => $r->message]);
         $teams->notifyStaff($r->load('course'));
 
-        return $back->with('purchase', 'Compra registada! Vais receber acesso assim que a equipa de gestão de cursos a autorizar.');
+        return $back('Compra registada! Vais receber acesso assim que a equipa de gestão de cursos a autorizar.');
     }
 }
