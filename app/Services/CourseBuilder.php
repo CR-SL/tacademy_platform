@@ -33,6 +33,12 @@ class CourseBuilder
     /** Pasta (disco public) onde ficam capas e anexos carregados no editor. */
     public const UPLOAD_DIR = 'cursos';
 
+    /** Vídeos carregados pelo formador (disco public), servidos em /storage/cursos/videos/… */
+    public const VIDEO_DIR = self::UPLOAD_DIR.'/videos';
+
+    /** Tamanho de cada pedaço do upload de vídeo (abaixo do upload_max_filesize de 2 MB por defeito do PHP). */
+    public const VIDEO_CHUNK_BYTES = 1536 * 1024;
+
     /** Curso no formato do editor (React). */
     public function toEditor(Course $course): array
     {
@@ -128,6 +134,7 @@ class CourseBuilder
             $maps = ['modules' => [], 'lessons' => []];
             $existingModules = $course->modules()->get()->keyBy('id');
             $existingLessons = Lesson::whereIn('module_id', $existingModules->keys())->get()->keyBy('id');
+            $oldVideos = $existingLessons->toBase()->map(fn (Lesson $l) => self::uploadedVideo($l->content_url))->filter();
             $keptModules = [];
             $keptLessons = [];
             $minutes = 0;
@@ -174,6 +181,10 @@ class CourseBuilder
             });
             $existingModules->except($keptModules)->each->delete();
 
+            // Vídeos carregados que deixaram de ser usados (aula apagada ou vídeo trocado) saem do disco
+            $oldVideos->diff(Lesson::whereNotNull('content_url')->pluck('content_url')->map(fn ($u) => self::uploadedVideo($u))->filter())
+                ->each(fn ($path) => Storage::disk('public')->delete($path));
+
             $sample = $data['sample_lesson_key'] ?? '';
             $course->forceFill([
                 'duration_minutes' => $minutes,
@@ -216,7 +227,7 @@ class CourseBuilder
         if (! trim($l->title)) return false;
 
         return match ($l->content_type) {
-            'video_link', 'video_upload' => self::validUrl($l->content_url),
+            'video_link', 'video_upload' => self::validUrl($l->content_url) || self::uploadedVideo($l->content_url),
             'avatar' => self::validUrl($l->avatar_ref),
             'document' => $l->attachments->isNotEmpty(),
             'text' => trim(strip_tags((string) $l->body)) !== '',
@@ -230,6 +241,12 @@ class CourseBuilder
     public static function validUrl(?string $url): bool
     {
         return (bool) filter_var($url, FILTER_VALIDATE_URL) && preg_match('#^https?://#i', $url);
+    }
+
+    /** Caminho no disco public de um vídeo carregado pelo formador (/storage/cursos/videos/…), ou null. */
+    public static function uploadedVideo(?string $url): ?string
+    {
+        return preg_match('#^/storage/('.preg_quote(self::VIDEO_DIR, '#').'/[\w-]+\.(mp4|webm))$#', (string) $url, $m) ? $m[1] : null;
     }
 
     private function uniqueSlug(string $title, ?int $ignoreId): string

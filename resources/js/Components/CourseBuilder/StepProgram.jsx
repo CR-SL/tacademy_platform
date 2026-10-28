@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { usePage } from '@inertiajs/react';
+import { useRef, useState } from 'react';
 import { AddLink, Field, IconButton, inputCls, Panel } from './ui';
-import { formatBytes, formatMinutes, isHttpUrl, linkInfo } from './format';
+import { formatBytes, formatMinutes, isHttpUrl, isUploadedVideo, linkInfo } from './format';
 import { lessonComplete, newKey, totalMinutes } from './model';
 
 export const LESSON_TYPES = {
-    video_link: { label: 'Vídeo', short: '▶', hint: 'link', cls: 'bg-ink text-accent' },
+    video_link: { label: 'Vídeo', short: '▶', hint: 'ficheiro ou link', cls: 'bg-ink text-accent' },
     avatar: { label: 'Avatar IA', short: 'IA', hint: 'link', cls: 'bg-accent text-on-accent' },
     document: { label: 'Documento', short: 'PDF', hint: 'ficheiro', cls: 'bg-surface2' },
     text: { label: 'Texto', short: 'Aa', cls: 'bg-surface2' },
@@ -191,12 +192,15 @@ function LessonEditor({ l, set, upload }) {
                     required
                     help={l.type === 'avatar'
                         ? 'O avatar abre dentro da aula. Mais tarde a ligação pode passar a ser feita por API.'
-                        : 'YouTube (não listado), Vimeo ou outro link. Mais tarde poderá haver upload direto.'}
+                        : 'Carrega o vídeo (MP4) ou cola um link do YouTube (não listado), Vimeo ou outro.'}
                 >
-                    <input id={`${id}-u`} className={inputCls} value={l.url} maxLength={500}
-                        placeholder={l.type === 'avatar' ? 'https://… (link da plataforma do avatar)' : 'https://www.youtube.com/watch?v=… ou https://vimeo.com/…'}
-                        onChange={(e) => set((x) => { x.url = e.target.value; })} />
-                    {info ? (
+                    {l.type !== 'avatar' && <VideoUpload l={l} set={set} />}
+                    {!isUploadedVideo(l.url) && (
+                        <input id={`${id}-u`} className={inputCls} value={l.url} maxLength={500}
+                            placeholder={l.type === 'avatar' ? 'https://… (link da plataforma do avatar)' : 'https://www.youtube.com/watch?v=… ou https://vimeo.com/…'}
+                            onChange={(e) => set((x) => { x.url = e.target.value; })} />
+                    )}
+                    {isUploadedVideo(l.url) ? null : info ? (
                         <div className="ta-cut-8 mt-1 flex flex-wrap items-center gap-3 bg-page p-2.5">
                             {info.thumb && <img src={info.thumb} alt="" className="aspect-video w-[120px] object-cover" />}
                             <span className="bg-ink px-2 py-0.5 font-mono text-[11px] font-semibold text-accent">{info.tag}</span>
@@ -317,6 +321,106 @@ function QuizEditor({ l, set }) {
             ))}
             <AddLink onClick={() => set((x) => { x.quiz.push(blankQuestion()); })}>+ Adicionar pergunta</AddLink>
         </Field>
+    );
+}
+
+const VIDEO_CHUNK = 1536 * 1024; // igual a CourseBuilder::VIDEO_CHUNK_BYTES
+
+// Duração do vídeo lida no próprio browser, para preencher os minutos da aula
+const videoMinutes = (file) => new Promise((resolve) => {
+    const v = document.createElement('video');
+    const url = URL.createObjectURL(file);
+    const done = (m) => { URL.revokeObjectURL(url); resolve(m); };
+    v.preload = 'metadata';
+    v.onloadedmetadata = () => done(Number.isFinite(v.duration) ? Math.max(1, Math.round(v.duration / 60)) : null);
+    v.onerror = () => done(null);
+    v.src = url;
+});
+
+// Upload do vídeo da aula aos pedaços (com barra de progresso); o endereço fica no link da aula
+function VideoUpload({ l, set }) {
+    const { videoMaxMb = 1024 } = usePage().props;
+    const [progress, setProgress] = useState(null);
+    const [err, setErr] = useState('');
+    const [name, setName] = useState('');
+    const cancel = useRef(false);
+    const uploaded = isUploadedVideo(l.url);
+
+    const send = async (file) => {
+        if (!file) return;
+        setErr('');
+        if (!/\.(mp4|webm)$/i.test(file.name)) { setErr('O vídeo tem de ser MP4 ou WebM. Se for .mov, exporta-o em MP4 (H.264).'); return; }
+        if (file.size > videoMaxMb * 1024 * 1024) { setErr(`O vídeo não pode ter mais de ${videoMaxMb} MB.`); return; }
+        const minutes = await videoMinutes(file);
+        const id = crypto.randomUUID();
+        const total = Math.ceil(file.size / VIDEO_CHUNK);
+        cancel.current = false;
+        setName(file.name);
+        setProgress(0);
+        try {
+            let res;
+            for (let i = 0; i < total; i++) {
+                if (cancel.current) { setProgress(null); return; }
+                const form = new FormData();
+                form.append('id', id);
+                form.append('index', i);
+                form.append('total', total);
+                form.append('size', file.size);
+                form.append('name', file.name);
+                form.append('chunk', file.slice(i * VIDEO_CHUNK, (i + 1) * VIDEO_CHUNK), 'chunk');
+                res = await window.axios.post('/formador/videos', form);
+                setProgress((i + 1) / total);
+            }
+            set((x) => {
+                x.url = res.data.url;
+                if (minutes && !Number(x.minutes)) x.minutes = minutes;
+            });
+        } catch (e) {
+            const d = e.response?.data;
+            setErr(d?.message && e.response.status !== 500 ? (Object.values(d.errors ?? {})[0]?.[0] ?? d.message) : 'Não foi possível carregar o vídeo. Tenta outra vez.');
+        } finally {
+            setProgress(null);
+        }
+    };
+
+    if (progress !== null) {
+        return (
+            <div className="ta-cut-8 flex flex-col gap-2 bg-page p-3">
+                <div className="flex items-center gap-3 text-sm">
+                    <span className="min-w-0 flex-1 truncate">A carregar <b>{name}</b>…</span>
+                    <span className="font-mono text-xs font-semibold">{Math.round(progress * 100)}%</span>
+                    <button type="button" onClick={() => { cancel.current = true; }} className="font-display text-[13px] font-semibold text-muted hover:text-live">Cancelar</button>
+                </div>
+                <div className="h-1.5 bg-track"><div className="h-full bg-accent transition-[width]" style={{ width: `${progress * 100}%` }} /></div>
+                <p className="text-xs text-muted">Não feches esta página até terminar.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col gap-1.5">
+            {uploaded ? (
+                <div className="ta-cut-8 flex flex-wrap items-center gap-3 bg-page p-2.5">
+                    <video src={l.url} preload="metadata" muted className="aspect-video w-[120px] bg-black object-cover" />
+                    <span className="bg-ink px-2 py-0.5 font-mono text-[11px] font-semibold text-accent">VÍDEO CARREGADO</span>
+                    <span className="font-mono text-[11px] font-semibold text-[#2F9E5B]">✓ LEITOR T.ACADEMY</span>
+                    <span className="ml-auto flex gap-3">
+                        <label className="cursor-pointer font-display text-[13px] font-semibold text-accent-ink hover:text-ink">
+                            Trocar vídeo
+                            <input type="file" accept="video/mp4,video/webm,.mp4,.webm" className="sr-only" onChange={(e) => { send(e.target.files[0]); e.target.value = ''; }} />
+                        </label>
+                        <button type="button" onClick={() => set((x) => { x.url = ''; })} className="font-display text-[13px] font-semibold text-muted hover:text-live">Remover</button>
+                    </span>
+                </div>
+            ) : (
+                <label className="ta-cut-8 flex cursor-pointer flex-wrap items-center gap-3 border border-dashed border-line bg-page px-3 py-2.5 text-sm hover:border-muted">
+                    <span className="ta-cut-8 bg-ink px-3 py-1.5 font-display text-xs font-bold uppercase tracking-[0.04em] text-accent">Carregar vídeo</span>
+                    <span className="text-muted">MP4 ou WebM, até {videoMaxMb >= 1024 ? `${(videoMaxMb / 1024).toString().replace('.', ',')} GB` : `${videoMaxMb} MB`} · ou cola um link abaixo</span>
+                    <input type="file" accept="video/mp4,video/webm,.mp4,.webm" className="sr-only" onChange={(e) => { send(e.target.files[0]); e.target.value = ''; }} />
+                </label>
+            )}
+            {err && <span className="text-xs font-semibold text-live" role="alert">{err}</span>}
+        </div>
     );
 }
 

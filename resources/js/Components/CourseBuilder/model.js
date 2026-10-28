@@ -1,5 +1,5 @@
 // Estado do editor de cursos e as mesmas regras de publicação do servidor (CourseBuilder::publishProblems).
-import { isHttpUrl } from './format';
+import { isHttpUrl, isUploadedVideo } from './format';
 
 let n = 0;
 // Chave dos módulos/aulas novos até o servidor lhes dar um id
@@ -42,6 +42,7 @@ export function lessonComplete(l) {
     switch (l.type) {
         case 'video_link':
         case 'video_upload':
+            return isHttpUrl(l.url) || isUploadedVideo(l.url);
         case 'avatar':
             return isHttpUrl(l.url);
         case 'document':

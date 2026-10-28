@@ -1,14 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import QuickChecks from './QuickChecks';
 
 const TABS = [['ia', 'IA'], ['perguntas', 'Perguntas'], ['notas', 'Notas']];
 
 // Painel da direita na página da aula: IA (avatar do curso por link), perguntas rápidas e notas.
 // O iframe do avatar só carrega quando o aluno abre o separador IA, e nessa altura o vídeo pausa.
-export default function Assistant({ avatarUrl, lessonUlid, checks, setChecks, hasChecks, checksOpen, remaining, canSave, isQuiz, onAskAi, tabRequest }) {
+export default function Assistant({ avatarUrl, lessonUlid, checks, setChecks, hasChecks, checksOpen, remaining, canSave, isQuiz, onAskAi }) {
     const [tab, setTab] = useState('perguntas');
     const [aiStarted, setAiStarted] = useState(false);
-    const box = useRef(null);
     const unanswered = checks.filter((c) => c.chosen == null).length;
 
     const open = (t) => {
@@ -19,21 +18,13 @@ export default function Assistant({ avatarUrl, lessonUlid, checks, setChecks, ha
         }
     };
 
-    // Botão "Perguntar à IA" do vídeo: abre o separador e, no telemóvel, desce até ao painel
-    useEffect(() => {
-        if (!tabRequest) return;
-        open(tabRequest.tab);
-        if (window.innerWidth < 1024) box.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tabRequest]);
-
     // Quando o vídeo chega aos 90%, as perguntas aparecem (se o aluno não estiver a falar com a IA)
     useEffect(() => {
         if (checksOpen && hasChecks) setTab((t) => (t === 'ia' ? t : 'perguntas'));
     }, [checksOpen, hasChecks]);
 
     return (
-        <aside ref={box} className="ta-cut-12 flex scroll-mt-24 flex-col bg-surface lg:sticky lg:top-[90px] lg:max-h-[calc(100vh-110px)]">
+        <aside className="ta-cut-12 flex flex-col bg-surface lg:sticky lg:top-[90px] lg:max-h-[calc(100vh-110px)]">
             <div role="tablist" className="grid flex-none grid-cols-3 border-b border-line">
                 {TABS.map(([key, label]) => (
                     <button

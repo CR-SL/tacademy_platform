@@ -13,14 +13,15 @@ use Illuminate\Support\Facades\DB;
 /**
  * Curso de demonstração completo ("Mecânica Automóvel — Formação Completa"), escrito de raiz em português,
  * para experimentar todos os tipos de aula: vídeo por link, avatar IA, documento, texto e quiz.
- * Todos os vídeos usam o mesmo vídeo de exemplo. Os PDFs ficam no projeto em public/cursos-demo/.
+ * Todos os vídeos usam o mesmo vídeo de teste (HLS, leitor próprio). Os PDFs ficam no projeto em public/cursos-demo/.
  * Corre só uma vez (se o curso já existir não faz nada).
  */
 class DemoCourseSeeder extends Seeder
 {
     private const SLUG = 'mecanica-automovel-formacao-completa';
 
-    private const VIDEO = 'https://www.youtube.com/watch?v=baKzmOEP9D8';
+    // Vídeo de teste em HLS (várias qualidades) para o leitor próprio; Big Buck Bunny, Blender Foundation, CC BY 3.0
+    public const VIDEO = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
 
     private const AVATAR = 'https://example.com/avatar/tacademy-demo'; // a substituir pelo link real da plataforma do avatar
 

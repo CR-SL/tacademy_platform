@@ -1,8 +1,10 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import CinemaPlayer from '@/Components/Learn/CinemaPlayer';
 
 // Leitor da aula de vídeo. Conta os segundos REALMENTE reproduzidos num mapa de bits (1 bit por segundo):
 // saltar à frente não conta e rever não conta duas vezes. Grava a posição para retomar e envia o progresso.
-// YouTube e Vimeo usam a API do leitor; outros links abrem num separador e conta o tempo com a página visível.
+// Vídeos nossos (HLS .m3u8 ou MP4) usam o leitor próprio (CinemaPlayer); YouTube e Vimeo usam a API do leitor;
+// outros links abrem num separador e conta o tempo com a página visível.
 
 const loaded = {};
 function loadScript(src, ready) {
@@ -79,6 +81,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initia
         pause: () => {
             if (source.kind === 'youtube') player.current?.pauseVideo?.();
             if (source.kind === 'vimeo') player.current?.pause?.();
+            if (source.kind === 'file') player.current?.pause();
         },
     }), [source.kind]);
 
@@ -121,6 +124,8 @@ const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initia
                 p.on('ended', () => { st.playing = false; save(); });
                 p.on('timeupdate', (d) => { if (st.playing) advance(Math.floor(d.seconds)); });
             });
+        } else if (source.kind === 'file') {
+            // O CinemaPlayer avisa pelos eventos do <video> (onReady, onPlay, onTime, onPause)
         } else {
             // Link externo: conta o tempo com a página visível depois de abrir o vídeo
             st.lastT = count();
@@ -154,6 +159,17 @@ const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initia
                     Abrir vídeo ↗
                 </a>
             </div>
+        );
+    }
+
+    if (source.kind === 'file') {
+        const st = state.current;
+        return (
+            <CinemaPlayer ref={player} src={source.url} startAt={initial.position} map={map.current} duration={st.duration}
+                onReady={(d) => { st.duration = Math.floor(d) || st.duration; onWatched?.(count(), st.duration); }}
+                onPlay={(t) => { st.playing = true; st.lastT = Math.floor(t); }}
+                onTime={(t) => { if (st.playing) advance(Math.floor(t)); }}
+                onPause={() => { st.playing = false; save(); }} />
         );
     }
 

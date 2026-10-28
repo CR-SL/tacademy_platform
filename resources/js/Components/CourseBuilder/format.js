@@ -17,9 +17,13 @@ export function formatBytes(b = 0) {
 
 export const isHttpUrl = (u) => /^https?:\/\/[^\s/$.?#][^\s]*\.[^\s]+$/i.test((u ?? '').trim());
 
+// Vídeo carregado pelo formador (leitor próprio)
+export const isUploadedVideo = (u) => /^\/storage\/cursos\/videos\/[\w-]+\.(mp4|webm)$/i.test((u ?? '').trim());
+
 // Reconhece YouTube/Vimeo para mostrar a miniatura e o nome do serviço
 export function linkInfo(url) {
     const u = (url ?? '').trim();
+    if (isUploadedVideo(u)) return { tag: 'Vídeo carregado' };
     const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
     if (yt) return { tag: 'YouTube', thumb: `https://img.youtube.com/vi/${yt[1]}/mqdefault.jpg` };
     if (/vimeo\.com\/\d+/.test(u)) return { tag: 'Vimeo' };

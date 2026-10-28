@@ -6,9 +6,11 @@ use App\Models\Category;
 use App\Models\Course;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\CourseBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class CourseBuilderTest extends TestCase
@@ -200,5 +202,77 @@ class CourseBuilderTest extends TestCase
         $this->actingAs($this->user('aluno'))->post('/formador/uploads', [
             'kind' => 'cover', 'file' => $this->png(),
         ])->assertForbidden();
+    }
+
+    /** Envia um vídeo aos pedaços, como o editor; devolve a última resposta. */
+    private function sendVideo(User $u, string $bytes, string $name = 'aula.mp4')
+    {
+        $id = (string) Str::uuid();
+        $chunks = str_split($bytes, CourseBuilder::VIDEO_CHUNK_BYTES);
+        foreach ($chunks as $i => $chunk) {
+            $res = $this->actingAs($u)->post('/formador/videos', [
+                // Como no browser (FormData), os números chegam como texto
+                'id' => $id, 'index' => (string) $i, 'total' => (string) count($chunks), 'size' => (string) strlen($bytes), 'name' => $name,
+                'chunk' => UploadedFile::fake()->createWithContent('chunk', $chunk),
+            ], ['Accept' => 'application/json']);
+        }
+
+        return $res;
+    }
+
+    /** Início de um MP4 verdadeiro (caixa ftyp), com enchimento até ao tamanho pedido. */
+    private function mp4(int $size): string
+    {
+        $head = hex2bin('00000018').'ftypmp42'.hex2bin('00000000').'mp42isom';
+
+        return $head.str_repeat(hex2bin('00'), $size - strlen($head));
+    }
+
+
+    public function test_videos_are_uploaded_in_chunks_and_play_in_the_own_player(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+        $formador = $this->user('formador');
+
+        $video = $this->sendVideo($formador, $this->mp4(CourseBuilder::VIDEO_CHUNK_BYTES + 5000))->assertOk()->assertJson(['done' => true])->json();
+        $this->assertMatchesRegularExpression('#^/storage/cursos/videos/[a-z0-9]+.mp4$#', $video['url']);
+        $path = substr($video['url'], strlen('/storage/'));
+        Storage::disk('public')->assertExists($path);
+        $this->assertSame(CourseBuilder::VIDEO_CHUNK_BYTES + 5000, Storage::disk('public')->size($path));
+        $this->assertEmpty(Storage::disk('local')->allFiles('video-uploads')); // o temporário foi apagado
+
+        // A aula com o vídeo carregado fica completa e toca no leitor próprio
+        $data = $this->payload();
+        $data['modules'][0]['lessons'][0]['url'] = $video['url'];
+        $res = $this->actingAs($formador)->postJson('/formador/cursos', $data)->assertCreated()->json();
+        $course = Course::where('ulid', $res['ulid'])->first();
+        $lesson = $course->lessons()->where('lessons.title', 'Introdução')->first();
+        $this->assertSame($video['url'], $lesson->content_url);
+        $this->assertTrue(app(CourseBuilder::class)->lessonComplete($lesson));
+
+        // Trocar o vídeo apaga o ficheiro antigo do disco
+        $data['modules'][0]['id'] = $course->modules()->first()->id;
+        $data['modules'][0]['lessons'][0]['id'] = $lesson->id;
+        $data['modules'][0]['lessons'][0]['url'] = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
+        Storage::disk('public')->assertMissing($path);
+    }
+
+    public function test_video_upload_rejects_other_files_and_students(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        $this->sendVideo($this->user('formador'), '%PDF-1.4 não é vídeo', 'aula.mp4')->assertStatus(422);
+        $this->sendVideo($this->user('formador'), $this->mp4(2000), 'aula.mov')->assertStatus(422);
+        $this->sendVideo($this->user('aluno'), $this->mp4(2000))->assertForbidden();
+        $this->assertEmpty(Storage::disk('public')->allFiles());
+
+        // Pedaços fora de ordem não se juntam
+        $this->actingAs($this->user('formador'))->post('/formador/videos', [
+            'id' => (string) Str::uuid(), 'index' => 1, 'total' => 2, 'size' => 4000, 'name' => 'a.mp4',
+            'chunk' => UploadedFile::fake()->createWithContent('chunk', 'x'),
+        ], ['Accept' => 'application/json'])->assertStatus(409);
     }
 }

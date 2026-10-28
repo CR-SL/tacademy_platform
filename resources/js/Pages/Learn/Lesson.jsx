@@ -20,7 +20,6 @@ export default function Lesson({ course, mode, program, lesson, position, progre
     const [checks, setChecks] = useState(lesson.checks);
     const [sideOpen, setSideOpen] = useState(false);
     const [busy, setBusy] = useState(false);
-    const [tabRequest, setTabRequest] = useState(null);
 
     const video = isVideo(lesson.type);
     const videoReady = !video || done || needed <= 0 || watched >= needed;
@@ -45,7 +44,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
             <span className="flex flex-wrap items-center gap-3">
                 {reason && <span className="text-sm text-muted">{reason}</span>}
                 <button type="button" onClick={complete} disabled={!!reason || busy}
-                    className="ta-cut-8 ta-press bg-accent px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-on-accent disabled:cursor-not-allowed disabled:opacity-45">
+                    className="ta-cut-8 ta-press bg-accent px-4 py-[9px] font-display text-[11px] font-bold uppercase tracking-[0.04em] text-on-accent disabled:cursor-not-allowed disabled:opacity-45">
                     Marcar como concluída
                 </button>
             </span>
@@ -102,13 +101,6 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                                 canSave={canSave}
                                 onWatched={(w, d) => { setWatched(w); if (d) setNeeded(Math.ceil(d * 0.9)); }}
                             />
-                            {avatarUrl && (
-                                <button type="button" onClick={() => setTabRequest({ tab: 'ia' })}
-                                    className="absolute right-3 top-3 z-10 inline-flex items-center gap-2 rounded-full bg-white/95 py-1.5 pl-1.5 pr-3.5 font-display text-[13px] font-bold text-ink shadow-[0_6px_20px_rgba(0,0,0,.25)] transition-transform hover:-translate-y-px">
-                                    <span className="h-[22px] w-[22px] rounded-full bg-[radial-gradient(circle_at_35%_35%,#FFE08A,#F8B101_55%,#946A00)] shadow-[0_0_12px_rgba(248,177,1,.6)]" aria-hidden="true" />
-                                    Perguntar à IA
-                                </button>
-                            )}
                         </div>
                     )}
                     {lesson.type === 'avatar' && (
@@ -159,13 +151,13 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                         <div className="mt-5 flex flex-wrap items-center gap-2.5">
                             {prev && (
                                 <Link href={`/plataforma/cursos/${course.slug}/aulas/${prev.ulid}`} aria-label="Aula anterior" title={prev.title}
-                                    className="ta-cut-8 px-4 py-3 font-display text-sm font-bold shadow-[inset_0_0_0_1px_var(--color-line)] hover:bg-page">←</Link>
+                                    className="ta-cut-8 px-3 py-[9px] font-display text-[11px] font-bold shadow-[inset_0_0_0_1px_var(--color-line)] hover:bg-page">←</Link>
                             )}
                             <span className="flex-1" />
                             {action}
                             {next && (next.open
-                                ? <Link href={`/plataforma/cursos/${course.slug}/aulas/${next.ulid}`} className="ta-cut-8 ta-press bg-ink px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-accent">Seguinte →</Link>
-                                : <span title="Conclui esta aula para avançar" className="ta-cut-8 cursor-not-allowed bg-ink/40 px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-accent/70">Seguinte →</span>)}
+                                ? <Link href={`/plataforma/cursos/${course.slug}/aulas/${next.ulid}`} className="ta-cut-8 ta-press bg-ink px-4 py-[9px] font-display text-[11px] font-bold uppercase tracking-[0.04em] text-accent">Seguinte →</Link>
+                                : <span title="Conclui esta aula para avançar" className="ta-cut-8 cursor-not-allowed bg-ink/40 px-4 py-[9px] font-display text-[11px] font-bold uppercase tracking-[0.04em] text-accent/70">Seguinte →</span>)}
                         </div>
                     </div>
                 </section>
@@ -183,7 +175,6 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                     canSave={canSave}
                     isQuiz={lesson.type === 'quiz'}
                     onAskAi={() => player.current?.pause()}
-                    tabRequest={tabRequest}
                 />
             </div>
             <FlashToast />

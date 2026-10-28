@@ -192,10 +192,17 @@ class LessonController extends Controller
         return $payload;
     }
 
-    /** YouTube e Vimeo têm leitor com contagem do tempo visto; outros links abrem num separador. */
+    /**
+     * Vídeos nossos (HLS .m3u8 ou MP4/WebM) tocam no leitor próprio; YouTube e Vimeo têm leitor com contagem
+     * do tempo visto; outros links abrem num separador.
+     */
     private function videoSource(?string $url): ?array
     {
+        if (CourseBuilder::uploadedVideo($url)) return ['kind' => 'file', 'url' => $url]; // carregado pelo formador
         if (! CourseBuilder::validUrl($url)) return null;
+        if (preg_match('~\.(m3u8|mp4|webm)(\?|$)~i', $url)) {
+            return ['kind' => 'file', 'url' => $url];
+        }
         if (preg_match('~(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([\w-]{11})~', $url, $m)) {
             return ['kind' => 'youtube', 'id' => $m[1]];
         }

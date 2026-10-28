@@ -10,6 +10,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -135,6 +137,71 @@ class CourseBuilderController extends Controller
         ]);
     }
 
+    /**
+     * Vídeo da aula (MP4 ou WebM), enviado aos pedaços de CourseBuilder::VIDEO_CHUNK_BYTES.
+     * Os pedaços juntam-se num ficheiro temporário; no último, o vídeo passa para o disco public
+     * (cursos/videos/…) e devolve o endereço que fica no link da aula.
+     */
+    public function uploadVideo(Request $request): JsonResponse
+    {
+        Gate::authorize('create', Course::class);
+        $maxBytes = config('tacademy.video_max_mb') * 1024 * 1024;
+        $data = $request->validate([
+            'id' => ['required', 'uuid'],
+            'index' => ['required', 'integer', 'min:0'],
+            'total' => ['required', 'integer', 'min:1', 'max:'.(int) ceil($maxBytes / CourseBuilder::VIDEO_CHUNK_BYTES)],
+            'size' => ['required', 'integer', 'min:1', 'max:'.$maxBytes],
+            'name' => ['required', 'string', 'max:255', 'regex:/\.(mp4|webm)$/i'],
+            'chunk' => ['required', 'file', 'max:'.(int) ceil(CourseBuilder::VIDEO_CHUNK_BYTES / 1024)],
+        ], [
+            'name.regex' => 'O vídeo tem de ser MP4 ou WebM.',
+            'size.max' => 'O vídeo não pode ter mais de '.config('tacademy.video_max_mb').' MB.',
+        ]);
+        // Os campos chegam como texto (FormData)
+        [$index, $total, $size] = [(int) $data['index'], (int) $data['total'], (int) $data['size']];
+        abort_unless($index < $total, 422);
+
+        // Ficheiro temporário por formador e envio; cada pedaço tem de chegar pela ordem certa
+        $tmp = Storage::disk('local');
+        $part = 'video-uploads/'.$request->user()->id.'-'.$data['id'].'.part';
+        if ($index === 0) $tmp->delete($part);
+        $have = $tmp->exists($part) ? $tmp->size($part) : 0;
+        if ($have !== $index * CourseBuilder::VIDEO_CHUNK_BYTES) {
+            return response()->json(['message' => 'O envio foi interrompido. Tenta carregar o vídeo outra vez.'], 409);
+        }
+        $tmp->makeDirectory('video-uploads');
+        file_put_contents($tmp->path($part), $request->file('chunk')->get(), FILE_APPEND | LOCK_EX);
+
+        if ($index < $total - 1) {
+            return response()->json(['done' => false]);
+        }
+
+        // Último pedaço: confirma o tamanho e o tipo real do ficheiro antes de o publicar
+        $path = $tmp->path($part);
+        clearstatcache(true, $path);
+        $mime = mime_content_type($path) ?: '';
+        if (filesize($path) !== $size || ! in_array($mime, ['video/mp4', 'video/webm', 'video/x-m4v'], true)) {
+            $tmp->delete($part);
+
+            return response()->json(['message' => $mime === 'video/quicktime'
+                ? 'Este ficheiro é .mov. Exporta o vídeo em MP4 (H.264) e tenta outra vez.'
+                : 'O ficheiro não é um vídeo MP4 ou WebM válido.'], 422);
+        }
+        $ext = $mime === 'video/webm' ? 'webm' : 'mp4';
+        $final = CourseBuilder::VIDEO_DIR.'/'.Str::lower((string) Str::ulid()).'.'.$ext;
+        $in = fopen($path, 'rb');
+        Storage::disk('public')->writeStream($final, $in); // o volume pode ser outro disco: copiar em vez de mover
+        fclose($in);
+        $tmp->delete($part);
+
+        return response()->json([
+            'done' => true,
+            'url' => '/storage/'.$final,
+            'name' => $data['name'],
+            'size' => $size,
+        ]);
+    }
+
     private function editor(?Course $course): Response
     {
         return Inertia::render('Instructor/CourseEditor', [
@@ -147,6 +214,7 @@ class CourseBuilderController extends Controller
                 ['/images/cursos/cta-motor.jpg', '/images/cursos/cta-oficina.jpg', '/images/cursos/hibridos-eletricos.jpg', '/images/cursos/adas.jpg'],
             ))),
             'shortMax' => CourseBuilder::SHORT_MAX,
+            'videoMaxMb' => config('tacademy.video_max_mb'),
         ]);
     }
 
