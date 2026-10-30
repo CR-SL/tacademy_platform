@@ -116,7 +116,7 @@ export default function StudentLayout({ xp = null, children }) {
     return (
         <div className="min-h-screen bg-page text-ink">
             <header className="sticky top-0 z-30 border-b border-line bg-page">
-                <div className="mx-auto flex h-[66px] max-w-[1400px] items-center gap-7 px-4 sm:px-7">
+                <div className="flex h-[66px] items-center gap-7 px-4 sm:px-7">
                     <Link href="/dashboard" className="flex shrink-0 items-center">
                         <Logo />
                     </Link>
@@ -191,7 +191,7 @@ export default function StudentLayout({ xp = null, children }) {
                 </div>
             </header>
 
-            <main className="mx-auto w-full max-w-[1400px] px-4 pb-24 pt-6 sm:px-6 md:pb-10">{children}</main>
+            <main className="w-full px-4 pb-24 pt-6 sm:px-6 md:pb-10">{children}</main>
 
             {/* Bottom tab bar (mobile) — mesma navegação da topbar */}
             <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-line bg-surface px-2 py-1.5 md:hidden">

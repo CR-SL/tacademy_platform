@@ -48,13 +48,14 @@ body {
 [data-theme='dark'] .ta-logo-dark { display: block; }
 
 /*
- | Chanfro — o raio da identidade. N = 16 (cartões grandes), 12 (linhas),
- | 10 (notificação), 8 (botões e chips). Raio só em elementos redondos.
+ | Cantos (2026-10-30): as caixas passaram a ter cantos arredondados (12, 16, 18 px) em vez do chanfro;
+ | os botões e chips (ta-cut-8) mantêm o corte na diagonal, mas com todos os vértices arredondados.
+ | Continua a ser clip-path (inset round / polygon), para recortar o conteúdo como antes sem mexer no overflow.
  */
-.ta-cut-8 { clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
-.ta-cut-10 { clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
-.ta-cut-12 { clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px); }
-.ta-cut-16 { clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px); }
+.ta-cut-8 { clip-path: polygon(7.83px 1.17px, 8.43px 0.67px, 9.13px 0.3px, 9.88px 0.08px, 10.66px 0px, calc(100% - 7px) 0px, calc(100% - 4.32px) 0.53px, calc(100% - 2.05px) 2.05px, calc(100% - 0.53px) 4.32px, 100% 7px, 100% calc(100% - 10.66px), calc(100% - 0.08px) calc(100% - 9.88px), calc(100% - 0.3px) calc(100% - 9.13px), calc(100% - 0.67px) calc(100% - 8.43px), calc(100% - 1.17px) calc(100% - 7.83px), calc(100% - 7.83px) calc(100% - 1.17px), calc(100% - 8.43px) calc(100% - 0.67px), calc(100% - 9.13px) calc(100% - 0.3px), calc(100% - 9.88px) calc(100% - 0.08px), calc(100% - 10.66px) 100%, 7px 100%, 4.32px calc(100% - 0.53px), 2.05px calc(100% - 2.05px), 0.53px calc(100% - 4.32px), 0px calc(100% - 7px), 0px 10.66px, 0.08px 9.88px, 0.3px 9.13px, 0.67px 8.43px, 1.17px 7.83px); }
+.ta-cut-10 { clip-path: inset(0 round 12px); }
+.ta-cut-12 { clip-path: inset(0 round 16px); }
+.ta-cut-16 { clip-path: inset(0 round 18px); }
 /* Barra de XP com cantos inclinados */
 .ta-slant-4 { clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
 
