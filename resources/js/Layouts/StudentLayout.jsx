@@ -7,7 +7,7 @@ import { CatalogIcon, CreateCourseIcon, GoalsIcon, RequestsIcon, TeamIcon } from
 
 // Navegação da topbar (direção 4b)
 const baseNav = [
-    { key: 'tasks', label: 'Tarefas', href: '/dashboard', Icon: GoalsIcon },
+    { key: 'tasks', label: 'Dashboard', href: '/dashboard', Icon: GoalsIcon },
     // Catálogo dentro da plataforma (igual ao /cursos da landing); fica ativo também nas páginas do curso e da aula
     { key: 'courses', label: 'Cursos', href: '/plataforma/cursos', Icon: CatalogIcon },
 ];

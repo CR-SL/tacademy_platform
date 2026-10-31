@@ -350,7 +350,7 @@ export default function Dashboard({
 
     return (
         <StudentLayout xp={xp}>
-            <Head title="Tarefas" />
+            <Head title="Dashboard" />
 
             {toast && (
                 <div
@@ -372,7 +372,7 @@ export default function Dashboard({
                 {/* Coluna central: tarefas + desafio de equipa */}
                 <div className="flex flex-col gap-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                        <h1 className="font-display text-[26px] font-bold">TAREFAS</h1>
+                        <h1 className="font-display text-[26px] font-bold">DASHBOARD</h1>
                         <div className="ta-cut-8 flex gap-1 bg-surface p-1" role="tablist">
                             {TABS.map(({ key, label }) => {
                                 const n = pending(key);

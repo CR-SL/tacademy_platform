@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
 use App\Models\User;
+use App\Services\LearningService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -22,7 +24,7 @@ class DashboardController extends Controller
 
         return Inertia::render('Dashboard', [
             'stats' => $this->stats($user->id),
-            'continueCourse' => $this->continueCourse($user->id),
+            'continueCourse' => $this->continueCourse($user),
             ...$this->demoGamification($user),
         ]);
     }
@@ -52,8 +54,9 @@ class DashboardController extends Controller
      * Curso a retomar: inscrição ativa mais recente, com o estado de cada módulo
      * (concluído / atual / por fazer) para os segmentos do cartão "Continuar".
      */
-    private function continueCourse(int $userId): ?array
+    private function continueCourse(User $user): ?array
     {
+        $userId = $user->id;
         $enrollment = Enrollment::with(['course.modules' => fn ($q) => $q->orderBy('order_index')->with('lessons:id,module_id')])
             ->where('user_id', $userId)
             ->where('status', 'active')
@@ -89,11 +92,34 @@ class DashboardController extends Controller
 
         return [
             'title' => $course->title,
-            'url' => '/plataforma/cursos/'.$course->slug,
+            'url' => $this->resumeUrl($user, $course),
             'has_ai' => $course->lessons()->where('content_type', 'avatar')->exists(),
             'modules' => $modules,
             'current_module' => ($current ?? max(count($modules) - 1, 0)) + 1,
         ];
+    }
+
+    /**
+     * Aula onde o aluno ficou: a última em que mexeu e ainda não concluiu (se ainda a pode abrir);
+     * senão, a primeira por concluir que já esteja aberta, como o botão "Continuar" da página do curso.
+     */
+    private function resumeUrl(User $user, Course $course): string
+    {
+        $learning = app(LearningService::class);
+        $course = $course->fresh();
+        $lessons = $learning->lessons($course);
+        $done = $learning->completedIds($user, $lessons);
+        $access = $learning->access($user, $course);
+        $unlocked = $learning->unlockedIds($course, $lessons, $done);
+        $canOpen = fn ($l) => $learning->canOpen($access, $course, $l, $unlocked);
+
+        $lastId = LessonProgress::where('user_id', $user->id)->whereIn('lesson_id', $lessons->pluck('id'))
+            ->where('status', '!=', 'completed')->latest('updated_at')->value('lesson_id');
+        $lesson = $lessons->first(fn ($l) => $l->id === $lastId && $canOpen($l))
+            ?? $lessons->first(fn ($l) => ! $done->contains($l->id) && $canOpen($l))
+            ?? $lessons->first();
+
+        return '/plataforma/cursos/'.$course->slug.($lesson ? '/aulas/'.$lesson->ulid : '');
     }
 
     /**

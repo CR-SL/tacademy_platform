@@ -250,7 +250,7 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
                 className={`absolute bottom-6 left-1/2 z-[3] -translate-x-1/2 transition-[opacity,transform] duration-300 max-sm:bottom-[18px] ${hidden ? 'translate-y-1.5 opacity-0' : ''}`}>
                 {volX !== null && (
                     // Barra vertical do volume: arrastar ou clicar; a parte amarela é o volume atual
-                    <div ref={volPop} className="absolute bottom-full -mb-1 -translate-x-1/2" style={{ left: volX }}
+                    <div ref={volPop} className="absolute bottom-full -translate-x-1/2 pb-3" style={{ left: volX }}
                         onPointerEnter={openVol} onPointerLeave={closeVolSoon}>
                         <div className="flex flex-col items-center pt-1">
                             <div ref={volTrack} role="slider" tabIndex={-1} aria-label="Volume" aria-orientation="vertical"
