@@ -58,7 +58,7 @@ export default function TeamReport({ team, report, note }) {
                                         <Td>
                                             <b className="block font-semibold">
                                                 {m.name}
-                                                {m.leader && <span className="ml-1.5 bg-ink px-1.5 py-0.5 align-[1px] font-mono text-[9.5px] font-bold tracking-[0.08em] text-accent">TEAM LEADER</span>}
+                                                {m.leader && <span className="ml-1.5 bg-ink px-1.5 py-0.5 align-[1px] font-mono text-[9.5px] font-bold tracking-[0.08em] text-on-ink">TEAM LEADER</span>}
                                             </b>
                                             <small className="text-[12.5px] text-muted">{m.email}</small>
                                         </Td>

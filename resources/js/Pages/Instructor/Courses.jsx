@@ -64,7 +64,7 @@ export default function Courses({ courses, isAdmin }) {
                 <div className="ta-cut-16 bg-surface px-6 py-14 text-center">
                     <p className="font-display text-xl font-bold">Ainda não criaste nenhum curso.</p>
                     <p className="mt-1 text-muted">Começa pelo título — o resto vais preenchendo, e fica tudo guardado sozinho.</p>
-                    <Link href="/formador/cursos/novo" className="ta-cut-8 ta-press mt-5 inline-block bg-ink px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-accent">
+                    <Link href="/formador/cursos/novo" className="ta-cut-8 ta-press mt-5 inline-block bg-ink px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-on-ink">
                         Criar o primeiro curso →
                     </Link>
                 </div>
@@ -120,7 +120,7 @@ export default function Courses({ courses, isAdmin }) {
             )}
 
             {toast && (
-                <div role="status" className="ta-cut-8 fixed bottom-20 left-1/2 z-50 -translate-x-1/2 bg-ink px-5 py-3 font-display text-sm font-semibold text-white md:bottom-6">
+                <div role="status" className="ta-cut-8 fixed bottom-20 left-1/2 z-50 -translate-x-1/2 bg-ink px-5 py-3 font-display text-sm font-semibold text-page md:bottom-6">
                     <span className="text-accent">✓</span> {toast}
                 </div>
             )}

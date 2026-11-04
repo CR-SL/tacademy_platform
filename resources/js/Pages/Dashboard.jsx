@@ -349,7 +349,7 @@ export default function Dashboard({
     const pending = (key) => missions[key].filter((m) => m.progress >= m.target && !m.claimed).length;
 
     return (
-        <StudentLayout xp={xp}>
+        <StudentLayout>
             <Head title="Dashboard" />
 
             {toast && (

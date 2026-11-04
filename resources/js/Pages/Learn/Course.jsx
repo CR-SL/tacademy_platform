@@ -40,7 +40,7 @@ export default function Course({ course, access, progress, program, next, sample
                 <p className="ta-cut-8 mb-4 bg-accent/15 px-4 py-2.5 text-sm">👁 Pré-visualização — estás a ver o curso como um aluno. Todas as aulas estão abertas e o progresso não é guardado.</p>
             )}
 
-            <section className="ta-cut-16 grid overflow-hidden bg-ink text-white md:grid-cols-[1.1fr_.9fr]">
+            <section className="ta-cut-16 grid overflow-hidden bg-carbon text-white md:grid-cols-[1.1fr_.9fr]">
                 <div className="flex flex-col gap-3.5 p-6 sm:p-9">
                     <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-white/65">{course.area} · {levelLabels[course.level] ?? course.level}</span>
                     <h1 className="font-display text-[clamp(28px,3.4vw,44px)] font-bold leading-[1.05]">{course.title}</h1>

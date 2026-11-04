@@ -75,7 +75,7 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
                     {!quiz.passed && left > 0 && ' As respostas certas aparecem quando passares ou esgotares as tentativas.'}
                 </p>
                 {!quiz.passed && left > 0 && canSave && (
-                    <button type="button" onClick={() => setRetrying(true)} className="ta-cut-8 ta-press mt-4 bg-ink px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-accent">
+                    <button type="button" onClick={() => setRetrying(true)} className="ta-cut-8 ta-press mt-4 bg-ink px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-on-ink">
                         Tentar outra vez
                     </button>
                 )}

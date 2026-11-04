@@ -78,7 +78,10 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
     const [flash, setFlash] = useState(null); // aviso rápido ao mudar o volume ou a velocidade pelo teclado
     const [volX, setVolX] = useState(null); // posição (px) da barra vertical do volume, por cima do botão do som; null = fechada
 
-    useImperativeHandle(ref, () => ({ pause: () => video.current?.pause() }), []);
+    useImperativeHandle(ref, () => ({
+        pause: () => video.current?.pause(),
+        seek: (s) => { if (video.current) video.current.currentTime = s; },
+    }), []);
 
     useEffect(() => {
         const v = video.current;

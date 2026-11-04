@@ -44,8 +44,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('throttle:120,1')->prefix('plataforma/aulas/{lesson}')->name('learn.')->group(function () {
         Route::post('/progresso', [LessonController::class, 'progress'])->name('progress');
         Route::post('/perguntas/{check}', [LessonController::class, 'check'])->name('check');
-        Route::post('/concluir', [LessonController::class, 'complete'])->name('complete');
         Route::post('/quiz', [LessonController::class, 'quiz'])->name('quiz');
+        Route::post('/notas', [LessonController::class, 'storeNote'])->name('notes.store');
+        Route::delete('/notas/{note}', [LessonController::class, 'destroyNote'])->name('notes.destroy');
     });
 });
 

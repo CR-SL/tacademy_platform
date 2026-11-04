@@ -100,7 +100,7 @@ export function formatXp(n = 0) {
     return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
-export default function StudentLayout({ xp = null, children }) {
+export default function StudentLayout({ children }) {
     const { auth, staffInbox } = usePage().props;
     const currentUrl = usePage().url;
     const user = auth?.user ?? {};
@@ -117,9 +117,12 @@ export default function StudentLayout({ xp = null, children }) {
         <div className="min-h-screen bg-page text-ink">
             <header className="sticky top-0 z-30 border-b border-line bg-page">
                 <div className="flex h-[66px] items-center gap-7 px-4 sm:px-7">
-                    <Link href="/dashboard" className="flex shrink-0 items-center">
-                        <Logo />
-                    </Link>
+                    {/* Logo e ações com flex-1 para as opções ficarem centradas na barra */}
+                    <div className="flex flex-1 items-center">
+                        <Link href="/dashboard" className="flex shrink-0 items-center">
+                            <Logo />
+                        </Link>
+                    </div>
 
                     <nav className="hidden gap-6 font-display text-[15px] font-semibold uppercase tracking-[0.04em] md:flex">
                         {navItems.map((item) => {
@@ -138,7 +141,7 @@ export default function StudentLayout({ xp = null, children }) {
                                 {item.label}
                                 {item.badge && <Badge n={staffInbox?.count} />}
                                 {item.tag && (
-                                    <span className="bg-ink px-1.5 py-0.5 font-mono text-[9.5px] font-semibold tracking-[0.08em] text-accent">
+                                    <span className="bg-ink px-1.5 py-0.5 font-mono text-[9.5px] font-semibold tracking-[0.08em] text-on-ink">
                                         {item.tag.toUpperCase()}
                                     </span>
                                 )}
@@ -147,19 +150,7 @@ export default function StudentLayout({ xp = null, children }) {
                         })}
                     </nav>
 
-                    <div className="ml-auto flex items-center gap-3">
-                        {xp !== null ? (
-                            <div className="ta-cut-8 flex items-center gap-2 bg-surface px-3.5 py-[7px] font-display text-[15px] font-bold">
-                                <span className="text-accent-ink">XP</span>
-                                {formatXp(xp)}
-                            </div>
-                        ) : (
-                            <div className="ta-cut-8 flex items-center gap-2 bg-surface px-3.5 py-[7px] font-display text-[15px] font-bold">
-                                {user.streak_days ?? 0}
-                                <span className="text-accent-ink">DIAS</span>
-                            </div>
-                        )}
-
+                    <div className="flex flex-1 items-center justify-end gap-3">
                         {staffInbox && <Bell inbox={staffInbox} />}
 
                         <ThemeToggle />

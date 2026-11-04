@@ -92,7 +92,9 @@ class LearningTest extends TestCase
         $u = $this->student();
         $this->actingAs($u)->get($this->lessonUrl(2))->assertRedirect('/plataforma/cursos/curso-de-teste');
 
-        $this->actingAs($u)->post("/plataforma/aulas/{$this->l[1]->ulid}/concluir")->assertSessionHasNoErrors();
+        // A aula de texto fica concluída ao abrir, e isso desbloqueia o teste
+        $this->actingAs($u)->get($this->lessonUrl(1))->assertOk()
+            ->assertInertia(fn ($p) => $p->where('progress.status', 'completed')->where('next.open', true));
         $this->actingAs($u)->get($this->lessonUrl(2))->assertOk();
     }
 
@@ -101,28 +103,69 @@ class LearningTest extends TestCase
         $u = $this->student();
         $url = "/plataforma/aulas/{$this->l[0]->ulid}";
 
-        $this->actingAs($u)->postJson("$url/progresso", ['position' => 50, 'map' => $this->map(50), 'duration' => 100])->assertJson(['watched' => 50, 'ready' => false]);
-        $this->actingAs($u)->post("$url/concluir")->assertSessionHasErrors('lesson');
+        $this->actingAs($u)->postJson("$url/progresso", ['position' => 50, 'map' => $this->map(50), 'duration' => 100])->assertJson(['watched' => 50, 'ready' => false, 'completed' => false]);
 
-        // Rever o mesmo trecho não conta duas vezes; saltar não conta
-        $this->actingAs($u)->postJson("$url/progresso", ['position' => 90, 'map' => $this->map(90), 'duration' => 100])->assertJson(['watched' => 90, 'ready' => true]);
-        $this->actingAs($u)->post("$url/concluir")->assertSessionHasErrors('lesson'); // falta a pergunta rápida
+        // Rever o mesmo trecho não conta duas vezes; saltar não conta. Ainda falta a pergunta rápida
+        $this->actingAs($u)->postJson("$url/progresso", ['position' => 90, 'map' => $this->map(90), 'duration' => 100])->assertJson(['watched' => 90, 'ready' => true, 'completed' => false]);
+        $this->assertSame('in_progress', LessonProgress::where('user_id', $u->id)->where('lesson_id', $this->l[0]->id)->value('status'));
 
+        // A última resposta conclui a aula sozinha
         $check = $this->l[0]->checks()->first();
-        $this->actingAs($u)->postJson("$url/perguntas/{$check->id}", ['answer' => 0])->assertJson(['chosen' => 0, 'correct' => 1, 'explanation' => 'Porque sim.']);
+        $this->actingAs($u)->postJson("$url/perguntas/{$check->id}", ['answer' => 0])->assertJson(['chosen' => 0, 'correct' => 1, 'explanation' => 'Porque sim.', 'completed' => true]);
         // Responder outra vez não muda a resposta
-        $this->actingAs($u)->postJson("$url/perguntas/{$check->id}", ['answer' => 1])->assertJson(['chosen' => 0]);
+        $this->actingAs($u)->postJson("$url/perguntas/{$check->id}", ['answer' => 1])->assertJson(['chosen' => 0, 'completed' => false]);
 
-        $this->actingAs($u)->post("$url/concluir")->assertSessionHasNoErrors();
         $this->assertSame('completed', LessonProgress::where('user_id', $u->id)->where('lesson_id', $this->l[0]->id)->value('status'));
+    }
+
+    public function test_answering_first_completes_the_video_when_it_reaches_90_percent(): void
+    {
+        $u = $this->student();
+        $url = "/plataforma/aulas/{$this->l[0]->ulid}";
+        $check = $this->l[0]->checks()->first();
+
+        $this->actingAs($u)->postJson("$url/perguntas/{$check->id}", ['answer' => 1])->assertJson(['completed' => false]);
+        $this->actingAs($u)->postJson("$url/progresso", ['position' => 90, 'map' => $this->map(90), 'duration' => 100])->assertJson(['completed' => true]);
+    }
+
+    public function test_a_video_is_not_completed_just_by_opening_it(): void
+    {
+        $this->l[0]->checks()->delete();
+        $this->l[0]->update(['duration_seconds' => 0]); // duração ainda desconhecida
+
+        $this->actingAs($this->student())->get($this->lessonUrl(0))->assertOk()
+            ->assertInertia(fn ($p) => $p->where('progress.status', 'not_started'));
+    }
+
+    public function test_notes_are_saved_per_student_and_only_the_owner_deletes_them(): void
+    {
+        $u = $this->student();
+        $url = "/plataforma/aulas/{$this->l[0]->ulid}/notas";
+
+        $id = $this->actingAs($u)->postJson($url, ['body' => ' A chave é aqui. ', 'position' => 42])
+            ->assertCreated()->assertJson(['position' => 42, 'body' => 'A chave é aqui.'])->json('id');
+        $this->actingAs($u)->postJson($url, ['body' => ''])->assertUnprocessable();
+
+        $this->actingAs($u)->get($this->lessonUrl(0))->assertInertia(fn ($p) => $p->has('notes', 1)->where('notes.0.position', 42));
+
+        $other = $this->student();
+        $this->actingAs($other)->get($this->lessonUrl(0))->assertInertia(fn ($p) => $p->has('notes', 0));
+        $this->actingAs($other)->deleteJson("$url/$id")->assertNotFound();
+
+        $this->actingAs($u)->deleteJson("$url/$id")->assertOk();
+        $this->assertDatabaseMissing('lesson_notes', ['id' => $id]);
+    }
+
+    public function test_only_enrolled_students_can_save_notes(): void
+    {
+        $this->actingAs($this->user())->postJson("/plataforma/aulas/{$this->l[1]->ulid}/notas", ['body' => 'Olá'])->assertForbidden();
     }
 
     public function test_the_quiz_allows_three_attempts_and_reveals_answers_only_when_closed(): void
     {
         $u = $this->student();
-        foreach ([0, 1] as $i) $this->actingAs($u)->post("/plataforma/aulas/{$this->l[$i]->ulid}/concluir");
-        // a aula 0 é vídeo: marca-se como concluída diretamente para o teste
-        LessonProgress::updateOrCreate(['user_id' => $u->id, 'lesson_id' => $this->l[0]->id], ['status' => 'completed']);
+        // as aulas anteriores marcam-se como concluídas diretamente para o teste
+        foreach ([0, 1] as $i) LessonProgress::updateOrCreate(['user_id' => $u->id, 'lesson_id' => $this->l[$i]->id], ['status' => 'completed']);
 
         $q = $this->l[2]->quiz->questions()->with('options')->get();
         $wrong = [$q[0]->id => $q[0]->options[1]->id, $q[1]->id => $q[1]->options[0]->id];
@@ -146,8 +189,8 @@ class LearningTest extends TestCase
     {
         $u = $this->student();
         LessonProgress::create(['user_id' => $u->id, 'lesson_id' => $this->l[0]->id, 'status' => 'completed']);
-        $this->actingAs($u)->post("/plataforma/aulas/{$this->l[1]->ulid}/concluir");
-        $q = $this->l[2]->quiz->questions()->with('options')->get();
+        $this->actingAs($u)->get($this->lessonUrl(1));
+        $q =$this->l[2]->quiz->questions()->with('options')->get();
         $this->actingAs($u)->post("/plataforma/aulas/{$this->l[2]->ulid}/quiz", ['answers' => [
             $q[0]->id => $q[0]->options[0]->id, $q[1]->id => $q[1]->options[1]->id,
         ]]);
@@ -164,7 +207,7 @@ class LearningTest extends TestCase
         $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertInertia(fn ($p) => $p->where('access.mode', 'none')->where('sample.title', 'Texto'));
         $this->actingAs($u)->get($this->lessonUrl(1))->assertOk()->assertInertia(fn ($p) => $p->where('mode', 'sample'));
         $this->actingAs($u)->get($this->lessonUrl(0))->assertRedirect();
-        $this->actingAs($u)->post("/plataforma/aulas/{$this->l[1]->ulid}/concluir")->assertForbidden();
+        $this->assertSame(0, LessonProgress::where('user_id', $u->id)->count()); // abrir a amostra não guarda progresso
     }
 
     public function test_staff_preview_opens_every_lesson_without_saving(): void

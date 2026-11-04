@@ -7,7 +7,7 @@ export const inputCls =
 
 export const btn = {
     accent: 'ta-cut-8 ta-press bg-accent px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-on-accent disabled:cursor-not-allowed disabled:opacity-45',
-    dark: 'ta-cut-8 ta-press bg-ink px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-accent disabled:opacity-45',
+    dark: 'ta-cut-8 ta-press bg-ink px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-on-ink disabled:opacity-45',
     line: 'ta-cut-8 ta-press bg-surface px-4 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] shadow-[inset_0_0_0_1px_var(--color-line)] hover:bg-page',
     small: 'bg-surface2 px-3 py-2 font-display text-xs font-bold uppercase tracking-[0.04em] hover:bg-track',
 };
@@ -54,7 +54,7 @@ const chipTones = {
     warn: 'bg-accent/15 text-accent-ink',
     bad: 'bg-live/10 text-live',
     info: 'bg-[#3A6FD81a] text-[#3A6FD8]',
-    dark: 'bg-ink text-accent',
+    dark: 'bg-ink text-on-ink',
     mut: 'bg-surface2 text-muted',
 };
 export function Chip({ tone = 'mut', children }) {
@@ -91,7 +91,7 @@ export function Drawer({ over, title, onClose, footer, width = 'w-[min(640px,100
 
     return (
         <>
-            <div className="fixed inset-0 z-40 bg-ink/35" onClick={onClose} aria-hidden="true" />
+            <div className="fixed inset-0 z-40 bg-carbon/35" onClick={onClose} aria-hidden="true" />
             <aside role="dialog" aria-modal="true" aria-label={title} className={`fixed inset-y-0 right-0 z-50 flex ${width} flex-col bg-page shadow-[-20px_0_60px_rgba(0,0,0,.15)]`}>
                 <div className="flex items-start gap-4 border-b border-line bg-surface px-6 pb-4 pt-5">
                     <div className="min-w-0">
@@ -133,7 +133,7 @@ export function FlashToast() {
     }, [flash]);
     if (!msg) return null;
     return (
-        <div role="status" className="ta-cut-8 fixed bottom-20 left-1/2 z-[60] -translate-x-1/2 bg-ink px-5 py-3 font-display text-sm font-semibold text-white md:bottom-6">
+        <div role="status" className="ta-cut-8 fixed bottom-20 left-1/2 z-[60] -translate-x-1/2 bg-ink px-5 py-3 font-display text-sm font-semibold text-page md:bottom-6">
             <span className="text-accent">✓</span> {msg}
         </div>
     );

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\LessonCheck;
+use App\Models\LessonNote;
 use App\Models\LessonProgress;
 use App\Models\QuizAttempt;
 use App\Models\User;
@@ -17,7 +18,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/** Página da aula: conteúdo, progresso do vídeo, perguntas rápidas, quiz e "Marcar como concluída". */
+/** Página da aula: conteúdo, progresso do vídeo, perguntas rápidas, quiz e notas. A aula conclui-se sozinha (ver LearningService). */
 class LessonController extends Controller
 {
     use BuildsProgram;
@@ -37,6 +38,14 @@ class LessonController extends Controller
         $unlocked = $this->learning->unlockedIds($course, $lessons, $done);
         if (! $this->learning->canOpen($access, $course, $lesson, $unlocked)) {
             return to_route('learn.course', $course->slug)->with('status', 'Essa aula ainda está bloqueada — conclui as anteriores para a abrir.');
+        }
+
+        if ($access['mode'] === 'enrolled' && $this->finishOnOpen($user, $lesson)) {
+            $done = $this->learning->completedIds($user, $lessons);
+            $unlocked = $this->learning->unlockedIds($course, $lessons, $done);
+            if ($this->newCertificate($user, $course)) {
+                $request->session()->now('status', $this->doneMessage($user, $course));
+            }
         }
 
         $p = LessonProgress::where('user_id', $user->id)->where('lesson_id', $lesson->id)->first();
@@ -68,6 +77,8 @@ class LessonController extends Controller
             'prev' => $prev ? ['ulid' => $prev->ulid, 'title' => $prev->title] : null,
             'next' => $next ? ['ulid' => $next->ulid, 'title' => $next->title, 'open' => $this->learning->canOpen($access, $course, $next, $unlocked)] : null,
             'avatarUrl' => $avatar?->avatar_ref,
+            'notes' => LessonNote::where('user_id', $user->id)->where('lesson_id', $lesson->id)
+                ->orderBy('position_seconds')->orderBy('id')->get()->map(fn ($n) => $this->notePayload($n))->values(),
         ]);
     }
 
@@ -82,7 +93,11 @@ class LessonController extends Controller
         ]);
         $p = $this->learning->recordProgress($request->user(), $lesson, $data['position'], $data['map'] ?? null, $data['duration'] ?? null);
 
-        return response()->json(['watched' => $p->watched_seconds, 'ready' => $this->learning->videoReady($lesson, $p)]);
+        return response()->json([
+            'watched' => $p->watched_seconds,
+            'ready' => $this->learning->videoReady($lesson, $p),
+            'completed' => $this->finishVideo($request, $lesson),
+        ]);
     }
 
     public function check(Request $request, Lesson $lesson, LessonCheck $check): JsonResponse
@@ -91,15 +106,35 @@ class LessonController extends Controller
         $this->guard($request->user(), $lesson);
         $data = $request->validate(['answer' => ['required', 'integer', 'min:0']]);
 
-        return response()->json($this->learning->answerCheck($request->user(), $lesson, $check, $data['answer']));
+        $result = $this->learning->answerCheck($request->user(), $lesson, $check, $data['answer']);
+
+        return response()->json($result + ['completed' => $this->finishVideo($request, $lesson)]);
     }
 
-    public function complete(Request $request, Lesson $lesson): RedirectResponse
+    /** Nota do aluno; nas aulas de vídeo vem com o segundo em que estava. */
+    public function storeNote(Request $request, Lesson $lesson): JsonResponse
     {
-        [$course] = $this->guard($request->user(), $lesson);
-        $this->learning->complete($request->user(), $lesson);
+        $this->guard($request->user(), $lesson);
+        $data = $request->validate([
+            'body' => ['required', 'string', 'max:2000'],
+            'position' => ['nullable', 'integer', 'min:0'],
+        ]);
+        $note = LessonNote::create([
+            'user_id' => $request->user()->id,
+            'lesson_id' => $lesson->id,
+            'position_seconds' => $data['position'] ?? null,
+            'body' => trim($data['body']),
+        ]);
 
-        return back()->with('status', $this->doneMessage($request->user(), $course));
+        return response()->json($this->notePayload($note), 201);
+    }
+
+    public function destroyNote(Request $request, Lesson $lesson, LessonNote $note): JsonResponse
+    {
+        abort_unless($note->lesson_id === $lesson->id && $note->user_id === $request->user()->id, 404);
+        $note->delete();
+
+        return response()->json(['deleted' => true]);
     }
 
     public function quiz(Request $request, Lesson $lesson): RedirectResponse
@@ -124,12 +159,46 @@ class LessonController extends Controller
         return [$course];
     }
 
+    /** Conclui ao abrir as aulas sem nada para ver até ao fim; o vídeo só se já cumpre as condições. */
+    private function finishOnOpen(User $user, Lesson $lesson): bool
+    {
+        if ($lesson->content_type === 'quiz') {
+            return false;
+        }
+        if ($this->learning->isVideo($lesson) && $this->videoSource($lesson->content_url)) {
+            return $this->learning->completeVideoIfReady($user, $lesson);
+        }
+
+        return $this->learning->completeOnOpen($user, $lesson);
+    }
+
+    /** Depois de guardar progresso ou uma resposta; o aviso aparece quando a página pede os dados novos. */
+    private function finishVideo(Request $request, Lesson $lesson): bool
+    {
+        $completed = $this->learning->completeVideoIfReady($request->user(), $lesson);
+        if ($completed) {
+            $request->session()->flash('status', $this->doneMessage($request->user(), $lesson->module->course));
+        }
+
+        return $completed;
+    }
+
+    private function newCertificate(User $user, Course $course): ?\App\Models\Certificate
+    {
+        return \App\Models\Certificate::where('user_id', $user->id)->where('course_id', $course->id)
+            ->where('issued_at', '>=', now()->subSeconds(10))->first();
+    }
+
     private function doneMessage(User $user, Course $course, string $prefix = 'Aula concluída!'): string
     {
-        $cert = \App\Models\Certificate::where('user_id', $user->id)->where('course_id', $course->id)
-            ->where('issued_at', '>=', now()->subSeconds(10))->first();
+        $cert = $this->newCertificate($user, $course);
 
         return $cert ? "{$prefix} Curso concluído — certificado {$cert->certificate_number} emitido 🎉" : $prefix;
+    }
+
+    private function notePayload(LessonNote $note): array
+    {
+        return ['id' => $note->id, 'position' => $note->position_seconds, 'body' => $note->body];
     }
 
     private function lessonPayload(Lesson $lesson, User $user, ?LessonProgress $p): array

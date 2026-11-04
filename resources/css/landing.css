@@ -34,6 +34,9 @@ body.landing { margin: 0; background: var(--bg); color: var(--ink); font-family:
 .cut-8 { clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
 .cut-12 { clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px); }
 .cut-16 { clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px); }
+/* Contactos: caixas com cantos de 8 px, como na plataforma (a landing mantém o corte) */
+.landing-contact .cut-12,
+.landing-contact .cut-16 { clip-path: inset(0 round 8px); }
 
 .label { margin: 0; font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); }
 .h-display { font-family: var(--display); font-weight: 700; line-height: 1.02; letter-spacing: -.01em; margin: 0; }

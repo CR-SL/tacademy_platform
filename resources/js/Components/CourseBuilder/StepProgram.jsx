@@ -5,14 +5,14 @@ import { formatBytes, formatMinutes, isHttpUrl, isUploadedVideo, linkInfo } from
 import { lessonComplete, newKey, totalMinutes } from './model';
 
 export const LESSON_TYPES = {
-    video_link: { label: 'Vídeo', short: '▶', hint: 'ficheiro ou link', cls: 'bg-ink text-accent' },
+    video_link: { label: 'Vídeo', short: '▶', hint: 'ficheiro ou link', cls: 'bg-ink text-on-ink' },
     avatar: { label: 'Avatar IA', short: 'IA', hint: 'link', cls: 'bg-accent text-on-accent' },
     document: { label: 'Documento', short: 'PDF', hint: 'ficheiro', cls: 'bg-surface2' },
     text: { label: 'Texto', short: 'Aa', cls: 'bg-surface2' },
     quiz: { label: 'Quiz', short: '?', cls: 'bg-surface2' },
 };
 // Tipos antigos (criados no backoffice) que o editor mostra mas não oferece
-const LEGACY = { video_upload: { label: 'Vídeo (upload)', short: '▶', cls: 'bg-ink text-accent' }, live: { label: 'Ao vivo', short: '●', cls: 'bg-surface2' } };
+const LEGACY = { video_upload: { label: 'Vídeo (upload)', short: '▶', cls: 'bg-ink text-on-ink' }, live: { label: 'Ao vivo', short: '●', cls: 'bg-surface2' } };
 const typeOf = (t) => LESSON_TYPES[t] ?? LEGACY[t] ?? LESSON_TYPES.video_link;
 
 export const blankLesson = () => ({ key: newKey(), id: null, title: '', type: 'video_link', url: '', minutes: '', body: '', attachments: [], quiz: [], checks: [] });
@@ -165,7 +165,7 @@ function LessonEditor({ l, set, upload }) {
                             if (k === 'quiz' && !x.quiz.length) x.quiz.push(blankQuestion());
                         })}
                         className={`inline-flex items-center gap-2 border px-3 py-2 font-display text-[13px] font-semibold ${
-                            l.type === k ? 'border-ink bg-ink text-accent' : 'border-line bg-surface hover:border-muted'
+                            l.type === k ? 'border-ink bg-ink text-on-ink' : 'border-line bg-surface hover:border-muted'
                         }`}
                     >
                         {t.label}
@@ -203,7 +203,7 @@ function LessonEditor({ l, set, upload }) {
                     {isUploadedVideo(l.url) ? null : info ? (
                         <div className="ta-cut-8 mt-1 flex flex-wrap items-center gap-3 bg-page p-2.5">
                             {info.thumb && <img src={info.thumb} alt="" className="aspect-video w-[120px] object-cover" />}
-                            <span className="bg-ink px-2 py-0.5 font-mono text-[11px] font-semibold text-accent">{info.tag}</span>
+                            <span className="bg-ink px-2 py-0.5 font-mono text-[11px] font-semibold text-on-ink">{info.tag}</span>
                             <span className="font-mono text-[11px] font-semibold text-[#2F9E5B]">✓ LINK VÁLIDO</span>
                             {isHttpUrl(l.url) && (
                                 <a href={l.url.trim()} target="_blank" rel="noopener noreferrer" className="ml-auto font-display text-[13px] font-semibold text-accent-ink hover:text-ink">
@@ -402,7 +402,7 @@ function VideoUpload({ l, set }) {
             {uploaded ? (
                 <div className="ta-cut-8 flex flex-wrap items-center gap-3 bg-page p-2.5">
                     <video src={l.url} preload="metadata" muted className="aspect-video w-[120px] bg-black object-cover" />
-                    <span className="bg-ink px-2 py-0.5 font-mono text-[11px] font-semibold text-accent">VÍDEO CARREGADO</span>
+                    <span className="bg-ink px-2 py-0.5 font-mono text-[11px] font-semibold text-on-ink">VÍDEO CARREGADO</span>
                     <span className="font-mono text-[11px] font-semibold text-[#2F9E5B]">✓ LEITOR T.ACADEMY</span>
                     <span className="ml-auto flex gap-3">
                         <label className="cursor-pointer font-display text-[13px] font-semibold text-accent-ink hover:text-ink">
@@ -414,7 +414,7 @@ function VideoUpload({ l, set }) {
                 </div>
             ) : (
                 <label className="ta-cut-8 flex cursor-pointer flex-wrap items-center gap-3 border border-dashed border-line bg-page px-3 py-2.5 text-sm hover:border-muted">
-                    <span className="ta-cut-8 bg-ink px-3 py-1.5 font-display text-xs font-bold uppercase tracking-[0.04em] text-accent">Carregar vídeo</span>
+                    <span className="ta-cut-8 bg-ink px-3 py-1.5 font-display text-xs font-bold uppercase tracking-[0.04em] text-on-ink">Carregar vídeo</span>
                     <span className="text-muted">MP4 ou WebM, até {videoMaxMb >= 1024 ? `${(videoMaxMb / 1024).toString().replace('.', ',')} GB` : `${videoMaxMb} MB`} · ou cola um link abaixo</span>
                     <input type="file" accept="video/mp4,video/webm,.mp4,.webm" className="sr-only" onChange={(e) => { send(e.target.files[0]); e.target.value = ''; }} />
                 </label>
@@ -450,7 +450,7 @@ function Attachments({ l, set, upload, main }) {
             </span>
             {l.attachments.map((a, i) => (
                 <div key={a.path} className="flex items-center gap-2.5 bg-page px-2.5 py-2 text-[13.5px]">
-                    <span className="bg-ink px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase text-accent">{a.name.split('.').pop()}</span>
+                    <span className="bg-ink px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase text-on-ink">{a.name.split('.').pop()}</span>
                     <a href={a.url} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate hover:underline">{a.name}</a>
                     <small className="text-muted">{formatBytes(a.size)}</small>
                     <IconButton label="Remover ficheiro" danger className="ml-auto" onClick={() => set((x) => { x.attachments.splice(i, 1); })}>✕</IconButton>

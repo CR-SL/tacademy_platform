@@ -113,7 +113,7 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
                         const idx = FLOW.indexOf(r.status);
                         return (
                             <span key={s} className={`px-2 py-1 font-mono text-[10.5px] font-semibold uppercase tracking-[0.04em] ${
-                                i < idx ? 'bg-ink text-accent' : i === idx ? 'bg-accent text-on-accent' : 'bg-surface2 text-muted'
+                                i < idx ? 'bg-ink text-on-ink' : i === idx ? 'bg-accent text-on-accent' : 'bg-surface2 text-muted'
                             }`}>{statuses[s]}</span>
                         );
                     })}

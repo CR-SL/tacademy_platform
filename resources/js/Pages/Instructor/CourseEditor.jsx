@@ -185,7 +185,7 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
                                 className={`flex flex-none items-center gap-3 p-2 text-left lg:w-full lg:p-2.5 ${i === step ? 'bg-page' : 'hover:bg-page/60'}`}
                             >
                                 <span className={`ta-cut-8 flex h-[30px] w-[30px] flex-none items-center justify-center font-display text-sm font-bold ${
-                                    i === step ? 'bg-accent text-on-accent' : done ? 'bg-ink text-accent' : 'bg-surface2 text-muted'
+                                    i === step ? 'bg-accent text-on-accent' : done ? 'bg-ink text-on-ink' : 'bg-surface2 text-muted'
                                 }`}>
                                     {done ? '✓' : i + 1}
                                 </span>
@@ -229,7 +229,7 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
                             </button>
                         ) : <span />}
                         {step < 3 && (
-                            <button type="button" onClick={() => goTo(step + 1)} className="ta-cut-8 ta-press bg-ink px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-accent">
+                            <button type="button" onClick={() => goTo(step + 1)} className="ta-cut-8 ta-press bg-ink px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-on-ink">
                                 Seguinte →
                             </button>
                         )}

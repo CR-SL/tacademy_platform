@@ -1,6 +1,9 @@
 import defaultTheme from 'tailwindcss/defaultTheme';
 import forms from '@tailwindcss/forms';
 
+// Permite modificadores de opacidade (bg-accent/15) em cores definidas por variável CSS
+const token = (name) => `color-mix(in srgb, var(${name}) calc(<alpha-value> * 100%), transparent)`;
+
 /** @type {import('tailwindcss').Config} */
 export default {
     content: [
@@ -20,17 +23,19 @@ export default {
             },
             colors: {
                 // Tokens em resources/css/app.css (mudam com o tema claro/escuro)
-                accent: 'var(--color-accent)',
-                'accent-ink': 'var(--color-accent-ink)',
-                'on-accent': 'var(--color-on-accent)',
-                page: 'var(--color-bg)',
-                surface: 'var(--color-surface)',
-                surface2: 'var(--color-surface2)',
-                ink: 'var(--color-ink)',
-                muted: 'var(--color-muted)',
-                line: 'var(--color-line)',
-                track: 'var(--color-track)',
-                live: 'var(--color-live)',
+                accent: token('--color-accent'),
+                'accent-ink': token('--color-accent-ink'),
+                'on-accent': token('--color-on-accent'),
+                page: token('--color-bg'),
+                surface: token('--color-surface'),
+                surface2: token('--color-surface2'),
+                ink: token('--color-ink'),
+                'on-ink': token('--color-on-ink'), // texto sobre bg-ink (amarelo no claro, escuro no escuro)
+                carbon: token('--color-carbon'), // sempre escuro: vídeo e destaques com texto branco
+                muted: token('--color-muted'),
+                line: token('--color-line'),
+                track: token('--color-track'),
+                live: token('--color-live'),
             },
         },
     },

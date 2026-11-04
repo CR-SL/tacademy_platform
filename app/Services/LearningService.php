@@ -21,7 +21,8 @@ use Illuminate\Validation\ValidationException;
  * Regras da página do curso e da aula do aluno:
  * - acesso: inscrito (dentro da validade), pré-visualização (formador do curso / gestão) ou aula de amostra;
  * - aulas desbloqueadas de cada vez (unlock_window; 0 = todas), contando os testes como aulas;
- * - vídeo: só conclui depois de ver 90% (segundos realmente reproduzidos) e responder às perguntas rápidas;
+ * - vídeo: conclui sozinho depois de ver 90% (segundos realmente reproduzidos) e responder às perguntas rápidas;
+ * - documento, texto e avatar: concluem ao abrir;
  * - quiz: até 3 tentativas, conclui ao passar; certificado emitido automaticamente ao cumprir os critérios.
  */
 class LearningService
@@ -137,23 +138,35 @@ class LearningService
         return ['chosen' => $answers[(string) $check->id], 'correct' => $check->correct, 'explanation' => $check->explanation];
     }
 
-    /** "Marcar como concluída" (vídeo, avatar, documento, texto). O quiz conclui-se ao passar. */
-    public function complete(User $user, Lesson $lesson): void
+    /** Vídeo: fica concluída quando o aluno viu 90% e respondeu às perguntas rápidas. Devolve true se concluiu agora. */
+    public function completeVideoIfReady(User $user, Lesson $lesson): bool
     {
-        if ($lesson->content_type === 'quiz') {
-            throw ValidationException::withMessages(['lesson' => 'Este teste fica concluído quando passares.']);
+        if (! $this->isVideo($lesson)) {
+            return false;
         }
         $p = LessonProgress::where('user_id', $user->id)->where('lesson_id', $lesson->id)->first();
-        if ($this->isVideo($lesson)) {
-            if (! $this->videoReady($lesson, $p)) {
-                throw ValidationException::withMessages(['lesson' => 'Ainda não viste o vídeo até ao fim.']);
-            }
-            $missing = $lesson->checks()->pluck('id')->diff(array_map('intval', array_keys($p?->check_answers ?? [])));
-            if ($missing->isNotEmpty()) {
-                throw ValidationException::withMessages(['lesson' => 'Responde às perguntas rápidas para concluir a aula.']);
-            }
+        // Sem nada visto não conclui, mesmo que a duração do vídeo ainda não seja conhecida
+        if (! $p || $p->status === 'completed' || $p->watched_seconds <= 0 || ! $this->videoReady($lesson, $p)) {
+            return false;
+        }
+        $missing = $lesson->checks()->pluck('id')->diff(array_map('intval', array_keys($p->check_answers ?? [])));
+        if ($missing->isNotEmpty()) {
+            return false;
         }
         $this->markCompleted($user, $lesson);
+
+        return true;
+    }
+
+    /** Aulas sem nada para ver até ao fim (documento, texto, avatar, vídeo sem link válido): ficam concluídas ao abrir. */
+    public function completeOnOpen(User $user, Lesson $lesson): bool
+    {
+        if (LessonProgress::where('user_id', $user->id)->where('lesson_id', $lesson->id)->where('status', 'completed')->exists()) {
+            return false;
+        }
+        $this->markCompleted($user, $lesson);
+
+        return true;
     }
 
     /** Entrega uma tentativa do quiz. answers = [question_id => option_id]. */

@@ -29,7 +29,7 @@ const fromBase64 = (b64) => {
 const toBase64 = (bytes) => btoa(String.fromCharCode(...bytes));
 const BITS = Array.from({ length: 256 }, (_, i) => i.toString(2).split('1').length - 1);
 
-const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initial, canSave, onWatched }, ref) {
+const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initial, canSave, onWatched, onSaved }, ref) {
     const box = useRef(null);
     const player = useRef(null);
     const map = useRef(fromBase64(initial.map));
@@ -61,9 +61,9 @@ const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initia
         redraw((n) => n + 1);
     };
 
-    const save = useCallback((beacon = false) => {
+    const save = useCallback((beacon = false, force = false) => {
         const st = state.current;
-        if (!canSave || (!st.dirty && !beacon)) return;
+        if (!canSave || (!st.dirty && !beacon && !force)) return;
         st.dirty = false;
         const body = { position: Math.floor(st.position || 0), map: toBase64(map.current), duration: Math.floor(st.duration || 0) || null };
         const url = `/plataforma/aulas/${lessonUlid}/progresso`;
@@ -73,8 +73,9 @@ const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initia
             fd.append('_token', document.querySelector('meta[name="csrf-token"]')?.content ?? '');
             navigator.sendBeacon(url, fd);
         } else {
-            window.axios.post(url, body).catch(() => { st.dirty = true; });
+            window.axios.post(url, body).then((r) => onSaved?.(r.data)).catch(() => { st.dirty = true; });
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [canSave, lessonUlid]);
 
     useImperativeHandle(ref, () => ({
@@ -83,7 +84,15 @@ const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initia
             if (source.kind === 'vimeo') player.current?.pause?.();
             if (source.kind === 'file') player.current?.pause();
         },
-    }), [source.kind]);
+        // Saltar para o segundo de uma nota (não conta como visto)
+        seek: (s) => {
+            if (source.kind === 'youtube') player.current?.seekTo?.(s, true);
+            if (source.kind === 'vimeo') player.current?.setCurrentTime?.(s).catch(() => {});
+            if (source.kind === 'file') player.current?.seek(s);
+        },
+        time: () => Math.floor(state.current.position || 0),
+        flush: () => save(false, true),
+    }), [source.kind, save]);
 
     useEffect(() => {
         let tick;
@@ -151,7 +160,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initia
 
     if (source.kind === 'link') {
         return (
-            <div className="flex aspect-video flex-col items-center justify-center gap-4 bg-ink p-6 text-center text-white">
+            <div className="flex aspect-video flex-col items-center justify-center gap-4 bg-carbon p-6 text-center text-white">
                 <p className="max-w-md text-white/80">Este vídeo abre noutro separador. O tempo conta enquanto esta página estiver aberta depois de carregares em «Abrir vídeo».</p>
                 <a href={source.url} target="_blank" rel="noopener noreferrer"
                     onClick={() => { state.current.playing = true; }}

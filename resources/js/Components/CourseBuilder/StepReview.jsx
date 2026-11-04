@@ -18,7 +18,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                 : 'Assim fica o cartão no catálogo. Ao publicar, o curso fica logo visível para os alunos.'}
         >
             <div className="grid items-start gap-7 md:grid-cols-[300px_1fr]">
-                <div className="relative aspect-[4/5] max-w-[300px] overflow-hidden rounded-[18px] bg-[#222] text-white">
+                <div className="relative aspect-[4/5] max-w-[300px] overflow-hidden rounded-[8px] bg-[#222] text-white">
                     {c.thumbnail_url && <img src={c.thumbnail_url} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent from-35% to-black/85" />
                     <span className="absolute right-3.5 top-3.5 rounded-full bg-accent px-3 py-1 font-display text-[13px] font-bold text-on-accent">
