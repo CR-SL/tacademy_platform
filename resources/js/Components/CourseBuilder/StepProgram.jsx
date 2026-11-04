@@ -240,7 +240,7 @@ function LessonEditor({ l, set, upload }) {
 
 const blankCheck = () => ({ question: '', options: ['', '', ''], correct: 0, explanation: '' });
 
-// Perguntas rápidas no fim do vídeo: o aluno tem de responder para concluir a aula, mas não precisa de acertar
+// Perguntas rápidas no fim do vídeo: são opcionais para o aluno e não contam para a nota
 function ChecksEditor({ l, set }) {
     const checks = l.checks ?? [];
     return (
@@ -248,7 +248,7 @@ function ChecksEditor({ l, set }) {
             <span className="font-display text-[13px] font-semibold uppercase tracking-[0.04em]">
                 Perguntas rápidas
                 <span className="ml-1 font-sans text-xs font-normal normal-case tracking-normal text-muted">
-                    (2 a 3, no fim do vídeo — o aluno tem de responder, mas não conta para a nota)
+                    (2 a 3, no fim do vídeo; o aluno responde se quiser e não conta para a nota)
                 </span>
             </span>
             {checks.map((q, qi) => (

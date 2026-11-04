@@ -2,16 +2,19 @@
 
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CourseMessageController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Instructor\CourseBuilderController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Learn\CourseController as LearnCourseController;
 use App\Http\Controllers\Learn\LessonController;
+use App\Http\Controllers\PanelLayoutController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicCourseController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\Staff\RequestController;
 use App\Http\Controllers\Staff\TeamController as StaffTeamController;
+use App\Http\Controllers\StudentAreaController;
 use App\Http\Controllers\Team\TeamController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +39,17 @@ Route::get('/dashboard', DashboardController::class)
 Route::get('/plataforma/cursos', CatalogController::class)
     ->middleware(['auth', 'verified'])
     ->name('catalog');
+
+// Páginas em painéis do aluno, disposição das caixas e mensagens com o formador
+Route::middleware(['auth', 'verified'])->prefix('plataforma')->group(function () {
+    Route::get('/meus-cursos', [StudentAreaController::class, 'courses'])->name('student.courses');
+    Route::get('/avaliacoes', [StudentAreaController::class, 'assessments'])->name('student.assessments');
+    Route::get('/documentos', [StudentAreaController::class, 'documents'])->name('student.documents');
+    Route::put('/paineis/{view}', [PanelLayoutController::class, 'update'])->middleware('throttle:120,1')->name('panels.update');
+    Route::delete('/paineis/{view}', [PanelLayoutController::class, 'destroy'])->middleware('throttle:120,1')->name('panels.destroy');
+    Route::post('/mensagens', [CourseMessageController::class, 'store'])->middleware('throttle:30,1')->name('messages.store');
+    Route::post('/mensagens/lidas', [CourseMessageController::class, 'read'])->middleware('throttle:120,1')->name('messages.read');
+});
 
 // Página do curso e da aula do aluno
 Route::middleware(['auth', 'verified'])->group(function () {

@@ -1,42 +1,41 @@
 import { Link, usePage } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
-import Logo from '@/Components/Logo';
-import ThemeToggle from '@/Components/ThemeToggle';
 import { useEffect, useRef, useState } from 'react';
-import { CatalogIcon, CreateCourseIcon, GoalsIcon, RequestsIcon, TeamIcon } from '@/Components/NavIcons';
+import useTheme from '@/hooks/useTheme';
+import {
+    IconBook, IconCatalog, IconCreate, IconDoc, IconHome, IconInbox, IconMoon, IconSun, IconTeam, IconTest, IconUser,
+} from '@/Components/Panels/icons';
 
-// Navegação da topbar (direção 4b)
+// Navegação da plataforma (a aparência decidida a 2026-11-04): logótipo e opções à esquerda.
 const baseNav = [
-    { key: 'tasks', label: 'Dashboard', href: '/dashboard', Icon: GoalsIcon },
-    // Catálogo dentro da plataforma (igual ao /cursos da landing); fica ativo também nas páginas do curso e da aula
-    { key: 'courses', label: 'Cursos', href: '/plataforma/cursos', Icon: CatalogIcon },
+    { key: 'home', label: 'Início', href: '/dashboard', Icon: IconHome },
+    { key: 'mine', label: 'Os meus cursos', short: 'Cursos', href: '/plataforma/meus-cursos', Icon: IconBook },
+    { key: 'tests', label: 'Avaliações', href: '/plataforma/avaliacoes', Icon: IconTest },
+    { key: 'docs', label: 'Documentos', href: '/plataforma/documentos', Icon: IconDoc },
+    { key: 'catalog', label: 'Catálogo', href: '/plataforma/cursos', Icon: IconCatalog, exact: true },
 ];
-const requestsItem = { key: 'requests', label: 'Pedidos', href: '/gestao/pedidos', Icon: RequestsIcon, badge: true };
-const teamsItem = { key: 'teams', label: 'Equipas', href: '/gestao/equipas', Icon: TeamIcon };
+const requestsItem = { key: 'requests', label: 'Pedidos', href: '/gestao/pedidos', Icon: IconInbox, badge: true };
+const teamsItem = { key: 'teams', label: 'Equipas', href: '/gestao/equipas', Icon: IconTeam };
 
-// Cada perfil vê as suas opções: Equipa (team leader), Pedidos/Equipas (gestor de cursos e admin), cursos (formador/admin)
+// Cada perfil vê as suas opções: Equipas (team leader), Pedidos/Equipas (gestor de cursos e admin), cursos (formador/admin)
 function navFor(role) {
     switch (role) {
         case 'team_leader':
-            return [...baseNav, { key: 'team', label: 'Equipa', href: '/equipa', Icon: TeamIcon }];
+            return [...baseNav, { key: 'team', label: 'Equipas', href: '/equipa', Icon: IconTeam }];
         case 'gestor_cursos':
             return [...baseNav, requestsItem, teamsItem];
         case 'formador':
-            return [...baseNav, { key: 'builder', label: 'Os meus cursos', short: 'Criar', href: '/formador/cursos', Icon: CreateCourseIcon, tag: 'Formador' }];
+            return [...baseNav, { key: 'builder', label: 'Criar cursos', short: 'Criar', href: '/formador/cursos', Icon: IconCreate, tag: 'Formador' }];
         case 'admin':
-            return [...baseNav, requestsItem, teamsItem, { key: 'builder', label: 'Gerir cursos', short: 'Gerir', href: '/formador/cursos', Icon: CreateCourseIcon, tag: 'Admin' }];
+            return [...baseNav, requestsItem, teamsItem, { key: 'builder', label: 'Gerir cursos', short: 'Gerir', href: '/formador/cursos', Icon: IconCreate, tag: 'Admin' }];
         default:
             return baseNav;
     }
 }
 
-function Badge({ n, className = '' }) {
+function Count({ n }) {
     if (!n) return null;
-    return (
-        <span className={`inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-live px-[5px] font-display text-[11px] font-bold leading-none tracking-normal text-white ${className}`}>
-            {n > 99 ? '99+' : n}
-        </span>
-    );
+    return <span className="pn-count">{n > 99 ? '99+' : n}</span>;
 }
 
 // Sino do Gestor de Cursos/admin: pedidos novos
@@ -44,7 +43,7 @@ function Bell({ inbox }) {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
     useEffect(() => {
-        if (!open) return;
+        if (!open) return undefined;
         const close = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
         const esc = (e) => e.key === 'Escape' && setOpen(false);
         document.addEventListener('pointerdown', close);
@@ -59,26 +58,25 @@ function Bell({ inbox }) {
                 aria-label={`Notificações${inbox.count ? `: ${inbox.count} pedidos novos` : ''}`}
                 aria-expanded={open}
                 onClick={() => setOpen((o) => !o)}
-                className="relative flex h-9 w-9 items-center justify-center"
+                className="pn-icon relative"
             >
-                <span className="ta-cut-8 absolute inset-0 bg-surface" aria-hidden="true" />
-                <svg className="relative" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
                     <path d="M13.7 21a2 2 0 0 1-3.4 0" />
                 </svg>
-                <Badge n={inbox.count} className="absolute -right-2 -top-[7px] shadow-[0_0_0_2px_var(--color-bg)]" />
+                {inbox.count > 0 && <span className="pn-count absolute -right-1 -top-1" style={{ margin: 0 }}>{inbox.count > 99 ? '99+' : inbox.count}</span>}
             </button>
             {open && (
-                <div className="ta-cut-12 absolute right-0 top-12 z-40 w-[320px] max-w-[calc(100vw-32px)] bg-surface shadow-[0_12px_40px_rgba(0,0,0,.15)]">
-                    <p className="border-b border-line px-4 py-3 font-display text-sm font-bold">Pedidos novos</p>
+                <div className="absolute right-0 top-12 z-40 w-[320px] max-w-[calc(100vw-32px)] bg-surface shadow-[0_14px_40px_rgba(0,0,0,.18)]">
+                    <p className="border-b border-line px-4 py-3 text-sm font-bold">Pedidos novos</p>
                     {inbox.items.length ? inbox.items.map((r) => (
                         <Link key={r.id} href={`/gestao/pedidos?pedido=${r.id}`} onClick={() => setOpen(false)} className="block border-b border-line px-4 py-3 text-sm hover:bg-page">
                             <b>#{r.id}</b> · {r.kind}
                             <small className="block text-xs text-muted">{r.who} · {r.ago}</small>
                         </Link>
                     )) : <p className="px-4 py-6 text-center text-sm text-muted">Sem pedidos novos.</p>}
-                    <Link href="/gestao/pedidos" onClick={() => setOpen(false)} className="block px-4 py-3 text-center font-display text-[13px] font-semibold text-accent-ink hover:text-ink">
-                        Ver todos os pedidos →
+                    <Link href="/gestao/pedidos" onClick={() => setOpen(false)} className="block px-4 py-3 text-center text-[13px] font-semibold underline underline-offset-4">
+                        Ver todos os pedidos
                     </Link>
                 </div>
             )}
@@ -100,111 +98,89 @@ export function formatXp(n = 0) {
     return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
-export default function StudentLayout({ children }) {
-    const { auth, staffInbox } = usePage().props;
+export default function StudentLayout({ children, navTools }) {
+    const { auth, staffInbox, access } = usePage().props;
     const currentUrl = usePage().url;
     const user = auth?.user ?? {};
     const navItems = navFor(auth?.role);
+    const { theme, toggle } = useTheme();
+    const dark = theme === 'dark';
+    const [notice, setNotice] = useState(null);
+    const noticeTimer = useRef(null);
+    useEffect(() => () => clearTimeout(noticeTimer.current), []);
 
-    const isActive = ({ href, activeOn }) => {
-        const base = activeOn ?? href;
-        return base !== '#' && (currentUrl === base || currentUrl.startsWith(base + '/') || currentUrl.startsWith(base + '?'));
+    const langNotice = () => {
+        setNotice('Para já, a plataforma só existe em português.');
+        clearTimeout(noticeTimer.current);
+        noticeTimer.current = setTimeout(() => setNotice(null), 2600);
     };
-    // Páginas fora do Inertia (catálogo público) abrem com um link normal
-    const NavLink = (item) => (item.external ? 'a' : Link);
+
+    const isActive = ({ href, exact }) => {
+        const path = currentUrl.split('?')[0];
+        return path === href || (!exact && path.startsWith(`${href}/`));
+    };
+    // Páginas de um curso: contam como "Os meus cursos" para quem está inscrito e como "Catálogo" para os outros
+    const inCourse = currentUrl.startsWith('/plataforma/cursos/');
+    const enrolled = access?.mode === 'enrolled';
+    const active = (item) => isActive(item)
+        || (inCourse && item.key === (enrolled ? 'mine' : 'catalog'));
 
     return (
         <div className="min-h-screen bg-page text-ink">
-            <header className="sticky top-0 z-30 border-b border-line bg-page">
-                <div className="flex h-[66px] items-center gap-7 px-4 sm:px-7">
-                    {/* Logo e ações com flex-1 para as opções ficarem centradas na barra */}
-                    <div className="flex flex-1 items-center">
-                        <Link href="/dashboard" className="flex shrink-0 items-center">
-                            <Logo />
+            <header className="pn-nav">
+                <Link href="/dashboard" className="pn-logo" aria-label="T.Academy, início">
+                    <img className="ta-logo-light" src="/images/brand/logo-nav.png" alt="T.Academy" />
+                    <img className="ta-logo-dark" src="/images/brand/logo-nav-dark.png" alt="" />
+                </Link>
+                <nav className="pn-nav-links" aria-label="Principal">
+                    {navItems.map((item) => (
+                        <Link key={item.key} href={item.href} className={active(item) ? 'pn-on' : undefined} aria-current={active(item) ? 'page' : undefined}>
+                            {item.label}
+                            {item.badge && <Count n={staffInbox?.count} />}
+                            {item.tag && <span className="pn-tag">{item.tag}</span>}
                         </Link>
-                    </div>
-
-                    <nav className="hidden gap-6 font-display text-[15px] font-semibold uppercase tracking-[0.04em] md:flex">
-                        {navItems.map((item) => {
-                            const L = NavLink(item);
-                            return (
-                            <L
-                                key={item.key}
-                                href={item.href}
-                                title={item.href === '#' ? 'Em breve' : undefined}
-                                className={`inline-flex items-center gap-2 ${
-                                    isActive(item)
-                                        ? 'border-b-2 border-accent pb-1 text-accent-ink'
-                                        : `border-b-2 border-transparent pb-1 transition-colors hover:text-ink ${item.tag ? 'text-ink' : 'text-muted'}`
-                                }`}
-                            >
-                                {item.label}
-                                {item.badge && <Badge n={staffInbox?.count} />}
-                                {item.tag && (
-                                    <span className="bg-ink px-1.5 py-0.5 font-mono text-[9.5px] font-semibold tracking-[0.08em] text-on-ink">
-                                        {item.tag.toUpperCase()}
-                                    </span>
-                                )}
-                            </L>
-                            );
-                        })}
-                    </nav>
-
-                    <div className="flex flex-1 items-center justify-end gap-3">
-                        {staffInbox && <Bell inbox={staffInbox} />}
-
-                        <ThemeToggle />
-
-                        <Dropdown>
-                            <Dropdown.Trigger>
-                                <button
-                                    type="button"
-                                    aria-label="Menu da conta"
-                                    className="ta-cut-8 ta-press flex h-9 w-9 items-center justify-center bg-accent font-display text-[13px] font-bold text-on-accent"
-                                >
-                                    {initials(user.name) || 'AL'}
-                                </button>
-                            </Dropdown.Trigger>
-                            <Dropdown.Content>
-                                <div className="border-b border-line px-4 py-3">
-                                    <p className="truncate font-display text-sm font-bold text-ink">
-                                        {user.name ?? 'Aluno'}
-                                    </p>
-                                    <p className="truncate text-xs text-muted">{user.email}</p>
-                                </div>
-                                <Dropdown.Link href="/profile">Perfil</Dropdown.Link>
-                                <Dropdown.Link href="/logout" method="post" as="button">
-                                    Terminar sessão
-                                </Dropdown.Link>
-                            </Dropdown.Content>
-                        </Dropdown>
-                    </div>
+                    ))}
+                </nav>
+                <div className="pn-nav-end">
+                    {navTools}
+                    {staffInbox && <Bell inbox={staffInbox} />}
+                    <button type="button" className="pn-lang" onClick={langNotice}>PT · EN</button>
+                    <button type="button" className="pn-icon" onClick={toggle} aria-label={dark ? 'Mudar para tema claro' : 'Mudar para tema escuro'} title={dark ? 'Tema claro' : 'Tema escuro'}>
+                        {dark ? <IconSun /> : <IconMoon />}
+                    </button>
+                    <Dropdown>
+                        <Dropdown.Trigger>
+                            <button type="button" aria-label="Menu da conta" className="pn-account"><IconUser /></button>
+                        </Dropdown.Trigger>
+                        <Dropdown.Content>
+                            <div className="border-b border-line px-4 py-3">
+                                <p className="truncate text-sm font-bold text-ink">{user.name ?? 'Aluno'}</p>
+                                <p className="truncate text-xs text-muted">{user.email}</p>
+                            </div>
+                            <Dropdown.Link href="/profile">Perfil</Dropdown.Link>
+                            <Dropdown.Link href="/logout" method="post" as="button">Terminar sessão</Dropdown.Link>
+                        </Dropdown.Content>
+                    </Dropdown>
                 </div>
             </header>
 
-            <main className="w-full px-4 pb-24 pt-6 sm:px-6 md:pb-10">{children}</main>
+            <main className="pn-main">{children}</main>
 
-            {/* Bottom tab bar (mobile) — mesma navegação da topbar */}
-            <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-line bg-surface px-2 py-1.5 md:hidden">
+            {/* Barra de baixo (janelas estreitas): mesma navegação da barra de cima */}
+            <nav className="pn-tabbar" aria-label="Principal">
                 {navItems.map((item) => {
                     const { key, label, short, href, Icon, badge } = item;
-                    const L = NavLink(item);
                     return (
-                        <L
-                            key={key}
-                            href={href}
-                            aria-label={label}
-                            className={`relative flex flex-col items-center gap-0.5 px-2 py-1 font-display text-[11px] font-semibold uppercase tracking-[0.04em] ${
-                                isActive(item) ? 'text-accent-ink' : 'text-muted'
-                            }`}
-                        >
-                            <Icon className="h-5 w-5" />
-                            {badge && <Badge n={staffInbox?.count} className="absolute -top-1 right-0" />}
+                        <Link key={key} href={href} aria-label={label} className={active(item) ? 'pn-on' : undefined} aria-current={active(item) ? 'page' : undefined}>
+                            <Icon />
+                            {badge && <Count n={staffInbox?.count} />}
                             {short ?? label}
-                        </L>
+                        </Link>
                     );
                 })}
             </nav>
+
+            <div className={`pn-toast ${notice ? 'pn-on' : ''}`} role="status">{notice}</div>
         </div>
     );
 }

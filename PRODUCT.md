@@ -30,9 +30,9 @@ O computador e o telemóvel têm a mesma importância: tanto sessões de estudo 
 
 ## Capabilities and Constraints
 
-- O redesign muda o aspeto, não as regras do produto: desbloqueio de aulas, meta de 90% do vídeo, tentativas dos testes, certificados e perfis.
+- O redesign muda o aspeto, não as regras do produto: aulas sem bloqueios para quem está inscrito, meta de 90% do vídeo, tentativas dos testes, certificados e perfis.
 - Os temas claro e escuro têm de funcionar.
-- O XP, as missões e a classificação ficam **discretos, em segundo plano**. Hoje são dados de demonstração, porque ainda não há tabelas para eles. Em aberto: quando passam a dados reais.
+- O dashboard em painéis (2026-11-04) só mostra dados reais: o XP, as missões, o feed "ao vivo" e a classificação saíram, porque eram dados de demonstração. Em aberto: se voltam quando houver tabelas para eles.
 - A landing page está fora de âmbito por agora. O hero "nuvem" e a aula em ecrã dividido estão em espera.
 - Detalhes técnicos e histórico de decisões: `../docs/CLAUDE.md`.
 
@@ -41,7 +41,7 @@ O computador e o telemóvel têm a mesma importância: tanto sessões de estudo 
 - **Personalidade:** ousada, futurista e marcante. A referência é Linear / Stripe: software de grande precisão, com tipografia cuidada, detalhes finos e muita clareza.
 - **Cor da marca:** o amarelo do logótipo, `#F8B101`.
 - **Logótipo:** os PNG originais em `public/images/brand/`.
-- **Decisões recentes do cliente, a respeitar salvo indicação em contrário:** navbar com o logótipo à esquerda e as opções ao centro, sem XP nem contador de dias; caixas com cantos de 8 px; botões com corte na diagonal.
+- **Nova aparência da plataforma (decidida a 2026-11-04):** a do exemplo do colega, "opção B", em `public/landing-concepts/dashboard-paineis.html`: letra Archivo, painéis brancos sem cantos arredondados, botões em forma de cápsula, etiquetas pequenas em maiúsculas, navbar com o logótipo e as opções à esquerda. Substitui a navbar com opções ao centro, as caixas com cantos de 8 px e os botões com corte na diagonal. Aprovada e aplicada a toda a plataforma com sessão; a landing, o catálogo público e os contactos mantêm o aspeto próprio. Estilos em `resources/css/panels.css` e motor das caixas em `resources/js/Components/Panels/`.
 
 ## Evidence on Hand
 

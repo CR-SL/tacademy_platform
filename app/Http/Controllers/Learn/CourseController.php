@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ContactRequest;
 use App\Models\Course;
 use App\Services\LearningService;
+use App\Services\StudentArea;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,7 +18,7 @@ class CourseController extends Controller
 
     public function __construct(private LearningService $learning) {}
 
-    public function __invoke(Request $request, Course $course): Response
+    public function __invoke(Request $request, Course $course, StudentArea $area): Response
     {
         $user = $request->user();
         $access = $this->learning->access($user, $course);
@@ -25,8 +26,7 @@ class CourseController extends Controller
 
         $lessons = $this->learning->lessons($course);
         $done = $access['mode'] === 'enrolled' ? $this->learning->completedIds($user, $lessons) : collect();
-        $unlocked = $this->learning->unlockedIds($course, $lessons, $done);
-        $next = $lessons->first(fn ($l) => ! $done->contains($l->id) && $this->learning->canOpen($access, $course, $l, $unlocked))
+        $next = $lessons->first(fn ($l) => ! $done->contains($l->id) && $this->learning->canOpen($access, $course, $l))
             ?? $lessons->first();
         $sample = $lessons->firstWhere('id', $course->sample_lesson_id);
         $course->loadMissing(['category', 'instructor']);
@@ -50,7 +50,6 @@ class CourseController extends Controller
                 'price' => (float) $course->price,
                 'is_free' => $course->is_free,
                 'access_months' => $course->access_months,
-                'unlock_window' => $course->unlock_window,
             ],
             'access' => [
                 'mode' => $access['mode'],
@@ -62,10 +61,12 @@ class CourseController extends Controller
                 'done' => $done->count(),
                 'percent' => $lessons->count() ? (int) floor($done->count() / $lessons->count() * 100) : 0,
             ],
-            'program' => $this->program($course, $lessons, $done, $unlocked, $access, null),
+            'program' => $this->program($course, $lessons, $done, $access, null),
             'next' => $next ? ['ulid' => $next->ulid, 'title' => $next->title, 'started' => $done->isNotEmpty(), 'finished' => $lessons->isNotEmpty() && $done->count() === $lessons->count()] : null,
             'sample' => $sample && $access['mode'] === 'none' ? ['ulid' => $sample->ulid, 'title' => $sample->title] : null,
             'certificate' => $this->learning->certificateStatus($user, $course, $lessons, $done),
+            'alexUrl' => $area->alexUrl($user),
+            'savedLayout' => $area->layout($user, 'curso'),
         ]);
     }
 }

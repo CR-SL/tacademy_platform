@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { IconCheck, IconLock, IconX } from '@/Components/Learn/LessonIcons';
 
-const LOCKED_TIP = 'Conclui as aulas anteriores para desbloquear';
+const LOCKED_TIP = 'Inscreve-te no curso para abrir esta aula';
 const modPct = (m) => Math.round(m.lessons.filter((l) => l.status === 'done').length / m.lessons.length * 100);
 const lessonPct = (l, currentPct) => (l.status === 'done' ? 100 : l.current ? currentPct : 0);
 
@@ -86,7 +86,7 @@ export function ModuleSheet({ slug, module: m, index, currentPct, onClose }) {
                     const body = (
                         <>
                             <span className="num">{index + 1}.{li + 1}</span><span>{l.title}</span>
-                            <small>{l.status === 'done' ? 'Concluída' : locked ? 'Bloqueada' : l.current ? 'A decorrer' : l.minutes > 0 ? `${l.minutes} min` : ''}</small>
+                            <small>{l.status === 'done' ? 'Concluída' : locked ? 'Só para inscritos' : l.current ? 'A decorrer' : l.minutes > 0 ? `${l.minutes} min` : ''}</small>
                             <span className="ln"><i style={{ width: `${lessonPct(l, currentPct)}%` }} /></span>
                         </>
                     );

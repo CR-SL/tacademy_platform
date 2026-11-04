@@ -8,9 +8,9 @@ use Illuminate\Support\Collection;
 /** Programa do curso (módulos e aulas com o estado de cada uma) para a página do curso e da aula. */
 trait BuildsProgram
 {
-    protected function program(Course $course, Collection $lessons, Collection $done, Collection $unlocked, array $access, ?int $currentId): array
+    protected function program(Course $course, Collection $lessons, Collection $done, array $access, ?int $currentId): array
     {
-        return $lessons->groupBy(fn ($l) => $l->module->id)->map(function ($ls) use ($course, $done, $unlocked, $access, $currentId) {
+        return $lessons->groupBy(fn ($l) => $l->module->id)->map(function ($ls) use ($course, $done, $access, $currentId) {
             $module = $ls->first()->module;
 
             return [
@@ -22,7 +22,7 @@ trait BuildsProgram
                     'minutes' => (int) round($l->duration_seconds / 60),
                     'status' => match (true) {
                         $done->contains($l->id) => 'done',
-                        $this->learning->canOpen($access, $course, $l, $unlocked) => 'open',
+                        $this->learning->canOpen($access, $course, $l) => 'open',
                         default => 'locked',
                     },
                     'current' => $l->id === $currentId,

@@ -25,9 +25,6 @@ class CourseBuilder
 
     public const ACCESS_MONTHS = [3, 6, 12];
 
-    /** Aulas desbloqueadas de cada vez (0 = todas). */
-    public const UNLOCK_WINDOWS = [1, 3, 5, 0];
-
     public const SHORT_MAX = 160;
 
     /** Pasta (disco public) onde ficam capas e anexos carregados no editor. */
@@ -61,7 +58,6 @@ class CourseBuilder
             'is_free' => $course->is_free,
             'price' => $course->is_free || (float) $course->price === 0.0 ? '' : (string) $course->price,
             'access_months' => $course->access_months,
-            'unlock_window' => $course->unlock_window,
             'certificate_enabled' => $course->certificate_enabled,
             'certificate_min_progress' => $course->certificate_min_progress,
             'certificate_min_score' => $course->certificate_min_score,
@@ -119,7 +115,6 @@ class CourseBuilder
                 'is_free' => $isFree,
                 'price' => $isFree ? 0 : (float) ($data['price'] ?? 0),
                 'access_months' => $data['access_months'] ?? null,
-                'unlock_window' => $data['unlock_window'] ?? 5,
                 'certificate_enabled' => (bool) ($data['certificate_enabled'] ?? true),
                 'certificate_min_progress' => $data['certificate_min_progress'] ?? 100,
                 'certificate_min_score' => $data['certificate_min_score'] ?? 70,

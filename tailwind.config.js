@@ -16,10 +16,10 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                // Outfit (títulos, números, rótulos) + Geist (texto) + Geist Mono (etiquetas e dados)
-                sans: ['Geist', ...defaultTheme.fontFamily.sans],
-                display: ['Outfit', ...defaultTheme.fontFamily.sans],
-                mono: ['"Geist Mono"', ...defaultTheme.fontFamily.mono],
+                // Archivo em toda a plataforma (aparência decidida a 2026-11-04); a landing tem letra própria
+                sans: ['Archivo', ...defaultTheme.fontFamily.sans],
+                display: ['Archivo', ...defaultTheme.fontFamily.sans],
+                mono: ['Archivo', ...defaultTheme.fontFamily.sans],
             },
             colors: {
                 // Tokens em resources/css/app.css (mudam com o tema claro/escuro)

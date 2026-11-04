@@ -60,7 +60,6 @@ class DemoCourseSeeder extends Seeder
                 'is_free' => false,
                 'currency' => 'EUR',
                 'access_months' => 12,
-                'unlock_window' => 5, // ficam sempre 5 aulas por fazer abertas
                 'certificate_enabled' => true,
                 'certificate_min_progress' => 100,
                 'certificate_min_score' => 70,
@@ -85,7 +84,7 @@ class DemoCourseSeeder extends Seeder
                     $minutes += $min;
                     $first ??= $lesson;
 
-                    // Perguntas rápidas do fim do vídeo (mini-quiz: responder é obrigatório, acertar não)
+                    // Perguntas rápidas do fim do vídeo (opcionais e sem contar para a nota)
                     if ($type === 'video_link') {
                         foreach ($this->checks()[$lTitle] ?? [] as $ci => [$question, $options, $correct, $explanation]) {
                             $lesson->checks()->create([
@@ -122,7 +121,7 @@ class DemoCourseSeeder extends Seeder
         return [
             ['Introdução', 'Boas-vindas e como tirar o melhor partido da formação.', [
                 [$v, 'Bem-vindo à formação', 4],
-                ['text', 'Como funciona este curso', 3, "Esta formação está organizada em 10 módulos, do mais geral para o mais técnico. As aulas abrem por ordem: conclui cada uma para desbloquear a seguinte.\n\nNas aulas de vídeo, quando terminares, carrega em «Marcar como concluída». No fim de cada módulo há um pequeno teste (nota mínima de 70%, até 3 tentativas) e, no fim do curso, o teste final.\n\nPara obteres o certificado precisas de concluir todas as aulas e ter nota mínima de 70% nos testes.\n\nDica: tem um bloco de notas à mão — vais encontrar valores de referência (binários, tensões, calibres) que dá jeito ter sempre por perto na oficina."],
+                ['text', 'Como funciona este curso', 3, "Esta formação está organizada em 10 módulos, do mais geral para o mais técnico. Podes abrir as aulas pela ordem que quiseres, mas recomendamos seguir o programa.\n\nAs aulas de vídeo ficam concluídas sozinhas quando vires 90% do vídeo. No fim de cada módulo há um pequeno teste (nota mínima de 70%, até 3 tentativas) e, no fim do curso, o teste final.\n\nPara obteres o certificado precisas de concluir todas as aulas e ter nota mínima de 70% nos testes.\n\nDica: tem um bloco de notas à mão — vais encontrar valores de referência (binários, tensões, calibres) que dá jeito ter sempre por perto na oficina."],
             ]],
             ['Princípios da reparação automóvel', 'Segurança, organização e método antes de pegar na primeira ferramenta.', [
                 [$v, 'O que todo o técnico deve saber', 8],

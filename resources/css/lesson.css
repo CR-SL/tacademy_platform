@@ -28,8 +28,8 @@
 .al-logo { flex: none; display: flex; }
 .al-logo-bird { display: none; height: 26px; width: auto; }
 .al-head-t { flex: 1; min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; line-height: 1.25; }
-.al-head-t .n { font-family: 'Geist Mono', monospace; font-size: 13px; font-weight: 500; padding-top: 1px; }
-.al-head-t b { font-family: Outfit, sans-serif; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.al-head-t .n { font-family: Archivo, sans-serif; font-size: 13px; font-weight: 500; padding-top: 1px; }
+.al-head-t b { font-family: Archivo, sans-serif; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .al-head-t small { grid-column: 2; font-size: 12.5px; color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .al-head-ic { display: flex; align-items: center; gap: 4px; flex: none; }
 .al-ic { width: 32px; height: 32px; border-radius: 999px; display: flex; align-items: center; justify-content: center; transition: background .2s; }
@@ -46,7 +46,7 @@
 .al-rail.open .al-rail-line { display: none; }
 .al-rail-in { width: 240px; height: 100%; overflow-y: auto; background: var(--color-surface); border-right: 1px solid var(--color-line); opacity: 0; transition: opacity .25s; scrollbar-width: thin; scrollbar-color: var(--color-accent) transparent; }
 .al-rail.open .al-rail-in { opacity: 1; }
-.al-mod-b { display: flex; width: 100%; gap: 8px; padding: 14px 16px 12px 22px; text-align: left; font: 500 14px/1.3 Outfit, sans-serif; align-items: flex-start; }
+.al-mod-b { display: flex; width: 100%; gap: 8px; padding: 14px 16px 12px 22px; text-align: left; font: 500 14px/1.3 Archivo, sans-serif; align-items: flex-start; }
 .al-mod-b .tt { flex: 1; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .al-mod-b .ck { margin-top: 2px; }
 .al-mod-b:hover { background: var(--al-hover); }
@@ -58,7 +58,7 @@
 a.al-les:hover { background: var(--al-hover); }
 .al-les.locked { cursor: not-allowed; opacity: .55; }
 .al-les.cur { background: var(--al-wash); color: var(--color-ink); }
-.al-les .top { display: flex; align-items: center; gap: 8px; font: 400 11.5px 'Geist Mono', monospace; }
+.al-les .top { display: flex; align-items: center; gap: 8px; font: 400 11.5px Archivo, sans-serif; }
 .al-les .top .sp { flex: 1; }
 .al-les .dot { width: 6px; height: 6px; border-radius: 99px; background: var(--color-accent); }
 .al-les .tl { display: block; font-size: 13px; line-height: 1.3; margin-top: 2px; padding-bottom: 9px; }
@@ -110,7 +110,7 @@ a.al-les:hover { background: var(--al-hover); }
 .al-m-scroll::-webkit-scrollbar { display: none; }
 .al-card { background: var(--color-surface); border-radius: 4px; padding: 34px 34px 30px; max-width: 760px; margin: 0 auto; }
 .al-card.flush { padding: 0; }
-.al-card h2 { margin: 0 0 16px; font: 500 21px/1.2 Outfit, sans-serif; letter-spacing: -.01em; }
+.al-card h2 { margin: 0 0 16px; font: 500 21px/1.2 Archivo, sans-serif; letter-spacing: -.01em; }
 .al-card p { margin: 0 0 12px; font-size: 14.5px; color: var(--al-body); white-space: pre-line; }
 .al-pdf { flex: 1; min-height: 0; width: 100%; border: 0; background: #fff; padding-top: 44px; }
 .al-m-foot { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--color-surface); border-top: 1px solid var(--color-line); font-size: 13px; overflow-x: auto; scrollbar-width: none; }
@@ -123,10 +123,10 @@ a.al-les:hover { background: var(--al-hover); }
 .al-n { background: var(--color-surface); border-top: 1px solid var(--color-line); }
 .al-n.side { border-top: 0; border-left: 1px solid var(--color-line); }
 .al-n-scroll { flex: 1; min-height: 0; overflow: auto; padding: 44px 18px 12px; scrollbar-width: thin; scrollbar-color: var(--color-accent) transparent; }
-.al-n-scroll h3 { margin: 0 0 14px; font: 600 15px Outfit, sans-serif; }
+.al-n-scroll h3 { margin: 0 0 14px; font: 600 15px Archivo, sans-serif; }
 .al-note { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 11px; font-size: 14px; color: var(--al-body); }
 .al-note .tx { flex: 1; min-width: 0; overflow-wrap: anywhere; white-space: pre-line; }
-.al-note .at { flex: none; height: 22px; padding: 0 9px; border-radius: 6px; background: var(--color-surface2); font: 500 12px 'Geist Mono', monospace; color: var(--color-ink); }
+.al-note .at { flex: none; height: 22px; padding: 0 9px; border-radius: 6px; background: var(--color-surface2); font: 500 12px Archivo, sans-serif; color: var(--color-ink); }
 .al-note .at:hover { background: var(--al-soft); }
 .al-note .rm { flex: none; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--color-muted); opacity: 0; transition: opacity .15s; }
 .al-note:hover .rm, .al-note .rm:focus-visible { opacity: 1; }
@@ -146,8 +146,8 @@ a.al-les:hover { background: var(--al-hover); }
 .al-c-scroll { flex: 1; min-height: 0; overflow: auto; padding: 48px 24px 24px; scrollbar-width: none; }
 .al-c-scroll::-webkit-scrollbar { display: none; }
 .al-c-card { background: var(--color-surface); border-radius: 4px; padding: 26px 28px; max-width: 760px; margin: 0 auto; }
-.al-c-card > small { font: 400 11px 'Geist Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
-.al-c-card h2 { margin: 6px 0 14px; font: 500 19px/1.25 Outfit, sans-serif; }
+.al-c-card > small { font: 400 11px Archivo, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+.al-c-card h2 { margin: 6px 0 14px; font: 500 19px/1.25 Archivo, sans-serif; }
 
 /* Avatar */
 .al-a { background: var(--color-carbon); color: #fff; }
@@ -182,7 +182,7 @@ a.al-les:hover { background: var(--al-hover); }
 .al-f-b:hover:not(:disabled) { background: var(--color-surface2); }
 .al-f-b.on { background: var(--color-surface2); }
 .al-f-b:disabled { color: var(--al-off); cursor: not-allowed; }
-.al-f-b .num { font: 400 14px 'Geist Mono', monospace; }
+.al-f-b .num { font: 400 14px Archivo, sans-serif; }
 .al-f-sep { width: 1px; height: 20px; background: var(--color-line); }
 .al-f-hint { font-size: 13px; color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .al-tools { display: flex; align-items: center; gap: 4px; padding: 3px; border-radius: 999px; background: var(--color-surface); box-shadow: 0 0 0 1px var(--color-line), 0 6px 18px -10px rgba(0, 0, 0, .25); }
@@ -235,7 +235,7 @@ a.al-les:hover { background: var(--al-hover); }
     .al-chev { display: flex; justify-content: center; align-items: center; width: 100%; height: 26px; background: var(--color-surface2); }
     .al-foot.min .al-chev svg { transform: rotate(180deg); }
     .al-tools-row { display: flex; align-items: center; justify-content: space-between; gap: 2px; padding: 8px; background: var(--color-surface2); }
-    .al-nav-m { display: flex; flex-direction: column; align-items: center; width: 34px; font: 400 11.5px 'Geist Mono', monospace; gap: 1px; }
+    .al-nav-m { display: flex; flex-direction: column; align-items: center; width: 34px; font: 400 11.5px Archivo, sans-serif; gap: 1px; }
     .al-nav-m:disabled { color: var(--al-off); }
     .al-tools { background: none; box-shadow: none; padding: 0; gap: 5px; }
     .al-tools .div { display: none; }
@@ -244,7 +244,7 @@ a.al-les:hover { background: var(--al-hover); }
     .al-ev { height: 34px; padding: 0 12px; font-size: 13px; box-shadow: inset 0 0 0 1px var(--color-ink); }
     .al-strip { display: flex; overflow-x: auto; scrollbar-width: none; background: var(--color-surface); }
     .al-strip::-webkit-scrollbar { display: none; }
-    .al-cell { position: relative; flex: 0 0 148px; padding: 8px 10px; text-align: left; font: 500 12.5px/1.3 Outfit, sans-serif; height: 54px; background: var(--color-surface); overflow: hidden; }
+    .al-cell { position: relative; flex: 0 0 148px; padding: 8px 10px; text-align: left; font: 500 12.5px/1.3 Archivo, sans-serif; height: 54px; background: var(--color-surface); overflow: hidden; }
     .al-cell i { position: absolute; inset: 0 auto 0 0; background: var(--al-soft); opacity: .55; }
     .al-cell span { position: relative; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .al-cell.on { background: var(--color-accent); color: var(--color-on-accent); font-weight: 600; }
@@ -253,13 +253,13 @@ a.al-les:hover { background: var(--al-hover); }
     .al-foot.sheeting .al-chev, .al-foot.sheeting .al-tools-row { display: none; }
     .al-sheet { position: absolute; left: 0; right: 0; top: var(--al-split, 38%); bottom: 0; z-index: 7; background: var(--color-surface); display: flex; flex-direction: column; animation: al-sheet .4s var(--al-ease); }
     @keyframes al-sheet { from { transform: translateY(100%); } to { transform: none; } }
-    .al-sheet-h { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px 10px 14px; font: 600 14px/1.25 Outfit, sans-serif; border-bottom: 1px solid var(--color-line); }
+    .al-sheet-h { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px 10px 14px; font: 600 14px/1.25 Archivo, sans-serif; border-bottom: 1px solid var(--color-line); }
     .al-sheet-h span:nth-child(2) { flex: 1; }
     .al-sheet-b { flex: 1; min-height: 0; overflow-y: auto; }
     .al-s-les { display: grid; grid-template-columns: 34px 1fr auto; width: 100%; align-items: baseline; padding: 12px 14px 0; font-size: 13.5px; text-align: left; color: var(--color-muted); column-gap: 6px; }
     .al-s-les.locked { opacity: .55; }
     .al-s-les.cur { background: var(--al-wash); color: var(--color-ink); }
-    .al-s-les .num { font: 400 11.5px 'Geist Mono', monospace; }
+    .al-s-les .num { font: 400 11.5px Archivo, sans-serif; }
     .al-s-les small { font-size: 11.5px; }
     .al-s-les .ln { grid-column: 2 / -1; height: 2px; margin-top: 12px; background: var(--color-track); }
     .al-s-les .ln i { display: block; height: 100%; background: var(--color-accent); }

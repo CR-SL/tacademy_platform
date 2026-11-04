@@ -4,7 +4,7 @@ export const TYPE_LABEL = {
     video_link: 'Vídeo', video_upload: 'Vídeo', avatar: 'Aula com avatar IA', document: 'Documento', text: 'Texto', quiz: 'Teste', live: 'Ao vivo',
 };
 
-// Programa do curso na página do curso: módulos e aulas com o estado (✓ concluída, ▶ atual, 🔒 bloqueada).
+// Programa do curso na página do curso: módulos e aulas com o estado (✓ concluída, ▶ atual, 🔒 só para inscritos).
 export default function Program({ slug, program }) {
     return (
         <div className="flex flex-col gap-1">
@@ -32,8 +32,8 @@ export default function Program({ slug, program }) {
                         );
                         const cls = `flex items-center gap-2.5 px-2 py-2 text-sm ${l.current ? 'bg-accent/15' : ''}`;
                         return locked ? (
-                            <div key={l.ulid} className={`${cls} cursor-not-allowed text-muted`} title="Conclui as aulas anteriores para desbloquear" aria-disabled="true">
-                                <span className="sr-only">Bloqueada: </span>{row}
+                            <div key={l.ulid} className={`${cls} cursor-not-allowed text-muted`} title="Inscreve-te no curso para abrir esta aula" aria-disabled="true">
+                                <span className="sr-only">Só para inscritos: </span>{row}
                             </div>
                         ) : (
                             <Link key={l.ulid} href={`/plataforma/cursos/${slug}/aulas/${l.ulid}`} preserveScroll={false}

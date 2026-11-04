@@ -22,7 +22,6 @@ export function blankCourse() {
         is_free: false,
         price: '',
         access_months: null,
-        unlock_window: 5, // aulas desbloqueadas de cada vez (0 = todas)
         certificate_enabled: true,
         certificate_min_progress: 100,
         certificate_min_score: 70,

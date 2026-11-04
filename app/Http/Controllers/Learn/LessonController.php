@@ -35,14 +35,12 @@ class LessonController extends Controller
 
         $lessons = $this->learning->lessons($course);
         $done = $access['mode'] === 'enrolled' ? $this->learning->completedIds($user, $lessons) : collect();
-        $unlocked = $this->learning->unlockedIds($course, $lessons, $done);
-        if (! $this->learning->canOpen($access, $course, $lesson, $unlocked)) {
-            return to_route('learn.course', $course->slug)->with('status', 'Essa aula ainda está bloqueada — conclui as anteriores para a abrir.');
+        if (! $this->learning->canOpen($access, $course, $lesson)) {
+            return to_route('learn.course', $course->slug)->with('status', 'Esta aula só abre para quem está inscrito no curso.');
         }
 
         if ($access['mode'] === 'enrolled' && $this->finishOnOpen($user, $lesson)) {
             $done = $this->learning->completedIds($user, $lessons);
-            $unlocked = $this->learning->unlockedIds($course, $lessons, $done);
             if ($this->newCertificate($user, $course)) {
                 $request->session()->now('status', $this->doneMessage($user, $course));
             }
@@ -59,11 +57,10 @@ class LessonController extends Controller
             'course' => [
                 'slug' => $course->slug,
                 'title' => $course->title,
-                'unlock_window' => $course->unlock_window,
                 'percent' => $lessons->count() ? (int) floor($done->count() / $lessons->count() * 100) : 0,
             ],
             'mode' => $access['mode'] === 'enrolled' ? 'enrolled' : ($access['mode'] === 'preview' ? 'preview' : 'sample'),
-            'program' => $this->program($course, $lessons, $done, $unlocked, $access, $lesson->id),
+            'program' => $this->program($course, $lessons, $done, $access, $lesson->id),
             'lesson' => $this->lessonPayload($lesson, $user, $p),
             'position' => ['index' => $i + 1, 'total' => $lessons->count()],
             'progress' => [
@@ -75,7 +72,7 @@ class LessonController extends Controller
                 'needed' => (int) ceil($duration * LearningService::VIDEO_THRESHOLD),
             ],
             'prev' => $prev ? ['ulid' => $prev->ulid, 'title' => $prev->title] : null,
-            'next' => $next ? ['ulid' => $next->ulid, 'title' => $next->title, 'open' => $this->learning->canOpen($access, $course, $next, $unlocked)] : null,
+            'next' => $next ? ['ulid' => $next->ulid, 'title' => $next->title, 'open' => $this->learning->canOpen($access, $course, $next)] : null,
             'avatarUrl' => $avatar?->avatar_ref,
             'notes' => LessonNote::where('user_id', $user->id)->where('lesson_id', $lesson->id)
                 ->orderBy('position_seconds')->orderBy('id')->get()->map(fn ($n) => $this->notePayload($n))->values(),
@@ -146,15 +143,12 @@ class LessonController extends Controller
         return back()->with('status', $attempt->passed ? $this->doneMessage($request->user(), $course, 'Passaste no teste!') : 'Tentativa registada — revê as respostas.');
     }
 
-    /** Só quem está inscrito (dentro da validade) e tem a aula desbloqueada pode registar progresso. */
+    /** Só quem está inscrito (dentro da validade) pode registar progresso. */
     private function guard(User $user, Lesson $lesson): array
     {
         $course = $lesson->module->course;
         $access = $this->learning->access($user, $course);
         abort_unless($access['mode'] === 'enrolled', 403, 'Inscreve-te no curso para guardar o progresso.');
-        $lessons = $this->learning->lessons($course);
-        $unlocked = $this->learning->unlockedIds($course, $lessons, $this->learning->completedIds($user, $lessons));
-        abort_unless($this->learning->canOpen($access, $course, $lesson, $unlocked), 403, 'Esta aula ainda está bloqueada.');
 
         return [$course];
     }

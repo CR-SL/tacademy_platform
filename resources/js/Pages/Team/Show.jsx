@@ -1,29 +1,100 @@
 import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import StudentLayout from '@/Layouts/StudentLayout';
-import TeamReport from '@/Components/Teams/TeamReport';
-import { btn, Drawer, FlashToast, inputCls, Over, PageHead } from '@/Components/Teams/ui';
+import StudentLayout, { initials } from '@/Layouts/StudentLayout';
+import { exportTeamCsv } from '@/Components/Teams/TeamReport';
+import { btn, Drawer, FlashToast, inputCls } from '@/Components/Teams/ui';
+import PanelBoard, { alexDef, Bar, Crumb, PanelsMenu } from '@/Components/Panels/PanelBoard';
+import usePanelBoard from '@/Components/Panels/usePanelBoard';
 
-// "Equipa" do team leader: só a sua equipa e os cursos da equipa. Alterações são pedidas ao Gestor de Cursos.
-export default function Show({ team, report, otherCourses, changeTypes }) {
+const statusOf = (m, s) => (m.invited ? 'Convite por aceitar' : s.stalled ? 'Sem atividade' : s.last ? 'A estudar' : 'Ainda não começou');
+const needsAttention = (m, s) => m.invited || s.stalled;
+
+function Person({ team, report, member, course }) {
+    const s = member.courses[course] ?? {};
+    return (
+        <div className="pn-detail">
+            <div className="pn-p-top">
+                <div>
+                    <span className="pn-lab">{team.name}{member.leader ? ' · Team leader' : ''}</span>
+                    <h3 className="pn-disp">{member.name}</h3>
+                    <small>{member.email}{s.last ? ` · Última atividade ${s.last}` : ''}</small>
+                </div>
+            </div>
+            <div className="pn-p-stats">
+                <div><span className="pn-lab">Progresso</span><b className="pn-disp">{s.progress ?? 0}%</b></div>
+                <div><span className="pn-lab">Nota nos testes</span><b className="pn-disp">{s.score == null ? '—' : `${s.score}%`}</b></div>
+                <div><span className="pn-lab">Certificado</span><b className="pn-disp">{s.certificate ? 'Emitido' : '—'}</b></div>
+            </div>
+            <span className="pn-lab pn-p-h">Cursos da equipa</span>
+            {report.courses.map((c) => {
+                const st = member.courses[c.id] ?? {};
+                return (
+                    <div key={c.id} className="pn-p-c">
+                        <span>{c.title}</span>
+                        <Bar value={st.progress ?? 0} />
+                        <span>{st.progress ?? 0}% feito</span>
+                    </div>
+                );
+            })}
+            <p className="pn-p-note">Vês apenas os cursos da equipa. Os cursos que a pessoa compra por conta própria não aparecem aqui. Para adicionar ou retirar pessoas, usa “Pedir alteração”.</p>
+        </div>
+    );
+}
+
+// "Equipas" do team leader: só a sua equipa e os cursos da equipa. Alterações são pedidas ao Gestor de Cursos.
+export default function Show({ team, report, otherCourses, changeTypes, alexUrl, savedLayout }) {
     const [asking, setAsking] = useState(false);
+    const [course, setCourse] = useState(report.courses[0]?.id ?? null);
+    const [person, setPerson] = useState(() => report.members.find((m) => needsAttention(m, m.courses[report.courses[0]?.id] ?? {}))?.id ?? report.members[0]?.id ?? null);
+    const members = report.members;
+    const selected = members.find((m) => m.id === person);
+    const attention = members.filter((m) => needsAttention(m, m.courses[course] ?? {})).length;
+
+    const panels = {
+        lista: {
+            title: 'A minha equipa', x: 0, y: 0, w: 6, h: 18, compact: true,
+            summary: `${members.length} pessoas`,
+            body: (
+                <>
+                    {report.courses.length > 1 && (
+                        <div className="pn-team-t pn-pills" role="group" aria-label="Curso">
+                            {report.courses.map((c) => <button key={c.id} type="button" aria-pressed={course === c.id} onClick={() => setCourse(c.id)}>{c.title}</button>)}
+                        </div>
+                    )}
+                    <p className="pn-team-s" style={report.courses.length > 1 ? undefined : { paddingTop: 12 }}>
+                        {members.length} de {team.seats} lugares · {attention} {attention === 1 ? 'precisa' : 'precisam'} de atenção
+                        {report.courses.length === 0 && ' · A equipa ainda não tem cursos'}
+                    </p>
+                    {members.map((m) => {
+                        const s = m.courses[course] ?? {};
+                        return (
+                            <button key={m.id} type="button" className={`pn-p-row ${m.id === person ? 'pn-on' : ''} ${needsAttention(m, s) ? 'pn-late' : ''}`} onClick={() => setPerson(m.id)}>
+                                <span className="pn-av">{initials(m.name)}</span>
+                                <b>{m.name}</b>
+                                <em>{statusOf(m, s)}</em>
+                                <Bar value={s.progress ?? 0} />
+                            </button>
+                        );
+                    })}
+                </>
+            ),
+        },
+        pessoa: {
+            title: 'Pessoa', x: 6, y: 0, w: 13, h: 18, compact: true, float: 'light',
+            body: selected ? <Person team={team} report={report} member={selected} course={course} /> : <p className="pn-empty">A equipa ainda não tem pessoas.</p>,
+        },
+        alex: alexDef(alexUrl, 0, 18),
+    };
+    const board = usePanelBoard({ view: 'equipas', panels, saved: savedLayout });
 
     return (
-        <StudentLayout>
+        <StudentLayout navTools={<PanelsMenu board={board} />}>
             <Head title="Equipa" />
-            <PageHead
-                over={<Over>A minha equipa</Over>}
-                title={team.name}
-                sub={`${report.members.length} membros · ${report.courses.length} ${report.courses.length === 1 ? 'curso' : 'cursos'}${team.created ? ` · equipa criada a ${team.created}` : ''}`}
-            >
-                <button type="button" className={btn.accent} onClick={() => setAsking(true)}>Pedir alteração</button>
-            </PageHead>
-
-            <TeamReport
-                team={team}
-                report={report}
-                note="Vês apenas os cursos da equipa — cursos que os alunos comprem a título pessoal não aparecem aqui. Para adicionar ou retirar pessoas, usa “Pedir alteração”."
-            />
+            <Crumb label={`Equipas · ${team.name}`}>
+                <button type="button" className="pn-btn pn-soft pn-sm" onClick={() => exportTeamCsv(team, report, course)}>Exportar (Excel)</button>
+                <button type="button" className="pn-btn pn-sm" onClick={() => setAsking(true)}>Pedir alteração</button>
+            </Crumb>
+            <PanelBoard board={board} />
 
             {asking && (
                 <ChangeRequest

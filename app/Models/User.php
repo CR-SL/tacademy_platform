@@ -34,6 +34,7 @@ class User extends Authenticatable implements FilamentUser
     protected $hidden = [
         'password',
         'remember_token',
+        'panel_layouts',
     ];
 
     protected function casts(): array
@@ -43,6 +44,7 @@ class User extends Authenticatable implements FilamentUser
             'last_active_at' => 'datetime',
             'password' => 'hashed',
             'streak_days' => 'integer',
+            'panel_layouts' => 'array',
         ];
     }
 

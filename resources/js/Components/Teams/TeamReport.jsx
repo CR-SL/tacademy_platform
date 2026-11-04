@@ -1,7 +1,22 @@
 import { useState } from 'react';
 import { Chip, Kpi, Progress, Tabs, Td, Th } from './ui';
 
-// Progresso da equipa nos cursos da equipa: o que o team leader vê (e o gestor, na página da equipa).
+export function exportTeamCsv(team, report, courseId) {
+    const course = report.courses.find((c) => c.id === courseId)?.title ?? '';
+    const rows = [['Nome', 'Email', 'Team leader', 'Curso', 'Progresso %', 'Nota quizzes %', 'Última atividade', 'Certificado']];
+    report.members.forEach((m) => {
+        const s = m.courses[courseId] ?? {};
+        rows.push([m.name, m.email, m.leader ? 'sim' : '', course, s.progress ?? 0, s.score ?? '', m.invited ? 'nunca entrou' : s.last ?? '', s.certificate ? 'sim' : '']);
+    });
+    const csv = '﻿' + rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = `equipa-${team.name.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+// Progresso da equipa nos cursos da equipa: o que o gestor vê na página da equipa.
 export default function TeamReport({ team, report, note }) {
     const [courseId, setCourseId] = useState(report.courses[0]?.id ?? null);
     const members = report.members;
@@ -11,20 +26,7 @@ export default function TeamReport({ team, report, note }) {
     const certs = members.filter((m) => stats(m).certificate).length;
     const attention = members.filter((m) => m.invited || stats(m).stalled).length;
 
-    const exportCsv = () => {
-        const course = report.courses.find((c) => c.id === courseId)?.title ?? '';
-        const rows = [['Nome', 'Email', 'Team leader', 'Curso', 'Progresso %', 'Nota quizzes %', 'Última atividade', 'Certificado']];
-        members.forEach((m) => {
-            const s = stats(m);
-            rows.push([m.name, m.email, m.leader ? 'sim' : '', course, s.progress ?? 0, s.score ?? '', m.invited ? 'nunca entrou' : s.last ?? '', s.certificate ? 'sim' : '']);
-        });
-        const csv = '﻿' + rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-        a.download = `equipa-${team.name.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.csv`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-    };
+    const exportCsv = () => exportTeamCsv(team, report, courseId);
 
     return (
         <>

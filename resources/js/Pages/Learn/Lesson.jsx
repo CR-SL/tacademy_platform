@@ -68,7 +68,7 @@ function Split({ dir, shown, value, min = MIN_PANEL, onChange, boxOf }) {
 const clampSplit = (v) => Math.max(MIN_PANEL, Math.min(100 - MIN_PANEL, v));
 
 // Página da aula: painéis que se ligam e desligam na barra de baixo, com divisórias para os redimensionar.
-// A aula conclui-se sozinha: o vídeo aos 90% com as perguntas respondidas; documento, texto e avatar ao abrir; o teste ao passar.
+// A aula conclui-se sozinha: o vídeo aos 90%; documento, texto e avatar ao abrir; o teste ao passar.
 export default function Lesson({ course, mode, program, lesson, position, progress, prev, next, avatarUrl, notes }) {
     const mobile = useMobile();
     const canSave = mode === 'enrolled';
@@ -86,7 +86,6 @@ export default function Lesson({ course, mode, program, lesson, position, progre
     const hasChecks = hasPlayer && checks.length > 0;
     const videoReady = !hasPlayer || done || needed <= 0 || watched >= needed;
     const checksDone = checks.every((c) => c.chosen != null);
-    const askChecks = hasChecks && videoReady && !done && !checksDone;
 
     // Painéis
     const [showVideo, setShowVideo] = useState(hasPlayer);
@@ -95,7 +94,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
         return !mobile && memory.material && lesson.attachments.length > 0;
     });
     const [showNotes, setShowNotes] = useState(() => (mobile ? hasPlayer : memory.notes));
-    const [showChecks, setShowChecks] = useState(askChecks);
+    const [showChecks, setShowChecks] = useState(false);
     const [ask, setAsk] = useState(false);
     const [askStarted, setAskStarted] = useState(false);
     const [evaluation, setEvaluation] = useState(null); // null | 'intro' | 'run'
@@ -120,12 +119,15 @@ export default function Lesson({ course, mode, program, lesson, position, progre
     // No telemóvel só cabe um painel em baixo: material ou notas
     useEffect(() => { if (mobile && showMaterial && showNotes) setShowMaterial(false); }, [mobile]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Aos 90% as perguntas rápidas aparecem por cima do material
+    // Ao chegar aos 90% as perguntas rápidas aparecem por cima do material; são opcionais e fecham-se
+    const wasReady = useRef(videoReady);
     useEffect(() => {
-        if (!askChecks) return;
-        setShowChecks(true);
-        if (mobile) setShowNotes(false);
-    }, [askChecks]); // eslint-disable-line react-hooks/exhaustive-deps
+        if (videoReady && !wasReady.current && hasChecks && !checksDone) {
+            setShowChecks(true);
+            if (mobile) setShowNotes(false);
+        }
+        wasReady.current = videoReady;
+    }, [videoReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Conclusão automática: o servidor confirma e a página pede o programa e a aula seguinte atualizados
     const refresh = useCallback(() => {
@@ -137,10 +139,10 @@ export default function Lesson({ course, mode, program, lesson, position, progre
         if (data.completed) refresh();
     }, [refresh]);
     useEffect(() => {
-        if (!canSave || done || !hasPlayer || watched <= 0 || !videoReady || !checksDone || finishing.current) return;
+        if (!canSave || done || !hasPlayer || watched <= 0 || !videoReady || finishing.current) return;
         finishing.current = true;
         player.current?.flush();
-    }, [canSave, done, hasPlayer, watched, videoReady, checksDone]);
+    }, [canSave, done, hasPlayer, watched, videoReady]);
 
     const pauseVideo = () => player.current?.pause();
     const toggleVideo = () => {
@@ -216,7 +218,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
     const currentPct = done ? 100 : hasPlayer && needed > 0 ? Math.min(100, Math.round(watched / needed * 90)) : 0;
     const hint = !canSave || done || lesson.type === 'quiz' || !hasPlayer
         ? null
-        : !videoReady ? `Faltam ${fmt(needed - watched)} de vídeo` : !checksDone ? 'Responde às perguntas rápidas' : null;
+        : !videoReady ? `Faltam ${fmt(needed - watched)} de vídeo` : null;
     const nextOpen = next?.open && !running;
     const prevOpen = prev && !running;
 
@@ -353,12 +355,12 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                             <section className={`al-panel al-c ${showChecks ? '' : 'off'}`} aria-label="Perguntas rápidas" style={{ flexGrow: topGrow }}>
                                 <div className="al-tb pin">
                                     <span className="sp" />
-                                    {checksDone && <button type="button" className="al-tb-b" aria-label="Fechar perguntas" onClick={() => setShowChecks(false)}><IconX /></button>}
+                                    <button type="button" className="al-tb-b" aria-label="Fechar perguntas" onClick={() => setShowChecks(false)}><IconX /></button>
                                 </div>
                                 <div className="al-c-scroll">
                                     <div className="al-c-card">
                                         <small>Perguntas rápidas</small>
-                                        <h2>{checksDone ? 'Respondidas. Aula concluída.' : 'Responde para concluir a aula'}</h2>
+                                        <h2>{checksDone ? 'Respondidas.' : 'Queres testar o que viste?'}</h2>
                                         <QuickChecks lessonUlid={lesson.ulid} checks={checks} canSave={canSave} onChange={setChecks} onCompleted={refresh} />
                                     </div>
                                 </div>
@@ -457,7 +459,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                         {hint && <span className="al-f-hint">{hint}</span>}
                         {nextOpen
                             ? <Link className="al-f-b" href={lessonUrl(next.ulid)} aria-label="Aula seguinte" title={next.title}><span className="num">{numOf(next.ulid)}</span><IconRight /></Link>
-                            : <button type="button" className="al-f-b" disabled aria-label="Aula seguinte" title={next && !next.open ? 'Conclui esta aula para avançar' : undefined}><span className="num">{next ? numOf(next.ulid) : ''}</span><IconRight /></button>}
+                            : <button type="button" className="al-f-b" disabled aria-label="Aula seguinte" title={next && !next.open ? 'Inscreve-te no curso para abrir esta aula' : undefined}><span className="num">{next ? numOf(next.ulid) : ''}</span><IconRight /></button>}
                     </div>
                 </footer>
             )}

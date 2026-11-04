@@ -152,10 +152,11 @@
  | O mesmo catálogo dentro da plataforma (Pages/Catalog.jsx, /plataforma/cursos).
  | Usa as cores do tema da plataforma, para funcionar também no modo escuro.
  */
+.cc-app .cc-ph, .cc-app .cc-res, .cc-app .cc-res img, .cc-app .cc-stats, .cc-app .cc-prog-box, .cc-app .cc-drawer, .cc-app .cc-sheet { border-radius: 0; }
 .cc-app {
-    --display: 'Outfit', system-ui, sans-serif;
-    --body: 'Geist', system-ui, sans-serif;
-    --mono: 'Geist Mono', ui-monospace, monospace;
+    --display: Archivo, system-ui, sans-serif;
+    --body: Archivo, system-ui, sans-serif;
+    --mono: Archivo, system-ui, sans-serif;
     --accent: var(--color-accent);
     --cc-paper: var(--color-bg);
     --cc-ink: var(--color-ink);

@@ -51,7 +51,6 @@ class CourseBuilderTest extends TestCase
             'is_free' => false,
             'price' => '79.90',
             'access_months' => 12,
-            'unlock_window' => 3,
             'certificate_enabled' => true,
             'certificate_min_progress' => 100,
             'certificate_min_score' => 70,
@@ -101,7 +100,6 @@ class CourseBuilderTest extends TestCase
         $this->assertSame('https://avatar.exemplo.pt/s/1', $course->lessons()->where('content_type', 'avatar')->value('avatar_ref'));
         $this->assertSame($res->json('lessons.nB'), $course->sample_lesson_id);
 
-        $this->assertSame(3, $course->unlock_window);
         // Perguntas rápidas do vídeo: as vazias são ignoradas e as opções vazias retiradas
         $checks = $course->lessons()->where('content_type', 'video_link')->first()->checks;
         $this->assertCount(1, $checks);

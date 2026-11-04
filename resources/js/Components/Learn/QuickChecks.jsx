@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-// Perguntas rápidas do fim do vídeo: responder é obrigatório, acertar não. Cada pergunta só se responde uma vez.
+// Perguntas rápidas do fim do vídeo: são opcionais e não contam para a nota. Cada pergunta só se responde uma vez.
 export default function QuickChecks({ lessonUlid, checks, canSave, onChange, onCompleted }) {
     const [items, setItems] = useState(checks);
     const [busy, setBusy] = useState(null);

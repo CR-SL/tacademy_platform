@@ -20,8 +20,8 @@ use Illuminate\Validation\ValidationException;
 /**
  * Regras da página do curso e da aula do aluno:
  * - acesso: inscrito (dentro da validade), pré-visualização (formador do curso / gestão) ou aula de amostra;
- * - aulas desbloqueadas de cada vez (unlock_window; 0 = todas), contando os testes como aulas;
- * - vídeo: conclui sozinho depois de ver 90% (segundos realmente reproduzidos) e responder às perguntas rápidas;
+ * - quem está inscrito abre qualquer aula, pela ordem que quiser;
+ * - vídeo: conclui sozinho depois de ver 90% (segundos realmente reproduzidos); as perguntas rápidas são opcionais;
  * - documento, texto e avatar: concluem ao abrir;
  * - quiz: até 3 tentativas, conclui ao passar; certificado emitido automaticamente ao cumprir os critérios.
  */
@@ -62,21 +62,9 @@ class LearningService
             ->where('status', 'completed')->pluck('lesson_id');
     }
 
-    /** Concluídas + as N seguintes por fazer (N = unlock_window; 0 = todas). */
-    public function unlockedIds(Course $course, Collection $lessons, Collection $done): Collection
+    public function canOpen(array $access, Course $course, Lesson $lesson): bool
     {
-        if (! $course->unlock_window) {
-            return $lessons->pluck('id');
-        }
-        $next = $lessons->reject(fn ($l) => $done->contains($l->id))->take($course->unlock_window)->pluck('id');
-
-        return $done->merge($next)->unique()->values();
-    }
-
-    public function canOpen(array $access, Course $course, Lesson $lesson, Collection $unlocked): bool
-    {
-        return $access['mode'] === 'preview'
-            || ($access['mode'] === 'enrolled' && $unlocked->contains($lesson->id))
+        return in_array($access['mode'], ['preview', 'enrolled'], true)
             || $lesson->id === $course->sample_lesson_id;
     }
 
@@ -138,7 +126,7 @@ class LearningService
         return ['chosen' => $answers[(string) $check->id], 'correct' => $check->correct, 'explanation' => $check->explanation];
     }
 
-    /** Vídeo: fica concluída quando o aluno viu 90% e respondeu às perguntas rápidas. Devolve true se concluiu agora. */
+    /** Vídeo: fica concluída quando o aluno viu 90%. Devolve true se concluiu agora. */
     public function completeVideoIfReady(User $user, Lesson $lesson): bool
     {
         if (! $this->isVideo($lesson)) {
@@ -147,10 +135,6 @@ class LearningService
         $p = LessonProgress::where('user_id', $user->id)->where('lesson_id', $lesson->id)->first();
         // Sem nada visto não conclui, mesmo que a duração do vídeo ainda não seja conhecida
         if (! $p || $p->status === 'completed' || $p->watched_seconds <= 0 || ! $this->videoReady($lesson, $p)) {
-            return false;
-        }
-        $missing = $lesson->checks()->pluck('id')->diff(array_map('intval', array_keys($p->check_answers ?? [])));
-        if ($missing->isNotEmpty()) {
             return false;
         }
         $this->markCompleted($user, $lesson);

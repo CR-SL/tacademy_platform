@@ -237,7 +237,6 @@ class CourseBuilderController extends Controller
             'is_free' => ['boolean'],
             'price' => ['nullable', 'numeric', 'min:0', 'max:99999'],
             'access_months' => ['nullable', Rule::in(CourseBuilder::ACCESS_MONTHS)],
-            'unlock_window' => ['integer', Rule::in(CourseBuilder::UNLOCK_WINDOWS)],
             'certificate_enabled' => ['boolean'],
             'certificate_min_progress' => ['integer', 'between:0,100'],
             'certificate_min_score' => ['integer', 'between:0,100'],

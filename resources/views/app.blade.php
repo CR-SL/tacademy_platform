@@ -16,10 +16,10 @@
             } catch (e) {}
         </script>
 
-        <!-- Fonts: Outfit (títulos/números) + Geist (texto) + Geist Mono (etiquetas/dados) -->
+        <!-- Letra da plataforma: Archivo -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
         @routes

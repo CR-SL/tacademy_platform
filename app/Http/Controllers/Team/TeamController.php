@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Team;
 use App\Http\Controllers\Controller;
 use App\Models\ContactRequest;
 use App\Models\Course;
+use App\Services\StudentArea;
 use App\Services\TeamService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class TeamController extends Controller
 {
     public function __construct(private TeamService $teams) {}
 
-    public function show(Request $request): Response
+    public function show(Request $request, StudentArea $area): Response
     {
         $company = $request->user()->company;
         abort_unless($company, 404);
@@ -38,6 +39,8 @@ class TeamController extends Controller
                 ->whereNotIn('id', $company->courses()->pluck('courses.id'))
                 ->orderBy('title')->get(['id', 'title']),
             'changeTypes' => ContactRequest::CHANGE_TYPES,
+            'alexUrl' => $area->alexUrl($request->user()),
+            'savedLayout' => $area->layout($request->user(), 'equipas'),
         ]);
     }
 

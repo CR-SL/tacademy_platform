@@ -1,13 +1,18 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
+import EnrolledCourse from '@/Components/Learn/EnrolledCourse';
 import Program from '@/Components/Learn/Program';
 import { FlashToast } from '@/Components/Teams/ui';
 import { formatEuro, formatMinutes, levelLabels } from '@/Components/CourseBuilder/format';
 
 // Página do curso vista pelo aluno: apresentação, progresso, programa e certificado.
-export default function Course({ course, access, progress, program, next, sample, certificate }) {
-    const enrolled = access.mode === 'enrolled' || access.mode === 'preview';
+export default function Course(props) {
+    return props.access.mode === 'enrolled' ? <EnrolledCourse {...props} /> : <CoursePresentation {...props} />;
+}
+
+function CoursePresentation({ course, access, progress, program, next, sample, certificate }) {
+    const enrolled = access.mode === 'preview';
     const [buying, setBuying] = useState(false);
     const buy = () => {
         setBuying(true);
@@ -89,11 +94,6 @@ export default function Course({ course, access, progress, program, next, sample
                     <div className="ta-cut-16 bg-surface p-6">
                         <h2 className="mb-3 font-display text-xl font-bold">Programa</h2>
                         <Program slug={course.slug} program={program} />
-                        {enrolled && course.unlock_window > 0 && (
-                            <p className="mt-3 text-[13px] text-muted">
-                                🔒 {course.unlock_window === 1 ? 'As aulas abrem por ordem: conclui cada uma para abrir a seguinte.' : `Tens sempre ${course.unlock_window} aulas desbloqueadas; ao concluir uma, abre a seguinte.`}
-                            </p>
-                        )}
                     </div>
                 </div>
 

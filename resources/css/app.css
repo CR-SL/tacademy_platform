@@ -1,27 +1,31 @@
+@import './panels.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /*
- | Design tokens — Identidade Visual v3, direção 4b "Centro de Missões"
- | (ver README.md e docs/claude.md secção 8.2).
- | Amarelo T.Academy como acento, cantos chanfrados, Outfit (títulos) + Geist (texto) + Geist Mono (etiquetas).
+ | Design tokens da aparência decidida a 2026-11-04 (ver PRODUCT.md e panels.css):
+ | amarelo T.Academy como acento, painéis brancos sem cantos arredondados, botões em cápsula, letra Archivo.
  | Tema claro/escuro via data-theme no <html> (preferência guardada em localStorage).
  */
 :root,
 [data-theme='light'] {
     --color-accent: #F8B101;
     --color-accent-ink: #946A00;   /* texto amarelo sobre fundo claro */
-    --color-on-accent: #18181B;
-    --color-bg: #F4F3EF;
+    --color-on-accent: #111111;
+    --color-bg: #F5F3EE;
     --color-surface: #FFFFFF;
-    --color-surface2: #EFEEE9;
-    --color-ink: #18181B;
-    --color-on-ink: #F8B101;
+    --color-surface2: #EFEBE4;
+    --color-ink: #111111;
+    --color-on-ink: #FFFFFF;
     --color-carbon: #18181B;   /* não muda com o tema */
-    --color-muted: #66666D;
-    --color-line: #E4E2DC;
-    --color-track: #E8E6E0;
+    --color-text: #3C3B38;
+    --color-muted: #6E6B63;
+    --color-line: #E7E4DD;
+    --color-track: #EFEBE4;
+    --color-pill: #D9D5CB;
+    --color-field: #CFCBBF;
     --color-live: #E5484D;
     color-scheme: light;
 }
@@ -30,12 +34,15 @@
     --color-accent-ink: #F8B101;
     --color-bg: #0F1013;
     --color-surface: #191B20;
-    --color-surface2: #23262C;
-    --color-ink: #F2F2F3;
-    --color-on-ink: #18181B;
-    --color-muted: #9095A0;
-    --color-line: #2A2D33;
+    --color-surface2: #262930;
+    --color-ink: #F4F4F2;
+    --color-on-ink: #111111;
+    --color-text: #C9C9C6;
+    --color-muted: #9A9A96;
+    --color-line: #2C2F36;
     --color-track: #2C2F36;
+    --color-pill: #3C3F46;
+    --color-field: #3C3F46;
     color-scheme: dark;
 }
 
@@ -51,16 +58,12 @@ body {
 [data-theme='dark'] .ta-logo-dark { display: block; }
 
 /*
- | Cantos (2026-11-02): as caixas têm cantos arredondados discretos (8 px) em vez do chanfro;
- | os botões e chips (ta-cut-8) mantêm o corte na diagonal, mas com todos os vértices arredondados.
- | Continua a ser clip-path (inset round / polygon), para recortar o conteúdo como antes sem mexer no overflow.
+ | Cantos (2026-11-04): os botões e etiquetas (ta-cut-8) são cápsulas; as caixas não têm cantos arredondados.
+ | Os nomes ficam para não mexer nas páginas que os usam.
  */
-.ta-cut-8 { clip-path: polygon(7.83px 1.17px, 8.43px 0.67px, 9.13px 0.3px, 9.88px 0.08px, 10.66px 0px, calc(100% - 7px) 0px, calc(100% - 4.32px) 0.53px, calc(100% - 2.05px) 2.05px, calc(100% - 0.53px) 4.32px, 100% 7px, 100% calc(100% - 10.66px), calc(100% - 0.08px) calc(100% - 9.88px), calc(100% - 0.3px) calc(100% - 9.13px), calc(100% - 0.67px) calc(100% - 8.43px), calc(100% - 1.17px) calc(100% - 7.83px), calc(100% - 7.83px) calc(100% - 1.17px), calc(100% - 8.43px) calc(100% - 0.67px), calc(100% - 9.13px) calc(100% - 0.3px), calc(100% - 9.88px) calc(100% - 0.08px), calc(100% - 10.66px) 100%, 7px 100%, 4.32px calc(100% - 0.53px), 2.05px calc(100% - 2.05px), 0.53px calc(100% - 4.32px), 0px calc(100% - 7px), 0px 10.66px, 0.08px 9.88px, 0.3px 9.13px, 0.67px 8.43px, 1.17px 7.83px); }
-.ta-cut-10,
-.ta-cut-12,
-.ta-cut-16 { clip-path: inset(0 round 8px); }
-/* Barra de XP com cantos inclinados */
-.ta-slant-4 { clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+button.ta-cut-8:not(:has(img)),
+a.ta-cut-8:not(:has(img)),
+span.ta-cut-8 { clip-path: inset(0 round 999px); }
 
 /* Barras e anéis animam de 0 até ao valor ao montar */
 .ta-fill {
