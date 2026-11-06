@@ -206,4 +206,52 @@ class TeamsAndRequestsTest extends TestCase
         $this->assertSame($gestor->id, $r->fresh()->assigned_to);
         Mail::assertSent(PlatformMail::class, fn ($m) => $m->hasTo('vasco@x.pt'));
     }
+
+    public function test_the_team_leader_assigns_a_course_with_a_deadline_and_sends_reminders(): void
+    {
+        $course = $this->course('Diagnóstico OBD');
+        $company = $this->createTeam($this->user('gestor_cursos'), $this->paidCompanyRequest($course), $course);
+        $leader = User::where('email', 'paulo@moura.pt')->first();
+        $sergio = User::where('email', 'sergio@moura.pt')->first();
+        $outsider = $this->user('aluno');
+        Mail::fake();
+
+        // Só pessoas da equipa e cursos da equipa
+        $this->actingAs($leader)->post('/equipa/atribuir', ['course_id' => $course->id, 'members' => [$outsider->id]])->assertSessionHasErrors('members.0');
+        $other = $this->course('Outro curso');
+        $this->actingAs($leader)->post('/equipa/atribuir', ['course_id' => $other->id, 'members' => [$sergio->id]])->assertSessionHasErrors('course_id');
+        $this->actingAs($leader)->post('/equipa/atribuir', ['course_id' => $course->id, 'members' => [$sergio->id], 'due_at' => now()->toDateString()])->assertSessionHasErrors('due_at');
+
+        $due = now()->addDays(15)->toDateString();
+        $this->actingAs($leader)->post('/equipa/atribuir', ['course_id' => $course->id, 'members' => [$sergio->id], 'due_at' => $due, 'message' => 'Antes da auditoria.'])
+            ->assertSessionHasNoErrors();
+        $e = Enrollment::where('user_id', $sergio->id)->where('course_id', $course->id)->first();
+        $this->assertSame($due, $e->due_at->toDateString());
+        $this->assertSame($leader->id, $e->assigned_by);
+        Mail::assertSent(PlatformMail::class, fn ($m) => $m->hasTo('sergio@moura.pt') && str_contains($m->subjectLine, 'Diagnóstico OBD') && $m->quote === 'Antes da auditoria.');
+
+        // Atribuir outra vez sem data mantém o prazo
+        $this->actingAs($leader)->post('/equipa/atribuir', ['course_id' => $course->id, 'members' => [$sergio->id]])->assertSessionHasNoErrors();
+        $this->assertSame($due, $e->fresh()->due_at->toDateString());
+
+        // O aluno vê o prazo da empresa
+        $this->actingAs($sergio)->get('/plataforma/meus-cursos')->assertInertia(fn ($p) => $p->where('courses.0.deadline.by', 'empresa'));
+
+        // Lembrete: um de cada vez, sem repetir no mesmo dia
+        Mail::fake();
+        $this->actingAs($leader)->post('/equipa/lembretes', ['course_id' => $course->id, 'members' => [$sergio->id]])->assertSessionHas('status', 'Lembrete enviado.');
+        Mail::assertSent(PlatformMail::class, fn ($m) => $m->hasTo('sergio@moura.pt') && str_starts_with($m->subjectLine, 'Lembrete'));
+        $this->assertNotNull($e->fresh()->reminded_at);
+
+        Mail::fake();
+        $this->actingAs($leader)->post('/equipa/lembretes', ['course_id' => $course->id, 'members' => [$sergio->id]]);
+        Mail::assertNothingSent();
+
+        $this->actingAs($leader)->get('/equipa')->assertInertia(fn ($p) => $p
+            ->where("report.members.1.courses.{$course->id}.remindable", false)
+            ->where("report.members.1.courses.{$course->id}.due", now()->addDays(15)->format('d/m/Y')));
+
+        // Um aluno não usa estas ações
+        $this->actingAs($sergio)->post('/equipa/lembretes', ['course_id' => $course->id, 'members' => [$leader->id]])->assertForbidden();
+    }
 }

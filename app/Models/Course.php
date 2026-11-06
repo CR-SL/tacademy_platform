@@ -31,9 +31,11 @@ class Course extends Model
         'is_free',
         'currency',
         'access_months',
+        'deadline_days',
         'certificate_enabled',
         'certificate_min_progress',
         'certificate_min_score',
+        'requires_attendance',
         'sample_lesson_id',
     ];
 
@@ -45,6 +47,8 @@ class Course extends Model
             'learning_outcomes' => 'array',
             'is_free' => 'boolean',
             'access_months' => 'integer',
+            'deadline_days' => 'integer',
+            'requires_attendance' => 'boolean',
             'certificate_enabled' => 'boolean',
             'certificate_min_progress' => 'integer',
             'certificate_min_score' => 'integer',

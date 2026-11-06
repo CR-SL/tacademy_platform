@@ -1,5 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import AttendanceDrawer from '@/Components/CourseBuilder/AttendanceDrawer';
 import StudentLayout from '@/Layouts/StudentLayout';
 import { formatMinutes, levelLabels } from '@/Components/CourseBuilder/format';
 
@@ -7,6 +8,7 @@ import { formatMinutes, levelLabels } from '@/Components/CourseBuilder/format';
 export default function Courses({ courses, isAdmin }) {
     const { flash } = usePage().props;
     const [toast, setToast] = useState(flash?.status ?? null);
+    const [attendance, setAttendance] = useState(null);
 
     useEffect(() => {
         setToast(flash?.status ?? null);
@@ -99,6 +101,11 @@ export default function Courses({ courses, isAdmin }) {
                                 <Link href={`/formador/cursos/${c.ulid}/editar`} className="ta-press bg-surface2 px-3 py-2 font-display text-xs font-bold uppercase tracking-[0.04em] hover:bg-track">
                                     Editar
                                 </Link>
+                                {c.attendance && c.students > 0 && (
+                                    <button type="button" onClick={() => setAttendance(c)} className="ta-press bg-surface2 px-3 py-2 font-display text-xs font-bold uppercase tracking-[0.04em] hover:bg-track">
+                                        Alunos · Presença
+                                    </button>
+                                )}
                                 {c.status === 'published' ? (
                                     <>
                                         <a href={`/cursos?curso=${c.slug}`} target="_blank" rel="noopener" className="px-2 py-2 font-display text-xs font-bold uppercase tracking-[0.04em] text-accent-ink hover:text-ink">
@@ -119,6 +126,7 @@ export default function Courses({ courses, isAdmin }) {
                 </div>
             )}
 
+            {attendance && <AttendanceDrawer course={attendance} onClose={() => setAttendance(null)} />}
             {toast && (
                 <div role="status" className="ta-cut-8 fixed bottom-20 left-1/2 z-50 -translate-x-1/2 bg-ink px-5 py-3 font-display text-sm font-semibold text-page md:bottom-6">
                     <span className="text-accent">✓</span> {toast}

@@ -34,11 +34,12 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                 </div>
 
                 <div>
-                    <div className="mb-5 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+                    <div className="mb-5 grid grid-cols-2 gap-2.5 lg:grid-cols-5">
                         <Fact label="Duração" value={formatMinutes(totalMinutes(c))} />
                         <Fact label="Módulos" value={c.modules.length} />
                         <Fact label="Acesso" value={c.access_months ? `${c.access_months} meses` : 'Vitalício'} />
-                        <Fact label="Certificado" value={c.certificate_enabled ? 'Sim' : 'Não'} />
+                        <Fact label="Prazo" value={c.deadline_days ? (c.deadline_days === 180 ? '6 meses' : `${c.deadline_days} dias`) : 'Sem prazo'} />
+                        <Fact label="Certificado" value={c.certificate_enabled ? (c.requires_attendance ? 'Sim · com presença' : 'Sim') : 'Não'} />
                     </div>
                     {ai && (
                         <p className="mb-4">

@@ -228,4 +228,52 @@ class LearningTest extends TestCase
         $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertInertia(fn ($p) => $p->where('access.mode', 'expired'));
         $this->actingAs($u)->get($this->lessonUrl(0))->assertRedirect();
     }
+
+    public function test_the_course_page_shows_where_the_student_stopped_in_a_video(): void
+    {
+        $u = $this->student();
+        LessonProgress::create(['user_id' => $u->id, 'lesson_id' => $this->l[0]->id, 'status' => 'in_progress', 'last_position_seconds' => 462, 'video_duration_seconds' => 720]);
+
+        $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertInertia(fn ($p) => $p
+            ->where('program.0.lessons.0.position', ['at' => '7:42', 'of' => '12:00'])
+            ->where('program.0.lessons.1.position', null));
+    }
+
+    public function test_a_course_deadline_counts_from_enrollment_and_the_company_one_wins(): void
+    {
+        $this->course->update(['deadline_days' => 30]);
+        $u = $this->user();
+        $e = Enrollment::create(['user_id' => $u->id, 'course_id' => $this->course->id, 'source' => 'manual', 'enrolled_at' => now()->subDays(20)]);
+
+        $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertInertia(fn ($p) => $p
+            ->where('access.deadline.days', 10)->where('access.deadline.by', 'curso')->where('access.deadline.late', false));
+        // Faltam 10 dias: aparece nos Pendentes do Início
+        $this->actingAs($u)->get('/dashboard')->assertInertia(fn ($p) => $p->where('pending.0.kind', 'Prazo'));
+
+        $e->update(['due_at' => now()->subDay()->toDateString()]);
+        $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertInertia(fn ($p) => $p
+            ->where('access.deadline.late', true)->where('access.deadline.by', 'empresa'));
+    }
+
+    public function test_when_attendance_is_required_the_certificate_waits_for_the_instructor(): void
+    {
+        $formador = $this->user('formador');
+        $this->course->update(['requires_attendance' => true, 'instructor_id' => $formador->id]);
+        $u = $this->student();
+        LessonProgress::create(['user_id' => $u->id, 'lesson_id' => $this->l[0]->id, 'status' => 'completed']);
+        $this->actingAs($u)->get($this->lessonUrl(1));
+        $q = $this->l[2]->quiz->questions()->with('options')->get();
+        $this->actingAs($u)->post("/plataforma/aulas/{$this->l[2]->ulid}/quiz", ['answers' => [
+            $q[0]->id => $q[0]->options[0]->id, $q[1]->id => $q[1]->options[1]->id,
+        ]]);
+        $this->assertNull(Certificate::where('user_id', $u->id)->first());
+
+        // Outro formador não mexe nas presenças deste curso
+        $this->actingAs($this->user('formador'))->postJson("/formador/cursos/{$this->course->ulid}/alunos/{$u->ulid}/presenca", ['attended' => true])->assertForbidden();
+
+        $this->actingAs($formador)->getJson("/formador/cursos/{$this->course->ulid}/alunos")->assertOk()->assertJsonPath('students.0.attended', null);
+        $this->actingAs($formador)->postJson("/formador/cursos/{$this->course->ulid}/alunos/{$u->ulid}/presenca", ['attended' => true])
+            ->assertOk()->assertJsonPath('student.certificate', true);
+        $this->assertNotNull(Certificate::where('user_id', $u->id)->first());
+    }
 }

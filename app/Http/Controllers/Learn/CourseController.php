@@ -29,6 +29,7 @@ class CourseController extends Controller
         $next = $lessons->first(fn ($l) => ! $done->contains($l->id) && $this->learning->canOpen($access, $course, $l))
             ?? $lessons->first();
         $sample = $lessons->firstWhere('id', $course->sample_lesson_id);
+        $enrollment = $access['mode'] === 'enrolled' ? $access['enrollment']?->setRelation('course', $course) : null;
         $course->loadMissing(['category', 'instructor']);
 
         return Inertia::render('Learn/Course', [
@@ -50,10 +51,12 @@ class CourseController extends Controller
                 'price' => (float) $course->price,
                 'is_free' => $course->is_free,
                 'access_months' => $course->access_months,
+                'attendance' => (bool) $course->requires_attendance,
             ],
             'access' => [
                 'mode' => $access['mode'],
                 'expires' => $access['expires_at']?->format('d/m/Y'),
+                'deadline' => $enrollment?->deadlineInfo($lessons->isNotEmpty() && $done->count() === $lessons->count()),
                 'pending' => $access['mode'] === 'none' && ContactRequest::where('user_id', $user->id)->where('course_id', $course->id)
                     ->where('kind', 'compra')->whereIn('status', ContactRequest::OPEN)->exists(),
             ],
@@ -61,7 +64,7 @@ class CourseController extends Controller
                 'done' => $done->count(),
                 'percent' => $lessons->count() ? (int) floor($done->count() / $lessons->count() * 100) : 0,
             ],
-            'program' => $this->program($course, $lessons, $done, $access, null),
+            'program' => $this->program($course, $lessons, $done, $access, null, $access['mode'] === 'enrolled' ? $this->startedVideos($user, $lessons) : null),
             'next' => $next ? ['ulid' => $next->ulid, 'title' => $next->title, 'started' => $done->isNotEmpty(), 'finished' => $lessons->isNotEmpty() && $done->count() === $lessons->count()] : null,
             'sample' => $sample && $access['mode'] === 'none' ? ['ulid' => $sample->ulid, 'title' => $sample->title] : null,
             'certificate' => $this->learning->certificateStatus($user, $course, $lessons, $done),

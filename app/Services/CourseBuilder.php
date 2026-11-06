@@ -25,6 +25,9 @@ class CourseBuilder
 
     public const ACCESS_MONTHS = [3, 6, 12];
 
+    /** Prazos que quem cria o curso pode escolher (dias a contar da inscrição). */
+    public const DEADLINE_DAYS = [30, 60, 90, 180];
+
     public const SHORT_MAX = 160;
 
     /** Pasta (disco public) onde ficam capas e anexos carregados no editor. */
@@ -58,6 +61,8 @@ class CourseBuilder
             'is_free' => $course->is_free,
             'price' => $course->is_free || (float) $course->price === 0.0 ? '' : (string) $course->price,
             'access_months' => $course->access_months,
+            'deadline_days' => $course->deadline_days,
+            'requires_attendance' => (bool) $course->requires_attendance,
             'certificate_enabled' => $course->certificate_enabled,
             'certificate_min_progress' => $course->certificate_min_progress,
             'certificate_min_score' => $course->certificate_min_score,
@@ -115,6 +120,8 @@ class CourseBuilder
                 'is_free' => $isFree,
                 'price' => $isFree ? 0 : (float) ($data['price'] ?? 0),
                 'access_months' => $data['access_months'] ?? null,
+                'deadline_days' => $data['deadline_days'] ?? null,
+                'requires_attendance' => (bool) ($data['requires_attendance'] ?? false),
                 'certificate_enabled' => (bool) ($data['certificate_enabled'] ?? true),
                 'certificate_min_progress' => $data['certificate_min_progress'] ?? 100,
                 'certificate_min_score' => $data['certificate_min_score'] ?? 70,

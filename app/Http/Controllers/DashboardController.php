@@ -17,7 +17,7 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'courses' => $area->courses($user),
             'resume' => $area->resume($user),
-            'pending' => $area->pending($user),
+            'pending' => [...$area->deadlines($user), ...$area->pending($user)],
             'results' => $area->results($user, 3),
             'notes' => $area->notes($user),
             'messages' => $area->messages($user),

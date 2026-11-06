@@ -44,6 +44,63 @@ class TeamController extends Controller
         ]);
     }
 
+    /** "Enviar lembrete": email às pessoas escolhidas sobre um curso da equipa. */
+    public function remind(Request $request): RedirectResponse
+    {
+        $company = $request->user()->company;
+        abort_unless($company, 404);
+        $data = $request->validate($this->peopleRules($company) + [
+            'message' => ['nullable', 'string', 'max:1000'],
+        ], $this->peopleMessages());
+
+        $course = $company->courses()->findOrFail($data['course_id']);
+        ['sent' => $sent, 'skipped' => $skipped] = $this->teams->remind($company, $request->user(), $course, $data['members'], $data['message'] ?? null);
+
+        $status = match (true) {
+            $sent === 0 => 'Nenhum lembrete enviado: quem escolheste já concluiu o curso ou recebeu um lembrete há pouco.',
+            $skipped > 0 => ($sent === 1 ? '1 lembrete enviado' : "{$sent} lembretes enviados").". {$skipped} ".($skipped === 1 ? 'pessoa ficou' : 'pessoas ficaram').' de fora (já concluíram ou receberam um lembrete há pouco).',
+            default => $sent === 1 ? 'Lembrete enviado.' : "{$sent} lembretes enviados.",
+        };
+
+        return back()->with('status', $status);
+    }
+
+    /** "Atribuir formação": um curso da equipa às pessoas escolhidas, com prazo opcional. */
+    public function assign(Request $request): RedirectResponse
+    {
+        $company = $request->user()->company;
+        abort_unless($company, 404);
+        $data = $request->validate($this->peopleRules($company) + [
+            'due_at' => ['nullable', 'date_format:Y-m-d', 'after:today', 'before:'.now()->addYears(2)->format('Y-m-d')],
+            'message' => ['nullable', 'string', 'max:1000'],
+        ], $this->peopleMessages() + [
+            'due_at.after' => 'Escolhe uma data a partir de amanhã.',
+            'due_at.before' => 'Escolhe uma data nos próximos dois anos.',
+        ]);
+
+        $course = $company->courses()->findOrFail($data['course_id']);
+        $n = $this->teams->assign($company, $request->user(), $course, $data['members'], $data['due_at'] ?? null, $data['message'] ?? null);
+
+        return back()->with('status', ($n === 1 ? 'Formação atribuída a 1 pessoa' : "Formação atribuída a {$n} pessoas").' — receberam um email.');
+    }
+
+    private function peopleRules($company): array
+    {
+        return [
+            'course_id' => ['required', 'integer', Rule::exists('company_course', 'course_id')->where('company_id', $company->id)],
+            'members' => ['required', 'array', 'min:1', 'max:'.max(1, $company->seats())],
+            'members.*' => ['integer', 'distinct', Rule::exists('users', 'id')->where('company_id', $company->id)],
+        ];
+    }
+
+    private function peopleMessages(): array
+    {
+        return [
+            'members.required' => 'Escolhe pelo menos uma pessoa.',
+            'course_id.required' => 'Escolhe o curso.',
+        ];
+    }
+
     public function requestChange(Request $request): RedirectResponse
     {
         $user = $request->user();

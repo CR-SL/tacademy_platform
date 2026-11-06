@@ -4,7 +4,11 @@ namespace App\Http\Controllers\Instructor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Certificate;
 use App\Models\Course;
+use App\Models\Enrollment;
+use App\Models\User;
+use App\Services\LearningService;
 use App\Services\CourseBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -50,6 +54,7 @@ class CourseBuilderController extends Controller
                 'author' => $c->instructor?->name,
                 'mine' => $c->instructor_id === $user->id,
                 'updated' => $c->updated_at?->diffForHumans(),
+                'attendance' => (bool) $c->requires_attendance,
             ]),
         ]);
     }
@@ -112,6 +117,48 @@ class CourseBuilderController extends Controller
         $course->delete();
 
         return to_route('instructor.courses.index')->with('status', 'Rascunho apagado.');
+    }
+
+    /** Alunos do curso, com o progresso e a presença, para o formador confirmar quem esteve presente. */
+    public function students(Course $course, LearningService $learning): JsonResponse
+    {
+        Gate::authorize('update', $course);
+        $lessons = $learning->lessons($course);
+        $enrollments = Enrollment::with('user:id,ulid,name,email')->where('course_id', $course->id)->get()
+            ->filter(fn ($e) => $e->user)->sortBy(fn ($e) => $e->user->name, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return response()->json([
+            'students' => $enrollments->map(fn (Enrollment $e) => $this->studentRow($e, $lessons, $learning))->values(),
+        ]);
+    }
+
+    /** Confirma (ou retira) a presença de um aluno. Com a presença confirmada, o certificado sai se o resto estiver cumprido. */
+    public function attendance(Request $request, Course $course, User $student, LearningService $learning): JsonResponse
+    {
+        Gate::authorize('update', $course);
+        $data = $request->validate(['attended' => ['required', 'boolean']]);
+        $e = Enrollment::with('user:id,ulid,name,email')->where('course_id', $course->id)->where('user_id', $student->id)->firstOrFail();
+        $e->forceFill(['attended_at' => $data['attended'] ? ($e->attended_at ?? now()) : null])->save();
+        if ($data['attended']) {
+            $learning->afterProgress($student, $course);
+        }
+
+        return response()->json(['student' => $this->studentRow($e, $learning->lessons($course), $learning)]);
+    }
+
+    private function studentRow(Enrollment $e, $lessons, LearningService $learning): array
+    {
+        $done = $learning->completedIds($e->user, $lessons)->count();
+
+        return [
+            'id' => $e->user->id,
+            'ulid' => $e->user->ulid,
+            'name' => $e->user->name,
+            'email' => $e->user->email,
+            'progress' => $lessons->count() ? (int) floor($done / $lessons->count() * 100) : 0,
+            'attended' => $e->attended_at?->format('d/m/Y'),
+            'certificate' => Certificate::where('user_id', $e->user_id)->where('course_id', $e->course_id)->where('status', 'valid')->exists(),
+        ];
     }
 
     /** Capa do curso (imagem) ou anexo de uma aula; devolve o caminho para o editor. */
@@ -237,6 +284,12 @@ class CourseBuilderController extends Controller
             'is_free' => ['boolean'],
             'price' => ['nullable', 'numeric', 'min:0', 'max:99999'],
             'access_months' => ['nullable', Rule::in(CourseBuilder::ACCESS_MONTHS)],
+            // O prazo cabe sempre dentro da validade do acesso
+            'deadline_days' => ['nullable', Rule::in(CourseBuilder::DEADLINE_DAYS), function ($attr, $value, $fail) use ($request) {
+                $months = $request->input('access_months');
+                if ($value && $months && $value > $months * 30) $fail('O prazo não pode ser maior do que a validade do acesso.');
+            }],
+            'requires_attendance' => ['boolean'],
             'certificate_enabled' => ['boolean'],
             'certificate_min_progress' => ['integer', 'between:0,100'],
             'certificate_min_score' => ['integer', 'between:0,100'],

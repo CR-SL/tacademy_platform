@@ -1,5 +1,7 @@
 import { Field, inputCls, Panel, Seg, Toggle } from './ui';
 
+const DEADLINES = [[null, 'Sem prazo'], [30, '30 dias'], [60, '60 dias'], [90, '90 dias'], [180, '6 meses']];
+
 // Passo 3 · Preço e acesso.
 export default function StepPrice({ c, update }) {
     const lessons = c.modules.flatMap((m, mi) => m.lessons.map((l, li) => [l.key, `${mi + 1}.${li + 1} ${l.title || 'Aula sem título'}`]));
@@ -39,7 +41,18 @@ export default function StepPrice({ c, update }) {
                         label="Validade do acesso"
                         options={[[null, 'Vitalício'], [12, '12 meses'], [6, '6 meses'], [3, '3 meses']]}
                         value={c.access_months}
-                        onChange={(v) => update((d) => { d.access_months = v; })}
+                        onChange={(v) => update((d) => {
+                            d.access_months = v;
+                            if (v && d.deadline_days > v * 30) d.deadline_days = null; // o prazo cabe no acesso
+                        })}
+                    />
+                </Field>
+                <Field label="Prazo para concluir" help="Conta a partir da inscrição. Uma empresa pode definir outro prazo para a sua equipa.">
+                    <Seg
+                        label="Prazo para concluir"
+                        options={DEADLINES.filter(([d]) => !d || !c.access_months || d <= c.access_months * 30)}
+                        value={c.deadline_days}
+                        onChange={(v) => update((d) => { d.deadline_days = v; })}
                     />
                 </Field>
                 <Toggle checked={c.certificate_enabled} onChange={(v) => update((d) => { d.certificate_enabled = v; })} title="Emitir certificado">
@@ -50,6 +63,11 @@ export default function StepPrice({ c, update }) {
                         <Range label="Aulas vistas" min={50} value={c.certificate_min_progress} onChange={(v) => update((d) => { d.certificate_min_progress = v; })} />
                         <Range label="Nota mínima nos quizzes" min={0} value={c.certificate_min_score} onChange={(v) => update((d) => { d.certificate_min_score = v; })} />
                     </div>
+                )}
+                {c.certificate_enabled && (
+                    <Toggle checked={c.requires_attendance} onChange={(v) => update((d) => { d.requires_attendance = v; })} title="Exigir presença">
+                        O certificado só é emitido depois de confirmares a presença do aluno, em “Os meus cursos” › Alunos.
+                    </Toggle>
                 )}
                 <Field label="Aula de amostra grátis" htmlFor="f-sample" className="mb-0 mt-2" help="Quem ainda não comprou pode ver esta aula para experimentar.">
                     <select id="f-sample" className={inputCls} value={c.sample_lesson_key} onChange={(e) => update((d) => { d.sample_lesson_key = e.target.value; })}>

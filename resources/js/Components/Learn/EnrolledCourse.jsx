@@ -7,7 +7,21 @@ import usePanelBoard from '@/Components/Panels/usePanelBoard';
 import { FlashToast } from '@/Components/Teams/ui';
 
 // Página do curso para quem está inscrito: módulos, aulas do módulo, certificado e o Alex.
-export default function EnrolledCourse({ course, progress, program, next, certificate, alexUrl, savedLayout }) {
+// Estado de cada aula na lista: feita, a meio (com o tempo onde parou), a seguir ou por fazer
+function lessonState(l, isNext) {
+    if (l.status === 'done') return `Feita${l.minutes ? ` · ${l.minutes} min` : ''}`;
+    if (l.position) return `Em curso · ${l.position.at}${l.position.of ? ` de ${l.position.of}` : ''}`;
+    return `${isNext ? 'A seguir' : 'Por fazer'}${l.minutes ? ` · ${l.minutes} min` : ''}`;
+}
+
+export const deadlineText = (d) => (d.late
+    ? `Prazo terminou a ${d.date}`
+    : d.days === 0 ? 'Prazo termina hoje'
+    : d.days <= 14 ? `Faltam ${d.days} ${d.days === 1 ? 'dia' : 'dias'} · até ${d.date}`
+    : `Concluir até ${d.date}`);
+
+export default function EnrolledCourse({ course, access, progress, program, next, certificate, alexUrl, savedLayout }) {
+    const deadline = access?.deadline;
     const lessonUrl = (l) => `/plataforma/cursos/${course.slug}/aulas/${l.ulid}`;
     const [selected, setSelected] = useState(() => {
         const i = program.findIndex((m) => m.lessons.some((l) => l.ulid === next?.ulid));
@@ -38,7 +52,7 @@ export default function EnrolledCourse({ course, progress, program, next, certif
                         <img src={course.image} alt="" />
                         <div className="pn-band-t">
                             <div>
-                                <span className="pn-lab">{course.title} · {progress.percent}%</span>
+                                <span className="pn-lab">{course.title} · {progress.percent}%{deadline ? ` · ${deadlineText(deadline)}` : ''}</span>
                                 <h3 className="pn-disp">{mod && moduleName(mod.title, selected)}</h3>
                             </div>
                         </div>
@@ -46,7 +60,7 @@ export default function EnrolledCourse({ course, progress, program, next, certif
                     {mod?.lessons.map((l, j) => (
                         <Link key={l.ulid} href={lessonUrl(l)} className={`pn-l-row ${l.ulid === next?.ulid ? 'pn-cur' : ''}`}>
                             <span>{selected + 1}.{j + 1} · {l.title}</span>
-                            <span>{l.status === 'done' ? 'Feita' : l.ulid === next?.ulid ? 'A seguir' : 'Por fazer'}{l.minutes ? ` · ${l.minutes} min` : ''}</span>
+                            <span>{lessonState(l, l.ulid === next?.ulid)}</span>
                         </Link>
                     ))}
                 </>
@@ -72,6 +86,9 @@ export default function EnrolledCourse({ course, progress, program, next, certif
                                     {certificate.score !== null && (
                                         <li>{certificate.score_ok ? <IconCheck /> : <span aria-hidden="true">○</span>}<span>Nota média de {certificate.min_score}% nos testes ({certificate.score}%)</span></li>
                                     )}
+                                    {certificate.attendance !== null && (
+                                        <li>{certificate.attendance_ok ? <IconCheck /> : <span aria-hidden="true">○</span>}<span>Presença confirmada pelo formador{certificate.attendance_ok ? '' : ' (por confirmar)'}</span></li>
+                                    )}
                                 </ul>
                             </>
                         )}
@@ -81,10 +98,12 @@ export default function EnrolledCourse({ course, progress, program, next, certif
         } : {}),
         sobre: {
             title: 'Sobre o curso', x: certificate.enabled ? 8 : 0, y: 18, w: certificate.enabled ? 16 : 24, h: 8, compact: true,
-            summary: course.instructor ? `Formador: ${course.instructor}` : undefined,
+            summary: deadline ? deadlineText(deadline) : course.instructor ? `Formador: ${course.instructor}` : undefined,
             body: (
                 <div className="pn-prose">
                     {course.instructor && <p><b>Formador:</b> {course.instructor}</p>}
+                    {deadline && <p><b>Prazo:</b> {deadline.late ? `terminou a ${deadline.date}` : `concluir até ${deadline.date}`}{deadline.by === 'empresa' ? ', definido pela tua empresa' : ''}.</p>}
+                    {course.attendance && <p><b>Presença:</b> este curso exige presença, confirmada pelo formador.</p>}
                     {course.description?.split(/\n{2,}/).map((p, i) => <p key={i}>{p}</p>)}
                     {course.learn.length > 0 && (
                         <>

@@ -76,6 +76,8 @@ Route::middleware(['auth', 'verified', 'can:viewAny,App\Models\Course'])
         Route::post('/cursos/{course}/publicar', 'publish')->name('courses.publish');
         Route::post('/cursos/{course}/rascunho', 'unpublish')->name('courses.unpublish');
         Route::delete('/cursos/{course}', 'destroy')->name('courses.destroy');
+        Route::get('/cursos/{course}/alunos', 'students')->name('courses.students');
+        Route::post('/cursos/{course}/alunos/{student}/presenca', 'attendance')->middleware('throttle:120,1')->name('courses.attendance');
         Route::post('/uploads', 'upload')->middleware('throttle:60,1')->name('uploads');
         // Vídeo da aula, enviado aos pedaços (cada pedido fica abaixo dos limites do PHP e do proxy)
         Route::post('/videos', 'uploadVideo')->middleware('throttle:1200,1')->name('videos');
@@ -90,6 +92,8 @@ Route::post('/cursos/{course:slug}/comprar', [PurchaseController::class, 'store'
 Route::middleware(['auth', 'verified', 'role:team_leader'])->group(function () {
     Route::get('/equipa', [TeamController::class, 'show'])->name('team.show');
     Route::post('/equipa/pedidos', [TeamController::class, 'requestChange'])->middleware('throttle:10,1')->name('team.request');
+    Route::post('/equipa/lembretes', [TeamController::class, 'remind'])->middleware('throttle:10,1')->name('team.remind');
+    Route::post('/equipa/atribuir', [TeamController::class, 'assign'])->middleware('throttle:10,1')->name('team.assign');
 });
 
 // "Pedidos" e "Equipas": Gestor de Cursos e admin

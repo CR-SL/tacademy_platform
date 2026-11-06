@@ -6,10 +6,10 @@ import { btn, Drawer, FlashToast, inputCls } from '@/Components/Teams/ui';
 import PanelBoard, { alexDef, Bar, Crumb, PanelsMenu } from '@/Components/Panels/PanelBoard';
 import usePanelBoard from '@/Components/Panels/usePanelBoard';
 
-const statusOf = (m, s) => (m.invited ? 'Convite por aceitar' : s.stalled ? 'Sem atividade' : s.last ? 'A estudar' : 'Ainda não começou');
-const needsAttention = (m, s) => m.invited || s.stalled;
+const statusOf = (m, s) => (m.invited ? 'Convite por aceitar' : s.late ? 'Fora do prazo' : s.stalled ? 'Sem atividade' : s.progress === 100 ? 'Concluído' : s.last ? 'A estudar' : 'Ainda não começou');
+const needsAttention = (m, s) => m.invited || s.stalled || s.late;
 
-function Person({ team, report, member, course }) {
+function Person({ team, report, member, course, onAction }) {
     const s = member.courses[course] ?? {};
     return (
         <div className="pn-detail">
@@ -24,7 +24,18 @@ function Person({ team, report, member, course }) {
                 <div><span className="pn-lab">Progresso</span><b className="pn-disp">{s.progress ?? 0}%</b></div>
                 <div><span className="pn-lab">Nota nos testes</span><b className="pn-disp">{s.score == null ? '—' : `${s.score}%`}</b></div>
                 <div><span className="pn-lab">Certificado</span><b className="pn-disp">{s.certificate ? 'Emitido' : '—'}</b></div>
+                <div><span className="pn-lab">Prazo</span><b className={`pn-disp ${s.late ? 'pn-late-t' : ''}`}>{s.due ?? '—'}</b></div>
             </div>
+            {s.enrolled && (
+                <div className="pn-p-acts">
+                    <button type="button" className="pn-btn pn-sm" disabled={!s.remindable} onClick={() => onAction('remind', [member.id])}>Enviar lembrete</button>
+                    <button type="button" className="pn-btn pn-soft pn-sm" onClick={() => onAction('assign', [member.id])}>{s.due ? 'Mudar o prazo' : 'Atribuir com prazo'}</button>
+                    <small>
+                        {[s.assigned && `Atribuído a ${s.assigned}`, s.reminded && `Último lembrete ${s.reminded}`].filter(Boolean).join(' · ')
+                            || (s.progress === 100 ? 'Curso concluído.' : 'Ainda sem lembretes.')}
+                    </small>
+                </div>
+            )}
             <span className="pn-lab pn-p-h">Cursos da equipa</span>
             {report.courses.map((c) => {
                 const st = member.courses[c.id] ?? {};
@@ -44,6 +55,7 @@ function Person({ team, report, member, course }) {
 // "Equipas" do team leader: só a sua equipa e os cursos da equipa. Alterações são pedidas ao Gestor de Cursos.
 export default function Show({ team, report, otherCourses, changeTypes, alexUrl, savedLayout }) {
     const [asking, setAsking] = useState(false);
+    const [action, setAction] = useState(null); // { mode: 'remind' | 'assign', members: [ids] }
     const [course, setCourse] = useState(report.courses[0]?.id ?? null);
     const [person, setPerson] = useState(() => report.members.find((m) => needsAttention(m, m.courses[report.courses[0]?.id] ?? {}))?.id ?? report.members[0]?.id ?? null);
     const members = report.members;
@@ -81,7 +93,9 @@ export default function Show({ team, report, otherCourses, changeTypes, alexUrl,
         },
         pessoa: {
             title: 'Pessoa', x: 6, y: 0, w: 13, h: 18, compact: true, float: 'light',
-            body: selected ? <Person team={team} report={report} member={selected} course={course} /> : <p className="pn-empty">A equipa ainda não tem pessoas.</p>,
+            body: selected
+                ? <Person team={team} report={report} member={selected} course={course} onAction={(mode, ids) => setAction({ mode, members: ids })} />
+                : <p className="pn-empty">A equipa ainda não tem pessoas.</p>,
         },
         alex: alexDef(alexUrl, 0, 18),
     };
@@ -92,10 +106,27 @@ export default function Show({ team, report, otherCourses, changeTypes, alexUrl,
             <Head title="Equipa" />
             <Crumb label={`Equipas · ${team.name}`}>
                 <button type="button" className="pn-btn pn-soft pn-sm" onClick={() => exportTeamCsv(team, report, course)}>Exportar (Excel)</button>
+                {report.courses.length > 0 && members.length > 0 && (
+                    <>
+                        <button type="button" className="pn-btn pn-soft pn-sm" onClick={() => setAction({ mode: 'remind', members: null })}>Enviar lembrete</button>
+                        <button type="button" className="pn-btn pn-soft pn-sm" onClick={() => setAction({ mode: 'assign', members: null })}>Atribuir formação</button>
+                    </>
+                )}
                 <button type="button" className="pn-btn pn-sm" onClick={() => setAsking(true)}>Pedir alteração</button>
             </Crumb>
             <PanelBoard board={board} />
 
+            {action && (
+                <PeopleAction
+                    key={`${action.mode}-${course}`}
+                    mode={action.mode}
+                    team={team}
+                    report={report}
+                    course={course}
+                    initial={action.members}
+                    onClose={() => setAction(null)}
+                />
+            )}
             {asking && (
                 <ChangeRequest
                     team={team}
@@ -107,6 +138,101 @@ export default function Show({ team, report, otherCourses, changeTypes, alexUrl,
             )}
             <FlashToast />
         </StudentLayout>
+    );
+}
+
+// "Enviar lembrete" e "Atribuir formação": escolher o curso da equipa, as pessoas e, ao atribuir, o prazo.
+function PeopleAction({ mode, team, report, course, initial, onClose }) {
+    const remind = mode === 'remind';
+    const stats = (m, c) => m.courses[c] ?? {};
+    // Por omissão: ao lembrar, quem precisa de atenção e ainda pode receber; ao atribuir, toda a equipa
+    const defaults = (c) => initial ?? report.members
+        .filter((m) => (remind ? stats(m, c).remindable && needsAttention(m, stats(m, c)) : true))
+        .map((m) => m.id);
+    const { data, setData, post, processing, errors, transform } = useForm({
+        course_id: course ?? report.courses[0]?.id ?? '',
+        members: defaults(course),
+        due_at: initial?.length === 1 ? stats(report.members.find((m) => m.id === initial[0]) ?? { courses: {} }, course).dueInput ?? '' : '',
+        message: '',
+    });
+    transform((d) => ({ ...d, due_at: d.due_at || null }));
+    const toggle = (id) => setData('members', data.members.includes(id) ? data.members.filter((x) => x !== id) : [...data.members, id]);
+    const canPick = (m) => !remind || stats(m, data.course_id).remindable;
+    const pickable = report.members.filter(canPick);
+    const tomorrow = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+    const submit = (e) => {
+        e.preventDefault();
+        post(remind ? '/equipa/lembretes' : '/equipa/atribuir', { preserveScroll: true, onSuccess: onClose });
+    };
+    const err = (k) => errors[k] && <span className="text-[13px] text-live">{errors[k]}</span>;
+    const chosen = data.members.filter((id) => pickable.some((m) => m.id === id)).length;
+
+    return (
+        <Drawer
+            over={team.name}
+            title={remind ? 'Enviar lembrete' : 'Atribuir formação'}
+            onClose={onClose}
+            width="w-[min(520px,100%)]"
+            footer={<><span className="flex-1 text-[13px] text-muted">{chosen} {chosen === 1 ? 'pessoa escolhida' : 'pessoas escolhidas'}</span><button type="submit" form="people-form" disabled={processing || chosen === 0} className={btn.accent}>{processing ? 'A enviar…' : remind ? 'Enviar lembrete' : 'Atribuir'}</button></>}
+        >
+            <form id="people-form" onSubmit={submit} className="flex flex-col gap-4">
+                <p className="text-muted">
+                    {remind
+                        ? 'Cada pessoa recebe um email com o progresso no curso e o prazo, se houver. Quem já concluiu ou recebeu um lembrete nas últimas horas fica de fora.'
+                        : 'Cada pessoa recebe um email com o curso e o prazo. Sem data, cada pessoa mantém o prazo que já tinha.'}
+                </p>
+                <Field label="Curso" id="p-course">
+                    <select id="p-course" className={inputCls} value={data.course_id} onChange={(e) => {
+                        const c = Number(e.target.value);
+                        setData((d) => ({ ...d, course_id: c, members: initial ?? defaults(c) }));
+                    }}>
+                        {report.courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+                    </select>
+                    {err('course_id')}
+                </Field>
+                <fieldset className="flex flex-col gap-1.5">
+                    <legend className="mb-1.5 flex w-full items-center justify-between font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">
+                        Pessoas
+                        <span className="flex gap-3 normal-case tracking-normal">
+                            <button type="button" className="text-[13px] text-accent-ink hover:text-ink" onClick={() => setData('members', pickable.map((m) => m.id))}>Todas</button>
+                            <button type="button" className="text-[13px] text-muted hover:text-ink" onClick={() => setData('members', [])}>Nenhuma</button>
+                        </span>
+                    </legend>
+                    <div className="max-h-[300px] overflow-y-auto border border-line">
+                        {report.members.map((m) => {
+                            const s = stats(m, data.course_id);
+                            const ok = canPick(m);
+                            return (
+                                <label key={m.id} className={`flex items-center gap-3 border-b border-line px-3 py-2.5 last:border-b-0 ${ok ? 'cursor-pointer hover:bg-surface2' : 'opacity-55'}`}>
+                                    <input type="checkbox" className="h-4 w-4 accent-[#F8B101]" disabled={!ok} checked={ok && data.members.includes(m.id)} onChange={() => toggle(m.id)} />
+                                    <span className="min-w-0 flex-1">
+                                        <b className="block truncate text-[14.5px] font-semibold">{m.name}</b>
+                                        <small className="text-[12.5px] text-muted">
+                                            {remind && !ok
+                                                ? (s.progress === 100 ? 'Já concluiu' : s.reminded ? `Lembrete enviado ${s.reminded}` : 'Sem acesso ao curso')
+                                                : [statusOf(m, s), `${s.progress ?? 0}%`, s.due && `prazo ${s.due}`].filter(Boolean).join(' · ')}
+                                        </small>
+                                    </span>
+                                </label>
+                            );
+                        })}
+                    </div>
+                    {err('members')}
+                </fieldset>
+                {!remind && (
+                    <Field label="Prazo para concluir (opcional)" id="p-due">
+                        <input id="p-due" type="date" min={tomorrow} className={inputCls} value={data.due_at} onChange={(e) => setData('due_at', e.target.value)} />
+                        {err('due_at')}
+                    </Field>
+                )}
+                <Field label="Mensagem (opcional)" id="p-msg">
+                    <textarea id="p-msg" rows={3} className={inputCls} value={data.message} maxLength={1000}
+                        placeholder={remind ? 'Ex.: lembra-te de acabar o módulo 2 antes da reunião de sexta.' : 'Ex.: este curso é para fazer antes da formação presencial.'}
+                        onChange={(e) => setData('message', e.target.value)} />
+                    {err('message')}
+                </Field>
+            </form>
+        </Drawer>
     );
 }
 

@@ -218,7 +218,7 @@ class LearningService
                 ->update(['status' => 'completed', 'completed_at' => now()]);
         }
         $status = $this->certificateStatus($user, $course, $lessons, $done);
-        if (! $course->certificate_enabled || $status['certificate'] || ! ($status['progress_ok'] && $status['score_ok'])) {
+        if (! $course->certificate_enabled || $status['certificate'] || ! ($status['progress_ok'] && $status['score_ok'] && $status['attendance_ok'])) {
             return null;
         }
 
@@ -240,6 +240,10 @@ class LearningService
             ->selectRaw('quiz_id, MAX(score) as best')->groupBy('quiz_id')->pluck('best', 'quiz_id');
         $score = $quizIds->isEmpty() ? null : (int) round($quizIds->sum(fn ($id) => (int) ($best[$id] ?? 0)) / $quizIds->count());
         $cert = Certificate::where('user_id', $user->id)->where('course_id', $course->id)->where('status', 'valid')->first();
+        // Presença: só conta quando o formador a exige no curso; confirma-a em "Os meus cursos" › Alunos
+        $attended = $course->requires_attendance
+            ? Enrollment::where('user_id', $user->id)->where('course_id', $course->id)->whereNotNull('attended_at')->exists()
+            : null;
 
         return [
             'enabled' => (bool) $course->certificate_enabled,
@@ -249,6 +253,8 @@ class LearningService
             'score' => $score,
             'progress_ok' => $progress >= $course->certificate_min_progress,
             'score_ok' => $score === null || $score >= $course->certificate_min_score,
+            'attendance' => $attended,
+            'attendance_ok' => $attended !== false,
             'certificate' => $cert ? ['number' => $cert->certificate_number, 'issued_at' => $cert->issued_at?->format('d/m/Y')] : null,
         ];
     }

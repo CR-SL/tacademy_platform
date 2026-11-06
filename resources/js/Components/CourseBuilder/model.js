@@ -22,6 +22,8 @@ export function blankCourse() {
         is_free: false,
         price: '',
         access_months: null,
+        deadline_days: null,
+        requires_attendance: false,
         certificate_enabled: true,
         certificate_min_progress: 100,
         certificate_min_score: 70,

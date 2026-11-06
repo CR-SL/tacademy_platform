@@ -3,10 +3,10 @@ import { Chip, Kpi, Progress, Tabs, Td, Th } from './ui';
 
 export function exportTeamCsv(team, report, courseId) {
     const course = report.courses.find((c) => c.id === courseId)?.title ?? '';
-    const rows = [['Nome', 'Email', 'Team leader', 'Curso', 'Progresso %', 'Nota quizzes %', 'Última atividade', 'Certificado']];
+    const rows = [['Nome', 'Email', 'Team leader', 'Curso', 'Progresso %', 'Nota quizzes %', 'Última atividade', 'Prazo', 'Certificado']];
     report.members.forEach((m) => {
         const s = m.courses[courseId] ?? {};
-        rows.push([m.name, m.email, m.leader ? 'sim' : '', course, s.progress ?? 0, s.score ?? '', m.invited ? 'nunca entrou' : s.last ?? '', s.certificate ? 'sim' : '']);
+        rows.push([m.name, m.email, m.leader ? 'sim' : '', course, s.progress ?? 0, s.score ?? '', m.invited ? 'nunca entrou' : s.last ?? '', s.due ? `${s.due}${s.late ? ' (fora do prazo)' : ''}` : '', s.certificate ? 'sim' : '']);
     });
     const csv = '﻿' + rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
     const a = document.createElement('a');

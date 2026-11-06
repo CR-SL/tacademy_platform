@@ -181,7 +181,7 @@ class TeamService
             'courses' => $courses->map(fn ($c) => ['id' => $c->id, 'title' => $c->title])->values()->all(),
             'members' => $members->map(function (User $u) use ($courses, $lessonIds, $company) {
                 $progress = LessonProgress::where('user_id', $u->id)->whereIn('lesson_id', $lessonIds->flatten())->get();
-                $enrolled = Enrollment::where('user_id', $u->id)->where('company_id', $company->id)->pluck('course_id');
+                $enrolled = Enrollment::with('course')->where('user_id', $u->id)->where('company_id', $company->id)->get()->keyBy('course_id');
 
                 return [
                     'id' => $u->id,
@@ -194,9 +194,17 @@ class TeamService
                         $mine = $progress->whereIn('lesson_id', $ids);
                         $done = $mine->where('status', 'completed')->count();
                         $last = $mine->max('updated_at');
+                        $e = $enrolled->get($c->id);
+                        $deadline = $e?->deadlineInfo($ids->isNotEmpty() && $done >= $ids->count());
 
                         return [$c->id => [
-                            'enrolled' => $enrolled->contains($c->id),
+                            'enrolled' => (bool) $e,
+                            'due' => $deadline['date'] ?? null,
+                            'dueInput' => $e?->due_at?->format('Y-m-d'),
+                            'late' => $deadline['late'] ?? false,
+                            'assigned' => $e?->assigned_at?->format('d/m/Y'),
+                            'reminded' => $e?->reminded_at?->diffForHumans(),
+                            'remindable' => $e && ! $this->remindedRecently($e) && ($ids->isEmpty() || $done < $ids->count()),
                             'progress' => $ids->count() ? (int) round($done / $ids->count() * 100) : 0,
                             'score' => $this->quizScore($u->id, $ids),
                             'last' => $last ? \Illuminate\Support\Carbon::parse($last)->diffForHumans() : null,
@@ -207,6 +215,107 @@ class TeamService
                 ];
             })->values()->all(),
         ];
+    }
+
+    /** Horas mínimas entre dois lembretes à mesma pessoa, no mesmo curso. */
+    public const REMIND_EVERY_HOURS = 20;
+
+    private function remindedRecently(Enrollment $e): bool
+    {
+        return (bool) $e->reminded_at?->gt(now()->subHours(self::REMIND_EVERY_HOURS));
+    }
+
+    /**
+     * Lembrete por email às pessoas escolhidas, num curso da equipa. Quem já concluiu o curso
+     * ou recebeu um lembrete há pouco fica de fora.
+     *
+     * @return array{sent: int, skipped: int}
+     */
+    public function remind(Company $company, User $leader, Course $course, array $memberIds, ?string $message): array
+    {
+        $lessonIds = $course->lessons()->pluck('lessons.id');
+        $sent = 0;
+        $members = $company->users()->whereIn('users.id', $memberIds)->get();
+
+        foreach ($members as $u) {
+            $e = Enrollment::with('course')->where('user_id', $u->id)->where('course_id', $course->id)->where('company_id', $company->id)->first();
+            $done = LessonProgress::where('user_id', $u->id)->whereIn('lesson_id', $lessonIds)->where('status', 'completed')->count();
+            $finished = $lessonIds->isNotEmpty() && $done >= $lessonIds->count();
+            if (! $e || $finished || $this->remindedRecently($e)) {
+                continue;
+            }
+
+            $deadline = $e->deadlineInfo(false);
+            $pct = $lessonIds->count() ? (int) floor($done / $lessonIds->count() * 100) : 0;
+            $first = Str::before($u->name, ' ');
+            $action = $this->entryAction($u, $course, $done ? 'Continuar o curso' : 'Começar o curso');
+            PlatformMail::deliver($u->email, new PlatformMail(
+                subjectLine: "Lembrete: {$course->title}",
+                heading: "Olá {$first}, o curso {$course->title} está à tua espera",
+                lines: array_filter([
+                    $done ? "Já fizeste {$pct}% do curso ({$done} de {$lessonIds->count()} aulas)." : 'Ainda não começaste o curso.',
+                    $deadline ? ($deadline['late'] ? "O prazo terminou a {$deadline['date']}." : "Prazo para concluir: {$deadline['date']}.") : null,
+                    "Lembrete enviado por {$leader->name}, da equipa {$company->name}.",
+                ]),
+                quote: $message ?: null,
+                actionText: $action['actionText'],
+                actionUrl: $action['actionUrl'],
+            ));
+            $e->forceFill(['reminded_at' => now()])->save();
+            $sent++;
+        }
+
+        return ['sent' => $sent, 'skipped' => count($memberIds) - $sent];
+    }
+
+    /**
+     * Atribui um curso da equipa às pessoas escolhidas, com prazo opcional (data), e avisa-as por email.
+     * Sem data, cada pessoa mantém o prazo que já tinha (o da empresa ou o do curso).
+     */
+    public function assign(Company $company, User $leader, Course $course, array $memberIds, ?string $due, ?string $message): int
+    {
+        $members = $company->users()->whereIn('users.id', $memberIds)->get();
+        $dueDate = $due ? \Illuminate\Support\Carbon::parse($due) : null;
+
+        DB::transaction(function () use ($members, $course, $company, $leader, $dueDate) {
+            foreach ($members as $u) {
+                $e = $this->enroll($u, $course->id, $company->id);
+                $e->forceFill(['assigned_at' => now(), 'assigned_by' => $leader->id]);
+                if ($dueDate) $e->due_at = $dueDate;
+                $e->save();
+            }
+        });
+
+        foreach ($members as $u) {
+            $first = Str::before($u->name, ' ');
+            $action = $this->entryAction($u, $course, 'Abrir o curso');
+            $deadline = Enrollment::with('course')->where('user_id', $u->id)->where('course_id', $course->id)->first()?->deadlineInfo(false);
+            PlatformMail::deliver($u->email, new PlatformMail(
+                subjectLine: "Tens uma formação atribuída: {$course->title}",
+                heading: "Olá {$first}, tens uma formação para fazer",
+                lines: array_filter([
+                    "{$leader->name}, da equipa {$company->name}, atribuiu-te o curso {$course->title}.",
+                    $deadline ? 'Prazo para concluir: '.$deadline['date'].'.' : null,
+                ]),
+                quote: $message ?: null,
+                actionText: $action['actionText'],
+                actionUrl: $action['actionUrl'],
+            ));
+        }
+
+        return $members->count();
+    }
+
+    /** Botão do email: quem ainda não entrou define primeiro a palavra-passe. */
+    private function entryAction(User $u, Course $course, string $text): array
+    {
+        if ($u->last_active_at === null && ! LessonProgress::where('user_id', $u->id)->exists()) {
+            $token = Password::broker()->createToken($u);
+
+            return ['actionText' => 'Definir palavra-passe', 'actionUrl' => url(route('password.reset', ['token' => $token, 'email' => $u->email], false))];
+        }
+
+        return ['actionText' => $text, 'actionUrl' => url('/plataforma/cursos/'.$course->slug)];
     }
 
     /** Média da melhor nota em cada quiz do curso (null se ainda não fez nenhum). */

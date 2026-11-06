@@ -92,8 +92,32 @@ class StudentArea
                 'expired' => $expiry?->isPast() ?? false,
                 'expires' => $expiry?->format('d/m/Y'),
                 'completed' => $e->completed_at?->translatedFormat('j M Y'),
+                'deadline' => $expiry?->isPast() ? null : $e->deadlineInfo($lessons->isNotEmpty() && $finished === $lessons->count()),
             ];
         })->all();
+    }
+
+    /** Dias antes do fim do prazo a partir dos quais o curso aparece nos Pendentes. */
+    public const DEADLINE_SOON_DAYS = 14;
+
+    /** Cursos com o prazo a acabar (ou já passado), para os Pendentes. */
+    public function deadlines(User $user): array
+    {
+        return collect($this->courses($user))
+            ->filter(fn ($c) => $c['deadline'] && $c['deadline']['days'] <= self::DEADLINE_SOON_DAYS)
+            ->sortBy(fn ($c) => $c['deadline']['days'])
+            ->map(fn ($c) => [
+                'kind' => 'Prazo',
+                'title' => $c['title'],
+                'course' => $c['deadline']['late'] ? 'terminou a '.$c['deadline']['date'] : 'até '.$c['deadline']['date'],
+                'text' => ($c['deadline']['late']
+                    ? 'O prazo para concluir este curso já passou.'
+                    : ($c['deadline']['days'] === 0 ? 'O prazo termina hoje.' : 'Faltam '.$c['deadline']['days'].' '.($c['deadline']['days'] === 1 ? 'dia' : 'dias').' para concluir o curso.'))
+                    .' Já fizeste '.$c['done'].' de '.$c['total'].' aulas'
+                    .($c['deadline']['by'] === 'empresa' ? '. Prazo definido pela tua empresa.' : '.'),
+                'cta' => $c['done'] ? 'Continuar o curso' : 'Começar o curso',
+                'url' => $c['url'],
+            ])->values()->all();
     }
 
     /**

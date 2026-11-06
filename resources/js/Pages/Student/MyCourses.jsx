@@ -24,6 +24,7 @@ function Group({ title, courses }) {
                                 <span>
                                     {c.expired ? `Acesso terminou a ${c.expires}`
                                         : c.completed ? `Concluído a ${c.completed}`
+                                        : c.deadline ? (c.deadline.late ? `Prazo terminou a ${c.deadline.date}` : `Concluir até ${c.deadline.date}`)
                                         : c.expires ? `Acesso até ${c.expires}`
                                         : `${c.done} de ${c.total} aulas`}
                                 </span>

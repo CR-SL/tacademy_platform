@@ -6,6 +6,7 @@ import MessagesPanel from '@/Components/Panels/MessagesPanel';
 import PanelBoard, { alexDef, Bar, EmptyPanel, moduleName, PanelsMenu } from '@/Components/Panels/PanelBoard';
 import { IconArrow, IconCheck, IconPlay, IconTri } from '@/Components/Panels/icons';
 import usePanelBoard from '@/Components/Panels/usePanelBoard';
+import WorkshopGame from '@/Components/Panels/WorkshopGame';
 
 function greeting() {
     const h = new Date().getHours();
@@ -13,6 +14,13 @@ function greeting() {
 }
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+// "1 prazo a acabar · 2 testes por fazer"
+function pendingSummary(pending) {
+    const late = pending.filter((p) => p.kind === 'Prazo').length;
+    const tests = pending.length - late;
+    return [late && plural(late, 'prazo a acabar', 'prazos a acabar'), tests && plural(tests, 'teste por fazer', 'testes por fazer')].filter(Boolean).join(' · ') || null;
+}
 
 function CoursesPanel({ courses, resume }) {
     const [open, setOpen] = useState(() => resume?.modules.find((m) => m.current)?.id ?? null);
@@ -29,7 +37,7 @@ function CoursesPanel({ courses, resume }) {
                     <span>
                         <b>{c.title}</b>
                         <Bar value={c.pct} />
-                        <small>{c.state === 'feito' ? '✓ Concluído' : `${c.pct}%`}{c.company ? ' · Empresa' : ' · Curso próprio'}{c.expired ? ' · Acesso terminado' : ''}</small>
+                        <small className={c.deadline?.late ? 'pn-late-t' : undefined}>{c.state === 'feito' ? '✓ Concluído' : `${c.pct}%`}{c.company ? ' · Empresa' : ' · Curso próprio'}{c.expired ? ' · Acesso terminado' : c.deadline ? ` · ${c.deadline.late ? 'Fora do prazo' : `Até ${c.deadline.date.slice(0, 5)}`}` : ''}</small>
                     </span>
                 </Link>
             ))}
@@ -92,7 +100,7 @@ function ContinueBody({ resume, hasCourses }) {
 
 function PendingPanel({ pending }) {
     const [open, setOpen] = useState(0);
-    if (!pending.length) return <p className="pn-empty">Não tens testes por fazer.</p>;
+    if (!pending.length) return <p className="pn-empty">Não tens testes nem prazos por cumprir.</p>;
 
     return pending.map((p, i) => (
         <div key={p.url} className="pn-pend">
@@ -215,6 +223,7 @@ function lessonNumber(resume) {
 }
 
 export default function Dashboard({ courses, resume, pending, results, notes, messages, suggestions, alexUrl, savedLayout }) {
+    const [best, setBest] = useState(0);
     const { auth } = usePage().props;
     const firstName = (auth?.user?.name ?? '').split(' ')[0];
     const startWith = new URLSearchParams(window.location.search).get('conversa');
@@ -239,7 +248,7 @@ export default function Dashboard({ courses, resume, pending, results, notes, me
         pendentes: {
             title: 'Pendentes', x: 5, y: 9, w: 7, h: 13,
             label: `Pendentes · ${pending.length}`,
-            summary: pending.length ? plural(pending.length, 'teste por fazer', 'testes por fazer') : 'Nada por fazer',
+            summary: pendingSummary(pending) ?? 'Nada por fazer',
             body: <PendingPanel pending={pending} />,
         },
         resultados: {
@@ -266,10 +275,16 @@ export default function Dashboard({ courses, resume, pending, results, notes, me
             summary: plural(suggestions.length, 'curso', 'cursos'),
             body: <SuggestionsPanel suggestions={suggestions} />,
         },
+        pausa: {
+            title: 'Pausa', x: 0, y: 46, w: 8, h: 14, compact: true,
+            label: 'Pausa · Arrumar a oficina',
+            summary: best ? `Recorde: ${best} pontos` : 'Um minijogo para descontrair',
+            body: <WorkshopGame onBest={setBest} />,
+        },
     };
 
     const board = usePanelBoard({ view: 'home', panels, saved: savedLayout });
-    const summaryLine = pending.length ? plural(pending.length, 'teste por fazer', 'testes por fazer') : resume ? 'Tudo em dia' : null;
+    const summaryLine = pendingSummary(pending) ?? (resume ? 'Tudo em dia' : null);
 
     return (
         <StudentLayout navTools={<PanelsMenu board={board} />}>
