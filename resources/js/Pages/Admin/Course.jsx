@@ -17,9 +17,9 @@ export default function Course({ course, stats: s, days }) {
     return (
         <StudentLayout>
             <Head title={`${course.title} · ${t('Administração')}`} />
-            <div className="ad-main" style={{ maxWidth: 1360, margin: '0 auto' }}>
+            <div className="bo-main" style={{ maxWidth: 1360, margin: '0 auto' }}>
                 <Link href="/administracao/catalogo" className="ui-link mb-3 inline-block text-[13px]">{t('← Catálogo')}</Link>
-                <div className="ad-hero">
+                <div className="bo-hero">
                     <img src={course.image} alt="" />
                     <div style={{ minWidth: 0 }}>
                         <span className="pn-lab">{[course.area, course.free ? t('Grátis') : fmtEuro(course.price), course.instructor].filter(Boolean).join(' · ')}</span>
@@ -33,7 +33,7 @@ export default function Course({ course, stats: s, days }) {
                     </div>
                 </div>
 
-                <div className="ad-kpis ad-kpis5">
+                <div className="bo-kpis bo-kpis5">
                     <Kpi label={t('Cliques · :days dias', { days })} value={fmtInt(s.views)} hint={t('aberturas no catálogo')} />
                     <Kpi label={t('Compras · :days dias', { days })} value={fmtInt(s.sales)} hint={s.views ? t(':pct% de quem viu', { pct: ((s.sales / s.views) * 100).toLocaleString(undefined, { maximumFractionDigits: 1 }) }) : t(':n no total', { n: s.allSales })} />
                     <Kpi label={t('Receita · :days dias', { days })} value={fmtEuro(s.revenue)} hint={t('compras pessoais')} />
@@ -41,14 +41,14 @@ export default function Course({ course, stats: s, days }) {
                     <Kpi label={t('Concluíram')} value={`${pct}%`} hint={t(':n de :total inscritos', { n: s.done, total: s.enrolled })} />
                 </div>
 
-                <div className="ad-row ad-row2">
-                    <section className="ad-box">
-                        <div className="ad-box-h"><span className="pn-lab">{t('Cliques por dia · :days dias', { days })}</span></div>
-                        <div className="ad-box-b"><Columns data={s.byDay.map((d) => ({ label: d.label, value: d.value, tip: d.date }))} unit={` ${t('cliques')}`} caption={t('Cliques por dia')} /></div>
+                <div className="bo-row bo-row2">
+                    <section className="bo-box">
+                        <div className="bo-box-h"><span className="pn-lab">{t('Cliques por dia · :days dias', { days })}</span></div>
+                        <div className="bo-box-b"><Columns data={s.byDay.map((d) => ({ label: d.label, value: d.value, tip: d.date }))} unit={` ${t('cliques')}`} caption={t('Cliques por dia')} /></div>
                     </section>
-                    <section className="ad-box">
-                        <div className="ad-box-h"><span className="pn-lab">{t('Percurso neste curso')}</span></div>
-                        <div className="ad-box-b">
+                    <section className="bo-box">
+                        <div className="bo-box-h"><span className="pn-lab">{t('Percurso neste curso')}</span></div>
+                        <div className="bo-box-b">
                             <HBars caption={t('Percurso neste curso')} rows={[
                                 { name: t('Viram no catálogo'), value: s.views, tip: t('últimos :days dias', { days }) },
                                 { name: t('Inscreveram-se'), value: s.enrolled },
@@ -59,15 +59,15 @@ export default function Course({ course, stats: s, days }) {
                     </section>
                 </div>
 
-                <section className="ad-box" style={{ marginTop: 12 }}>
-                    <div className="ad-box-h"><span className="pn-lab">{t('Alunos · :n', { n: s.enrolled })}</span></div>
+                <section className="bo-box" style={{ marginTop: 12 }}>
+                    <div className="bo-box-h"><span className="pn-lab">{t('Alunos · :n', { n: s.enrolled })}</span></div>
                     <div className="overflow-x-auto px-3 py-1">
                         {s.students.length ? (
-                            <table className="ad-table">
+                            <table className="bo-table">
                                 <thead><tr><th>{t('Aluno')}</th><th>{t('Empresa')}</th><th>{t('Inscrição')}</th><th style={{ width: '30%' }}>{t('Progresso')}</th><th>{t('Última atividade')}</th></tr></thead>
                                 <tbody>{s.students.map((u) => (
                                     <tr key={u.email}>
-                                        <td><div className="ad-who"><span className="ad-av">{initials(u.name)}</span><span style={{ minWidth: 0 }}><b>{u.name}</b><small>{u.email}</small></span></div></td>
+                                        <td><div className="bo-who"><span className="bo-av">{initials(u.name)}</span><span style={{ minWidth: 0 }}><b>{u.name}</b><small>{u.email}</small></span></div></td>
                                         <td>{u.company ?? <span className="text-muted">{t('Compra pessoal')}</span>}</td>
                                         <td className="text-muted">{u.enrolled}</td>
                                         <td><Progress value={u.progress} /></td>
@@ -75,7 +75,7 @@ export default function Course({ course, stats: s, days }) {
                                     </tr>
                                 ))}</tbody>
                             </table>
-                        ) : <p className="ad-empty px-3">{t('Ainda ninguém se inscreveu neste curso.')}</p>}
+                        ) : <p className="bo-empty px-3">{t('Ainda ninguém se inscreveu neste curso.')}</p>}
                     </div>
                 </section>
             </div>

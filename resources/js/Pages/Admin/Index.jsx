@@ -30,8 +30,8 @@ export default function Index({ section, sections, days, data }) {
     return (
         <StudentLayout>
             <Head title={t('Administração')} />
-            <div className="ad-shell">
-                <nav className="ad-side" aria-label={t('Administração')}>
+            <div className="bo-shell">
+                <nav className="bo-side" aria-label={t('Administração')}>
                     {MENU.map(([group, items]) => {
                         const shown = items.filter(([key]) => sections.includes(key));
                         if (!shown.length) return null;
@@ -47,7 +47,7 @@ export default function Index({ section, sections, days, data }) {
                         );
                     })}
                 </nav>
-                <main className="ad-main"><Section data={data} days={days} /></main>
+                <main className="bo-main"><Section data={data} days={days} /></main>
             </div>
             <FlashToast />
         </StudentLayout>
@@ -56,7 +56,7 @@ export default function Index({ section, sections, days, data }) {
 
 function Head2({ title, sub, children }) {
     return (
-        <div className="ad-head">
+        <div className="bo-head">
             <div><h1>{title}</h1>{sub && <p>{sub}</p>}</div>
             {children && <div className="flex flex-wrap gap-2">{children}</div>}
         </div>
@@ -65,9 +65,9 @@ function Head2({ title, sub, children }) {
 
 function Box({ title, chip, children, pad = true }) {
     return (
-        <section className="ad-box">
-            <div className="ad-box-h"><span className="pn-lab">{title}</span>{chip}</div>
-            <div className={pad ? 'ad-box-b' : ''}>{children}</div>
+        <section className="bo-box">
+            <div className="bo-box-h"><span className="pn-lab">{title}</span>{chip}</div>
+            <div className={pad ? 'bo-box-b' : ''}>{children}</div>
         </section>
     );
 }
@@ -92,21 +92,21 @@ function Overview({ data, days }) {
     return (
         <>
             <Head2 title={t('Visão geral')} sub={t('Últimos :days dias.', { days })} />
-            <div className="ad-kpis">
+            <div className="bo-kpis">
                 <Kpi label={t('Receita')} value={fmtEuro(o.revenue)} hint={t(':n compras pessoais', { n: o.sales })} />
                 <Kpi label={t('Compras de empresas')} value={fmtInt(o.companySales)} hint={t('pedidos pagos ou com equipa criada')} />
                 <Kpi label={t('Cliques no catálogo')} value={fmtInt(o.views)} hint={t('cursos abertos no catálogo')} />
                 <Kpi label={t('Cursos concluídos')} value={t(':done de :total', { done: o.done, total: o.enrolled })} hint={o.enrolled ? t(':pct% das inscrições', { pct: Math.round((o.done / o.enrolled) * 100) }) : null} />
             </div>
-            <div className="ad-row">
+            <div className="bo-row">
                 <Box title={t('Compras por mês')}><Columns data={months} unit={` ${t('compras')}`} caption={t('Compras por mês')} /></Box>
                 <Box title={t('A precisar de atenção')}>
                     {attention.length ? attention.map((a, i) => (
-                        <Link key={i} href={a.url} className="ad-att"><i /><span><b>{a.title}</b><small>{a.text}</small></span></Link>
-                    )) : <p className="ad-empty">{t('Nada a pedir atenção. Está tudo em dia.')}</p>}
+                        <Link key={i} href={a.url} className="bo-att"><i /><span><b>{a.title}</b><small>{a.text}</small></span></Link>
+                    )) : <p className="bo-empty">{t('Nada a pedir atenção. Está tudo em dia.')}</p>}
                 </Box>
             </div>
-            <div className="ad-row">
+            <div className="bo-row">
                 <Box title={t('Conclusão por curso')}><Completion rows={completion} linkTo={(r) => courseUrl(r.ulid)} /></Box>
                 <Box title={t('Cursos mais vistos')}>
                     <HBars rows={topViews.map((c) => ({ name: c.title, value: c.views, href: courseUrl(c.ulid), tip: t(':views cliques · :sales compras', { views: fmtInt(c.views), sales: c.sales }) }))} caption={t('Cursos mais vistos')} />
@@ -122,19 +122,19 @@ function Sales({ data, days }) {
     return (
         <>
             <Head2 title={t('Vendas')} sub={t(PAY_NOTE)} />
-            <div className="ad-kpis">
+            <div className="bo-kpis">
                 <Kpi label={t('Receita · :days dias', { days })} value={fmtEuro(o.revenue)} />
                 <Kpi label={t('Compras pessoais')} value={fmtInt(o.sales)} />
                 <Kpi label={t('Compras de empresas')} value={fmtInt(o.companySales)} />
                 <Kpi label={t('Pessoas novas')} value={fmtInt(o.newUsers)} hint={t('contas criadas no período')} />
             </div>
-            <div className="ad-row">
+            <div className="bo-row">
                 <Box title={t('Compras por mês')}><Columns data={months} unit={` ${t('compras')}`} caption={t('Compras por mês')} /></Box>
                 <Box title={t('Receita por curso · :days dias', { days })}>
                     <HBars rows={byCourse.map((c) => ({ name: c.title, value: c.revenue, href: c.ulid ? courseUrl(c.ulid) : undefined, tip: t(':n compras', { n: c.sales }) }))} format={fmtEuro} caption={t('Receita por curso')} />
                 </Box>
             </div>
-            <p className="ad-note">{t('As faturas chegam mais tarde no desenvolvimento.')}</p>
+            <p className="bo-note">{t('As faturas chegam mais tarde no desenvolvimento.')}</p>
         </>
     );
 }
@@ -147,7 +147,7 @@ function Clicks({ data, days }) {
             <Head2 title={t('Cliques no catálogo')} sub={t('Quantas vezes cada curso foi aberto no catálogo nos últimos :days dias, e quantas compras houve.', { days })} />
             <Box title={t('Cliques e compras por curso')} pad={false}>
                 <div className="overflow-x-auto px-3 py-1">
-                    <table className="ad-table">
+                    <table className="bo-table">
                         <thead><tr><th>{t('Curso')}</th><th className="num">{t('Cliques')}</th><th className="num">{t('Compras')}</th><th className="num">{t('Conversão')}</th></tr></thead>
                         <tbody>{rows.map((c) => (
                             <tr key={c.ulid}>
@@ -160,7 +160,7 @@ function Clicks({ data, days }) {
                     </table>
                 </div>
             </Box>
-            <p className="ad-note">{t('A contagem começou quando esta página foi criada. Abrir o mesmo curso várias vezes seguidas conta uma vez a cada 30 minutos.')}</p>
+            <p className="bo-note">{t('A contagem começou quando esta página foi criada. Abrir o mesmo curso várias vezes seguidas conta uma vez a cada 30 minutos.')}</p>
         </>
     );
 }
@@ -184,7 +184,7 @@ function Catalog({ data }) {
             </Head2>
             <Box title={t(':n cursos', { n: data.catalog.length })} pad={false}>
                 <div className="overflow-x-auto px-3 py-1">
-                    <table className="ad-table">
+                    <table className="bo-table">
                         <thead><tr><th /><th>{t('Curso')}</th><th>{t('Estado')}</th><th className="num">{t('Preço')}</th><th className="num">{t('Inscritos')}</th><th className="num">{t('Cliques')}</th><th /></tr></thead>
                         <tbody>{data.catalog.map((c) => (
                             <tr key={c.ulid}>
@@ -220,15 +220,15 @@ function Areas({ areas }) {
     };
 
     return (
-        <section className="ad-box" style={{ marginTop: 12 }}>
-            <div className="ad-box-h"><span className="pn-lab">{t('Áreas')}</span></div>
-            <div className="ad-box-b">
+        <section className="bo-box" style={{ marginTop: 12 }}>
+            <div className="bo-box-h"><span className="pn-lab">{t('Áreas')}</span></div>
+            <div className="bo-box-b">
                 <form className="mb-3 flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); add.post('/administracao/areas', { preserveScroll: true, onSuccess: () => add.reset() }); }}>
                     <input className={inputCls} style={{ maxWidth: 320 }} value={add.data.name} maxLength={100} placeholder={t('Nome da área nova')} aria-label={t('Nome da área nova')} onChange={(e) => add.setData('name', e.target.value)} />
                     <Button variant="soft" type="submit" disabled={add.processing || !add.data.name.trim()}>{t('Criar área')}</Button>
                 </form>
                 {(add.errors.name || errors.area) && <p className="ui-err mb-2">{add.errors.name || errors.area}</p>}
-                <table className="ad-table">
+                <table className="bo-table">
                     <thead><tr><th>{t('Área')}</th><th className="num">{t('Cursos')}</th><th /></tr></thead>
                     <tbody>{areas.map((a) => (
                         <tr key={a.id}>
@@ -250,7 +250,7 @@ function Areas({ areas }) {
                         </tr>
                     ))}</tbody>
                 </table>
-                <p className="ad-note">{t('O nome aparece no catálogo e nos cursos. Uma área com cursos não se apaga.')}</p>
+                <p className="bo-note">{t('O nome aparece no catálogo e nos cursos. Uma área com cursos não se apaga.')}</p>
             </div>
             {confirmDialog}
         </section>
@@ -293,11 +293,11 @@ function People({ data }) {
             <Box title={t(':n pessoas', { n: users.total })} pad={false}>
                 <div className="overflow-x-auto px-3 py-1">
                     {users.data.length ? (
-                        <table className="ad-table">
+                        <table className="bo-table">
                             <thead><tr><th>{t('Pessoa')}</th><th>{t('Perfil')}</th><th>{t('Empresa')}</th><th className="num">{t('Cursos')}</th><th>{t('Última atividade')}</th><th /></tr></thead>
                             <tbody>{users.data.map((u) => (
-                                <tr key={u.id} className={u.disabled ? 'ad-dim' : ''}>
-                                    <td><div className="ad-who"><span className="ad-av">{initials(u.name)}</span><span style={{ minWidth: 0 }}><b>{u.name}{u.me && <> <Chip>{t('Tu')}</Chip></>}</b><small>{u.email}</small></span></div></td>
+                                <tr key={u.id} className={u.disabled ? 'bo-dim' : ''}>
+                                    <td><div className="bo-who"><span className="bo-av">{initials(u.name)}</span><span style={{ minWidth: 0 }}><b>{u.name}{u.me && <> <Chip>{t('Tu')}</Chip></>}</b><small>{u.email}</small></span></div></td>
                                     <td><Chip tone={u.role === 'admin' ? 'dark' : 'mut'}>{roleName[u.role] ?? u.role}</Chip>{u.disabled && <> <Chip tone="bad">{t('Desativada')}</Chip></>}</td>
                                     <td>{u.company ?? <span className="text-muted">—</span>}</td>
                                     <td className="num">{u.courses}</td>
@@ -315,7 +315,7 @@ function People({ data }) {
                                 </tr>
                             ))}</tbody>
                         </table>
-                    ) : <p className="ad-empty px-3">{t('Ninguém com estes filtros.')}</p>}
+                    ) : <p className="bo-empty px-3">{t('Ninguém com estes filtros.')}</p>}
                 </div>
             </Box>
             {users.last_page > 1 && (
@@ -353,7 +353,7 @@ function PersonDrawer({ user, roles, onClose }) {
                 </Field>
                 <fieldset>
                     <legend className="ui-label mb-1.5">{t('Perfil')}</legend>
-                    <div className="ad-roles">
+                    <div className="bo-roles">
                         {roles.map((r) => (
                             <label key={r.key}>
                                 <input type="radio" name="role" value={r.key} checked={form.data.role === r.key} onChange={() => form.setData('role', r.key)} disabled={user?.me} />
@@ -385,7 +385,7 @@ function Permissions({ data }) {
             <Head2 title={t('Permissões')} sub={t('O que cada perfil pode fazer na plataforma. As mudanças valem logo para todas as pessoas desse perfil.')} />
             <Box title={t('Perfis e permissões')} pad={false}>
                 <div className="overflow-x-auto px-3 py-1">
-                    <table className="ad-table ad-matrix">
+                    <table className="bo-table bo-matrix">
                         <thead><tr><th>{t('O que pode fazer')}</th>{roles.map((r) => <th key={r.key}>{r.name}</th>)}</tr></thead>
                         <tbody>{permissions.map((p) => (
                             <tr key={p.key}>
@@ -394,7 +394,7 @@ function Permissions({ data }) {
                                     const on = (granted[r.key] ?? []).includes(p.key);
                                     return (
                                         <td key={r.key}>
-                                            <button type="button" className="ad-tick" aria-pressed={on} disabled={r.key === 'admin' || busy === `${r.key}-${p.key}`}
+                                            <button type="button" className="bo-tick" aria-pressed={on} disabled={r.key === 'admin' || busy === `${r.key}-${p.key}`}
                                                 aria-label={`${r.name}: ${p.label}`} onClick={() => toggle(r.key, p.key)}>
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
                                             </button>
@@ -406,7 +406,7 @@ function Permissions({ data }) {
                     </table>
                 </div>
             </Box>
-            <p className="ad-note">{t('O admin tem sempre todas as permissões. Ver o catálogo, comprar e fazer cursos está sempre ao alcance de todos.')}</p>
+            <p className="bo-note">{t('O admin tem sempre todas as permissões. Ver o catálogo, comprar e fazer cursos está sempre ao alcance de todos.')}</p>
         </>
     );
 }

@@ -16,14 +16,14 @@ function useTip() {
         onMouseLeave: () => setTip(null),
     });
     const node = tip && createPortal(
-        <div className="ad-tip" role="tooltip" style={{ left: Math.min(tip.x + 14, window.innerWidth - 240), top: tip.y - 44 }}>{tip.html}</div>,
+        <div className="bo-tip" role="tooltip" style={{ left: Math.min(tip.x + 14, window.innerWidth - 240), top: tip.y - 44 }}>{tip.html}</div>,
         document.body,
     );
     return [node, bind];
 }
 
 export function Empty({ children }) {
-    return <p className="ad-empty">{children ?? t('Ainda não há dados neste período.')}</p>;
+    return <p className="bo-empty">{children ?? t('Ainda não há dados neste período.')}</p>;
 }
 
 /** Colunas no tempo (meses ou dias). data: [{ label, value, tip? }] */
@@ -34,9 +34,9 @@ export function Columns({ data, unit = '', caption }) {
 
     return (
         <>
-            <div className="ad-cols" aria-hidden="true">
+            <div className="bo-cols" aria-hidden="true">
                 {data.map((d, i) => (
-                    <div key={i} className="ad-col" {...bind(<><b>{d.tip ?? d.label}</b> · {fmtInt(d.value)}{unit}</>)}>
+                    <div key={i} className="bo-col" {...bind(<><b>{d.tip ?? d.label}</b> · {fmtInt(d.value)}{unit}</>)}>
                         <i style={{ height: `${(d.value / max) * 100}%` }} />
                         <span>{d.label}</span>
                     </div>
@@ -60,10 +60,10 @@ export function HBars({ rows, format = fmtInt, caption }) {
                 {rows.map((r) => {
                     const name = r.href ? <Link href={r.href} tabIndex={-1} className="hover:underline">{r.name}</Link> : r.name;
                     return (
-                        <div key={r.name} className="ad-hbar" {...bind(<><b>{r.name}</b><br />{r.tip ?? format(r.value)}</>)}>
-                            <span className="ad-hbar-n">{name}</span>
-                            <span className="ad-hbar-t"><i style={{ width: `${(r.value / max) * 100}%` }} /></span>
-                            <span className="ad-hbar-v">{format(r.value)}</span>
+                        <div key={r.name} className="bo-hbar" {...bind(<><b>{r.name}</b><br />{r.tip ?? format(r.value)}</>)}>
+                            <span className="bo-hbar-n">{name}</span>
+                            <span className="bo-hbar-t"><i style={{ width: `${(r.value / max) * 100}%` }} /></span>
+                            <span className="bo-hbar-v">{format(r.value)}</span>
                         </div>
                     );
                 })}
@@ -79,21 +79,21 @@ export function Completion({ rows, linkTo }) {
     const [tipNode, bind] = useTip();
     const list = rows.filter((r) => r.enrolled > 0);
     if (!list.length) return <Empty>{t('Ainda ninguém se inscreveu num curso.')}</Empty>;
-    const parts = (r) => [[r.done, 'ad-s1'], [r.started - r.done, 'ad-s2'], [r.enrolled - r.started, 'ad-s3']];
+    const parts = (r) => [[r.done, 'bo-s1'], [r.started - r.done, 'bo-s2'], [r.enrolled - r.started, 'bo-s3']];
 
     return (
         <>
-            <div className="ad-legend" aria-hidden="true">
-                <span><i className="ad-s1" />{t('Concluíram')}</span>
-                <span><i className="ad-s2" />{t('Em curso')}</span>
-                <span><i className="ad-s3" />{t('Por começar')}</span>
+            <div className="bo-legend" aria-hidden="true">
+                <span><i className="bo-s1" />{t('Concluíram')}</span>
+                <span><i className="bo-s2" />{t('Em curso')}</span>
+                <span><i className="bo-s3" />{t('Por começar')}</span>
             </div>
             <div aria-hidden="true">
                 {list.map((r) => (
-                    <div key={r.title} className="ad-hbar" {...bind(<><b>{r.title}</b><br />{t(':done concluíram · :prog em curso · :none por começar', { done: r.done, prog: r.started - r.done, none: r.enrolled - r.started })}</>)}>
-                        <span className="ad-hbar-n">{linkTo ? <Link href={linkTo(r)} tabIndex={-1} className="hover:underline">{r.title}</Link> : r.title}</span>
-                        <span className="ad-stack">{parts(r).filter(([n]) => n > 0).map(([n, cls]) => <i key={cls} className={cls} style={{ width: `${(n / r.enrolled) * 100}%` }} />)}</span>
-                        <span className="ad-hbar-v">{Math.round((r.done / r.enrolled) * 100)}%</span>
+                    <div key={r.title} className="bo-hbar" {...bind(<><b>{r.title}</b><br />{t(':done concluíram · :prog em curso · :none por começar', { done: r.done, prog: r.started - r.done, none: r.enrolled - r.started })}</>)}>
+                        <span className="bo-hbar-n">{linkTo ? <Link href={linkTo(r)} tabIndex={-1} className="hover:underline">{r.title}</Link> : r.title}</span>
+                        <span className="bo-stack">{parts(r).filter(([n]) => n > 0).map(([n, cls]) => <i key={cls} className={cls} style={{ width: `${(n / r.enrolled) * 100}%` }} />)}</span>
+                        <span className="bo-hbar-v">{Math.round((r.done / r.enrolled) * 100)}%</span>
                     </div>
                 ))}
             </div>
