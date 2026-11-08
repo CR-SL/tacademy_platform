@@ -33,7 +33,7 @@ class PanelLayoutController extends Controller
         ]);
         foreach (array_keys($data['items']) as $id) {
             if (! preg_match('/^[a-z]{1,30}$/', (string) $id)) {
-                throw ValidationException::withMessages(['items' => 'Painel inválido.']);
+                throw ValidationException::withMessages(['items' => __('Painel inválido.')]);
             }
         }
 

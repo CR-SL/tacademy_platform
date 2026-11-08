@@ -1,5 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
+import { t } from '@/i18n';
+
 // Leitor próprio da T.Academy (opção C "Cinema", escolhida a 2026-10-28; exemplo em landing-concepts/leitor-video-opcoes.html).
 // Vídeo de ponta a ponta, comandos numa cápsula flutuante e barra fina no fundo, que se escondem quando não estão em uso.
 // HLS (.m3u8, várias qualidades) com hls.js — carregado só quando é preciso; o iPhone toca HLS nativo; MP4 direto.
@@ -61,7 +63,7 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
 
     const [playing, setPlaying] = useState(false);
     const [started, setStarted] = useState(false);
-    const [t, setT] = useState(startAt);
+    const [tx, setT] = useState(startAt);
     const [dur, setDur] = useState(0);
     const [buf, setBuf] = useState(0);
     const [volume, setVolume] = useState(1);
@@ -183,11 +185,11 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
         else if (k === 'arrowright' || k === 'l') skip(10);
         else if (k === 'arrowup' || k === 'arrowdown') {
             setVol((v.muted ? 0 : v.volume) + (k === 'arrowup' ? 0.1 : -0.1));
-            showFlash(`Volume ${Math.round(v.volume * 100)}%`);
+            showFlash(t('Volume :v1%', { v1: Math.round(v.volume * 100) }));
         } else if (k === '>' || k === '<') {
             const i = RATES.indexOf(v.playbackRate);
             v.playbackRate = RATES[Math.min(RATES.length - 1, Math.max(0, (i < 0 ? 1 : i) + (k === '>' ? 1 : -1)))];
-            showFlash(`Velocidade ${rateLabel(v.playbackRate)}`);
+            showFlash(t('Velocidade :v1', { v1: rateLabel(v.playbackRate) }));
         } else if (k === 'f') toggleFull();
         else if (k === 'm') toggleMute();
         else return;
@@ -207,7 +209,7 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
         <div ref={root} tabIndex={0} onKeyDown={onKey} onFocus={wake}
             onPointerMove={(e) => { if (e.pointerType === 'mouse') wake(); }}
             onPointerDownCapture={(e) => { tapWhileHidden.current = hiddenRef.current && e.pointerType !== 'mouse'; wake(); }}
-            aria-label="Leitor de vídeo (espaço: reproduzir ou pausar, setas ← →: 10 segundos, ↑ ↓: volume, F: ecrã inteiro, M: som)"
+            aria-label={t('Leitor de vídeo (espaço: reproduzir ou pausar, setas ← →: 10 segundos, ↑ ↓: volume, F: ecrã inteiro, M: som)')}
             className={`relative aspect-video w-full select-none overflow-hidden bg-black text-white outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent ${hidden ? 'cursor-none' : ''}`}>
             <video ref={video} playsInline preload="metadata" onDoubleClick={toggleFull}
                 onClick={() => { if (!tapWhileHidden.current) toggle(); }}
@@ -241,7 +243,7 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
             )}
 
             {!started && (
-                <button type="button" onClick={toggle} aria-label="Reproduzir"
+                <button type="button" onClick={toggle} aria-label={t('Reproduzir')}
                     className="absolute left-1/2 top-1/2 z-[2] grid h-[84px] w-[84px] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-[rgba(24,24,27,.6)] text-accent shadow-[0_0_0_2px_var(--color-accent)] backdrop-blur-sm transition-transform hover:scale-105">
                     <Icon d={PLAY} className="ml-1 h-8 w-8" />
                 </button>
@@ -256,7 +258,7 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
                     <div ref={volPop} className="absolute bottom-full -translate-x-1/2 pb-3" style={{ left: volX }}
                         onPointerEnter={openVol} onPointerLeave={closeVolSoon}>
                         <div className="flex flex-col items-center pt-1">
-                            <div ref={volTrack} role="slider" tabIndex={-1} aria-label="Volume" aria-orientation="vertical"
+                            <div ref={volTrack} role="slider" tabIndex={-1} aria-label={t('Volume')} aria-orientation="vertical"
                                 aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(shownVolume * 100)}
                                 className="relative h-24 w-6 cursor-pointer touch-none"
                                 onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); volDrag.current = true; volFrom(e); }}
@@ -275,49 +277,49 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
                 )}
                 {menu && (
                     <div className="absolute bottom-full right-0 mb-2 flex w-44 flex-col overflow-auto bg-[rgba(24,24,27,.95)] p-2" style={{ maxHeight: Math.max(120, (root.current?.clientHeight ?? 300) - 90) }}>
-                        <span className="px-2 pb-1.5 pt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-white/60">{menu === 'speed' ? 'Velocidade' : 'Qualidade'}</span>
+                        <span className="px-2 pb-1.5 pt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-white/60">{menu === 'speed' ? t('Velocidade') : t('Qualidade')}</span>
                         {menu === 'speed' ? RATES.map((r) => (
                             <button key={r} type="button" onClick={() => setSpeed(r)} aria-pressed={rate === r} className={menuItem(rate === r)}>
-                                {r === 1 ? 'Normal' : rateLabel(r)}
+                                {r === 1 ? t('Normal') : rateLabel(r)}
                             </button>
                         )) : [{ i: -1, h: null }, ...levels].map((l) => (
                             <button key={l.i} type="button" onClick={() => pickLevel(l.i)} aria-pressed={level === l.i} className={menuItem(level === l.i)}>
-                                {l.h ? `${l.h}p` : 'Auto'}
+                                {l.h ? `${l.h}p` : t('Auto')}
                                 {!l.h && level === -1 && autoH && <small className="font-normal text-white/60">· {autoH}p</small>}
-                                {l.h >= 720 && <em className="border border-current px-1 font-mono text-[9px] not-italic opacity-70">HD</em>}
+                                {l.h >= 720 && <em className="border border-current px-1 font-mono text-[9px] not-italic opacity-70">{t('HD')}</em>}
                             </button>
                         ))}
                     </div>
                 )}
                 <div className="flex items-center gap-0.5 whitespace-nowrap bg-[rgba(24,24,27,.74)] p-1 backdrop-blur-md">
-                    <button type="button" onClick={() => skip(-10)} aria-label="Recuar 10 segundos" className={`${BTN} max-sm:hidden`}><Icon d={BACK} /></button>
-                    <button type="button" onClick={toggle} aria-label={playing ? 'Pausar' : 'Reproduzir'}
+                    <button type="button" onClick={() => skip(-10)} aria-label={t('Recuar 10 segundos')} className={`${BTN} max-sm:hidden`}><Icon d={BACK} /></button>
+                    <button type="button" onClick={toggle} aria-label={playing ? t('Pausar') : t('Reproduzir')}
                         className="rounded-full mx-0.5 grid h-8 w-9 place-items-center bg-accent text-on-accent">
                         <Icon d={playing ? PAUSE : PLAY} />
                     </button>
-                    <button type="button" onClick={() => skip(10)} aria-label="Avançar 10 segundos" className={`${BTN} max-sm:hidden`}><Icon d={FWD} /></button>
-                    <span className="px-2 font-mono text-xs text-white/85">{fmt(t)} / {fmt(d)}</span>
+                    <button type="button" onClick={() => skip(10)} aria-label={t('Avançar 10 segundos')} className={`${BTN} max-sm:hidden`}><Icon d={FWD} /></button>
+                    <span className="px-2 font-mono text-xs text-white/85">{fmt(tx)} / {fmt(d)}</span>
                     {/* Som: o botão liga e desliga; ao passar o rato abre a barra vertical do volume por cima (fora da cápsula,
                         para não a alargar nem mudar os botões de sítio). No telemóvel usa-se o volume do aparelho. */}
-                    <button ref={volBtn} type="button" onClick={toggleMute} aria-label={muted ? 'Ligar o som' : 'Tirar o som'}
+                    <button ref={volBtn} type="button" onClick={toggleMute} aria-label={muted ? t('Ligar o som') : t('Tirar o som')}
                         onPointerEnter={(e) => { if (e.pointerType === 'mouse') openVol(); }} onPointerLeave={closeVolSoon} onFocus={openVol} onBlur={closeVolSoon}
                         className={`${BTN} max-sm:hidden`}>
                         <Icon d={shownVolume === 0 ? MUTE : shownVolume < 0.5 ? VOL_LOW : VOL} />
                     </button>
-                    <button type="button" onClick={() => setMenu((m) => (m === 'speed' ? null : 'speed'))} aria-label={`Velocidade: ${rateLabel(rate)}`} aria-expanded={menu === 'speed'}
+                    <button type="button" onClick={() => setMenu((m) => (m === 'speed' ? null : 'speed'))} aria-label={t('Velocidade: :v1', { v1: rateLabel(rate) })} aria-expanded={menu === 'speed'}
                         className={`h-8 min-w-[40px] px-1.5 font-display text-[12px] font-semibold transition-colors hover:text-accent ${rate !== 1 ? 'text-accent' : ''}`}>
                         {rateLabel(rate)}
                     </button>
                     {levels.length > 0 && (
-                        <button type="button" onClick={() => setMenu((m) => (m === 'quality' ? null : 'quality'))} aria-label="Qualidade" aria-expanded={menu === 'quality'} className={BTN}><Icon d={GEAR} /></button>
+                        <button type="button" onClick={() => setMenu((m) => (m === 'quality' ? null : 'quality'))} aria-label={t('Qualidade')} aria-expanded={menu === 'quality'} className={BTN}><Icon d={GEAR} /></button>
                     )}
-                    <button type="button" onClick={toggleFull} aria-label={full ? 'Sair do ecrã inteiro' : 'Ecrã inteiro'} className={BTN}><Icon d={full ? EXIT : FULL} /></button>
+                    <button type="button" onClick={toggleFull} aria-label={full ? t('Sair do ecrã inteiro') : t('Ecrã inteiro')} className={BTN}><Icon d={full ? EXIT : FULL} /></button>
                 </div>
             </div>
 
             {/* Barra fina do tempo: troços já vistos (amarelo), meta dos 90% e posição */}
             <div className={`group/tl absolute inset-x-0 bottom-0 z-[3] pt-4 transition-opacity duration-300 ${hidden ? 'opacity-0' : ''}`}>
-                <div ref={tl} role="slider" aria-label="Posição no vídeo" aria-valuemin={0} aria-valuemax={Math.floor(d)} aria-valuenow={Math.floor(t)} aria-valuetext={`${fmt(t)} de ${fmt(d)}`}
+                <div ref={tl} role="slider" aria-label={t('Posição no vídeo')} aria-valuemin={0} aria-valuemax={Math.floor(d)} aria-valuenow={Math.floor(tx)} aria-valuetext={t(':at de :of', { at: fmt(tx), of: fmt(d) })}
                     className="relative h-1 cursor-pointer touch-none bg-white/25 transition-[height] duration-150 group-hover/tl:h-2.5"
                     onPointerDown={(e) => { if (!d || tapWhileHidden.current) return; e.currentTarget.setPointerCapture(e.pointerId); dragging.current = true; seekTo(e); }}
                     onPointerMove={(e) => { const p = posOf(e); setTip({ p, t: p * d }); if (dragging.current) seekTo(e); }}
@@ -325,8 +327,8 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
                     onPointerLeave={() => setTip(null)}>
                     <span className="absolute inset-y-0 left-0 bg-white/20" style={{ width: pct(buf) }} />
                     {seen.map(([a, b]) => <i key={a} className="absolute inset-y-0 bg-accent" style={{ left: pct(a), width: pct(b - a) }} />)}
-                    <span className="absolute inset-y-0 left-[90%] z-[1] w-0.5 bg-white/70" title="Meta: 90%" aria-hidden="true" />
-                    <span className="absolute top-1/2 z-[2] -ml-[7px] -mt-[7px] h-3.5 w-3.5 scale-0 rounded-full bg-accent transition-transform duration-150 group-hover/tl:scale-100" style={{ left: pct(t) }} aria-hidden="true" />
+                    <span className="absolute inset-y-0 left-[90%] z-[1] w-0.5 bg-white/70" title={t('Meta: 90%')} aria-hidden="true" />
+                    <span className="absolute top-1/2 z-[2] -ml-[7px] -mt-[7px] h-3.5 w-3.5 scale-0 rounded-full bg-accent transition-transform duration-150 group-hover/tl:scale-100" style={{ left: pct(tx) }} aria-hidden="true" />
                     {tip && d > 0 && (
                         <span className="pointer-events-none absolute bottom-[calc(100%+12px)] -translate-x-1/2 whitespace-nowrap bg-[#18181B] px-2 py-1 font-mono text-[11px] text-white"
                             style={{ left: `${Math.min(94, Math.max(6, tip.p * 100))}%` }}>

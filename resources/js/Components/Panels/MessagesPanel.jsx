@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { initials } from '@/Layouts/StudentLayout';
 import { IconBack } from './icons';
 
+import { t } from '@/i18n';
+
 // Ao ler ou enviar, atualiza também as tarefas do Início e os números da navegação
 const options = { preserveScroll: true, preserveState: true, only: ['messages', 'pending', 'navCounts', 'errors'] };
 
@@ -12,7 +14,7 @@ export default function MessagesPanel({ messages, startWith }) {
     const { threads, canStart } = messages;
     const [openKey, setOpenKey] = useState(() => {
         if (!startWith) return null;
-        return threads.find((t) => t.key === startWith || String(t.course_id) === String(startWith))?.key ?? null;
+        return threads.find((tx) => tx.key === startWith || String(tx.course_id) === String(startWith))?.key ?? null;
     });
     const [newCourse, setNewCourse] = useState(() => {
         const wanted = canStart.find((c) => String(c.id) === String(startWith));
@@ -21,7 +23,7 @@ export default function MessagesPanel({ messages, startWith }) {
     const [body, setBody] = useState('');
     const [sending, setSending] = useState(false);
     const threadRef = useRef(null);
-    const thread = threads.find((t) => t.key === openKey);
+    const thread = threads.find((tx) => tx.key === openKey);
 
     // Aberta a partir de uma tarefa do Início (?conversa=…): marca como lida e mostra a caixa
     useEffect(() => {
@@ -31,10 +33,10 @@ export default function MessagesPanel({ messages, startWith }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const openThread = (t) => {
-        setOpenKey(t.key);
+    const openThread = (tx) => {
+        setOpenKey(tx.key);
         setBody('');
-        if (t.unread) router.post('/plataforma/mensagens/lidas', { course_id: t.course_id, student_id: t.student_id }, options);
+        if (tx.unread) router.post('/plataforma/mensagens/lidas', { course_id: tx.course_id, student_id: tx.student_id }, options);
     };
 
     useEffect(() => {
@@ -61,7 +63,7 @@ export default function MessagesPanel({ messages, startWith }) {
         return (
             <div className="pn-sent">
                 <div className="pn-thread-h">
-                    <button type="button" className="pn-tool" aria-label="Voltar às conversas" title="Voltar às conversas" onClick={() => setOpenKey(null)}><IconBack /></button>
+                    <button type="button" className="pn-tool" aria-label={t('Voltar às conversas')} title={t('Voltar às conversas')} onClick={() => setOpenKey(null)}><IconBack /></button>
                     <span><b>{thread.name}</b><small>{thread.context}</small></span>
                 </div>
                 <div className="pn-thread" ref={threadRef}>
@@ -71,9 +73,9 @@ export default function MessagesPanel({ messages, startWith }) {
                 </div>
                 {error}
                 <form className="pn-reply" onSubmit={(e) => send(e, { course_id: thread.course_id, student_id: thread.student_id })}>
-                    <label className="pn-sr" htmlFor="pn-reply-text">Responder a {thread.name}</label>
-                    <textarea id="pn-reply-text" rows={2} maxLength={3000} placeholder="Escreve a tua resposta" value={body} onChange={(e) => setBody(e.target.value)} />
-                    <button type="submit" className="ui-btn ui-btn-sm" disabled={sending}>{sending ? 'A enviar…' : 'Enviar'}</button>
+                    <label className="pn-sr" htmlFor="pn-reply-text">{t('Responder a')}{' '}{thread.name}</label>
+                    <textarea id="pn-reply-text" rows={2} maxLength={3000} placeholder={t('Escreve a tua resposta')} value={body} onChange={(e) => setBody(e.target.value)} />
+                    <button type="submit" className="ui-btn ui-btn-sm" disabled={sending}>{sending ? t('A enviar…') : t('Enviar')}</button>
                 </form>
             </div>
         );
@@ -83,36 +85,36 @@ export default function MessagesPanel({ messages, startWith }) {
         <>
             {canStart.length > 0 && (
                 <form className="pn-new" onSubmit={(e) => send(e, { course_id: newCourse }, () => setNewCourse(''))}>
-                    <label className="pn-sr" htmlFor="pn-new-course">Curso</label>
+                    <label className="pn-sr" htmlFor="pn-new-course">{t('Curso')}</label>
                     <select id="pn-new-course" value={newCourse} onChange={(e) => setNewCourse(e.target.value)}>
-                        <option value="">Nova mensagem ao formador de…</option>
+                        <option value="">{t('Nova mensagem ao formador de…')}</option>
                         {canStart.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
                     </select>
                     {newCourse && (
                         <>
-                            <label className="pn-sr" htmlFor="pn-new-text">Mensagem</label>
+                            <label className="pn-sr" htmlFor="pn-new-text">{t('Mensagem')}</label>
                             <span className="pn-reply" style={{ flexBasis: '100%', padding: 0, border: 0 }}>
-                                <textarea id="pn-new-text" rows={2} maxLength={3000} placeholder="Escreve a tua dúvida" value={body} onChange={(e) => setBody(e.target.value)} />
-                                <button type="submit" className="ui-btn ui-btn-sm" disabled={sending}>{sending ? 'A enviar…' : 'Enviar'}</button>
+                                <textarea id="pn-new-text" rows={2} maxLength={3000} placeholder={t('Escreve a tua dúvida')} value={body} onChange={(e) => setBody(e.target.value)} />
+                                <button type="submit" className="ui-btn ui-btn-sm" disabled={sending}>{sending ? t('A enviar…') : t('Enviar')}</button>
                             </span>
                         </>
                     )}
                 </form>
             )}
             {error}
-            {threads.map((t) => (
-                <button key={t.key} type="button" className={`pn-msg ${t.unread ? 'pn-new-m' : ''}`} onClick={() => openThread(t)}>
-                    <span className="pn-av">{initials(t.name)}</span>
+            {threads.map((tx) => (
+                <button key={tx.key} type="button" className={`pn-msg ${tx.unread ? 'pn-new-m' : ''}`} onClick={() => openThread(tx)}>
+                    <span className="pn-av">{initials(tx.name)}</span>
                     <span style={{ minWidth: 0 }}>
-                        <b>{t.name}</b>
-                        <small>{t.context}</small>
-                        <p>{t.last}</p>
+                        <b>{tx.name}</b>
+                        <small>{tx.context}</small>
+                        <p>{tx.last}</p>
                     </span>
-                    <span className="pn-w">{t.when}{t.unread > 0 && <span className="pn-dot" aria-label="Por ler" />}</span>
+                    <span className="pn-w">{tx.when}{tx.unread > 0 && <span className="pn-dot" aria-label={t('Por ler')} />}</span>
                 </button>
             ))}
-            {threads.length === 0 && canStart.length === 0 && <p className="pn-empty">Ainda não tens mensagens. Podes falar com o formador quando estiveres inscrito num curso.</p>}
-            {threads.length === 0 && canStart.length > 0 && <p className="pn-empty">Ainda não tens mensagens. Escolhe um curso acima para falares com o formador.</p>}
+            {threads.length === 0 && canStart.length === 0 && <p className="pn-empty">{t('Ainda não tens mensagens. Podes falar com o formador quando estiveres inscrito num curso.')}</p>}
+            {threads.length === 0 && canStart.length > 0 && <p className="pn-empty">{t('Ainda não tens mensagens. Escolhe um curso acima para falares com o formador.')}</p>}
         </>
     );
 }

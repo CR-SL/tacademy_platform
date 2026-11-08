@@ -38,7 +38,7 @@ class TeamController extends Controller
             'otherCourses' => Course::where('status', 'published')
                 ->whereNotIn('id', $company->courses()->pluck('courses.id'))
                 ->orderBy('title')->get(['id', 'title']),
-            'changeTypes' => ContactRequest::CHANGE_TYPES,
+            'changeTypes' => ContactRequest::labels(ContactRequest::CHANGE_TYPES),
             'alexUrl' => $area->alexUrl($request->user()),
             'savedLayout' => $area->layout($request->user(), 'equipas'),
         ]);
@@ -57,9 +57,10 @@ class TeamController extends Controller
         ['sent' => $sent, 'skipped' => $skipped] = $this->teams->remind($company, $request->user(), $course, $data['members'], $data['message'] ?? null);
 
         $status = match (true) {
-            $sent === 0 => 'Nenhum lembrete enviado: quem escolheste já concluiu o curso, recebeu um lembrete há pouco ou desligou os lembretes.',
-            $skipped > 0 => ($sent === 1 ? '1 lembrete enviado' : "{$sent} lembretes enviados").". {$skipped} ".($skipped === 1 ? 'pessoa ficou' : 'pessoas ficaram').' de fora (já concluíram, receberam um lembrete há pouco ou desligaram os lembretes).',
-            default => $sent === 1 ? 'Lembrete enviado.' : "{$sent} lembretes enviados.",
+            $sent === 0 => __('Nenhum lembrete enviado: quem escolheste já concluiu o curso, recebeu um lembrete há pouco ou desligou os lembretes.'),
+            $skipped > 0 => trans_choice('{1} 1 lembrete enviado.|[2,*] :count lembretes enviados.', $sent).' '
+                .trans_choice('{1} 1 pessoa ficou de fora (já concluiu, recebeu um lembrete há pouco ou desligou os lembretes).|[2,*] :count pessoas ficaram de fora (já concluíram, receberam um lembrete há pouco ou desligaram os lembretes).', $skipped),
+            default => trans_choice('{1} Lembrete enviado.|[2,*] :count lembretes enviados.', $sent),
         };
 
         return back()->with('status', $status);
@@ -74,14 +75,14 @@ class TeamController extends Controller
             'due_at' => ['nullable', 'date_format:Y-m-d', 'after:today', 'before:'.now()->addYears(2)->format('Y-m-d')],
             'message' => ['nullable', 'string', 'max:1000'],
         ], $this->peopleMessages() + [
-            'due_at.after' => 'Escolhe uma data a partir de amanhã.',
-            'due_at.before' => 'Escolhe uma data nos próximos dois anos.',
+            'due_at.after' => __('Escolhe uma data a partir de amanhã.'),
+            'due_at.before' => __('Escolhe uma data nos próximos dois anos.'),
         ]);
 
         $course = $company->courses()->findOrFail($data['course_id']);
         $n = $this->teams->assign($company, $request->user(), $course, $data['members'], $data['due_at'] ?? null, $data['message'] ?? null);
 
-        return back()->with('status', ($n === 1 ? 'Curso atribuído a 1 pessoa. Recebeu um email.' : "Curso atribuído a {$n} pessoas. Receberam um email."));
+        return back()->with('status', trans_choice('{1} Curso atribuído a 1 pessoa. Recebeu um email.|[2,*] Curso atribuído a :count pessoas. Receberam um email.', $n));
     }
 
     private function peopleRules($company): array
@@ -96,8 +97,8 @@ class TeamController extends Controller
     private function peopleMessages(): array
     {
         return [
-            'members.required' => 'Escolhe pelo menos uma pessoa.',
-            'course_id.required' => 'Escolhe o curso.',
+            'members.required' => __('Escolhe pelo menos uma pessoa.'),
+            'course_id.required' => __('Escolhe o curso.'),
         ];
     }
 
@@ -116,7 +117,7 @@ class TeamController extends Controller
             'course_id' => ['required_if:change_type,curso', 'nullable', Rule::exists('courses', 'id')->where('status', 'published')],
             'message' => ['required_if:change_type,outro', 'nullable', 'string', 'max:3000'],
         ], [
-            'required_if' => 'Preenche este campo.',
+            'required_if' => __('Preenche este campo.'),
         ]);
 
         $people = match ($data['change_type']) {
@@ -144,6 +145,6 @@ class TeamController extends Controller
         $r->messages()->create(['user_id' => $user->id, 'author' => $user->name, 'body' => $r->message]);
         $this->teams->notifyStaff($r->load('course'));
 
-        return back()->with('status', 'Pedido enviado. O gestor de cursos foi avisado.');
+        return back()->with('status', __('Pedido enviado. O gestor de cursos foi avisado.'));
     }
 }

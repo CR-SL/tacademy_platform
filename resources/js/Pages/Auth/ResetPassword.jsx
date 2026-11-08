@@ -5,6 +5,8 @@ import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
 
+import { t } from '@/i18n';
+
 export default function ResetPassword({ token, email }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         token: token,
@@ -23,13 +25,13 @@ export default function ResetPassword({ token, email }) {
 
     return (
         <GuestLayout>
-            <Head title="Definir nova palavra-passe" />
+            <Head title={t('Definir nova palavra-passe')} />
 
             <h1 className="mb-1 font-display text-2xl font-bold uppercase text-ink">
-                Nova palavra-passe
+                {t('Nova palavra-passe')}
             </h1>
             <p className="mb-6 text-sm text-muted">
-                Escolhe uma nova palavra-passe para a tua conta.
+                {t('Escolhe uma nova palavra-passe para a tua conta.')}
             </p>
 
             <form onSubmit={submit}>
@@ -92,7 +94,7 @@ export default function ResetPassword({ token, email }) {
 
                 <div className="mt-6">
                     <PrimaryButton className="w-full" disabled={processing}>
-                        Guardar nova palavra-passe
+                        {t('Guardar nova palavra-passe')}
                     </PrimaryButton>
                 </div>
             </form>

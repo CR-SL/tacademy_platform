@@ -22,12 +22,12 @@ class PurchaseController extends Controller
         $back = fn (string $msg) => redirect()->back(fallback: route('courses', ['curso' => $course->slug]))->with('purchase', $msg)->with('status', $msg);
 
         if ($user->enrollments()->where('course_id', $course->id)->exists()) {
-            return $back('Já tens acesso a este curso.');
+            return $back(__('Já tens acesso a este curso.'));
         }
         $pending = ContactRequest::where('user_id', $user->id)->where('course_id', $course->id)
             ->where('kind', 'compra')->whereIn('status', ContactRequest::OPEN)->exists();
         if ($pending) {
-            return $back('A tua compra já está registada e aguarda autorização.');
+            return $back(__('A tua compra já está registada e aguarda autorização.'));
         }
 
         $r = ContactRequest::create([
@@ -38,11 +38,11 @@ class PurchaseController extends Controller
             'email' => $user->email,
             'user_id' => $user->id,
             'course_id' => $course->id,
-            'message' => 'Compra a título pessoal (pagamento simulado enquanto o pagamento pela plataforma não está ativo).',
+            'message' => __('Compra a título pessoal (pagamento simulado enquanto o pagamento pela plataforma não está ativo).'),
         ]);
         $r->messages()->create(['user_id' => $user->id, 'author' => $user->name, 'body' => $r->message]);
         $teams->notifyStaff($r->load('course'));
 
-        return $back('Compra registada. Ficas com acesso assim que o gestor de cursos a autorizar.');
+        return $back(__('Compra registada. Ficas com acesso assim que o gestor de cursos a autorizar.'));
     }
 }

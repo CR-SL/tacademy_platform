@@ -34,16 +34,16 @@ class CourseBuilderController extends Controller
         $courses = Course::with(['category', 'instructor'])
             ->withCount('enrollments')
             ->withCount(['enrollments as completed_count' => fn ($q) => $q->where('status', 'completed')])
-            ->when(! $user->isAdmin(), fn ($q) => $q->where('instructor_id', $user->id))
+            ->when(! $user->canDo('cursos.todos'), fn ($q) => $q->where('instructor_id', $user->id))
             ->latest('updated_at')
             ->get();
 
         return Inertia::render('Instructor/Courses', [
-            'isAdmin' => $user->isAdmin(),
+            'isAdmin' => $user->canDo('cursos.todos'), // vê e edita os cursos de todos
             'courses' => $courses->map(fn (Course $c) => [
                 'ulid' => $c->ulid,
                 'slug' => $c->slug,
-                'title' => $c->title ?: 'Curso sem título',
+                'title' => $c->title ?: __('Curso sem título'),
                 'area' => $c->category?->name,
                 'level' => $c->level,
                 'minutes' => $c->duration_minutes,
@@ -93,13 +93,13 @@ class CourseBuilderController extends Controller
 
     public function publish(Course $course): RedirectResponse
     {
-        Gate::authorize('update', $course);
+        Gate::authorize('publish', $course);
         if ($problems = $this->builder->publishProblems($course)) {
-            return back()->withErrors(['publish' => 'Falta completar: '.collect($problems)->pluck(0)->implode(', ').'.']);
+            return back()->withErrors(['publish' => __('Falta completar: :items.', ['items' => collect($problems)->pluck(0)->map(fn ($p) => __($p))->implode(', ')])]);
         }
         $course->update(['status' => 'published']);
 
-        return to_route('instructor.courses.index')->with('status', "“{$course->title}” publicado. Já está no catálogo.");
+        return to_route('instructor.courses.index')->with('status', __('“:title” publicado. Já está no catálogo.', ['title' => $course->title]));
     }
 
     public function unpublish(Course $course): RedirectResponse
@@ -107,16 +107,16 @@ class CourseBuilderController extends Controller
         Gate::authorize('update', $course);
         $course->update(['status' => 'draft']);
 
-        return back()->with('status', 'O curso voltou a rascunho e saiu do catálogo.');
+        return back()->with('status', __('O curso voltou a rascunho e saiu do catálogo.'));
     }
 
     public function destroy(Course $course): RedirectResponse
     {
         Gate::authorize('delete', $course);
-        abort_if($course->status === 'published', 422, 'Passe o curso a rascunho antes de o apagar.');
+        abort_if($course->status === 'published', 422, __('Passe o curso a rascunho antes de o apagar.'));
         $course->delete();
 
-        return to_route('instructor.courses.index')->with('status', 'Rascunho apagado.');
+        return to_route('instructor.courses.index')->with('status', __('Rascunho apagado.'));
     }
 
     /** Alunos do curso, com o progresso e a presença, para o formador confirmar quem esteve presente. */
@@ -201,8 +201,8 @@ class CourseBuilderController extends Controller
             'name' => ['required', 'string', 'max:255', 'regex:/\.(mp4|webm)$/i'],
             'chunk' => ['required', 'file', 'max:'.(int) ceil(CourseBuilder::VIDEO_CHUNK_BYTES / 1024)],
         ], [
-            'name.regex' => 'O vídeo tem de ser MP4 ou WebM.',
-            'size.max' => 'O vídeo não pode ter mais de '.config('tacademy.video_max_mb').' MB.',
+            'name.regex' => __('O vídeo tem de ser MP4 ou WebM.'),
+            'size.max' => __('O vídeo não pode ter mais de :mb MB.', ['mb' => config('tacademy.video_max_mb')]),
         ]);
         // Os campos chegam como texto (FormData)
         [$index, $total, $size] = [(int) $data['index'], (int) $data['total'], (int) $data['size']];
@@ -214,7 +214,7 @@ class CourseBuilderController extends Controller
         if ($index === 0) $tmp->delete($part);
         $have = $tmp->exists($part) ? $tmp->size($part) : 0;
         if ($have !== $index * CourseBuilder::VIDEO_CHUNK_BYTES) {
-            return response()->json(['message' => 'O envio foi interrompido. Tenta carregar o vídeo outra vez.'], 409);
+            return response()->json(['message' => __('O envio foi interrompido. Tenta carregar o vídeo outra vez.')], 409);
         }
         $tmp->makeDirectory('video-uploads');
         file_put_contents($tmp->path($part), $request->file('chunk')->get(), FILE_APPEND | LOCK_EX);
@@ -231,8 +231,8 @@ class CourseBuilderController extends Controller
             $tmp->delete($part);
 
             return response()->json(['message' => $mime === 'video/quicktime'
-                ? 'Este ficheiro é .mov. Exporta o vídeo em MP4 (H.264) e tenta outra vez.'
-                : 'O ficheiro não é um vídeo MP4 ou WebM válido.'], 422);
+                ? __('Este ficheiro é .mov. Exporta o vídeo em MP4 (H.264) e tenta outra vez.')
+                : __('O ficheiro não é um vídeo MP4 ou WebM válido.')], 422);
         }
         $ext = $mime === 'video/webm' ? 'webm' : 'mp4';
         $final = CourseBuilder::VIDEO_DIR.'/'.Str::lower((string) Str::ulid()).'.'.$ext;
@@ -258,7 +258,9 @@ class CourseBuilderController extends Controller
             'library' => array_values(array_unique(array_merge(
                 array_values(config('tacademy.course_images')),
                 array_values(config('tacademy.area_images')),
-                ['/images/cursos/cta-motor.jpg', '/images/cursos/cta-oficina.jpg', '/images/cursos/hibridos-eletricos.jpg', '/images/cursos/adas.jpg'],
+                ['/images/cursos/cta-motor.jpg', '/images/cursos/cta-oficina.jpg', '/images/cursos/hibridos-eletricos.jpg', '/images/cursos/adas.jpg',
+                    '/images/cursos/airbags.jpg', '/images/cursos/baterias-alta-tensao.jpg', '/images/cursos/climatizacao.jpg', '/images/cursos/colisoes-estrutura.jpg',
+                    '/images/cursos/geometria-suspensao.jpg', '/images/cursos/pintura.jpg', '/images/cursos/travagem-abs.jpg'],
             ))),
             'shortMax' => CourseBuilder::SHORT_MAX,
             'videoMaxMb' => config('tacademy.video_max_mb'),
@@ -287,7 +289,7 @@ class CourseBuilderController extends Controller
             // O prazo cabe sempre dentro da validade do acesso
             'deadline_days' => ['nullable', Rule::in(CourseBuilder::DEADLINE_DAYS), function ($attr, $value, $fail) use ($request) {
                 $months = $request->input('access_months');
-                if ($value && $months && $value > $months * 30) $fail('O prazo não pode ser maior do que a validade do acesso.');
+                if ($value && $months && $value > $months * 30) $fail(__('O prazo não pode ser maior do que a validade do acesso.'));
             }],
             'requires_attendance' => ['boolean'],
             'certificate_enabled' => ['boolean'],

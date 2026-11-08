@@ -49,6 +49,6 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         // Depois de sair, volta à entrada com uma confirmação (sem repetir a intro)
-        return redirect()->route('login')->with('status', 'Sessão terminada. Até breve.');
+        return redirect()->route('login')->with('status', __('Sessão terminada. Até breve.'));
     }
 }

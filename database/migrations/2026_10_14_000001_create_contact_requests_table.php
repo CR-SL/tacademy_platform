@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Pedidos de contacto enviados pela página pública /contactos.
-     * Geridos no backoffice (Filament) pelo estado.
+     * Geridos em Pedidos pelo estado.
      */
     public function up(): void
     {

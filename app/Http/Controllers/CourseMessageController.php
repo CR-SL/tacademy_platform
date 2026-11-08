@@ -18,7 +18,7 @@ class CourseMessageController extends Controller
             'student_id' => ['nullable', 'integer', 'exists:users,id'],
             'body' => ['required', 'string', 'max:3000'],
         ], [
-            'body.required' => 'Escreve a mensagem.',
+            'body.required' => __('Escreve a mensagem.'),
         ]);
 
         $user = $request->user();

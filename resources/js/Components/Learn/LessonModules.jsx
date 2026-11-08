@@ -2,6 +2,8 @@ import { Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { IconCheck, IconLock, IconX } from '@/Components/Learn/LessonIcons';
 
+import { t } from '@/i18n';
+
 const LOCKED_TIP = 'Inscreve-te no curso para abrir esta aula';
 const modPct = (m) => Math.round(m.lessons.filter((l) => l.status === 'done').length / m.lessons.length * 100);
 const lessonPct = (l, currentPct) => (l.status === 'done' ? 100 : l.current ? currentPct : 0);
@@ -12,7 +14,7 @@ export function ModulesRail({ open, slug, program, percent, currentPct }) {
     const [shown, setShown] = useState(current);
 
     return (
-        <aside className={`al-rail ${open ? 'open' : ''}`} aria-label="Módulos do curso">
+        <aside className={`al-rail ${open ? 'open' : ''}`} aria-label={t('Módulos do curso')}>
             <div className="al-rail-line" style={{ height: `${percent}%` }} />
             <div className="al-rail-in" inert={open ? undefined : ''}>
                 {program.map((m, mi) => {
@@ -40,7 +42,7 @@ export function ModulesRail({ open, slug, program, percent, currentPct }) {
                                 );
                                 const cls = `al-les ${l.current ? 'cur' : ''}`;
                                 return locked
-                                    ? <div key={l.ulid} className={`${cls} locked`} title={LOCKED_TIP} aria-disabled="true">{body}</div>
+                                    ? <div key={l.ulid} className={`${cls} locked`} title={t(LOCKED_TIP)} aria-disabled="true">{body}</div>
                                     : <Link key={l.ulid} className={cls} href={`/plataforma/cursos/${slug}/aulas/${l.ulid}`} aria-current={l.current ? 'page' : undefined}>{body}</Link>;
                             })}
                         </div>
@@ -78,7 +80,7 @@ export function ModuleSheet({ slug, module: m, index, currentPct, onClose }) {
         <div className="al-sheet">
             <div className="al-sheet-h">
                 <span>{index + 1}</span><span>{m.title}</span>
-                <button type="button" onClick={onClose} aria-label="Fechar"><IconX /></button>
+                <button type="button" onClick={onClose} aria-label={t('Fechar')}><IconX /></button>
             </div>
             <div className="al-sheet-b">
                 {m.lessons.map((l, li) => {
@@ -86,7 +88,7 @@ export function ModuleSheet({ slug, module: m, index, currentPct, onClose }) {
                     const body = (
                         <>
                             <span className="num">{index + 1}.{li + 1}</span><span>{l.title}</span>
-                            <small>{l.status === 'done' ? 'Concluída' : locked ? 'Só para inscritos' : l.current ? 'A decorrer' : l.minutes > 0 ? `${l.minutes} min` : ''}</small>
+                            <small>{l.status === 'done' ? t('Concluída') : locked ? t('Só para inscritos') : l.current ? t('A decorrer') : l.minutes > 0 ? `${l.minutes} min` : ''}</small>
                             <span className="ln"><i style={{ width: `${lessonPct(l, currentPct)}%` }} /></span>
                         </>
                     );

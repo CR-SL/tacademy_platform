@@ -6,7 +6,9 @@ import { btn, Drawer, FlashToast, inputCls } from '@/Components/Teams/ui';
 import PanelBoard, { alexDef, Bar, Crumb, PanelsMenu } from '@/Components/Panels/PanelBoard';
 import usePanelBoard from '@/Components/Panels/usePanelBoard';
 
-const statusOf = (m, s) => (m.invited ? 'Convite por aceitar' : s.late ? 'Fora do prazo' : s.stalled ? 'Sem atividade' : s.progress === 100 ? 'Concluído' : s.last ? 'A estudar' : 'Ainda não começou');
+import { t } from '@/i18n';
+
+const statusOf = (m, s) => (m.invited ? t('Convite por aceitar') : s.late ? t('Fora do prazo') : s.stalled ? t('Sem atividade') : s.progress === 100 ? t('Concluído') : s.last ? t('A estudar') : t('Ainda não começou'));
 const needsAttention = (m, s) => m.invited || s.stalled || s.late;
 
 function Person({ team, report, member, course, onAction }) {
@@ -15,41 +17,41 @@ function Person({ team, report, member, course, onAction }) {
         <div className="pn-detail">
             <div className="pn-p-top">
                 <div>
-                    <span className="pn-lab">{team.name}{member.leader ? ' · Team leader' : ''}</span>
+                    <span className="pn-lab">{team.name}{member.leader ? t(' · Team leader') : ''}</span>
                     <h3 className="pn-disp">{member.name}</h3>
-                    <small>{member.email}{s.last ? ` · Última atividade ${s.last}` : ''}</small>
+                    <small>{member.email}{s.last ? t(' · Última atividade :last', { last: s.last }) : ''}</small>
                 </div>
             </div>
             <div className="pn-p-stats">
-                <div><span className="pn-lab">Progresso</span><b className="pn-disp">{s.progress ?? 0}%</b></div>
-                <div><span className="pn-lab">Nota nos testes</span><b className="pn-disp">{s.score == null ? '—' : `${s.score}%`}</b></div>
-                <div><span className="pn-lab">Certificado</span><b className="pn-disp">{s.certificate ? 'Emitido' : '—'}</b></div>
-                <div><span className="pn-lab">Prazo</span><b className={`pn-disp ${s.late ? 'pn-late-t' : ''}`}>{s.due ?? '—'}</b></div>
+                <div><span className="pn-lab">{t('Progresso')}</span><b className="pn-disp">{s.progress ?? 0}%</b></div>
+                <div><span className="pn-lab">{t('Nota nos testes')}</span><b className="pn-disp">{s.score == null ? '—' : `${s.score}%`}</b></div>
+                <div><span className="pn-lab">{t('Certificado')}</span><b className="pn-disp">{s.certificate ? t('Emitido') : '—'}</b></div>
+                <div><span className="pn-lab">{t('Prazo')}</span><b className={`pn-disp ${s.late ? 'pn-late-t' : ''}`}>{s.due ?? '—'}</b></div>
             </div>
             {s.enrolled && (
                 <div className="pn-p-acts">
-                    <button type="button" className="ui-btn ui-btn-sm" disabled={!s.remindable} onClick={() => onAction('remind', [member.id])}>Enviar lembrete</button>
-                    <button type="button" className="ui-btn ui-btn-soft ui-btn-sm" onClick={() => onAction('assign', [member.id])}>{s.due ? 'Mudar o prazo' : 'Atribuir com prazo'}</button>
+                    <button type="button" className="ui-btn ui-btn-sm" disabled={!s.remindable} onClick={() => onAction('remind', [member.id])}>{t('Enviar lembrete')}</button>
+                    <button type="button" className="ui-btn ui-btn-soft ui-btn-sm" onClick={() => onAction('assign', [member.id])}>{s.due ? t('Mudar o prazo') : t('Atribuir com prazo')}</button>
                     <small>
                         {member.remindersOff && s.progress !== 100
-                            ? ['Desligou os lembretes por email', s.assigned && `Atribuído a ${s.assigned}`].filter(Boolean).join(' · ')
-                            : [s.assigned && `Atribuído a ${s.assigned}`, s.reminded && `Último lembrete ${s.reminded}`].filter(Boolean).join(' · ')
-                                || (s.progress === 100 ? 'Curso concluído.' : 'Ainda sem lembretes.')}
+                            ? [t('Desligou os lembretes por email'), s.assigned && t('Atribuído a :assigned', { assigned: s.assigned })].filter(Boolean).join(' · ')
+                            : [s.assigned && t('Atribuído a :assigned', { assigned: s.assigned }), s.reminded && t('Último lembrete :reminded', { reminded: s.reminded })].filter(Boolean).join(' · ')
+                                || (s.progress === 100 ? t('Curso concluído.') : t('Ainda sem lembretes.'))}
                     </small>
                 </div>
             )}
-            <span className="pn-lab pn-p-h">Cursos da equipa</span>
+            <span className="pn-lab pn-p-h">{t('Cursos da equipa')}</span>
             {report.courses.map((c) => {
                 const st = member.courses[c.id] ?? {};
                 return (
                     <div key={c.id} className="pn-p-c">
                         <span>{c.title}</span>
                         <Bar value={st.progress ?? 0} />
-                        <span>{st.progress ?? 0}% feito</span>
+                        <span>{st.progress ?? 0}{t('% feito')}</span>
                     </div>
                 );
             })}
-            <p className="pn-p-note">Vês apenas os cursos da equipa. Os cursos que a pessoa compra por conta própria não aparecem aqui. Para adicionar ou retirar pessoas, usa “Pedir alteração”.</p>
+            <p className="pn-p-note">{t('Vês apenas os cursos da equipa. Os cursos que a pessoa compra por conta própria não aparecem aqui. Para adicionar ou retirar pessoas, usa “Pedir alteração”.')}</p>
         </div>
     );
 }
@@ -66,18 +68,18 @@ export default function Show({ team, report, otherCourses, changeTypes, alexUrl,
 
     const panels = {
         lista: {
-            title: 'A minha equipa', x: 0, y: 0, w: 6, h: 18, compact: true,
-            summary: `${members.length} pessoas`,
+            title: t('A minha equipa'), x: 0, y: 0, w: 6, h: 18, compact: true,
+            summary: t(':n pessoas', { n: members.length }),
             body: (
                 <>
                     {report.courses.length > 1 && (
-                        <div className="pn-team-t ui-pills" role="group" aria-label="Curso">
+                        <div className="pn-team-t ui-pills" role="group" aria-label={t('Curso')}>
                             {report.courses.map((c) => <button key={c.id} type="button" aria-pressed={course === c.id} onClick={() => setCourse(c.id)}>{c.title}</button>)}
                         </div>
                     )}
                     <p className="pn-team-s" style={report.courses.length > 1 ? undefined : { paddingTop: 12 }}>
-                        {members.length} de {team.seats} lugares · {attention} {attention === 1 ? 'precisa' : 'precisam'} de atenção
-                        {report.courses.length === 0 && ' · A equipa ainda não tem cursos'}
+                        {t(':used de :seats lugares', { used: members.length, seats: team.seats })} · {attention === 1 ? t(':n precisa de atenção', { n: attention }) : t(':n precisam de atenção', { n: attention })}
+                        {report.courses.length === 0 && t(' · A equipa ainda não tem cursos')}
                     </p>
                     {members.map((m) => {
                         const s = m.courses[course] ?? {};
@@ -94,10 +96,10 @@ export default function Show({ team, report, otherCourses, changeTypes, alexUrl,
             ),
         },
         pessoa: {
-            title: 'Pessoa', x: 6, y: 0, w: 13, h: 18, compact: true, float: 'light',
+            title: t('Pessoa'), x: 6, y: 0, w: 13, h: 18, compact: true, float: 'light',
             body: selected
                 ? <Person team={team} report={report} member={selected} course={course} onAction={(mode, ids) => setAction({ mode, members: ids })} />
-                : <p className="pn-empty">A equipa ainda não tem pessoas.</p>,
+                : <p className="pn-empty">{t('A equipa ainda não tem pessoas.')}</p>,
         },
         alex: alexDef(alexUrl, 0, 18),
     };
@@ -105,16 +107,16 @@ export default function Show({ team, report, otherCourses, changeTypes, alexUrl,
 
     return (
         <StudentLayout navTools={<PanelsMenu board={board} />}>
-            <Head title="Equipa" />
-            <Crumb label={`Equipas · ${team.name}`}>
-                <button type="button" className="ui-btn ui-btn-soft ui-btn-sm" onClick={() => exportTeamCsv(team, report, course)}>Exportar (Excel)</button>
+            <Head title={t('Equipa')} />
+            <Crumb label={t('Equipas · :name', { name: team.name })}>
+                <button type="button" className="ui-btn ui-btn-soft ui-btn-sm" onClick={() => exportTeamCsv(team, report, course)}>{t('Exportar (Excel)')}</button>
                 {report.courses.length > 0 && members.length > 0 && (
                     <>
-                        <button type="button" className="ui-btn ui-btn-soft ui-btn-sm" onClick={() => setAction({ mode: 'remind', members: null })}>Enviar lembrete</button>
-                        <button type="button" className="ui-btn ui-btn-soft ui-btn-sm" onClick={() => setAction({ mode: 'assign', members: null })}>Atribuir curso</button>
+                        <button type="button" className="ui-btn ui-btn-soft ui-btn-sm" onClick={() => setAction({ mode: 'remind', members: null })}>{t('Enviar lembrete')}</button>
+                        <button type="button" className="ui-btn ui-btn-soft ui-btn-sm" onClick={() => setAction({ mode: 'assign', members: null })}>{t('Atribuir curso')}</button>
                     </>
                 )}
-                <button type="button" className="ui-btn ui-btn-sm" onClick={() => setAsking(true)}>Pedir alteração</button>
+                <button type="button" className="ui-btn ui-btn-sm" onClick={() => setAsking(true)}>{t('Pedir alteração')}</button>
             </Crumb>
             <PanelBoard board={board} />
 
@@ -172,18 +174,18 @@ function PeopleAction({ mode, team, report, course, initial, onClose }) {
     return (
         <Drawer
             sub={team.name}
-            title={remind ? 'Enviar lembrete' : 'Atribuir curso'}
+            title={remind ? t('Enviar lembrete') : t('Atribuir curso')}
             onClose={onClose}
             width="w-[min(520px,100%)]"
-            footer={<><span className="flex-1 text-[13px] text-muted">{chosen} {chosen === 1 ? 'pessoa escolhida' : 'pessoas escolhidas'}</span><button type="submit" form="people-form" disabled={processing || chosen === 0} className={btn.accent}>{processing ? 'A enviar…' : `${remind ? 'Enviar lembrete' : 'Atribuir'}${chosen ? ` a ${chosen} ${chosen === 1 ? 'pessoa' : 'pessoas'}` : ''}`}</button></>}
+            footer={<><span className="flex-1 text-[13px] text-muted">{chosen} {chosen === 1 ? t('pessoa escolhida') : t('pessoas escolhidas')}</span><button type="submit" form="people-form" disabled={processing || chosen === 0} className={btn.accent}>{processing ? t('A enviar…') : `${remind ? t('Enviar lembrete') : t('Atribuir')}${chosen ? ` a ${chosen} ${chosen === 1 ? 'pessoa' : 'pessoas'}` : ''}`}</button></>}
         >
             <form id="people-form" onSubmit={submit} className="flex flex-col gap-4">
                 <p className="text-muted">
                     {remind
-                        ? 'Cada pessoa recebe um email com o progresso no curso e o prazo, se houver. Quem já concluiu, recebeu um lembrete nas últimas horas ou desligou os lembretes fica de fora.'
-                        : 'Cada pessoa recebe um email com o curso e o prazo. Sem data, cada pessoa mantém o prazo que já tinha.'}
+                        ? t('Cada pessoa recebe um email com o progresso no curso e o prazo, se houver. Quem já concluiu, recebeu um lembrete nas últimas horas ou desligou os lembretes fica de fora.')
+                        : t('Cada pessoa recebe um email com o curso e o prazo. Sem data, cada pessoa mantém o prazo que já tinha.')}
                 </p>
-                <Field label="Curso" id="p-course">
+                <Field label={t('Curso')} id="p-course">
                     <select id="p-course" className={inputCls} value={data.course_id} onChange={(e) => {
                         const c = Number(e.target.value);
                         setData((d) => ({ ...d, course_id: c, members: initial ?? defaults(c) }));
@@ -194,10 +196,10 @@ function PeopleAction({ mode, team, report, course, initial, onClose }) {
                 </Field>
                 <fieldset className="flex flex-col gap-1.5">
                     <legend className="mb-1.5 flex w-full items-center justify-between font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">
-                        Pessoas
+                        {t('Pessoas')}
                         <span className="flex gap-3 normal-case tracking-normal">
-                            <button type="button" className="text-[13px] text-accent-ink hover:text-ink" onClick={() => setData('members', pickable.map((m) => m.id))}>Todas</button>
-                            <button type="button" className="text-[13px] text-muted hover:text-ink" onClick={() => setData('members', [])}>Nenhuma</button>
+                            <button type="button" className="text-[13px] text-accent-ink hover:text-ink" onClick={() => setData('members', pickable.map((m) => m.id))}>{t('Todas')}</button>
+                            <button type="button" className="text-[13px] text-muted hover:text-ink" onClick={() => setData('members', [])}>{t('Nenhuma')}</button>
                         </span>
                     </legend>
                     <div className="max-h-[300px] overflow-y-auto border border-line">
@@ -211,7 +213,7 @@ function PeopleAction({ mode, team, report, course, initial, onClose }) {
                                         <b className="block truncate text-[14.5px] font-semibold">{m.name}</b>
                                         <small className="text-[12.5px] text-muted">
                                             {remind && !ok
-                                                ? (s.progress === 100 ? 'Já concluiu' : s.reminded ? `Lembrete enviado ${s.reminded}` : 'Sem acesso ao curso')
+                                                ? (s.progress === 100 ? t('Já concluiu') : s.reminded ? t('Lembrete enviado :reminded', { reminded: s.reminded }) : t('Sem acesso ao curso'))
                                                 : [statusOf(m, s), `${s.progress ?? 0}%`, s.due && `prazo ${s.due}`].filter(Boolean).join(' · ')}
                                         </small>
                                     </span>
@@ -222,14 +224,14 @@ function PeopleAction({ mode, team, report, course, initial, onClose }) {
                     {err('members')}
                 </fieldset>
                 {!remind && (
-                    <Field label="Prazo para concluir (opcional)" id="p-due">
+                    <Field label={t('Prazo para concluir (opcional)')} id="p-due">
                         <input id="p-due" type="date" min={tomorrow} className={inputCls} value={data.due_at} onChange={(e) => setData('due_at', e.target.value)} />
                         {err('due_at')}
                     </Field>
                 )}
-                <Field label="Mensagem (opcional)" id="p-msg">
+                <Field label={t('Mensagem (opcional)')} id="p-msg">
                     <textarea id="p-msg" rows={3} className={inputCls} value={data.message} maxLength={1000}
-                        placeholder={remind ? 'Ex.: lembra-te de acabar o módulo 2 antes da reunião de sexta.' : 'Ex.: este curso é para fazer antes da formação presencial.'}
+                        placeholder={remind ? t('Ex.: lembra-te de acabar o módulo 2 antes da reunião de sexta.') : t('Ex.: este curso é para fazer antes da formação presencial.')}
                         onChange={(e) => setData('message', e.target.value)} />
                     {err('message')}
                 </Field>
@@ -252,16 +254,16 @@ function ChangeRequest({ team, members, otherCourses, changeTypes, onClose }) {
     return (
         <Drawer
             sub={team.name}
-            title="Pedir alteração"
+            title={t('Pedir alteração')}
             onClose={onClose}
             width="w-[min(520px,100%)]"
-            footer={<><span className="flex-1" /><button type="submit" form="change-form" disabled={processing} className={btn.accent}>{processing ? 'A enviar…' : 'Enviar pedido'}</button></>}
+            footer={<><span className="flex-1" /><button type="submit" form="change-form" disabled={processing} className={btn.accent}>{processing ? t('A enviar…') : t('Enviar pedido')}</button></>}
         >
             <form id="change-form" onSubmit={submit} className="flex flex-col gap-4">
-                <p className="text-muted">O pedido vai para a equipa de gestão de cursos da T.Academy, que trata da alteração e te responde por email.</p>
+                <p className="text-muted">{t('O pedido vai para a equipa de gestão de cursos da T.Academy, que trata da alteração e te responde por email.')}</p>
                 <div>
-                    <span className="mb-1.5 block font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">O que precisas?</span>
-                    <div role="group" aria-label="Tipo de alteração" className="inline-flex flex-wrap gap-[3px] bg-surface2 p-[3px]">
+                    <span className="mb-1.5 block font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">{t('O que precisas?')}</span>
+                    <div role="group" aria-label={t('Tipo de alteração')} className="inline-flex flex-wrap gap-[3px] bg-surface2 p-[3px]">
                         {Object.entries(changeTypes).map(([k, label]) => (
                             <button key={k} type="button" aria-pressed={data.change_type === k} onClick={() => setData('change_type', k)}
                                 className={`px-3 py-2 font-display text-[13px] font-semibold ${data.change_type === k ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'}`}>
@@ -273,47 +275,47 @@ function ChangeRequest({ team, members, otherCourses, changeTypes, onClose }) {
 
                 {data.change_type === 'adicionar' && (
                     <>
-                        <Field label="Nome" id="c-name">
-                            <input id="c-name" className={inputCls} value={data.name} maxLength={150} placeholder="Nome completo" onChange={(e) => setData('name', e.target.value)} />
+                        <Field label={t('Nome')} id="c-name">
+                            <input id="c-name" className={inputCls} value={data.name} maxLength={150} placeholder={t('Nome completo')} onChange={(e) => setData('name', e.target.value)} />
                             {err('name')}
                         </Field>
-                        <Field label="Email" id="c-email">
+                        <Field label={t('Email')} id="c-email">
                             <input id="c-email" type="email" className={inputCls} value={data.email} maxLength={150} placeholder="email@empresa.pt" onChange={(e) => setData('email', e.target.value)} />
                             {err('email')}
                         </Field>
                         <p className={`text-[12.5px] ${free > 0 ? 'text-muted' : 'text-live-ink'}`}>
-                            {free > 0 ? `Lugares livres: ${free}.` : 'Não há lugares livres. O gestor de cursos vai propor um pack adicional.'}
+                            {free > 0 ? t('Lugares livres: :free.', { free }) : t('Não há lugares livres. O gestor de cursos vai propor um pack adicional.')}
                         </p>
                     </>
                 )}
                 {data.change_type === 'retirar' && (
-                    <Field label="Quem sai da equipa?" id="c-member">
+                    <Field label={t('Quem sai da equipa?')} id="c-member">
                         <select id="c-member" className={inputCls} value={data.member_id} onChange={(e) => setData('member_id', e.target.value)}>
-                            <option value="">Escolher…</option>
+                            <option value="">{t('Escolher…')}</option>
                             {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </select>
                         {err('member_id')}
-                        <span className="text-[12.5px] text-muted">A pessoa mantém os certificados já obtidos.</span>
+                        <span className="text-[12.5px] text-muted">{t('A pessoa mantém os certificados já obtidos.')}</span>
                     </Field>
                 )}
                 {data.change_type === 'lugares' && (
-                    <Field label="Quantos packs de 10 lugares?" id="c-packs">
+                    <Field label={t('Quantos packs de 10 lugares?')} id="c-packs">
                         <select id="c-packs" className={inputCls} value={data.packs} onChange={(e) => setData('packs', Number(e.target.value))}>
-                            {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} pack{n > 1 ? 's' : ''} (+{n * 10} lugares)</option>)}
+                            {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n === 1 ? t('1 pack (+10 lugares)') : t(':n packs (+:seats lugares)', { n, seats: n * 10 })}</option>)}
                         </select>
                     </Field>
                 )}
                 {data.change_type === 'curso' && (
-                    <Field label="Curso" id="c-course">
+                    <Field label={t('Curso')} id="c-course">
                         <select id="c-course" className={inputCls} value={data.course_id} onChange={(e) => setData('course_id', e.target.value)}>
                             {otherCourses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
                         </select>
                         {err('course_id')}
                     </Field>
                 )}
-                <Field label={data.change_type === 'outro' ? 'Mensagem' : 'Mensagem (opcional)'} id="c-msg">
+                <Field label={data.change_type === 'outro' ? t('Mensagem') : t('Mensagem (opcional)')} id="c-msg">
                     <textarea id="c-msg" rows={4} className={inputCls} value={data.message} maxLength={3000}
-                        placeholder="Ex.: entrou um técnico novo na oficina." onChange={(e) => setData('message', e.target.value)} />
+                        placeholder={t('Ex.: entrou um técnico novo na oficina.')} onChange={(e) => setData('message', e.target.value)} />
                     {err('message')}
                 </Field>
             </form>

@@ -4,6 +4,8 @@ import { Link, usePage } from '@inertiajs/react';
 import { Children, cloneElement, isValidElement, useCallback, useEffect, useRef, useState } from 'react';
 import Modal from '@/Components/Modal';
 
+import { t } from '@/i18n';
+
 const VARIANTS = { primary: '', accent: 'ui-btn-accent', soft: 'ui-btn-soft', line: 'ui-btn-line', danger: 'ui-btn-danger', glass: 'ui-btn-glass' };
 const SIZES = { md: '', sm: 'ui-btn-sm', lg: 'ui-btn-lg' };
 
@@ -169,7 +171,7 @@ export function Drawer({ title, sub, onClose, footer, width = 'w-[min(640px,100%
                         <h2 className="font-display text-2xl font-bold leading-tight">{title}</h2>
                         {sub && <p className="mt-1 text-[12.5px] text-muted">{sub}</p>}
                     </div>
-                    <button type="button" onClick={onClose} aria-label="Fechar" className={btnClass('soft', 'sm', 'ui-btn-icon ml-auto flex-none')}><IconClose /></button>
+                    <button type="button" onClick={onClose} aria-label={t('Fechar')} className={btnClass('soft', 'sm', 'ui-btn-icon ml-auto flex-none')}><IconClose /></button>
                 </div>
                 <div className="ui-drawer-b flex flex-1 flex-col gap-3.5 overflow-y-auto px-6 py-5">{children}</div>
                 {footer && <div className="flex flex-wrap items-center gap-2.5 border-t border-line bg-surface px-6 py-3.5">{footer}</div>}
@@ -192,8 +194,8 @@ export function FlashToast() {
     useEffect(() => {
         if (!flash?.status) return undefined;
         setMsg(flash.status);
-        const t = setTimeout(() => setMsg(null), 4500);
-        return () => clearTimeout(t);
+        const tx = setTimeout(() => setMsg(null), 4500);
+        return () => clearTimeout(tx);
     }, [flash]);
     return <Toast message={msg} />;
 }
@@ -229,7 +231,7 @@ export function useConfirm() {
                     {opts.body && <p className="mt-2 text-text">{opts.body}</p>}
                     <div className="mt-6 flex flex-wrap gap-2.5">
                         <Button variant={opts.danger ? 'danger' : 'primary'} onClick={() => answer(true)}>{opts.action}</Button>
-                        <Button variant="soft" onClick={() => answer(false)}>Cancelar</Button>
+                        <Button variant="soft" onClick={() => answer(false)}>{t('Cancelar')}</Button>
                     </div>
                 </div>
             )}

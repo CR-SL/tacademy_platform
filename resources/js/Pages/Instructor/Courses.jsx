@@ -5,6 +5,8 @@ import AttendanceDrawer from '@/Components/CourseBuilder/AttendanceDrawer';
 import StudentLayout from '@/Layouts/StudentLayout';
 import { formatMinutes, levelLabels } from '@/Components/CourseBuilder/format';
 
+import { t } from '@/i18n';
+
 // "Os meus cursos" (formador) / "Gerir cursos" (admin): lista, estado e atalho para o editor.
 export default function Courses({ courses, isAdmin }) {
     // A tarefa "Confirmar presença" do Início abre logo a gaveta do curso (?presenca=ulid)
@@ -20,48 +22,48 @@ export default function Courses({ courses, isAdmin }) {
     const completion = withRate.length ? Math.round(withRate.reduce((a, c) => a + c.completion, 0) / withRate.length) : null;
 
     const unpublish = async (c) => {
-        if (await confirm({ title: `Passar “${c.title}” a rascunho?`, body: 'Sai do catálogo até voltar a publicar.', action: 'Passar a rascunho' })) {
+        if (await confirm({ title: t('Passar “:title” a rascunho?', { title: c.title }), body: t('Sai do catálogo até voltar a publicar.'), action: t('Passar a rascunho') })) {
             router.post(`/formador/cursos/${c.ulid}/rascunho`, {}, { preserveScroll: true });
         }
     };
     const remove = async (c) => {
-        if (await confirm({ title: `Apagar o rascunho “${c.title}”?`, body: 'Isto não se pode desfazer.', action: 'Apagar o rascunho', danger: true })) router.delete(`/formador/cursos/${c.ulid}`, { preserveScroll: true });
+        if (await confirm({ title: t('Apagar o rascunho “:title”?', { title: c.title }), body: t('Isto não se pode desfazer.'), action: t('Apagar o rascunho'), danger: true })) router.delete(`/formador/cursos/${c.ulid}`, { preserveScroll: true });
     };
 
     return (
         <StudentLayout>
-            <Head title={isAdmin ? 'Gerir cursos' : 'Os meus cursos'} />
+            <Head title={isAdmin ? t('Gerir cursos') : t('Os meus cursos')} />
 
             <div className="mb-6 flex flex-wrap items-end justify-between gap-5">
                 <div>
                     <h1 className="font-display text-[clamp(30px,3.4vw,44px)] font-bold leading-none tracking-[-0.01em]">
-                        {isAdmin ? 'Todos os cursos' : 'Os meus cursos'}
+                        {isAdmin ? t('Todos os cursos') : t('Os meus cursos')}
                     </h1>
                     <p className="mt-2 text-muted">
-                        {isAdmin ? 'Cursos de todos os formadores. O admin pode editar qualquer um.' : 'Cria, edita e publica os teus cursos.'}
+                        {isAdmin ? t('Cursos de todos os formadores. O admin pode editar qualquer um.') : t('Cria, edita e publica os teus cursos.')}
                     </p>
                 </div>
                 <Link
                     href="/formador/cursos/novo"
                     className="ui-btn ui-btn-accent w-full sm:w-auto"
                 >
-                    + Criar curso
+                    {t('+ Criar curso')}
                 </Link>
             </div>
 
             <div className="mb-6 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
-                <Kpi label="Publicados" value={published.length} />
-                <Kpi label="Rascunhos" value={courses.length - published.length} />
-                <Kpi label="Alunos inscritos" value={students} />
-                <Kpi label="Conclusão média" value={completion === null ? '—' : `${completion}%`} />
+                <Kpi label={t('Publicados')} value={published.length} />
+                <Kpi label={t('Rascunhos')} value={courses.length - published.length} />
+                <Kpi label={t('Alunos inscritos')} value={students} />
+                <Kpi label={t('Conclusão média')} value={completion === null ? '—' : `${completion}%`} />
             </div>
 
             {courses.length === 0 ? (
                 <div className="bg-surface px-6 py-14 text-center">
-                    <p className="font-display text-xl font-bold">Ainda não criaste nenhum curso.</p>
-                    <p className="mt-1 text-muted">Começa pelo título. O resto vais preenchendo, e fica tudo guardado sozinho.</p>
+                    <p className="font-display text-xl font-bold">{t('Ainda não criaste nenhum curso.')}</p>
+                    <p className="mt-1 text-muted">{t('Começa pelo título. O resto vais preenchendo, e fica tudo guardado sozinho.')}</p>
                     <Link href="/formador/cursos/novo" className="ui-btn mt-5">
-                        Criar o primeiro curso →
+                        {t('Criar o primeiro curso →')}
                     </Link>
                 </div>
             ) : (
@@ -77,37 +79,37 @@ export default function Courses({ courses, isAdmin }) {
                                 <p className="text-[13px] text-muted">
                                     {[c.area, levelLabels[c.level], c.minutes ? formatMinutes(c.minutes) : null].filter(Boolean).join(' · ')}
                                     {isAdmin && c.author && <> · <b className="text-ink">{c.author}</b></>}
-                                    {c.updated && <span className="hidden md:inline"> · alterado {c.updated}</span>}
+                                    {c.updated && <span className="hidden md:inline">{' '}{t('· alterado')}{' '}{c.updated}</span>}
                                 </p>
                             </div>
                             <span className="col-start-2 justify-self-start sm:col-start-auto">
-                                <Chip tone={c.status === 'published' ? 'ok' : 'mut'}>{c.status === 'published' ? 'Publicado' : 'Rascunho'}</Chip>
+                                <Chip tone={c.status === 'published' ? 'ok' : 'mut'}>{c.status === 'published' ? t('Publicado') : t('Rascunho')}</Chip>
                             </span>
                             <div className="hidden text-right font-display text-lg font-bold sm:block">
                                 {c.students}
-                                <small className="block font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted">Alunos</small>
+                                <small className="block font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted">{t('Alunos')}</small>
                             </div>
                             <div className="col-start-2 flex flex-wrap gap-2 sm:col-start-auto">
                                 <Link href={`/formador/cursos/${c.ulid}/editar`} className={btnClass('soft', 'sm')}>
-                                    Editar
+                                    {t('Editar')}
                                 </Link>
                                 {c.attendance && c.students > 0 && (
                                     <button type="button" onClick={() => setAttendance(c)} className={btnClass('soft', 'sm')}>
-                                        Alunos · Presença
+                                        {t('Alunos · Presença')}
                                     </button>
                                 )}
                                 {c.status === 'published' ? (
                                     <>
                                         <a href={`/cursos?curso=${c.slug}`} target="_blank" rel="noopener" className={btnClass('line', 'sm')}>
-                                            Ver no catálogo
+                                            {t('Ver no catálogo')}
                                         </a>
                                         <button type="button" onClick={() => unpublish(c)} className={btnClass('soft', 'sm')}>
-                                            Despublicar
+                                            {t('Despublicar')}
                                         </button>
                                     </>
                                 ) : (
                                     <button type="button" onClick={() => remove(c)} className={btnClass('soft', 'sm')}>
-                                        Apagar
+                                        {t('Apagar')}
                                     </button>
                                 )}
                             </div>

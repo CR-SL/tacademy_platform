@@ -5,6 +5,8 @@ import MembersEditor from '@/Components/Teams/MembersEditor';
 import { Box, btn, Chip, Drawer, FlashToast, inputCls, PageHead, Tabs, Td, Th } from '@/Components/Teams/ui';
 import { useConfirm } from '@/Components/ui';
 
+import { t } from '@/i18n';
+
 const tone = { novo: 'bad', em_esclarecimento: 'info', aguardar_pagamento: 'warn', pago: 'ok', equipa_criada: 'dark', concluido: 'mut', cancelado: 'mut' };
 const FLOW = ['novo', 'em_esclarecimento', 'aguardar_pagamento', 'pago', 'equipa_criada', 'concluido'];
 const OPEN = ['novo', 'em_esclarecimento', 'aguardar_pagamento', 'pago', 'equipa_criada'];
@@ -18,20 +20,20 @@ export default function Requests({ requests, open, statuses, kinds, changeTypes,
     const matches = (r, f) => f === 'todos' || (f === 'abertos' ? OPEN.includes(r.status) : r.status === f);
     const rows = useMemo(() => requests.filter((r) => matches(r, filter)), [requests, filter]);
     const current = requests.find((r) => r.id === selected);
-    const filters = [['abertos', 'Abertos'], ...Object.entries(statuses).filter(([k]) => k !== 'cancelado'), ['todos', 'Todos']]
+    const filters = [['abertos', t('Abertos')], ...Object.entries(statuses).filter(([k]) => k !== 'cancelado'), ['todos', t('Todos')]]
         .map(([k, label]) => [k, label, requests.filter((r) => matches(r, k)).length]);
 
     return (
         <StudentLayout>
-            <Head title="Pedidos" />
-            <PageHead title="Pedidos" sub="Esclarecimentos, compras de cursos e alterações pedidas pelos team leaders." />
-            <Tabs label="Filtrar por estado" items={filters} value={filter} onChange={setFilter} />
+            <Head title={t('Pedidos')} />
+            <PageHead title={t('Pedidos')} sub={t('Esclarecimentos, compras de cursos e alterações pedidas pelos team leaders.')} />
+            <Tabs label={t('Filtrar por estado')} items={filters} value={filter} onChange={setFilter} />
 
             <div className="bg-surface px-3.5 py-2">
                 {rows.length ? (
                     <div className="overflow-x-auto">
                         <table className="w-full border-collapse text-[15px]">
-                            <thead><tr><Th>#</Th><Th>Pedido</Th><Th>Tipo</Th><Th className="hidden lg:table-cell">Curso</Th><Th>Estado</Th><Th className="hidden md:table-cell">Responsável</Th><Th className="hidden md:table-cell">Recebido</Th></tr></thead>
+                            <thead><tr><Th>#</Th><Th>{t('Pedido')}</Th><Th>{t('Tipo')}</Th><Th className="hidden lg:table-cell">{t('Curso')}</Th><Th>{t('Estado')}</Th><Th className="hidden md:table-cell">{t('Responsável')}</Th><Th className="hidden md:table-cell">{t('Recebido')}</Th></tr></thead>
                             <tbody>
                                 {rows.map((r) => (
                                     <tr key={r.id} onClick={() => setSelected(r.id)} className="cursor-pointer hover:bg-page">
@@ -39,7 +41,7 @@ export default function Requests({ requests, open, statuses, kinds, changeTypes,
                                         <Td>
                                             <button type="button" className="text-left" onClick={() => setSelected(r.id)}>
                                                 <b className="block font-semibold">{r.company || r.name}</b>
-                                                <small className="text-[12.5px] text-muted">{r.company ? r.name : r.type === 'particular' ? 'Particular' : r.email}</small>
+                                                <small className="text-[12.5px] text-muted">{r.company ? r.name : r.type === 'particular' ? t('Particular') : r.email}</small>
                                             </button>
                                         </Td>
                                         <Td>{r.kind === 'alteracao' ? <Chip tone="dark">{kinds[r.kind]}</Chip> : kinds[r.kind]}</Td>
@@ -48,14 +50,14 @@ export default function Requests({ requests, open, statuses, kinds, changeTypes,
                                             {r.packs ? <span className="text-muted"> · {r.packs} pack{r.packs > 1 ? 's' : ''}</span> : null}
                                         </Td>
                                         <Td><Chip tone={tone[r.status]}>{statuses[r.status]}</Chip></Td>
-                                        <Td className="hidden md:table-cell">{r.assignee ?? <span className="text-muted">Por atribuir</span>}</Td>
+                                        <Td className="hidden md:table-cell">{r.assignee ?? <span className="text-muted">{t('Por atribuir')}</span>}</Td>
                                         <Td className="hidden whitespace-nowrap text-muted md:table-cell">{r.ago}</Td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
-                ) : <p className="px-4 py-10 text-center text-muted">Sem pedidos neste estado.</p>}
+                ) : <p className="px-4 py-10 text-center text-muted">{t('Sem pedidos neste estado.')}</p>}
             </div>
 
             {current && !creating && (
@@ -80,31 +82,31 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
     };
     const [confirm, confirmDialog] = useConfirm();
     const authorize = async () => {
-        if (await confirm({ title: `Autorizar o acesso de ${r.name}?`, body: `Passa a ter acesso ao curso “${r.course?.title}”.`, action: 'Autorizar o acesso' })) {
+        if (await confirm({ title: t('Autorizar o acesso de :name?', { name: r.name }), body: t('Passa a ter acesso ao curso “:v1”.', { v1: r.course?.title }), action: t('Autorizar o acesso') })) {
             router.post(`/gestao/pedidos/${r.id}/autorizar`, {}, { preserveScroll: true, preserveState: true });
         }
     };
 
     return (
         <Drawer
-            sub={`Pedido #${r.id} · ${kinds[r.kind]}${personal ? ' (pessoal)' : ''}`}
+            sub={t('Pedido #:id · :v2:v3', { id: r.id, v2: kinds[r.kind], v3: personal ? t(' (pessoal)') : '' })}
             title={r.company || r.name}
             onClose={onClose}
             footer={
                 <>
-                    <select aria-label="Estado do pedido" className={`${inputCls} w-auto`} value={r.status} onChange={(e) => patch({ status: e.target.value })}>
+                    <select aria-label={t('Estado do pedido')} className={`${inputCls} w-auto`} value={r.status} onChange={(e) => patch({ status: e.target.value })}>
                         {stateOptions.map((s) => <option key={s} value={s}>{statuses[s]}</option>)}
                     </select>
-                    {!r.mine && <button type="button" className={btn.small} onClick={() => patch({ assign: true })}>Atribuir a mim</button>}
+                    {!r.mine && <button type="button" className={btn.small} onClick={() => patch({ assign: true })}>{t('Atribuir a mim')}</button>}
                     <span className="flex-1" />
                     {r.kind === 'compra' && !personal && r.status === 'pago' && !r.team && (
-                        <button type="button" className={btn.accent} onClick={onCreateTeam}>Criar equipa ▶</button>
+                        <button type="button" className={btn.accent} onClick={onCreateTeam}>{t('Criar equipa ▶')}</button>
                     )}
                     {personal && r.status === 'pago' && (
-                        <button type="button" className={btn.accent} onClick={authorize}>Autorizar acesso ▶</button>
+                        <button type="button" className={btn.accent} onClick={authorize}>{t('Autorizar acesso ▶')}</button>
                     )}
                     {r.team && (
-                        <Link href={`/gestao/equipas/${r.team.ulid}`} className={btn.dark}>{isChange ? 'Abrir equipa ▶' : 'Ver equipa ▶'}</Link>
+                        <Link href={`/gestao/equipas/${r.team.ulid}`} className={btn.dark}>{isChange ? t('Abrir equipa ▶') : t('Ver equipa ▶')}</Link>
                     )}
                 </>
             }
@@ -122,26 +124,26 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
                 </div>
             )}
             {personal && r.status === 'pago' && (
-                <p className="bg-accent/15 px-4 py-3 text-sm">Compra a título pessoal com pagamento <b>simulado</b> (o pagamento pela plataforma ainda não está ativo). Ao autorizar, o aluno passa a ter o curso.</p>
+                <p className="bg-accent/15 px-4 py-3 text-sm">{t('Compra a título pessoal com pagamento simulado (o pagamento pela plataforma ainda não está ativo). Ao autorizar, o aluno passa a ter o curso.')}</p>
             )}
 
-            <Box title="Contacto">
+            <Box title={t('Contacto')}>
                 <dl className="grid grid-cols-[110px_1fr] gap-x-3.5 gap-y-1.5 text-sm">
-                    <dt className="text-muted">Nome</dt><dd>{r.name}</dd>
-                    <dt className="text-muted">Email</dt><dd className="break-all">{r.email}</dd>
-                    {r.phone && <><dt className="text-muted">Telefone</dt><dd>{r.phone}</dd></>}
-                    {r.company && <><dt className="text-muted">Empresa</dt><dd>{r.company}</dd></>}
-                    {r.nif && <><dt className="text-muted">NIF</dt><dd>{r.nif}</dd></>}
-                    {r.team_size && <><dt className="text-muted">Nº pessoas</dt><dd>{r.team_size}</dd></>}
-                    {r.course && <><dt className="text-muted">Curso</dt><dd>{r.course.title}</dd></>}
-                    {r.packs && <><dt className="text-muted">{isChange ? 'Pedido' : 'Packs'}</dt><dd>{r.packs} × 10 lugares</dd></>}
-                    {r.change_type && <><dt className="text-muted">Alteração</dt><dd><b>{changeTypes[r.change_type]}</b></dd></>}
-                    <dt className="text-muted">Recebido</dt><dd>{r.date}</dd>
+                    <dt className="text-muted">{t('Nome')}</dt><dd>{r.name}</dd>
+                    <dt className="text-muted">{t('Email')}</dt><dd className="break-all">{r.email}</dd>
+                    {r.phone && <><dt className="text-muted">{t('Telefone')}</dt><dd>{r.phone}</dd></>}
+                    {r.company && <><dt className="text-muted">{t('Empresa')}</dt><dd>{r.company}</dd></>}
+                    {r.nif && <><dt className="text-muted">{t('NIF')}</dt><dd>{r.nif}</dd></>}
+                    {r.team_size && <><dt className="text-muted">{t('Nº pessoas')}</dt><dd>{r.team_size}</dd></>}
+                    {r.course && <><dt className="text-muted">{t('Curso')}</dt><dd>{r.course.title}</dd></>}
+                    {r.packs && <><dt className="text-muted">{isChange ? t('Pedido') : t('Packs')}</dt><dd>{r.packs}{' '}{t('× 10 lugares')}</dd></>}
+                    {r.change_type && <><dt className="text-muted">{t('Alteração')}</dt><dd><b>{changeTypes[r.change_type]}</b></dd></>}
+                    <dt className="text-muted">{t('Recebido')}</dt><dd>{r.date}</dd>
                 </dl>
             </Box>
 
             {r.people.length > 0 && (
-                <Box title={isChange ? (r.change_type === 'retirar' ? 'Pessoa a retirar' : 'Pessoa a adicionar') : `Alunos indicados (${r.people.length})`}>
+                <Box title={isChange ? (r.change_type === 'retirar' ? t('Pessoa a retirar') : t('Pessoa a adicionar')) : t('Alunos indicados (:length)', { length: r.people.length })}>
                     {r.people.map((p) => (
                         <div key={p.email} className="flex justify-between gap-3 border-b border-line py-1.5 text-sm last:border-0">
                             <span>{p.name}</span><span className="break-all text-muted">{p.email}</span>
@@ -150,22 +152,22 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
                 </Box>
             )}
 
-            <Box title="Conversa">
+            <Box title={t('Conversa')}>
                 <div className="flex flex-col gap-2">
                     {r.messages.length ? r.messages.map((m, i) => (
                         <div key={i} className={`px-3.5 py-3 text-sm ${m.staff ? 'ml-8 bg-accent/10' : 'bg-page'}`}>
                             <p className="mb-1 flex justify-between gap-3 font-display text-[12.5px] font-semibold">{m.author}<small className="font-sans font-normal text-muted">{m.when}</small></p>
                             <p className="whitespace-pre-line">{m.body}</p>
                         </div>
-                    )) : <span className="text-muted">Sem mensagens.</span>}
+                    )) : <span className="text-muted">{t('Sem mensagens.')}</span>}
                 </div>
                 <form onSubmit={send} className="mt-3 flex flex-col gap-2">
-                    <label htmlFor="reply" className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">Responder</label>
+                    <label htmlFor="reply" className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">{t('Responder')}</label>
                     <textarea id="reply" rows={4} className={inputCls} value={reply.data.body} maxLength={5000}
-                        placeholder={`A resposta é enviada por email para ${r.email}`} onChange={(e) => reply.setData('body', e.target.value)} />
+                        placeholder={t('A resposta é enviada por email para :email', { email: r.email })} onChange={(e) => reply.setData('body', e.target.value)} />
                     {reply.errors.body && <span className="text-[13px] text-live-ink">{reply.errors.body}</span>}
                     <button type="submit" disabled={reply.processing || !reply.data.body.trim()} className={`${btn.line} self-end disabled:opacity-45`}>
-                        {reply.processing ? 'A enviar…' : 'Enviar resposta'}
+                        {reply.processing ? t('A enviar…') : t('Enviar resposta')}
                     </button>
                 </form>
             </Box>
@@ -195,35 +197,35 @@ function CreateTeam({ r, courses, onClose }) {
 
     return (
         <Drawer
-            sub={`Criar equipa · pedido #${r.id}`}
-            title={company || 'Nova equipa'}
+            sub={t('Criar equipa · pedido #:id', { id: r.id })}
+            title={company || t('Nova equipa')}
             onClose={onClose}
             footer={
                 <>
-                    <span className="text-[13px] text-muted">Ao criar, o pedido passa a “Equipa criada” e são enviados os convites.</span>
+                    <span className="text-[13px] text-muted">{t('Ao criar, o pedido passa a “Equipa criada” e são enviados os convites.')}</span>
                     <span className="flex-1" />
                     <button type="button" className={btn.accent} disabled={busy || people.length > packs * 10} onClick={submit}>
-                        {busy ? 'A criar…' : 'Criar equipa e enviar convites'}
+                        {busy ? t('A criar…') : t('Criar equipa e enviar convites')}
                     </button>
                 </>
             }
         >
-            <Box title="Empresa">
+            <Box title={t('Empresa')}>
                 <div className="grid gap-3 sm:grid-cols-[1fr_160px]">
                     <label className="flex flex-col gap-1.5 text-sm">
-                        <span className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">Nome</span>
+                        <span className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">{t('Nome')}</span>
                         <input className={inputCls} value={company} maxLength={150} onChange={(e) => setCompany(e.target.value)} />
                         {errors.company && <span className="text-live-ink">{errors.company}</span>}
                     </label>
                     <label className="flex flex-col gap-1.5 text-sm">
-                        <span className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">NIF</span>
+                        <span className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">{t('NIF')}</span>
                         <input className={inputCls} value={nif} maxLength={20} onChange={(e) => setNif(e.target.value)} />
                     </label>
                 </div>
             </Box>
-            <Box title="Cursos e lugares">
+            <Box title={t('Cursos e lugares')}>
                 <label className="mb-3 flex items-center gap-3 text-sm">
-                    <span className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">Packs de 10 lugares</span>
+                    <span className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">{t('Packs de 10 lugares')}</span>
                     <input type="number" min="1" max="50" className={`${inputCls} w-24`} value={packs} onChange={(e) => setPacks(Math.max(1, parseInt(e.target.value, 10) || 1))} />
                 </label>
                 <div className="flex flex-col gap-1">
@@ -235,8 +237,8 @@ function CreateTeam({ r, courses, onClose }) {
                         </label>
                     ))}
                 </div>
-                {errors.course_ids && <p className="mt-2 text-sm text-live-ink">Escolhe pelo menos um curso.</p>}
-                <p className="mt-2 text-[12.5px] text-muted">Todos os membros da equipa têm acesso a todos os cursos escolhidos.</p>
+                {errors.course_ids && <p className="mt-2 text-sm text-live-ink">{t('Escolhe pelo menos um curso.')}</p>}
+                <p className="mt-2 text-[12.5px] text-muted">{t('Todos os membros da equipa têm acesso a todos os cursos escolhidos.')}</p>
             </Box>
             <MembersEditor people={people} setPeople={setPeople} leader={leader} setLeader={setLeader} seats={packs * 10} errors={errors} />
         </Drawer>

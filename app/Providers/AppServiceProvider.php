@@ -27,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
         // O admin passa por cima de todas as Policies (super-utilizador).
         Gate::before(fn (User $user) => $user->isAdmin() ? true : null);
 
+        // Uma Gate por permissão (ex.: middleware can:pedidos), lida do perfil da pessoa
+        foreach (\App\Support\Permissions::keys() as $permission) {
+            Gate::define($permission, fn (User $user) => $user->canDo($permission));
+        }
+
         // Em desenvolvimento/testes, todos os emails vão para uma só caixa (MAIL_ALWAYS_TO).
         // Só quando o mailer é criado (ao enviar): ligar já no arranque obrigava a ter a chave
         // do Resend em todo o lado e partia o `config:cache` do build sem ela.

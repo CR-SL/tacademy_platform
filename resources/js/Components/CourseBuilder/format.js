@@ -1,9 +1,14 @@
+import { t } from '@/i18n';
 // Formatação partilhada pelo editor de cursos e pela lista "Os meus cursos".
 
-export const levelLabels = { iniciante: 'Iniciante', intermedio: 'Intermédio', avancado: 'Avançado' };
+export const levelLabels = {
+    get iniciante() { return t('Iniciante'); },
+    get intermedio() { return t('Intermédio'); },
+    get avancado() { return t('Avançado'); },
+};
 
 export function formatMinutes(m) {
-    if (!m) return '0 min';
+    if (!m) return t('0 min');
     return m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, '0') : ''}` : `${m} min`;
 }
 
@@ -23,10 +28,10 @@ export const isUploadedVideo = (u) => /^\/storage\/cursos\/videos\/[\w-]+\.(mp4|
 // Reconhece YouTube/Vimeo para mostrar a miniatura e o nome do serviço
 export function linkInfo(url) {
     const u = (url ?? '').trim();
-    if (isUploadedVideo(u)) return { tag: 'Vídeo carregado' };
+    if (isUploadedVideo(u)) return { tag: t('Vídeo carregado') };
     const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
     if (yt) return { tag: 'YouTube', thumb: `https://img.youtube.com/vi/${yt[1]}/mqdefault.jpg` };
-    if (/vimeo\.com\/\d+/.test(u)) return { tag: 'Vimeo' };
-    if (isHttpUrl(u)) return { tag: 'Link externo' };
+    if (/vimeo\.com\/\d+/.test(u)) return { tag: t('Vimeo') };
+    if (isHttpUrl(u)) return { tag: t('Link externo') };
     return null;
 }

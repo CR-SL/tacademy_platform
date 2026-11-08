@@ -110,13 +110,13 @@ class StudentArea
             ->map(fn ($c) => [
                 'kind' => 'Prazo',
                 'title' => $c['title'],
-                'course' => $c['deadline']['late'] ? 'terminou a '.$c['deadline']['date'] : 'até '.$c['deadline']['date'],
+                'course' => $c['deadline']['late'] ? __('terminou a :date', ['date' => $c['deadline']['date']]) : __('até :date', ['date' => $c['deadline']['date']]),
                 'text' => ($c['deadline']['late']
-                    ? 'O prazo para concluir este curso já passou.'
-                    : ($c['deadline']['days'] === 0 ? 'O prazo termina hoje.' : 'Faltam '.$c['deadline']['days'].' '.($c['deadline']['days'] === 1 ? 'dia' : 'dias').' para concluir o curso.'))
-                    .' Já fizeste '.$c['done'].' de '.$c['total'].' aulas'
-                    .($c['deadline']['by'] === 'empresa' ? '. Prazo definido pela tua empresa.' : '.'),
-                'cta' => $c['done'] ? 'Continuar o curso' : 'Começar o curso',
+                    ? __('O prazo para concluir este curso já passou.')
+                    : ($c['deadline']['days'] === 0 ? __('O prazo termina hoje.') : trans_choice('{1} Falta 1 dia para concluir o curso.|[2,*] Faltam :count dias para concluir o curso.', $c['deadline']['days'])))
+                    .' '.__('Já fizeste :done de :total aulas.', ['done' => $c['done'], 'total' => $c['total']])
+                    .($c['deadline']['by'] === 'empresa' ? ' '.__('Prazo definido pela tua empresa.') : ''),
+                'cta' => $c['done'] ? __('Continuar o curso') : __('Começar o curso'),
                 'url' => $c['url'],
             ])->values()->all();
     }
@@ -185,7 +185,9 @@ class StudentArea
         }
         $duration = $this->learning->videoDuration($lesson, $p);
 
-        return 'Paraste aos '.$this->clock($p->last_position_seconds).($duration ? ' de '.$this->clock($duration) : '');
+        return $duration
+            ? __('Paraste aos :at de :of', ['at' => $this->clock($p->last_position_seconds), 'of' => $this->clock($duration)])
+            : __('Paraste aos :at', ['at' => $this->clock($p->last_position_seconds)]);
     }
 
     private function clock(int $seconds): string
@@ -234,8 +236,8 @@ class StudentArea
                 'kind' => 'Teste',
                 'title' => $lesson->title,
                 'course' => $course->title,
-                'text' => $quiz->questions_count.' perguntas · nota mínima '.($quiz->passing_score ?: 70).'% · '.$mine->count().' de '.$max.' tentativas usadas',
-                'cta' => $mine->isEmpty() ? 'Fazer o teste' : 'Tentar outra vez',
+                'text' => __(':questions perguntas · nota mínima :min% · :used de :max tentativas usadas', ['questions' => $quiz->questions_count, 'min' => $quiz->passing_score ?: 70, 'used' => $mine->count(), 'max' => $max]),
+                'cta' => $mine->isEmpty() ? __('Fazer o teste') : __('Tentar outra vez'),
                 'url' => $this->lessonUrl($course, $lesson),
             ];
         })->filter()->values()->all();
@@ -396,7 +398,7 @@ class StudentArea
                 'price' => (float) $c->price,
                 'free' => (bool) $c->is_free,
                 'image' => $this->image($c),
-                'why' => $areas->contains($c->category_id) ? 'Na área de '.$c->category?->name.', que já estudas' : null,
+                'why' => $areas->contains($c->category_id) ? __('Na área de :area, que já estudas', ['area' => $c->category?->name]) : null,
                 'url' => '/plataforma/cursos/'.$c->slug,
             ])->values()->all();
     }
@@ -425,8 +427,8 @@ class StudentArea
                 'key' => $key,
                 'course_id' => $first->course_id,
                 'student_id' => $first->student_id,
-                'name' => $name ?? 'Formador',
-                'context' => ($asStudent ? 'Formador' : 'Aluno').' · '.$first->course->title,
+                'name' => $name ?? __('Formador'),
+                'context' => ($asStudent ? __('Formador') : __('Aluno')).' · '.$first->course->title,
                 'last' => $last->body,
                 'when' => $last->created_at?->diffForHumans(),
                 'at' => $last->created_at?->getTimestamp(),

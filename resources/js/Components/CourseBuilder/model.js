@@ -1,6 +1,8 @@
 // Estado do editor de cursos e as mesmas regras de publicação do servidor (CourseBuilder::publishProblems).
 import { isHttpUrl, isUploadedVideo } from './format';
 
+import { t } from '@/i18n';
+
 let n = 0;
 // Chave dos módulos/aulas novos até o servidor lhes dar um id
 export const newKey = () => `n${Date.now().toString(36)}${(n++).toString(36)}`;
@@ -61,13 +63,13 @@ export function lessonComplete(l) {
 export function checklist(c, shortMax) {
     const lessons = c.modules.flatMap((m) => m.lessons);
     return [
-        ['Título do curso', 0, !!c.title.trim()],
-        ['Área e nível', 0, !!c.category_id && !!c.level],
-        ['Imagem de capa', 0, !!c.thumbnail_url],
-        ['Descrição curta', 0, !!c.short_description.trim() && c.short_description.length <= shortMax],
-        ['Pelo menos 1 módulo com 1 aula', 1, lessons.length > 0],
-        ['Todos os módulos têm título', 1, c.modules.every((m) => m.title.trim())],
-        ['Todas as aulas completas (título + link/conteúdo)', 1, lessons.every(lessonComplete)],
-        ['Preço definido', 2, c.is_free || Number(c.price) > 0],
+        [t('Título do curso'), 0, !!c.title.trim()],
+        [t('Área e nível'), 0, !!c.category_id && !!c.level],
+        [t('Imagem de capa'), 0, !!c.thumbnail_url],
+        [t('Descrição curta'), 0, !!c.short_description.trim() && c.short_description.length <= shortMax],
+        [t('Pelo menos 1 módulo com 1 aula'), 1, lessons.length > 0],
+        [t('Todos os módulos têm título'), 1, c.modules.every((m) => m.title.trim())],
+        [t('Todas as aulas completas (título + link/conteúdo)'), 1, lessons.every(lessonComplete)],
+        [t('Preço definido'), 2, c.is_free || Number(c.price) > 0],
     ];
 }

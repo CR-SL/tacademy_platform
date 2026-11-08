@@ -3,12 +3,14 @@ import { useEffect, useRef, useState } from 'react';
 import { IconArrow, IconBack, IconCorner, IconFold, IconGrip, IconPanels, IconX } from './icons';
 import { Bar as UiBar, Toast } from '@/Components/ui';
 
+import { t } from '@/i18n';
+
 export function Bar({ value }) {
     return <UiBar value={value} className="mt-[5px]" />;
 }
 
 // Numeração como no exemplo: "Módulo 3 · Radar". Não repete quando o título já traz "Módulo"
-export const moduleName = (title, i) => (/^m[oó]dulo\b/i.test(title) ? title : `Módulo ${i + 1} · ${title}`);
+export const moduleName = (title, i) => (/^m[oó]dulo\b/i.test(title) ? title : t('Módulo :v1 · :title', { v1: i + 1, title }));
 
 function Box({ board, id, panel }) {
     const { layout, gesture, flags } = board;
@@ -31,13 +33,13 @@ function Box({ board, id, panel }) {
 
     const header = (
         <div className="pn-box-h" data-drag>
-            <button type="button" className="pn-grip" data-grip aria-label={`Mover ${title}. Usa as setas do teclado.`} title="Arrastar"><IconGrip /></button>
+            <button type="button" className="pn-grip" data-grip aria-label={t('Mover :title. Usa as setas do teclado.', { title })} title={t('Arrastar')}><IconGrip /></button>
             <h2 className="pn-lab">{panel.label ?? title}</h2>
             {panel.summary && <span className="pn-sum">{panel.summary}</span>}
             {panel.mini}
             <span className="pn-tools">
-                <button type="button" className="pn-tool pn-fold" aria-expanded={!f.collapsed} aria-label={`${f.collapsed ? 'Abrir' : 'Minimizar'} ${title}`} title={f.collapsed ? 'Abrir' : 'Minimizar'} onClick={() => board.toggleFold(id)}><IconFold /></button>
-                <button type="button" className="pn-tool" aria-label={`Fechar ${title}`} title="Fechar" onClick={() => board.hide(id)}><IconX /></button>
+                <button type="button" className="pn-tool pn-fold" aria-expanded={!f.collapsed} aria-label={`${f.collapsed ? t('Abrir') : t('Minimizar')} ${title}`} title={f.collapsed ? t('Abrir') : t('Minimizar')} onClick={() => board.toggleFold(id)}><IconFold /></button>
+                <button type="button" className="pn-tool" aria-label={t('Fechar :title', { title })} title={t('Fechar')} onClick={() => board.hide(id)}><IconX /></button>
             </span>
         </div>
     );
@@ -66,8 +68,8 @@ function Box({ board, id, panel }) {
             <div className="pn-edge pn-e" data-rz="e" />
             <div className="pn-edge pn-w" data-rz="w" />
             <div className="pn-edge pn-s" data-rz="s" />
-            <button type="button" className="pn-rz pn-se" data-rz="se" data-corner aria-label={`Redimensionar ${title}. Usa as setas do teclado.`} title="Arrastar para redimensionar. Duplo clique repõe o tamanho."><IconCorner /></button>
-            <button type="button" className="pn-rz pn-sw" data-rz="sw" data-corner aria-label={`Redimensionar ${title}. Usa as setas do teclado.`} title="Arrastar para redimensionar. Duplo clique repõe o tamanho."><IconCorner /></button>
+            <button type="button" className="pn-rz pn-se" data-rz="se" data-corner aria-label={t('Redimensionar :title. Usa as setas do teclado.', { title })} title={t('Arrastar para redimensionar. Duplo clique repõe o tamanho.')}><IconCorner /></button>
+            <button type="button" className="pn-rz pn-sw" data-rz="sw" data-corner aria-label={t('Redimensionar :title. Usa as setas do teclado.', { title })} title={t('Arrastar para redimensionar. Duplo clique repõe o tamanho.')}><IconCorner /></button>
         </section>
     );
 }
@@ -106,17 +108,17 @@ export function PanelsMenu({ board }) {
 
     return (
         <div ref={ref} style={{ position: 'relative' }}>
-            <button type="button" className="pn-icon" aria-label="Painéis visíveis" title="Painéis visíveis" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((o) => !o)}><IconPanels /></button>
+            <button type="button" className="pn-icon" aria-label={t('Painéis visíveis')} title={t('Painéis visíveis')} aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((o) => !o)}><IconPanels /></button>
             {open && (
                 <div className="pn-menu">
-                    <h2 className="pn-lab">Painéis visíveis</h2>
+                    <h2 className="pn-lab">{t('Painéis visíveis')}</h2>
                     {Object.keys(board.layout.items).map((id) => (
                         <label key={id}>
                             <input type="checkbox" checked={!board.layout.hidden.includes(id)} onChange={(e) => (e.target.checked ? board.show(id) : board.hide(id))} />
                             {board.titles[id]}
                         </label>
                     ))}
-                    <button type="button" className="pn-rs" onClick={() => { board.reset(); setOpen(false); }}>Repor disposição inicial</button>
+                    <button type="button" className="pn-rs" onClick={() => { board.reset(); setOpen(false); }}>{t('Repor disposição inicial')}</button>
                 </div>
             )}
         </div>
@@ -128,7 +130,7 @@ export function Crumb({ label, children }) {
     return (
         <div className="pn-root">
             <div className="pn-crumb">
-                <Link href="/dashboard" className="pn-back"><IconBack />Início</Link>
+                <Link href="/dashboard" className="pn-back"><IconBack />{t('Início')}</Link>
                 <span className="pn-lab">{label}</span>
                 {children && <><span className="pn-sp" />{children}</>}
             </div>
@@ -140,14 +142,14 @@ export function Crumb({ label, children }) {
 export function AlexPanel({ url }) {
     return (
         <>
-            <img className="pn-alex-p" src="/images/alex.png" alt="Alex, o tutor do curso, numa oficina" />
+            <img className="pn-alex-p" src="/images/alex.png" alt={t('Alex, o tutor do curso, numa oficina')} />
             <div className="pn-alex-c">
                 {url ? (
-                    <Link href={url} className="ui-btn ui-btn-line">Falar com o Alex</Link>
+                    <Link href={url} className="ui-btn ui-btn-line">{t('Falar com o Alex')}</Link>
                 ) : (
                     <>
-                        <button type="button" className="ui-btn ui-btn-line" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>Falar com o Alex</button>
-                        <p className="pn-alex-note">O Alex vai estar disponível em breve.</p>
+                        <button type="button" className="ui-btn ui-btn-line" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>{t('Falar com o Alex')}</button>
+                        <p className="pn-alex-note">{t('O Alex vai estar disponível em breve.')}</p>
                     </>
                 )}
             </div>
@@ -156,7 +158,7 @@ export function AlexPanel({ url }) {
 }
 
 export const alexDef = (url, y, h) => ({
-    title: 'Alex', x: 19, y, w: 5, h, float: 'dark', summary: 'Tutor do curso', compact: true, body: <AlexPanel url={url} />,
+    title: t('Alex'), x: 19, y, w: 5, h, float: 'dark', summary: t('Tutor do curso'), compact: true, body: <AlexPanel url={url} />,
 });
 
 export function EmptyPanel({ title, text, href, cta }) {

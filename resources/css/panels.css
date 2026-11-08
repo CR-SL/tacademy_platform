@@ -23,6 +23,9 @@
 .pn-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: background .15s; }
 .pn-icon:hover, .pn-icon[aria-expanded="true"] { background: var(--color-surface2); }
 .pn-lang { padding: 0 6px; font-size: 13px; font-weight: 600; letter-spacing: .08em; color: var(--color-muted); white-space: nowrap; }
+.pn-lang button { padding: 4px 2px; font: inherit; letter-spacing: inherit; color: inherit; border-radius: 4px; }
+.pn-lang button:hover { color: var(--color-ink); }
+.pn-lang button[aria-pressed="true"] { color: var(--color-ink); text-decoration: underline; text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 5px; }
 
 /* Menu dos painéis */
 .pn-menu { position: absolute; top: calc(100% + 2px); right: 86px; z-index: 40; width: 250px; padding: 16px; background: var(--color-surface); box-shadow: 0 14px 40px rgba(0, 0, 0, .18); }

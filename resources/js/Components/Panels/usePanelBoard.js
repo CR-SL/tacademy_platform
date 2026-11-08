@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { t } from '@/i18n';
+
 // Motor dos painéis: grelha de 24 colunas, sem sobreposições. Arrastar troca de lugar,
 // redimensionar só muda a caixa que se puxa, e a disposição fica guardada por utilizador.
 export const COLS = 24;
@@ -81,7 +83,7 @@ function resizeTo(l, base, id, next) {
 
 function sizeMessage(l, id, title) {
     const it = l.items[id];
-    return l.collapsed.includes(id) ? `${title}: ${it.w} colunas.` : `${title}: ${it.w} colunas por ${it.h} linhas.`;
+    return l.collapsed.includes(id) ? t(':title: :w colunas.', { title, w: it.w }) : t(':title: :w colunas por :h linhas.', { title, w: it.w, h: it.h });
 }
 
 function defaults(defs) {
@@ -381,7 +383,7 @@ export default function usePanelBoard({ view, panels, saved }) {
             const sized = resizeTo(L.current, L.current.items, id, { w: def.w, h: def.h, x: clamp(L.current.items[id].x, 0, COLS - def.w) });
             setItems(compact(L.current, sized, id));
             persist();
-            setMessage(`${titles.current[id]}: tamanho reposto.`);
+            setMessage(t(':v1: tamanho reposto.', { v1: titles.current[id] }));
         };
         const onKey = (e) => {
             if (e.key === 'Escape') {
@@ -405,12 +407,12 @@ export default function usePanelBoard({ view, panels, saved }) {
                 o.splice(i, 1);
                 o.splice(j, 0, id);
                 setLayout({ ...l, order: o });
-                setMessage(`${titles.current[id]}: posição ${j + 1}.`);
+                setMessage(t(':v1: posição :v2.', { v1: titles.current[id], v2: j + 1 }));
             } else if (g) {
                 const next = { x: clamp(it.x + arrows[0], 0, COLS - it.w), y: Math.max(0, it.y + arrows[1] * effH(l, id, it)) };
                 const items = arrange(l, l.items, id, next, { x: it.x, y: it.y });
                 setItems(items);
-                setMessage(`${titles.current[id]}: coluna ${items[id].x + 1}, linha ${items[id].y + 1}.`);
+                setMessage(t(':v1: coluna :v2, linha :v3.', { v1: titles.current[id], v2: items[id].x + 1, v3: items[id].y + 1 }));
             } else {
                 const next = { w: it.w, h: l.collapsed.includes(id) ? it.h : clamp(it.h + arrows[1], MIN_H, 40), x: it.x };
                 if (arrows[0]) {
@@ -469,7 +471,7 @@ export default function usePanelBoard({ view, panels, saved }) {
         next.items = compact(next, copy(l.items));
         setLayout(next);
         persist();
-        showToast(`${titles.current[id]} fechado. Volta a abri-lo em Painéis visíveis, no topo.`);
+        showToast(t(':v1 fechado. Volta a abri-lo em Painéis visíveis, no topo.', { v1: titles.current[id] }));
     }, [persist, setLayout, showToast]);
 
     const show = useCallback((id) => {

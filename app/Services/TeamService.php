@@ -30,19 +30,24 @@ class TeamService
             ?: array_filter([config('tacademy.contact.email')]);
         if (! $to) return;
 
-        $kind = ContactRequest::KINDS[$r->kind] ?? 'Pedido';
-        PlatformMail::deliver($to, new PlatformMail(
-            subjectLine: "Novo pedido #{$r->id} · {$kind}",
-            heading: "Novo pedido: {$kind}",
-            lines: array_filter([
-                'De: '.$r->name.($r->company ? " ({$r->company})" : '').' · '.$r->email,
-                $r->course ? 'Curso: '.$r->course->title : null,
-                $r->change_type ? 'Alteração: '.(ContactRequest::CHANGE_TYPES[$r->change_type] ?? $r->change_type) : null,
-            ]),
-            quote: $r->message,
-            actionText: 'Abrir pedido',
-            actionUrl: url('/gestao/pedidos?pedido='.$r->id),
-        ));
+        // Cada gestor recebe na sua língua
+        foreach ($to as $email) {
+            PlatformMail::inLocaleOf(User::where('email', $email)->first() ?? 'pt', function () use ($r, $email) {
+                $kind = __(ContactRequest::KINDS[$r->kind] ?? 'Pedido');
+                PlatformMail::deliver($email, new PlatformMail(
+                    subjectLine: __('Novo pedido #:id · :kind', ['id' => $r->id, 'kind' => $kind]),
+                    heading: __('Novo pedido: :kind', ['kind' => $kind]),
+                    lines: array_filter([
+                        __('De: :who', ['who' => $r->name.($r->company ? " ({$r->company})" : '').' · '.$r->email]),
+                        $r->course ? __('Curso: :course', ['course' => $r->course->title]) : null,
+                        $r->change_type ? __('Alteração: :change', ['change' => __(ContactRequest::CHANGE_TYPES[$r->change_type] ?? $r->change_type)]) : null,
+                    ]),
+                    quote: $r->message,
+                    actionText: __('Abrir pedido'),
+                    actionUrl: url('/gestao/pedidos?pedido='.$r->id),
+                ));
+            });
+        }
     }
 
     /** Cria a equipa a partir de um pedido de compra pago. */
@@ -75,15 +80,15 @@ class TeamService
         $leaderEmail = Str::lower(trim($leaderEmail));
 
         if ($people->count() > $company->seats()) {
-            throw ValidationException::withMessages(['people' => "A equipa tem {$company->seats()} lugares; há {$people->count()} pessoas."]);
+            throw ValidationException::withMessages(['people' => __('A equipa tem :seats lugares; há :people pessoas.', ['seats' => $company->seats(), 'people' => $people->count()])]);
         }
         if (! $people->contains('email', $leaderEmail)) {
-            throw ValidationException::withMessages(['leader' => 'Escolhe o team leader entre os membros da equipa.']);
+            throw ValidationException::withMessages(['leader' => __('Escolhe o team leader entre os membros da equipa.')]);
         }
         // Quem já é de outra empresa não pode entrar nesta
         $taken = User::whereIn('email', $people->pluck('email'))->whereNotNull('company_id')->where('company_id', '!=', $company->id)->pluck('email');
         if ($taken->isNotEmpty()) {
-            throw ValidationException::withMessages(['people' => 'Já pertence a outra equipa: '.$taken->implode(', ')]);
+            throw ValidationException::withMessages(['people' => __('Já pertence a outra equipa: :emails', ['emails' => $taken->implode(', ')])]);
         }
 
         DB::transaction(function () use ($company, $people, $leaderEmail) {
@@ -148,21 +153,21 @@ class TeamService
         if ($isNew) {
             $token = Password::broker()->createToken($user);
             $url = url(route('password.reset', ['token' => $token, 'email' => $user->email], false));
-            PlatformMail::deliver($user->email, new PlatformMail(
-                subjectLine: "Bem-vindo à T.Academy (equipa {$company->name})",
-                heading: "Olá {$first}, já tens acesso à T.Academy",
-                lines: ["Foste incluído na equipa {$company->name}, com acesso a: {$courses}.", 'Define a tua palavra-passe para começar.'],
-                actionText: 'Definir palavra-passe',
+            PlatformMail::inLocaleOf($user, fn () => PlatformMail::deliver($user->email, new PlatformMail(
+                subjectLine: __('Bem-vindo à T.Academy (equipa :team)', ['team' => $company->name]),
+                heading: __('Olá :name, já tens acesso à T.Academy', ['name' => $first]),
+                lines: [__('Foste incluído na equipa :team, com acesso a: :courses.', ['team' => $company->name, 'courses' => $courses]), __('Define a tua palavra-passe para começar.')],
+                actionText: __('Definir palavra-passe'),
                 actionUrl: $url,
-            ));
+            )));
         } else {
-            PlatformMail::deliver($user->email, new PlatformMail(
-                subjectLine: "Foste incluído na equipa {$company->name}",
-                heading: "Olá {$first}, tens novos cursos",
-                lines: ["Foste incluído na equipa {$company->name}, com acesso a: {$courses}."],
-                actionText: 'Entrar na plataforma',
+            PlatformMail::inLocaleOf($user, fn () => PlatformMail::deliver($user->email, new PlatformMail(
+                subjectLine: __('Foste incluído na equipa :team', ['team' => $company->name]),
+                heading: __('Olá :name, tens novos cursos', ['name' => $first]),
+                lines: [__('Foste incluído na equipa :team, com acesso a: :courses.', ['team' => $company->name, 'courses' => $courses])],
+                actionText: __('Entrar na plataforma'),
                 actionUrl: url('/dashboard'),
-            ));
+            )));
         }
     }
 
@@ -249,19 +254,22 @@ class TeamService
             $deadline = $e->deadlineInfo(false);
             $pct = $lessonIds->count() ? (int) floor($done / $lessonIds->count() * 100) : 0;
             $first = Str::before($u->name, ' ');
-            $action = $this->entryAction($u, $course, $done ? 'Continuar o curso' : 'Começar o curso');
-            PlatformMail::deliver($u->email, new PlatformMail(
-                subjectLine: "Lembrete: {$course->title}",
-                heading: "Olá {$first}, o curso {$course->title} está à tua espera",
-                lines: array_filter([
-                    $done ? "Já fizeste {$pct}% do curso ({$done} de {$lessonIds->count()} aulas)." : 'Ainda não começaste o curso.',
-                    $deadline ? ($deadline['late'] ? "O prazo terminou a {$deadline['date']}." : "Prazo para concluir: {$deadline['date']}.") : null,
-                    "Lembrete enviado por {$leader->name}, da equipa {$company->name}.",
-                ]),
-                quote: $message ?: null,
-                actionText: $action['actionText'],
-                actionUrl: $action['actionUrl'],
-            ));
+            $total = $lessonIds->count();
+            PlatformMail::inLocaleOf($u, function () use ($u, $course, $done, $pct, $total, $deadline, $leader, $company, $message, $first) {
+                $action = $this->entryAction($u, $course, $done ? __('Continuar o curso') : __('Começar o curso'));
+                PlatformMail::deliver($u->email, new PlatformMail(
+                    subjectLine: __('Lembrete: :course', ['course' => $course->title]),
+                    heading: __('Olá :name, o curso :course está à tua espera', ['name' => $first, 'course' => $course->title]),
+                    lines: array_filter([
+                        $done ? __('Já fizeste :pct% do curso (:done de :total aulas).', ['pct' => $pct, 'done' => $done, 'total' => $total]) : __('Ainda não começaste o curso.'),
+                        $deadline ? ($deadline['late'] ? __('O prazo terminou a :date.', ['date' => $deadline['date']]) : __('Prazo para concluir: :date.', ['date' => $deadline['date']])) : null,
+                        __('Lembrete enviado por :leader, da equipa :team.', ['leader' => $leader->name, 'team' => $company->name]),
+                    ]),
+                    quote: $message ?: null,
+                    actionText: $action['actionText'],
+                    actionUrl: $action['actionUrl'],
+                ));
+            });
             $e->forceFill(['reminded_at' => now()])->save();
             $sent++;
         }
@@ -289,19 +297,21 @@ class TeamService
 
         foreach ($members as $u) {
             $first = Str::before($u->name, ' ');
-            $action = $this->entryAction($u, $course, 'Abrir o curso');
             $deadline = Enrollment::with('course')->where('user_id', $u->id)->where('course_id', $course->id)->first()?->deadlineInfo(false);
-            PlatformMail::deliver($u->email, new PlatformMail(
-                subjectLine: "Tens um curso atribuído: {$course->title}",
-                heading: "Olá {$first}, tens um curso para fazer",
-                lines: array_filter([
-                    "{$leader->name}, da equipa {$company->name}, atribuiu-te o curso {$course->title}.",
-                    $deadline ? 'Prazo para concluir: '.$deadline['date'].'.' : null,
-                ]),
-                quote: $message ?: null,
-                actionText: $action['actionText'],
-                actionUrl: $action['actionUrl'],
-            ));
+            PlatformMail::inLocaleOf($u, function () use ($u, $course, $deadline, $leader, $company, $message, $first) {
+                $action = $this->entryAction($u, $course, __('Abrir o curso'));
+                PlatformMail::deliver($u->email, new PlatformMail(
+                    subjectLine: __('Tens um curso atribuído: :course', ['course' => $course->title]),
+                    heading: __('Olá :name, tens um curso para fazer', ['name' => $first]),
+                    lines: array_filter([
+                        __(':leader, da equipa :team, atribuiu-te o curso :course.', ['leader' => $leader->name, 'team' => $company->name, 'course' => $course->title]),
+                        $deadline ? __('Prazo para concluir: :date.', ['date' => $deadline['date']]) : null,
+                    ]),
+                    quote: $message ?: null,
+                    actionText: $action['actionText'],
+                    actionUrl: $action['actionUrl'],
+                ));
+            });
         }
 
         return $members->count();
@@ -313,7 +323,7 @@ class TeamService
         if ($u->last_active_at === null && ! LessonProgress::where('user_id', $u->id)->exists()) {
             $token = Password::broker()->createToken($u);
 
-            return ['actionText' => 'Definir palavra-passe', 'actionUrl' => url(route('password.reset', ['token' => $token, 'email' => $u->email], false))];
+            return ['actionText' => __('Definir palavra-passe'), 'actionUrl' => url(route('password.reset', ['token' => $token, 'email' => $u->email], false))];
         }
 
         return ['actionText' => $text, 'actionUrl' => url('/plataforma/cursos/'.$course->slug)];

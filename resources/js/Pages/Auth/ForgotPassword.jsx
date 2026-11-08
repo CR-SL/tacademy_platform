@@ -5,6 +5,8 @@ import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
+import { t } from '@/i18n';
+
 export default function ForgotPassword({ status }) {
     const { data, setData, post, processing, errors } = useForm({
         email: '',
@@ -18,14 +20,13 @@ export default function ForgotPassword({ status }) {
 
     return (
         <GuestLayout>
-            <Head title="Recuperar palavra-passe" />
+            <Head title={t('Recuperar palavra-passe')} />
 
             <h1 className="mb-1 font-display text-2xl font-bold uppercase text-ink">
-                Recuperar palavra-passe
+                {t('Recuperar palavra-passe')}
             </h1>
             <p className="mb-6 text-sm text-muted">
-                Sem problema. Indica o teu email e enviamos-te um link para
-                definires uma nova palavra-passe.
+                {t('Sem problema. Indica o teu email e enviamos-te um link para definires uma nova palavra-passe.')}
             </p>
 
             {status && (
@@ -51,7 +52,7 @@ export default function ForgotPassword({ status }) {
 
                 <div className="mt-6">
                     <PrimaryButton className="w-full" disabled={processing}>
-                        Enviar link de recuperação
+                        {t('Enviar link de recuperação')}
                     </PrimaryButton>
                 </div>
 
@@ -60,7 +61,7 @@ export default function ForgotPassword({ status }) {
                         href={route('login')}
                         className="font-semibold text-accent-ink hover:underline"
                     >
-                        ← Voltar ao início de sessão
+                        {t('← Voltar ao início de sessão')}
                     </Link>
                 </p>
             </form>

@@ -6,19 +6,21 @@ import { IconArrow, IconCheck } from '@/Components/Panels/icons';
 import usePanelBoard from '@/Components/Panels/usePanelBoard';
 import { FlashToast } from '@/Components/Teams/ui';
 
+import { t } from '@/i18n';
+
 // Página do curso para quem está inscrito: módulos, aulas do módulo, certificado e o Alex.
 // Estado de cada aula na lista: feita, a meio (com o tempo onde parou), a seguir ou por fazer
 function lessonState(l, isNext) {
-    if (l.status === 'done') return `Feita${l.minutes ? ` · ${l.minutes} min` : ''}`;
-    if (l.position) return `Em curso · ${l.position.at}${l.position.of ? ` de ${l.position.of}` : ''}`;
-    return `${isNext ? 'A seguir' : 'Por fazer'}${l.minutes ? ` · ${l.minutes} min` : ''}`;
+    if (l.status === 'done') return t('Feita:v1', { v1: l.minutes ? t(' · :minutes min', { minutes: l.minutes }) : '' });
+    if (l.position) return (l.position.of ? t('Em curso · :at de :of', { at: l.position.at, of: l.position.of }) : t('Em curso · :at', { at: l.position.at }));
+    return `${isNext ? t('A seguir') : t('Por fazer')}${l.minutes ? t(' · :minutes min', { minutes: l.minutes }) : ''}`;
 }
 
 export const deadlineText = (d) => (d.late
-    ? `Prazo terminou a ${d.date}`
-    : d.days === 0 ? 'Prazo termina hoje'
-    : d.days <= 14 ? `Faltam ${d.days} ${d.days === 1 ? 'dia' : 'dias'} · até ${d.date}`
-    : `Concluir até ${d.date}`);
+    ? t('Prazo terminou a :date', { date: d.date })
+    : d.days === 0 ? t('Prazo termina hoje')
+    : d.days <= 14 ? (d.days === 1 ? t('Falta 1 dia · até :date', { date: d.date }) : t('Faltam :days dias · até :date', { days: d.days, date: d.date }))
+    : t('Concluir até :date', { date: d.date }));
 
 export default function EnrolledCourse({ course, access, progress, program, next, certificate, alexUrl, savedLayout }) {
     const deadline = access?.deadline;
@@ -32,20 +34,20 @@ export default function EnrolledCourse({ course, access, progress, program, next
 
     const panels = {
         modulos: {
-            title: 'Módulos', x: 0, y: 0, w: 5, h: 18, compact: true,
-            summary: `${program.length} módulos`,
+            title: t('Módulos'), x: 0, y: 0, w: 5, h: 18, compact: true,
+            summary: t(':length módulos', { length: program.length }),
             body: program.map((m, i) => {
                 const done = moduleDone(m);
                 return (
                     <button key={m.title} type="button" className={`pn-m-row ${i === selected ? 'pn-on' : ''}`} onClick={() => setSelected(i)}>
-                        <span><b>{moduleName(m.title, i)}</b><small>{done} / {m.lessons.length} aulas</small></span>
+                        <span><b>{moduleName(m.title, i)}</b><small>{t(':done / :total aulas', { done, total: m.lessons.length })}</small></span>
                         <span className="pn-st">{done === m.lessons.length && done > 0 ? <IconCheck /> : `${done} / ${m.lessons.length}`}</span>
                     </button>
                 );
             }),
         },
         modulo: {
-            title: 'Aulas do módulo', x: 5, y: 0, w: 14, h: 18, compact: true, float: 'dark',
+            title: t('Aulas do módulo'), x: 5, y: 0, w: 14, h: 18, compact: true, float: 'dark',
             body: (
                 <>
                     <div className="pn-band">
@@ -69,25 +71,25 @@ export default function EnrolledCourse({ course, access, progress, program, next
         alex: alexDef(alexUrl, 0, 18),
         ...(certificate.enabled ? {
             certificado: {
-                title: 'Certificado', x: 0, y: 18, w: 8, h: 8, compact: true,
-                summary: certificate.certificate ? certificate.certificate.number : `${certificate.progress}% das aulas`,
+                title: t('Certificado'), x: 0, y: 18, w: 8, h: 8, compact: true,
+                summary: certificate.certificate ? certificate.certificate.number : t(':progress% das aulas', { progress: certificate.progress }),
                 body: (
                     <div className="pn-cert">
                         {certificate.certificate ? (
                             <>
                                 <h3 className="pn-disp">{certificate.certificate.number}</h3>
-                                <p style={{ marginTop: 6 }}>Emitido a {certificate.certificate.issued_at}. Em breve vais poder descarregar o certificado em PDF.</p>
+                                <p style={{ marginTop: 6 }}>{t('Emitido a :date. Em breve vais poder descarregar o certificado em PDF.', { date: certificate.certificate.issued_at })}</p>
                             </>
                         ) : (
                             <>
-                                <h3 className="pn-disp">Para obter o certificado</h3>
+                                <h3 className="pn-disp">{t('Para obter o certificado')}</h3>
                                 <ul>
-                                    <li>{certificate.progress_ok ? <IconCheck /> : <span aria-hidden="true">○</span>}<span>Concluir {certificate.min_progress}% das aulas ({certificate.progress}%)</span></li>
+                                    <li>{certificate.progress_ok ? <IconCheck /> : <span aria-hidden="true">○</span>}<span>{t('Concluir')}{' '}{certificate.min_progress}{t('% das aulas (')}{certificate.progress}%)</span></li>
                                     {certificate.score !== null && (
-                                        <li>{certificate.score_ok ? <IconCheck /> : <span aria-hidden="true">○</span>}<span>Nota média de {certificate.min_score}% nos testes ({certificate.score}%)</span></li>
+                                        <li>{certificate.score_ok ? <IconCheck /> : <span aria-hidden="true">○</span>}<span>{t('Nota média de')}{' '}{certificate.min_score}{t('% nos testes (')}{certificate.score}%)</span></li>
                                     )}
                                     {certificate.attendance !== null && (
-                                        <li>{certificate.attendance_ok ? <IconCheck /> : <span aria-hidden="true">○</span>}<span>Presença confirmada pelo formador{certificate.attendance_ok ? '' : ' (por confirmar)'}</span></li>
+                                        <li>{certificate.attendance_ok ? <IconCheck /> : <span aria-hidden="true">○</span>}<span>{t('Presença confirmada pelo formador')}{certificate.attendance_ok ? '' : t(' (por confirmar)')}</span></li>
                                     )}
                                 </ul>
                             </>
@@ -97,18 +99,18 @@ export default function EnrolledCourse({ course, access, progress, program, next
             },
         } : {}),
         sobre: {
-            title: 'Sobre o curso', x: certificate.enabled ? 8 : 0, y: 18, w: certificate.enabled ? 16 : 24, h: 8, compact: true,
-            summary: deadline ? deadlineText(deadline) : course.instructor ? `Formador: ${course.instructor}` : undefined,
+            title: t('Sobre o curso'), x: certificate.enabled ? 8 : 0, y: 18, w: certificate.enabled ? 16 : 24, h: 8, compact: true,
+            summary: deadline ? deadlineText(deadline) : course.instructor ? t('Formador: :instructor', { instructor: course.instructor }) : undefined,
             body: (
                 <div className="pn-prose">
-                    {course.instructor && <p><b>Formador:</b> {course.instructor}</p>}
-                    {deadline && <p><b>Prazo:</b> {deadline.late ? `terminou a ${deadline.date}` : `concluir até ${deadline.date}`}{deadline.by === 'empresa' ? ', definido pela tua empresa' : ''}.</p>}
-                    {course.attendance && <p><b>Presença:</b> este curso exige presença, confirmada pelo formador.</p>}
+                    {course.instructor && <p><b>{t('Formador:')}</b> {course.instructor}</p>}
+                    {deadline && <p><b>{t('Prazo:')}</b> {deadline.late ? t('terminou a :date', { date: deadline.date }) : t('concluir até :date', { date: deadline.date })}{deadline.by === 'empresa' ? t(', definido pela tua empresa') : ''}.</p>}
+                    {course.attendance && <p><b>{t('Presença:')}</b>{' '}{t('este curso exige presença, confirmada pelo formador.')}</p>}
                     {course.description?.split(/\n{2,}/).map((p, i) => <p key={i}>{p}</p>)}
                     {course.learn.length > 0 && (
                         <>
-                            <h3 className="pn-disp" style={{ marginTop: 14 }}>O que vais aprender</h3>
-                            <ul>{course.learn.map((t) => <li key={t}>{t}</li>)}</ul>
+                            <h3 className="pn-disp" style={{ marginTop: 14 }}>{t('O que vais aprender')}</h3>
+                            <ul>{course.learn.map((tx) => <li key={tx}>{tx}</li>)}</ul>
                         </>
                     )}
                 </div>
@@ -116,12 +118,12 @@ export default function EnrolledCourse({ course, access, progress, program, next
         },
     };
     const board = usePanelBoard({ view: 'curso', panels, saved: savedLayout });
-    const nextLabel = next?.finished ? 'Rever o curso' : next?.started ? 'Continuar' : 'Começar o curso';
+    const nextLabel = next?.finished ? t('Rever o curso') : next?.started ? t('Continuar') : t('Começar o curso');
 
     return (
         <StudentLayout navTools={<PanelsMenu board={board} />}>
             <Head title={course.title} />
-            <Crumb label={<Link href="/plataforma/meus-cursos">Os meus cursos · {course.title}</Link>}>
+            <Crumb label={<Link href="/plataforma/meus-cursos">{t('Os meus cursos ·')}{' '}{course.title}</Link>}>
                 {next && <Link href={lessonUrl(next)} className="ui-btn ui-btn-sm">{nextLabel}<IconArrow /></Link>}
             </Crumb>
             <PanelBoard board={board} />

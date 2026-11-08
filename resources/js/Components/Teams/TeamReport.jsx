@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Chip, Kpi, Progress, Tabs, Td, Th } from './ui';
 
+import { t } from '@/i18n';
+
 export function exportTeamCsv(team, report, courseId) {
     const course = report.courses.find((c) => c.id === courseId)?.title ?? '';
-    const rows = [['Nome', 'Email', 'Team leader', 'Curso', 'Progresso %', 'Nota quizzes %', 'Última atividade', 'Prazo', 'Certificado']];
+    const rows = [[t('Nome'), t('Email'), t('Team leader'), t('Curso'), t('Progresso %'), t('Nota quizzes %'), t('Última atividade'), t('Prazo'), t('Certificado')]];
     report.members.forEach((m) => {
         const s = m.courses[courseId] ?? {};
-        rows.push([m.name, m.email, m.leader ? 'sim' : '', course, s.progress ?? 0, s.score ?? '', m.invited ? 'nunca entrou' : s.last ?? '', s.due ? `${s.due}${s.late ? ' (fora do prazo)' : ''}` : '', s.certificate ? 'sim' : '']);
+        rows.push([m.name, m.email, m.leader ? 'sim' : '', course, s.progress ?? 0, s.score ?? '', m.invited ? t('nunca entrou') : s.last ?? '', s.due ? `${s.due}${s.late ? t(' (fora do prazo)') : ''}` : '', s.certificate ? 'sim' : '']);
     });
     const csv = '﻿' + rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
     const a = document.createElement('a');
@@ -31,26 +33,26 @@ export default function TeamReport({ team, report, note }) {
     return (
         <>
             <div className="mb-5 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
-                <Kpi label="Lugares" value={`${members.length} / ${team.seats}`} bar={(members.length / team.seats) * 100}
-                    hint={`${team.packs} pack${team.packs > 1 ? 's' : ''} de 10 · ${Math.max(0, team.seats - members.length)} livres`} />
-                <Kpi label="Progresso médio" value={`${avg}%`} hint="neste curso" />
-                <Kpi label="Certificados" value={certs} hint={`de ${members.length} alunos`} />
-                <Kpi label="Precisam de atenção" value={attention} alert={attention > 0} hint="parados ou sem entrar" />
+                <Kpi label={t('Lugares')} value={`${members.length} / ${team.seats}`} bar={(members.length / team.seats) * 100}
+                    hint={t(':packs pack:v2 de 10 · :v3 livres', { packs: team.packs, v2: team.packs > 1 ? 's' : '', v3: Math.max(0, team.seats - members.length) })} />
+                <Kpi label={t('Progresso médio')} value={`${avg}%`} hint={t('neste curso')} />
+                <Kpi label={t('Certificados')} value={certs} hint={t('de :length alunos', { length: members.length })} />
+                <Kpi label={t('Precisam de atenção')} value={attention} alert={attention > 0} hint={t('parados ou sem entrar')} />
             </div>
 
             <div className="bg-surface p-4 sm:p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     {report.courses.length > 0
-                        ? <Tabs label="Cursos da equipa" items={report.courses.map((c) => [c.id, c.title])} value={courseId} onChange={setCourseId} />
-                        : <p className="mb-4 text-muted">A equipa ainda não tem cursos.</p>}
+                        ? <Tabs label={t('Cursos da equipa')} items={report.courses.map((c) => [c.id, c.title])} value={courseId} onChange={setCourseId} />
+                        : <p className="mb-4 text-muted">{t('A equipa ainda não tem cursos.')}</p>}
                     <button type="button" onClick={exportCsv} className="px-2 py-2 font-display text-[13px] font-semibold text-accent-ink hover:text-ink">
-                        ⭳ Exportar (Excel)
+                        {t('⭳ Exportar (Excel)')}
                     </button>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-[15px]">
                         <thead>
-                            <tr><Th>Aluno</Th><Th>Progresso</Th><Th>Nota quizzes</Th><Th className="hidden md:table-cell">Última atividade</Th><Th>Certificado</Th></tr>
+                            <tr><Th>{t('Aluno')}</Th><Th>{t('Progresso')}</Th><Th>{t('Nota quizzes')}</Th><Th className="hidden md:table-cell">{t('Última atividade')}</Th><Th>{t('Certificado')}</Th></tr>
                         </thead>
                         <tbody>
                             {members.map((m) => {
@@ -60,18 +62,18 @@ export default function TeamReport({ team, report, note }) {
                                         <Td>
                                             <b className="block font-semibold">
                                                 {m.name}
-                                                {m.leader && <span className="ml-1.5 align-[1px]"><Chip tone="dark">Team leader</Chip></span>}
+                                                {m.leader && <span className="ml-1.5 align-[1px]"><Chip tone="dark">{t('Team leader')}</Chip></span>}
                                             </b>
                                             <small className="text-[12.5px] text-muted">{m.email}</small>
                                         </Td>
                                         <Td><Progress value={s.progress ?? 0} /></Td>
                                         <Td>{s.score == null ? <span className="text-muted">—</span> : <b className="font-display">{s.score}%</b>}</Td>
                                         <Td className="hidden md:table-cell">
-                                            {m.invited ? <Chip tone="bad">Convite por aceitar</Chip>
-                                                : s.stalled ? <Chip tone="warn">Parado · {s.last}</Chip>
-                                                : s.last ?? <span className="text-muted">Ainda não começou</span>}
+                                            {m.invited ? <Chip tone="bad">{t('Convite por aceitar')}</Chip>
+                                                : s.stalled ? <Chip tone="warn">{t('Parado ·')}{' '}{s.last}</Chip>
+                                                : s.last ?? <span className="text-muted">{t('Ainda não começou')}</span>}
                                         </Td>
-                                        <Td>{s.certificate ? <Chip tone="ok">Emitido</Chip> : <span className="text-muted">—</span>}</Td>
+                                        <Td>{s.certificate ? <Chip tone="ok">{t('Emitido')}</Chip> : <span className="text-muted">—</span>}</Td>
                                     </tr>
                                 );
                             })}

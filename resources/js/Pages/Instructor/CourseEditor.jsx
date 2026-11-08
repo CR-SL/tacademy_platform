@@ -8,6 +8,8 @@ import StepReview from '@/Components/CourseBuilder/StepReview';
 import { blankCourse, checklist } from '@/Components/CourseBuilder/model';
 import { useConfirm } from '@/Components/ui';
 
+import { t } from '@/i18n';
+
 const STEPS = [
     ['Informação', 'Título, área, capa'],
     ['Programa', 'Módulos e aulas'],
@@ -79,8 +81,8 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
                 dirty.current = true;
                 setSave('error');
                 setSaveError(e.response?.status === 422
-                    ? Object.values(e.response.data.errors ?? {})[0]?.[0] ?? 'Há um campo inválido.'
-                    : 'Sem ligação ao servidor. Vamos tentar de novo.');
+                    ? Object.values(e.response.data.errors ?? {})[0]?.[0] ?? t('Há um campo inválido.')
+                    : t('Sem ligação ao servidor. Vamos tentar de novo.'));
                 return false;
             } finally {
                 inFlight.current = null;
@@ -100,8 +102,8 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
     // Nova tentativa automática se a gravação falhar por falta de ligação
     useEffect(() => {
         if (save !== 'error') return;
-        const t = setTimeout(flush, 5000);
-        return () => clearTimeout(t);
+        const tx = setTimeout(flush, 5000);
+        return () => clearTimeout(tx);
     }, [save, flush]);
 
     // Avisar antes de sair com alterações por gravar
@@ -127,8 +129,8 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
             return res.data;
         } catch (e) {
             throw new Error(e.response?.status === 422
-                ? Object.values(e.response.data.errors ?? {})[0]?.[0] ?? 'Ficheiro inválido.'
-                : e.response?.status === 413 ? 'O ficheiro é demasiado grande.' : 'Não foi possível carregar o ficheiro.');
+                ? Object.values(e.response.data.errors ?? {})[0]?.[0] ?? t('Ficheiro inválido.')
+                : e.response?.status === 413 ? t('O ficheiro é demasiado grande.') : t('Não foi possível carregar o ficheiro.'));
         }
     }, []);
 
@@ -141,16 +143,16 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
         setPublishError('');
         setPublishing(true);
         const ok = await flush();
-        if (!ok || !ulid.current) { setPublishing(false); setPublishError('Não foi possível guardar antes de publicar.'); return; }
+        if (!ok || !ulid.current) { setPublishing(false); setPublishError(t('Não foi possível guardar antes de publicar.')); return; }
         router.post(`/formador/cursos/${ulid.current}/publicar`, {}, {
-            onError: (errors) => setPublishError(errors.publish ?? 'Não foi possível publicar.'),
+            onError: (errors) => setPublishError(errors.publish ?? t('Não foi possível publicar.')),
             onFinish: () => setPublishing(false),
         });
     };
 
     const [confirm, confirmDialog] = useConfirm();
     const unpublish = async () => {
-        if (!(await confirm({ title: 'Passar o curso a rascunho?', body: 'Sai do catálogo até voltar a publicar.', action: 'Passar a rascunho' }))) return;
+        if (!(await confirm({ title: t('Passar o curso a rascunho?'), body: t('Sai do catálogo até voltar a publicar.'), action: t('Passar a rascunho') }))) return;
         await flush();
         router.post(`/formador/cursos/${ulid.current}/rascunho`, {}, {
             preserveScroll: true,
@@ -160,23 +162,23 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
 
     const doneStep = (i) => checklist(c, shortMax).filter((x) => x[1] === i).every((x) => x[2]);
     const saveLabel = {
-        new: 'Começa a preencher. Fica guardado sozinho.',
-        pending: 'Alterações por guardar…',
-        saving: 'A guardar…',
-        saved: c.status === 'published' ? 'Guardado · publicado' : 'Rascunho guardado',
+        new: t('Começa a preencher. Fica guardado sozinho.'),
+        pending: t('Alterações por guardar…'),
+        saving: t('A guardar…'),
+        saved: c.status === 'published' ? t('Guardado · publicado') : t('Rascunho guardado'),
         error: saveError,
     }[save];
 
     return (
         <StudentLayout>
-            <Head title={c.title ? `Editar · ${c.title}` : 'Criar curso'} />
+            <Head title={c.title ? t('Editar · :title', { title: c.title }) : t('Criar curso')} />
 
             <div className="grid items-start gap-7 lg:grid-cols-[260px_1fr]">
                 <aside className="flex gap-1 overflow-x-auto bg-surface p-3 lg:sticky lg:top-[90px] lg:flex-col lg:p-[18px]">
                     <Link href="/formador/cursos" className="mb-3 hidden items-center gap-1.5 font-display text-[13px] font-semibold text-muted hover:text-ink lg:inline-flex">
-                        ← Os meus cursos
+                        {t('← Os meus cursos')}
                     </Link>
-                    {STEPS.map(([title, sub], i) => {
+                    {STEPS.map(([pt, ps], i) => { const [title, sub] = [t(pt), t(ps)];
                         const done = i !== step && i < 3 && doneStep(i);
                         return (
                             <button
@@ -227,12 +229,12 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
                     <div className="mt-4 flex flex-wrap justify-between gap-3">
                         {step > 0 ? (
                             <button type="button" onClick={() => goTo(step - 1)} className="ui-btn ui-btn-soft">
-                                ← Anterior
+                                {t('← Anterior')}
                             </button>
                         ) : <span />}
                         {step < 3 && (
                             <button type="button" onClick={() => goTo(step + 1)} className="ui-btn">
-                                Seguinte →
+                                {t('Seguinte →')}
                             </button>
                         )}
                     </div>

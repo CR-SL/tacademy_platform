@@ -4,8 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasUlid;
 use Database\Factories\UserFactory;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements HasLocalePreference
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasUlid, Notifiable, SoftDeletes;
@@ -68,11 +67,6 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Enrollment::class);
     }
 
-    public function coursesTaught(): HasMany
-    {
-        return $this->hasMany(Course::class, 'instructor_id');
-    }
-
     // Papéis / autorização
 
     public function hasRole(string $name): bool
@@ -80,25 +74,31 @@ class User extends Authenticatable implements FilamentUser
         return $this->role?->name === $name;
     }
 
+    /** Língua dos emails e notificações enviados a esta pessoa (a da plataforma, ou o português). */
+    public function preferredLocale(): string
+    {
+        return $this->locale ?: config('app.locale', 'pt');
+    }
+
     public function isAdmin(): bool
     {
         return $this->hasRole('admin');
     }
 
-    /** Gestor de cursos ou admin: gere pedidos e equipas. */
+    /** Pode fazer isto? (Administração › Permissões; o admin pode sempre) */
+    public function canDo(string $permission): bool
+    {
+        return $this->isAdmin() || in_array($permission, $this->role?->permissionKeys() ?? [], true);
+    }
+
+    /** Quem trata pedidos (sino dos pedidos, pré-visualizar cursos). */
     public function isCourseStaff(): bool
     {
-        return in_array($this->role?->name, ['gestor_cursos', 'admin'], true);
+        return $this->canDo('pedidos');
     }
 
     public function isTeamLeader(): bool
     {
         return $this->hasRole('team_leader') && $this->company_id !== null;
-    }
-
-    public function canAccessPanel(Panel $panel): bool
-    {
-        // Só admin e formador entram no backoffice Filament.
-        return in_array($this->role?->name, ['admin', 'formador'], true);
     }
 }

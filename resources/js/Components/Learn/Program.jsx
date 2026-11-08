@@ -1,5 +1,7 @@
 import { Link } from '@inertiajs/react';
 
+import { t } from '@/i18n';
+
 export const TYPE_LABEL = {
     video_link: 'Vídeo', video_upload: 'Vídeo', avatar: 'Aula com avatar IA', document: 'Documento', text: 'Texto', quiz: 'Teste', live: 'Ao vivo',
 };
@@ -25,20 +27,20 @@ export default function Program({ slug, program }) {
                                 </span>
                                 <span className="min-w-0 flex-1">
                                     <span className="block truncate">{l.title}</span>
-                                    <small className="text-xs text-muted">{TYPE_LABEL[l.type] ?? l.type}{l.sample ? ' · amostra grátis' : ''}</small>
+                                    <small className="text-xs text-muted">{t(TYPE_LABEL[l.type] ?? l.type)}{l.sample ? t(' · amostra grátis') : ''}</small>
                                 </span>
                                 {l.minutes > 0 && <span className="font-mono text-[11px] text-muted">{l.minutes} min</span>}
                             </>
                         );
                         const cls = `flex items-center gap-2.5 px-2 py-2 text-sm ${l.current ? 'bg-accent/15' : ''}`;
                         return locked ? (
-                            <div key={l.ulid} className={`${cls} cursor-not-allowed text-muted`} title="Inscreve-te no curso para abrir esta aula" aria-disabled="true">
-                                <span className="sr-only">Só para inscritos: </span>{row}
+                            <div key={l.ulid} className={`${cls} cursor-not-allowed text-muted`} title={t('Inscreve-te no curso para abrir esta aula')} aria-disabled="true">
+                                <span className="sr-only">{t('Só para inscritos:')}{' '}</span>{row}
                             </div>
                         ) : (
                             <Link key={l.ulid} href={`/plataforma/cursos/${slug}/aulas/${l.ulid}`} preserveScroll={false}
                                 className={`${cls} hover:bg-page`} aria-current={l.current ? 'page' : undefined}>
-                                {l.status === 'done' && <span className="sr-only">Concluída: </span>}
+                                {l.status === 'done' && <span className="sr-only">{t('Concluída:')}{' '}</span>}
                                 {row}
                             </Link>
                         );

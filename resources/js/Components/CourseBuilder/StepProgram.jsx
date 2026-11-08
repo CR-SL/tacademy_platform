@@ -5,6 +5,8 @@ import { AddLink, Field, IconButton, inputCls, Panel } from './ui';
 import { formatBytes, formatMinutes, isHttpUrl, isUploadedVideo, linkInfo } from './format';
 import { lessonComplete, newKey, totalMinutes } from './model';
 
+import { t } from '@/i18n';
+
 export const LESSON_TYPES = {
     video_link: { label: 'Vídeo', short: '▶', hint: 'ficheiro ou link', cls: 'bg-ink text-on-ink' },
     avatar: { label: 'Avatar IA', short: 'IA', hint: 'link', cls: 'bg-accent text-on-accent' },
@@ -14,7 +16,7 @@ export const LESSON_TYPES = {
 };
 // Tipos antigos (criados no backoffice) que o editor mostra mas não oferece
 const LEGACY = { video_upload: { label: 'Vídeo (upload)', short: '▶', cls: 'bg-ink text-on-ink' }, live: { label: 'Ao vivo', short: '●', cls: 'bg-surface2' } };
-const typeOf = (t) => LESSON_TYPES[t] ?? LEGACY[t] ?? LESSON_TYPES.video_link;
+const typeOf = (tx) => LESSON_TYPES[tx] ?? LEGACY[tx] ?? LESSON_TYPES.video_link;
 
 export const blankLesson = () => ({ key: newKey(), id: null, title: '', type: 'video_link', url: '', minutes: '', body: '', attachments: [], quiz: [], checks: [] });
 const blankQuestion = () => ({ question: '', options: ['', ''], correct: 0 });
@@ -26,11 +28,11 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey }) 
     const [confirm, confirmDialog] = useConfirm();
 
     return (
-        <Panel title="Programa" sub="Organiza o curso em módulos e aulas. Usa as setas para mudar a ordem.">
+        <Panel title={t('Programa')} sub={t('Organiza o curso em módulos e aulas. Usa as setas para mudar a ordem.')}>
             <div className="mb-4 flex flex-wrap gap-5 font-mono text-xs uppercase tracking-[0.06em] text-muted">
-                <span><b className="mr-1 font-display text-base text-ink">{c.modules.length}</b>Módulos</span>
-                <span><b className="mr-1 font-display text-base text-ink">{lessons}</b>Aulas</span>
-                <span><b className="mr-1 font-display text-base text-ink">{formatMinutes(totalMinutes(c))}</b>Duração total</span>
+                <span><b className="mr-1 font-display text-base text-ink">{c.modules.length}</b>{t('Módulos')}</span>
+                <span><b className="mr-1 font-display text-base text-ink">{lessons}</b>{t('Aulas')}</span>
+                <span><b className="mr-1 font-display text-base text-ink">{formatMinutes(totalMinutes(c))}</b>{t('Duração total')}</span>
             </div>
 
             {c.modules.map((m, mi) => (
@@ -41,21 +43,21 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey }) 
                             className="min-w-0 flex-1 border-b border-transparent bg-transparent py-1 font-display text-[17px] font-semibold focus:border-accent focus:outline-none"
                             value={m.title}
                             maxLength={200}
-                            placeholder="Título do módulo"
-                            aria-label={`Título do módulo ${mi + 1}`}
+                            placeholder={t('Título do módulo')}
+                            aria-label={t('Título do módulo :v1', { v1: mi + 1 })}
                             onChange={(e) => update((d) => { d.modules[mi].title = e.target.value; })}
                         />
                         <div className="flex gap-1.5">
-                            <IconButton label="Subir módulo" disabled={mi === 0} onClick={() => update((d) => move(d.modules, mi, -1))}>↑</IconButton>
-                            <IconButton label="Descer módulo" disabled={mi === c.modules.length - 1} onClick={() => update((d) => move(d.modules, mi, 1))}>↓</IconButton>
+                            <IconButton label={t('Subir módulo')} disabled={mi === 0} onClick={() => update((d) => move(d.modules, mi, -1))}>↑</IconButton>
+                            <IconButton label={t('Descer módulo')} disabled={mi === c.modules.length - 1} onClick={() => update((d) => move(d.modules, mi, 1))}>↓</IconButton>
                             <IconButton
-                                label="Apagar módulo"
+                                label={t('Apagar módulo')}
                                 danger
                                 onClick={async () => {
                                     if (m.lessons.length && !(await confirm({
-                                        title: `Apagar o módulo “${m.title || 'sem título'}”?`,
-                                        body: m.lessons.length === 1 ? 'A aula deste módulo também é apagada.' : `As ${m.lessons.length} aulas deste módulo também são apagadas.`,
-                                        action: 'Apagar o módulo',
+                                        title: t('Apagar o módulo “:v1”?', { v1: m.title || t('sem título') }),
+                                        body: m.lessons.length === 1 ? t('A aula deste módulo também é apagada.') : t('As :length aulas deste módulo também são apagadas.', { length: m.lessons.length }),
+                                        action: t('Apagar o módulo'),
                                         danger: true,
                                     }))) return;
                                     update((d) => {
@@ -71,8 +73,8 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey }) 
                             className="w-full border-b border-dashed border-line bg-transparent py-1 text-sm text-muted focus:border-accent focus:text-ink focus:outline-none"
                             value={m.description}
                             maxLength={1000}
-                            placeholder="Descrição do módulo (opcional)"
-                            aria-label={`Descrição do módulo ${mi + 1}`}
+                            placeholder={t('Descrição do módulo (opcional)')}
+                            aria-label={t('Descrição do módulo :v1', { v1: mi + 1 })}
                             onChange={(e) => update((d) => { d.modules[mi].description = e.target.value; })}
                         />
                     </div>
@@ -88,7 +90,7 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey }) 
                                 set={(fn) => update((d) => fn(d.modules[mi].lessons[li]))}
                                 onMove={(dir) => update((d) => move(d.modules[mi].lessons, li, dir))}
                                 onDelete={async () => {
-                                    if (!(await confirm({ title: `Apagar a aula “${l.title || 'sem título'}”?`, action: 'Apagar a aula', danger: true }))) return;
+                                    if (!(await confirm({ title: t('Apagar a aula “:v1”?', { v1: l.title || t('sem título') }), action: t('Apagar a aula'), danger: true }))) return;
                                     update((d) => {
                                         d.modules[mi].lessons.splice(li, 1);
                                         if (d.sample_lesson_key === l.key) d.sample_lesson_key = '';
@@ -106,7 +108,7 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey }) 
                                 setOpenKey(l.key);
                             }}
                         >
-                            + Aula
+                            {t('+ Aula')}
                         </button>
                     </div>
                 </div>
@@ -118,7 +120,7 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey }) 
                     className="ui-btn ui-btn-line"
                     onClick={() => update((d) => { d.modules.push({ key: newKey(), id: null, title: '', description: '', lessons: [] }); })}
                 >
-                    + Adicionar módulo
+                    {t('+ Adicionar módulo')}
                 </button>
             )}
             {confirmDialog}
@@ -127,28 +129,28 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey }) 
 }
 
 function LessonRow({ l, index, count, open, onToggle, set, onMove, onDelete, upload }) {
-    const t = typeOf(l.type);
+    const tx = typeOf(l.type);
     const ok = lessonComplete(l);
-    const extra = l.type !== 'document' && l.attachments.length ? ` · ${l.attachments.length} anexo${l.attachments.length > 1 ? 's' : ''}` : '';
+    const extra = l.type !== 'document' && l.attachments.length ? t(' · :length anexo:v2', { length: l.attachments.length, v2: l.attachments.length > 1 ? 's' : '' }) : '';
 
     return (
         <div className="border border-line bg-surface">
             <div className="grid grid-cols-[34px_1fr_auto] items-center gap-2.5 px-3 py-2.5 sm:grid-cols-[34px_1fr_auto_auto]">
-                <button type="button" onClick={onToggle} aria-expanded={open} aria-label={`${open ? 'Fechar' : 'Abrir'} aula ${index + 1}`}
-                    className={`rounded-full flex h-[34px] w-[34px] items-center justify-center font-mono text-[11px] font-bold ${t.cls}`}>
-                    {t.short}
+                <button type="button" onClick={onToggle} aria-expanded={open} aria-label={open ? t('Fechar a aula :n', { n: index + 1 }) : t('Abrir a aula :n', { n: index + 1 })}
+                    className={`rounded-full flex h-[34px] w-[34px] items-center justify-center font-mono text-[11px] font-bold ${tx.cls}`}>
+                    {tx.short}
                 </button>
                 <button type="button" onClick={onToggle} className="min-w-0 text-left">
-                    <span className={`block truncate ${l.title ? 'font-medium' : 'italic text-muted'}`}>{l.title || 'Aula sem título'}</span>
-                    <small className="block text-xs text-muted">{t.label}{l.minutes ? ` · ${l.minutes} min` : ''}{extra}</small>
+                    <span className={`block truncate ${l.title ? 'font-medium' : 'italic text-muted'}`}>{l.title || t('Aula sem título')}</span>
+                    <small className="block text-xs text-muted">{t(tx.label)}{l.minutes ? t(' · :minutes min', { minutes: l.minutes }) : ''}{extra}</small>
                 </button>
                 <span className={`hidden font-mono text-[11px] font-semibold uppercase tracking-[0.04em] sm:inline ${ok ? 'text-success-ink' : 'text-live-ink'}`}>
-                    {ok ? <><span aria-hidden="true">✓ </span>Completa</> : 'Incompleta'}
+                    {ok ? <><span aria-hidden="true">✓ </span>{t('Completa')}</> : t('Incompleta')}
                 </span>
                 <span className="flex gap-1">
-                    <IconButton label="Subir aula" className="hidden sm:inline-flex" disabled={index === 0} onClick={() => onMove(-1)}>↑</IconButton>
-                    <IconButton label="Descer aula" className="hidden sm:inline-flex" disabled={index === count - 1} onClick={() => onMove(1)}>↓</IconButton>
-                    <IconButton label="Apagar aula" danger onClick={onDelete}>✕</IconButton>
+                    <IconButton label={t('Subir aula')} className="hidden sm:inline-flex" disabled={index === 0} onClick={() => onMove(-1)}>↑</IconButton>
+                    <IconButton label={t('Descer aula')} className="hidden sm:inline-flex" disabled={index === count - 1} onClick={() => onMove(1)}>↓</IconButton>
+                    <IconButton label={t('Apagar aula')} danger onClick={onDelete}>✕</IconButton>
                 </span>
             </div>
             {open && <LessonEditor l={l} set={set} upload={upload} />}
@@ -162,8 +164,8 @@ function LessonEditor({ l, set, upload }) {
 
     return (
         <div className="border-t border-line px-3.5 pb-4 sm:pl-[66px]">
-            <div className="my-3 flex flex-wrap gap-1.5" role="group" aria-label="Tipo de aula">
-                {Object.entries(LESSON_TYPES).map(([k, t]) => (
+            <div className="my-3 flex flex-wrap gap-1.5" role="group" aria-label={t('Tipo de aula')}>
+                {Object.entries(LESSON_TYPES).map(([k, tx]) => (
                     <button
                         key={k}
                         type="button"
@@ -176,18 +178,18 @@ function LessonEditor({ l, set, upload }) {
                             l.type === k ? 'border-ink bg-ink text-on-ink' : 'border-line bg-surface hover:border-muted'
                         }`}
                     >
-                        {t.label}
-                        {t.hint && <em className="font-mono text-[10px] not-italic opacity-70">{t.hint}</em>}
+                        {t(tx.label)}
+                        {tx.hint && <em className="font-mono text-[10px] not-italic opacity-70">{t(tx.hint)}</em>}
                     </button>
                 ))}
             </div>
 
             <div className="grid gap-x-4 sm:grid-cols-[1fr_150px]">
-                <Field label="Título da aula" htmlFor={`${id}-t`} required>
-                    <input id={`${id}-t`} className={inputCls} value={l.title} maxLength={200} placeholder="Ex.: Introdução ao sistema"
+                <Field label={t('Título da aula')} htmlFor={`${id}-t`} required>
+                    <input id={`${id}-t`} className={inputCls} value={l.title} maxLength={200} placeholder={t('Ex.: Introdução ao sistema')}
                         onChange={(e) => set((x) => { x.title = e.target.value; })} />
                 </Field>
-                <Field label="Duração (min)" htmlFor={`${id}-m`}>
+                <Field label={t('Duração (min)')} htmlFor={`${id}-m`}>
                     <input id={`${id}-m`} type="number" min="0" max="600" className={inputCls} value={l.minutes} placeholder="10"
                         onChange={(e) => set((x) => { x.minutes = e.target.value === '' ? '' : Math.max(0, Math.min(600, parseInt(e.target.value, 10) || 0)); })} />
                 </Field>
@@ -195,12 +197,12 @@ function LessonEditor({ l, set, upload }) {
 
             {(l.type === 'video_link' || l.type === 'video_upload' || l.type === 'avatar') && (
                 <Field
-                    label={l.type === 'avatar' ? 'Link do avatar de IA' : 'Link do vídeo'}
+                    label={l.type === 'avatar' ? t('Link do avatar de IA') : t('Link do vídeo')}
                     htmlFor={`${id}-u`}
                     required
                     help={l.type === 'avatar'
-                        ? 'O avatar abre dentro da aula. Mais tarde a ligação pode passar a ser feita por API.'
-                        : 'Carrega o vídeo (MP4) ou cola um link do YouTube (não listado), Vimeo ou outro.'}
+                        ? t('O avatar abre dentro da aula. Mais tarde a ligação pode passar a ser feita por API.')
+                        : t('Carrega o vídeo (MP4) ou cola um link do YouTube (não listado), Vimeo ou outro.')}
                 >
                     {l.type !== 'avatar' && <VideoUpload l={l} set={set} />}
                     {!isUploadedVideo(l.url) && (
@@ -212,15 +214,15 @@ function LessonEditor({ l, set, upload }) {
                         <div className="mt-1 flex flex-wrap items-center gap-3 bg-page p-2.5">
                             {info.thumb && <img src={info.thumb} alt="" className="aspect-video w-[120px] object-cover" />}
                             <span className="bg-ink px-2 py-0.5 font-mono text-[11px] font-semibold text-on-ink">{info.tag}</span>
-                            <span className="font-mono text-[11px] font-semibold uppercase text-success-ink"><span aria-hidden="true">✓ </span>Link válido</span>
+                            <span className="font-mono text-[11px] font-semibold uppercase text-success-ink"><span aria-hidden="true">✓ </span>{t('Link válido')}</span>
                             {isHttpUrl(l.url) && (
                                 <a href={l.url.trim()} target="_blank" rel="noopener noreferrer" className="ml-auto font-display text-[13px] font-semibold text-accent-ink hover:text-ink">
-                                    Abrir ↗
+                                    {t('Abrir ↗')}
                                 </a>
                             )}
                         </div>
                     ) : l.url ? (
-                        <span className="text-[13px] text-live-ink">O link tem de começar por https://</span>
+                        <span className="text-[13px] text-live-ink">{t('O link tem de começar por https://')}</span>
                     ) : null}
                 </Field>
             )}
@@ -228,8 +230,8 @@ function LessonEditor({ l, set, upload }) {
             {(l.type === 'video_link' || l.type === 'video_upload') && <ChecksEditor l={l} set={set} />}
 
             {l.type === 'text' && (
-                <Field label="Conteúdo" htmlFor={`${id}-b`} required>
-                    <textarea id={`${id}-b`} rows={7} className={inputCls} value={l.body} placeholder="Escreve aqui a aula…"
+                <Field label={t('Conteúdo')} htmlFor={`${id}-b`} required>
+                    <textarea id={`${id}-b`} rows={7} className={inputCls} value={l.body} placeholder={t('Escreve aqui a aula…')}
                         onChange={(e) => set((x) => { x.body = e.target.value; })} />
                 </Field>
             )}
@@ -254,41 +256,41 @@ function ChecksEditor({ l, set }) {
     return (
         <div className="mb-5 flex flex-col gap-1.5">
             <span className="font-display text-[13px] font-semibold uppercase tracking-[0.04em]">
-                Perguntas rápidas
+                {t('Perguntas rápidas')}
                 <span className="ml-1 font-sans text-xs font-normal normal-case tracking-normal text-muted">
-                    (2 a 3, no fim do vídeo; o aluno responde se quiser e não conta para a nota)
+                    {t('(2 a 3, no fim do vídeo; o aluno responde se quiser e não conta para a nota)')}
                 </span>
             </span>
             {checks.map((q, qi) => (
                 <div key={qi} className="bg-page p-3.5">
                     <div className="flex gap-2">
-                        <input className={inputCls} value={q.question} maxLength={500} placeholder={`Pergunta ${qi + 1}`} aria-label={`Pergunta rápida ${qi + 1}`}
+                        <input className={inputCls} value={q.question} maxLength={500} placeholder={t('Pergunta :v1', { v1: qi + 1 })} aria-label={t('Pergunta rápida :v1', { v1: qi + 1 })}
                             onChange={(e) => set((x) => { x.checks[qi].question = e.target.value; })} />
-                        <IconButton label="Remover pergunta" danger onClick={() => set((x) => { x.checks.splice(qi, 1); })}>✕</IconButton>
+                        <IconButton label={t('Remover pergunta')} danger onClick={() => set((x) => { x.checks.splice(qi, 1); })}>✕</IconButton>
                     </div>
                     {q.options.map((o, oi) => (
                         <div key={oi} className="mt-1.5 flex items-center gap-2">
-                            <input className={inputCls} value={o} maxLength={300} placeholder={`Opção ${oi + 1}`} aria-label={`Pergunta rápida ${qi + 1}, opção ${oi + 1}`}
+                            <input className={inputCls} value={o} maxLength={300} placeholder={t('Opção :v1', { v1: oi + 1 })} aria-label={t('Pergunta rápida :v1, opção :v2', { v1: qi + 1, v2: oi + 1 })}
                                 onChange={(e) => set((x) => { x.checks[qi].options[oi] = e.target.value; })} />
                             <label className="flex items-center gap-1 whitespace-nowrap text-xs text-muted">
                                 <input type="radio" name={`chk-${l.key}-${qi}`} checked={q.correct === oi} className="text-accent focus:ring-accent"
                                     onChange={() => set((x) => { x.checks[qi].correct = oi; })} />
-                                certa
+                                {t('certa')}
                             </label>
                         </div>
                     ))}
-                    {q.options.length < 4 && <AddLink onClick={() => set((x) => { x.checks[qi].options.push(''); })}>+ Opção</AddLink>}
-                    <input className={`${inputCls} mt-1.5`} value={q.explanation ?? ''} maxLength={500} placeholder="Explicação mostrada depois de responder (opcional)"
-                        aria-label={`Explicação da pergunta rápida ${qi + 1}`} onChange={(e) => set((x) => { x.checks[qi].explanation = e.target.value; })} />
+                    {q.options.length < 4 && <AddLink onClick={() => set((x) => { x.checks[qi].options.push(''); })}>{t('+ Opção')}</AddLink>}
+                    <input className={`${inputCls} mt-1.5`} value={q.explanation ?? ''} maxLength={500} placeholder={t('Explicação mostrada depois de responder (opcional)')}
+                        aria-label={t('Explicação da pergunta rápida :v1', { v1: qi + 1 })} onChange={(e) => set((x) => { x.checks[qi].explanation = e.target.value; })} />
                 </div>
             ))}
             <div className="flex flex-wrap items-center gap-4">
                 {checks.length < 5 && (
-                    <AddLink onClick={() => set((x) => { x.checks = [...(x.checks ?? []), blankCheck()]; })}>+ Adicionar pergunta rápida</AddLink>
+                    <AddLink onClick={() => set((x) => { x.checks = [...(x.checks ?? []), blankCheck()]; })}>{t('+ Adicionar pergunta rápida')}</AddLink>
                 )}
-                <button type="button" disabled title="Em breve: a IA gera as perguntas a partir do vídeo"
+                <button type="button" disabled title={t('Em breve: a IA gera as perguntas a partir do vídeo')}
                     className="cursor-not-allowed py-1.5 font-display text-[13.5px] font-semibold text-muted">
-                    ✦ Gerar com IA <span className="font-sans text-xs font-normal">(em breve)</span>
+                    {t('✦ Gerar com IA')}{' '}<span className="font-sans text-xs font-normal">{t('(em breve)')}</span>
                 </button>
             </div>
         </div>
@@ -297,25 +299,25 @@ function ChecksEditor({ l, set }) {
 
 function QuizEditor({ l, set }) {
     return (
-        <Field label="Perguntas" required help="Marca a resposta certa em cada pergunta. Mínimo 2 opções.">
+        <Field label={t('Perguntas')} required help={t('Marca a resposta certa em cada pergunta. Mínimo 2 opções.')}>
             {l.quiz.map((q, qi) => (
                 <div key={qi} className="mb-2 bg-page p-3.5">
                     <div className="flex gap-2">
-                        <input className={inputCls} value={q.question} maxLength={500} placeholder={`Pergunta ${qi + 1}`} aria-label={`Pergunta ${qi + 1}`}
+                        <input className={inputCls} value={q.question} maxLength={500} placeholder={t('Pergunta :v1', { v1: qi + 1 })} aria-label={t('Pergunta :v1', { v1: qi + 1 })}
                             onChange={(e) => set((x) => { x.quiz[qi].question = e.target.value; })} />
-                        <IconButton label="Remover pergunta" danger onClick={() => set((x) => { x.quiz.splice(qi, 1); })}>✕</IconButton>
+                        <IconButton label={t('Remover pergunta')} danger onClick={() => set((x) => { x.quiz.splice(qi, 1); })}>✕</IconButton>
                     </div>
                     {q.options.map((o, oi) => (
                         <div key={oi} className="mt-1.5 flex items-center gap-2">
-                            <input className={inputCls} value={o} maxLength={300} placeholder={`Opção ${oi + 1}`} aria-label={`Pergunta ${qi + 1}, opção ${oi + 1}`}
+                            <input className={inputCls} value={o} maxLength={300} placeholder={t('Opção :v1', { v1: oi + 1 })} aria-label={t('Pergunta :v1, opção :v2', { v1: qi + 1, v2: oi + 1 })}
                                 onChange={(e) => set((x) => { x.quiz[qi].options[oi] = e.target.value; })} />
                             <label className="flex items-center gap-1 whitespace-nowrap text-xs text-muted">
                                 <input type="radio" name={`c-${l.key}-${qi}`} checked={q.correct === oi} className="text-accent focus:ring-accent"
                                     onChange={() => set((x) => { x.quiz[qi].correct = oi; })} />
-                                certa
+                                {t('certa')}
                             </label>
                             {q.options.length > 2 && (
-                                <IconButton label="Remover opção" danger onClick={() => set((x) => {
+                                <IconButton label={t('Remover opção')} danger onClick={() => set((x) => {
                                     const qq = x.quiz[qi];
                                     qq.options.splice(oi, 1);
                                     if (qq.correct >= qq.options.length || qq.correct === oi) qq.correct = 0;
@@ -324,10 +326,10 @@ function QuizEditor({ l, set }) {
                             )}
                         </div>
                     ))}
-                    {q.options.length < 8 && <AddLink onClick={() => set((x) => { x.quiz[qi].options.push(''); })}>+ Opção</AddLink>}
+                    {q.options.length < 8 && <AddLink onClick={() => set((x) => { x.quiz[qi].options.push(''); })}>{t('+ Opção')}</AddLink>}
                 </div>
             ))}
-            <AddLink onClick={() => set((x) => { x.quiz.push(blankQuestion()); })}>+ Adicionar pergunta</AddLink>
+            <AddLink onClick={() => set((x) => { x.quiz.push(blankQuestion()); })}>{t('+ Adicionar pergunta')}</AddLink>
         </Field>
     );
 }
@@ -357,8 +359,8 @@ function VideoUpload({ l, set }) {
     const send = async (file) => {
         if (!file) return;
         setErr('');
-        if (!/\.(mp4|webm)$/i.test(file.name)) { setErr('O vídeo tem de ser MP4 ou WebM. Se for .mov, exporta-o em MP4 (H.264).'); return; }
-        if (file.size > videoMaxMb * 1024 * 1024) { setErr(`O vídeo não pode ter mais de ${videoMaxMb} MB.`); return; }
+        if (!/\.(mp4|webm)$/i.test(file.name)) { setErr(t('O vídeo tem de ser MP4 ou WebM. Se for .mov, exporta-o em MP4 (H.264).')); return; }
+        if (file.size > videoMaxMb * 1024 * 1024) { setErr(t('O vídeo não pode ter mais de :videoMaxMb MB.', { videoMaxMb })); return; }
         const minutes = await videoMinutes(file);
         const id = crypto.randomUUID();
         const total = Math.ceil(file.size / VIDEO_CHUNK);
@@ -385,7 +387,7 @@ function VideoUpload({ l, set }) {
             });
         } catch (e) {
             const d = e.response?.data;
-            setErr(d?.message && e.response.status !== 500 ? (Object.values(d.errors ?? {})[0]?.[0] ?? d.message) : 'Não foi possível carregar o vídeo. Tenta outra vez.');
+            setErr(d?.message && e.response.status !== 500 ? (Object.values(d.errors ?? {})[0]?.[0] ?? d.message) : t('Não foi possível carregar o vídeo. Tenta outra vez.'));
         } finally {
             setProgress(null);
         }
@@ -395,12 +397,12 @@ function VideoUpload({ l, set }) {
         return (
             <div className="flex flex-col gap-2 bg-page p-3">
                 <div className="flex items-center gap-3 text-sm">
-                    <span className="min-w-0 flex-1 truncate">A carregar <b>{name}</b>…</span>
+                    <span className="min-w-0 flex-1 truncate">{t('A carregar')}{' '}<b>{name}</b>…</span>
                     <span className="font-mono text-xs font-semibold">{Math.round(progress * 100)}%</span>
-                    <button type="button" onClick={() => { cancel.current = true; }} className="font-display text-[13px] font-semibold text-muted hover:text-live-ink">Cancelar</button>
+                    <button type="button" onClick={() => { cancel.current = true; }} className="font-display text-[13px] font-semibold text-muted hover:text-live-ink">{t('Cancelar')}</button>
                 </div>
                 <div className="h-1.5 bg-track"><div className="h-full bg-accent transition-[width]" style={{ width: `${progress * 100}%` }} /></div>
-                <p className="text-xs text-muted">Não feches esta página até terminar.</p>
+                <p className="text-xs text-muted">{t('Não feches esta página até terminar.')}</p>
             </div>
         );
     }
@@ -410,20 +412,20 @@ function VideoUpload({ l, set }) {
             {uploaded ? (
                 <div className="flex flex-wrap items-center gap-3 bg-page p-2.5">
                     <video src={l.url} preload="metadata" muted className="aspect-video w-[120px] bg-black object-cover" />
-                    <span className="bg-ink px-2 py-0.5 font-mono text-[11px] font-semibold uppercase text-on-ink">Vídeo carregado</span>
-                    <span className="font-mono text-[11px] font-semibold uppercase text-success-ink"><span aria-hidden="true">✓ </span>Leitor T.Academy</span>
+                    <span className="bg-ink px-2 py-0.5 font-mono text-[11px] font-semibold uppercase text-on-ink">{t('Vídeo carregado')}</span>
+                    <span className="font-mono text-[11px] font-semibold uppercase text-success-ink"><span aria-hidden="true">✓ </span>{t('Leitor T.Academy')}</span>
                     <span className="ml-auto flex gap-3">
                         <label className="cursor-pointer font-display text-[13px] font-semibold text-accent-ink hover:text-ink">
-                            Trocar vídeo
+                            {t('Trocar vídeo')}
                             <input type="file" accept="video/mp4,video/webm,.mp4,.webm" className="sr-only" onChange={(e) => { send(e.target.files[0]); e.target.value = ''; }} />
                         </label>
-                        <button type="button" onClick={() => set((x) => { x.url = ''; })} className="font-display text-[13px] font-semibold text-muted hover:text-live-ink">Remover</button>
+                        <button type="button" onClick={() => set((x) => { x.url = ''; })} className="font-display text-[13px] font-semibold text-muted hover:text-live-ink">{t('Remover')}</button>
                     </span>
                 </div>
             ) : (
                 <label className="flex cursor-pointer flex-wrap items-center gap-3 border border-dashed border-line bg-page px-3 py-2.5 text-sm hover:border-muted">
-                    <span className="rounded-full bg-ink px-3 py-1.5 font-display text-xs font-bold uppercase tracking-[0.04em] text-on-ink">Carregar vídeo</span>
-                    <span className="text-muted">MP4 ou WebM, até {videoMaxMb >= 1024 ? `${(videoMaxMb / 1024).toString().replace('.', ',')} GB` : `${videoMaxMb} MB`} · ou cola um link abaixo</span>
+                    <span className="rounded-full bg-ink px-3 py-1.5 font-display text-xs font-bold uppercase tracking-[0.04em] text-on-ink">{t('Carregar vídeo')}</span>
+                    <span className="text-muted">{t('MP4 ou WebM, até')}{' '}{videoMaxMb >= 1024 ? `${(videoMaxMb / 1024).toString().replace('.', ',')} GB` : `${videoMaxMb} MB`}{' '}{t('· ou cola um link abaixo')}</span>
                     <input type="file" accept="video/mp4,video/webm,.mp4,.webm" className="sr-only" onChange={(e) => { send(e.target.files[0]); e.target.value = ''; }} />
                 </label>
             )}
@@ -453,15 +455,15 @@ function Attachments({ l, set, upload, main }) {
     return (
         <div className="flex flex-col gap-1.5">
             <span className="font-display text-[13px] font-semibold uppercase tracking-[0.04em]">
-                {main ? <>Documento<span className="text-accent-ink"> *</span></> : 'Materiais de apoio'}
-                {!main && <span className="ml-1 font-sans text-xs font-normal normal-case tracking-normal text-muted">(opcional: fichas técnicas, esquemas)</span>}
+                {main ? <>{t('Documento')}<span className="text-accent-ink"> *</span></> : t('Materiais de apoio')}
+                {!main && <span className="ml-1 font-sans text-xs font-normal normal-case tracking-normal text-muted">{t('(opcional: fichas técnicas, esquemas)')}</span>}
             </span>
             {l.attachments.map((a, i) => (
                 <div key={a.path} className="flex items-center gap-2.5 bg-page px-2.5 py-2 text-[13.5px]">
                     <span className="bg-ink px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase text-on-ink">{a.name.split('.').pop()}</span>
                     <a href={a.url} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate hover:underline">{a.name}</a>
                     <small className="text-muted">{formatBytes(a.size)}</small>
-                    <IconButton label="Remover ficheiro" danger className="ml-auto" onClick={() => set((x) => { x.attachments.splice(i, 1); })}>✕</IconButton>
+                    <IconButton label={t('Remover ficheiro')} danger className="ml-auto" onClick={() => set((x) => { x.attachments.splice(i, 1); })}>✕</IconButton>
                 </div>
             ))}
             {l.attachments.length < 20 && (
@@ -470,7 +472,7 @@ function Attachments({ l, set, upload, main }) {
                     : 'cursor-pointer self-start py-1 font-display text-[13.5px] font-semibold text-accent-ink hover:text-ink'}>
                     <input type="file" className="sr-only" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"
                         onChange={(e) => { send(e.target.files[0]); e.target.value = ''; }} />
-                    {busy ? 'A carregar…' : main ? <><b className="text-ink">Carregar ficheiro</b> · PDF, imagens, Office · até 20 MB</> : '+ Anexar ficheiro'}
+                    {busy ? t('A carregar…') : main ? <><b className="text-ink">{t('Carregar ficheiro')}</b>{' '}{t('· PDF, imagens, Office · até 20 MB')}</> : t('+ Anexar ficheiro')}
                 </label>
             )}
             {err && <p className="text-[13px] text-live-ink">{err}</p>}

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { IconX } from '@/Components/Learn/LessonIcons';
 import { useConfirm } from '@/Components/ui';
 
+import { t } from '@/i18n';
+
 const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 const byTime = (a, b) => (a.position ?? -1) - (b.position ?? -1) || a.id - b.id;
 
@@ -25,18 +27,18 @@ export default function LessonNotes({ lessonUlid, title, initial, canSave, hasVi
             setNotes((n) => [...n, data].sort(byTime));
             setDraft('');
         } catch {
-            setError('Não foi possível guardar a nota. Tenta outra vez.');
+            setError(t('Não foi possível guardar a nota. Tenta outra vez.'));
         }
         setBusy(false);
     };
 
     const remove = async (note) => {
-        if (!(await confirm({ title: 'Apagar esta nota?', action: 'Apagar a nota', danger: true }))) return;
+        if (!(await confirm({ title: t('Apagar esta nota?'), action: t('Apagar a nota'), danger: true }))) return;
         try {
             await window.axios.delete(`${url}/${note.id}`);
             setNotes((n) => n.filter((x) => x.id !== note.id));
         } catch {
-            setError('Não foi possível apagar a nota. Tenta outra vez.');
+            setError(t('Não foi possível apagar a nota. Tenta outra vez.'));
         }
     };
 
@@ -47,19 +49,19 @@ export default function LessonNotes({ lessonUlid, title, initial, canSave, hasVi
                 {notes.length ? notes.map((n) => (
                     <div className="al-note" key={n.id}>
                         {n.position != null && (
-                            <button type="button" className="at" onClick={() => onSeek(n.position)} aria-label={`Ir para ${fmt(n.position)} do vídeo`}>{fmt(n.position)}</button>
+                            <button type="button" className="at" onClick={() => onSeek(n.position)} aria-label={t('Ir para :v1 do vídeo', { v1: fmt(n.position) })}>{fmt(n.position)}</button>
                         )}
                         <span className="tx">{n.body}</span>
-                        <button type="button" className="rm" onClick={() => remove(n)} aria-label="Apagar nota"><IconX /></button>
+                        <button type="button" className="rm" onClick={() => remove(n)} aria-label={t('Apagar nota')}><IconX /></button>
                     </div>
                 )) : (
-                    <p className="al-note-empty">{canSave ? 'Ainda não há notas nesta aula.' : 'As notas ficam disponíveis depois de te inscreveres no curso.'}</p>
+                    <p className="al-note-empty">{canSave ? t('Ainda não há notas nesta aula.') : t('As notas ficam disponíveis depois de te inscreveres no curso.')}</p>
                 )}
                 {error && <p className="al-note-empty" role="alert">{error}</p>}
             </div>
             <form className="al-n-form" onSubmit={add}>
-                <input value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={2000} placeholder="Escrever nota" aria-label="Escrever nota" autoComplete="off" disabled={!canSave} />
-                <button type="submit" className="al-pill" disabled={!canSave || busy || !draft.trim()}>Guardar</button>
+                <input value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={2000} placeholder={t('Escrever nota')} aria-label={t('Escrever nota')} autoComplete="off" disabled={!canSave} />
+                <button type="submit" className="al-pill" disabled={!canSave || busy || !draft.trim()}>{t('Guardar')}</button>
             </form>
             {confirmDialog}
         </>

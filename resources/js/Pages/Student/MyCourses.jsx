@@ -5,6 +5,8 @@ import { levelLabels } from '@/Components/CourseBuilder/format';
 import PanelBoard, { alexDef, Crumb, EmptyPanel, PanelsMenu } from '@/Components/Panels/PanelBoard';
 import usePanelBoard from '@/Components/Panels/usePanelBoard';
 
+import { t } from '@/i18n';
+
 const STATE_LABEL = { curso: 'Em curso', novo: 'Por começar', feito: 'Concluídos' };
 
 function Group({ title, courses }) {
@@ -22,11 +24,11 @@ function Group({ title, courses }) {
                             <h3 className="pn-disp">{c.title}</h3>
                             <span className="pn-card-f">
                                 <span>
-                                    {c.expired ? `Acesso terminou a ${c.expires}`
-                                        : c.completed ? `Concluído a ${c.completed}`
-                                        : c.deadline ? (c.deadline.late ? `Prazo terminou a ${c.deadline.date}` : `Concluir até ${c.deadline.date}`)
-                                        : c.expires ? `Acesso até ${c.expires}`
-                                        : `${c.done} de ${c.total} aulas`}
+                                    {c.expired ? t('Acesso terminou a :expires', { expires: c.expires })
+                                        : c.completed ? t('Concluído a :completed', { completed: c.completed })
+                                        : c.deadline ? (c.deadline.late ? t('Prazo terminou a :date', { date: c.deadline.date }) : t('Concluir até :date', { date: c.deadline.date }))
+                                        : c.expires ? t('Acesso até :expires', { expires: c.expires })
+                                        : t(':done de :total aulas', { done: c.done, total: c.total })}
                                 </span>
                                 <span className="pn-price">{c.pct}%</span>
                             </span>
@@ -46,18 +48,18 @@ function CoursesList({ courses }) {
     return (
         <div className="pn-page-c">
             <div className="pn-page-t">
-                <h3 className="pn-disp">Os meus cursos</h3>
-                <div className="ui-pills" role="group" aria-label="Filtrar cursos">
-                    <button type="button" aria-pressed={filter === 'todos'} onClick={() => setFilter('todos')}>Todos · {courses.length}</button>
+                <h3 className="pn-disp">{t('Os meus cursos')}</h3>
+                <div className="ui-pills" role="group" aria-label={t('Filtrar cursos')}>
+                    <button type="button" aria-pressed={filter === 'todos'} onClick={() => setFilter('todos')}>{t('Todos ·')}{' '}{courses.length}</button>
                     {states.map((s) => (
                         <button key={s} type="button" aria-pressed={filter === s} onClick={() => setFilter(s)}>
-                            {STATE_LABEL[s]} · {courses.filter((c) => c.state === s).length}
+                            {t(STATE_LABEL[s])} · {courses.filter((c) => c.state === s).length}
                         </button>
                     ))}
                 </div>
             </div>
-            <Group title="Atribuídos pela empresa" courses={list.filter((c) => c.company)} />
-            <Group title="Os meus" courses={list.filter((c) => !c.company)} />
+            <Group title={t('Atribuídos pela empresa')} courses={list.filter((c) => c.company)} />
+            <Group title={t('Os meus')} courses={list.filter((c) => !c.company)} />
         </div>
     );
 }
@@ -65,11 +67,11 @@ function CoursesList({ courses }) {
 export default function MyCourses({ courses, alexUrl, savedLayout }) {
     const panels = {
         lista: {
-            title: 'Os meus cursos', x: 0, y: 0, w: 19, h: 22, compact: true, float: 'light',
-            summary: `${courses.length} ${courses.length === 1 ? 'curso' : 'cursos'}`,
+            title: t('Os meus cursos'), x: 0, y: 0, w: 19, h: 22, compact: true, float: 'light',
+            summary: `${courses.length} ${courses.length === 1 ? t('curso') : t('cursos')}`,
             body: courses.length
                 ? <CoursesList courses={courses} />
-                : <EmptyPanel title="Ainda não tens cursos" text="Quando te inscreveres num curso, aparece aqui." href="/plataforma/cursos" cta="Ver o catálogo" />,
+                : <EmptyPanel title={t('Ainda não tens cursos')} text={t('Quando te inscreveres num curso, aparece aqui.')} href="/plataforma/cursos" cta={t('Ver o catálogo')} />,
         },
         alex: alexDef(alexUrl, 0, 22),
     };
@@ -77,8 +79,8 @@ export default function MyCourses({ courses, alexUrl, savedLayout }) {
 
     return (
         <StudentLayout navTools={<PanelsMenu board={board} />}>
-            <Head title="Os meus cursos" />
-            <Crumb label="Os meus cursos" />
+            <Head title={t('Os meus cursos')} />
+            <Crumb label={t('Os meus cursos')} />
             <PanelBoard board={board} />
         </StudentLayout>
     );

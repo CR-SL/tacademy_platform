@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { t } from '@/i18n';
+
 // "Arrumar a oficina": minijogo de peças que caem, para uma pausa entre aulas.
 // Cada peça é uma caixa de material; uma prateleira cheia fica arrumada e sai.
 // O teclado só responde com o jogo em foco, e o jogo pára quando se sai dele.
@@ -194,7 +196,7 @@ export default function WorkshopGame({ onBest }) {
             g.piece = null;
             setStatus('over');
             const total = g.score;
-            setAnnounce(`As prateleiras encheram. ${total} pontos.`);
+            setAnnounce(t('As prateleiras encheram. :total pontos.', { total }));
             if (total > readBest()) {
                 saveBest(total);
                 setBest(total);
@@ -216,7 +218,7 @@ export default function WorkshopGame({ onBest }) {
             const level = Math.floor(g.lines / 10) + 1;
             if (level !== g.level) {
                 g.level = level;
-                setAnnounce(`Nível ${level}.`);
+                setAnnounce(t('Nível :level.', { level }));
             }
             setStats({ score: g.score, lines: g.lines, level: g.level });
         }
@@ -234,8 +236,8 @@ export default function WorkshopGame({ onBest }) {
     // Relógio da queda
     useEffect(() => {
         if (status !== 'playing') return undefined;
-        const t = setInterval(step, speed(stats.level));
-        return () => clearInterval(t);
+        const tx = setInterval(step, speed(stats.level));
+        return () => clearInterval(tx);
     }, [status, stats.level, step]);
 
     const start = () => {
@@ -243,7 +245,7 @@ export default function WorkshopGame({ onBest }) {
         setStats({ score: 0, lines: 0, level: 1 });
         spawn();
         setStatus('playing');
-        setAnnounce('Jogo começado.');
+        setAnnounce(t('Jogo começado.'));
         boardRef.current?.focus();
     };
     const pause = useCallback(() => setStatus((s) => (s === 'playing' ? 'paused' : s)), []);
@@ -318,9 +320,9 @@ export default function WorkshopGame({ onBest }) {
     }, [pause]);
 
     const overlay = {
-        idle: { title: 'Pausa na oficina', text: 'Arruma as caixas nas prateleiras. Cada prateleira cheia fica arrumada e sai.', cta: 'Começar', onClick: start },
-        paused: { title: 'Em pausa', text: 'O jogo espera por ti.', cta: 'Continuar', onClick: resume },
-        over: { title: 'As prateleiras encheram', text: `Arrumaste ${stats.lines} ${stats.lines === 1 ? 'prateleira' : 'prateleiras'} e fizeste ${stats.score} pontos.${stats.score > 0 && stats.score >= best ? ' É o teu recorde!' : ''}`, cta: 'Jogar outra vez', onClick: start },
+        idle: { title: t('Pausa na oficina'), text: t('Arruma as caixas nas prateleiras. Cada prateleira cheia fica arrumada e sai.'), cta: t('Começar'), onClick: start },
+        paused: { title: t('Em pausa'), text: t('O jogo espera por ti.'), cta: t('Continuar'), onClick: resume },
+        over: { title: t('As prateleiras encheram'), text: t('Arrumaste :lines :v2 e fizeste :score pontos.:v4', { lines: stats.lines, v2: stats.lines === 1 ? t('prateleira') : t('prateleiras'), score: stats.score, v4: stats.score > 0 && stats.score >= best ? t(' É o teu recorde!') : '' }), cta: t('Jogar outra vez'), onClick: start },
     }[status];
 
     return (
@@ -330,7 +332,7 @@ export default function WorkshopGame({ onBest }) {
                 ref={boardRef}
                 tabIndex={0}
                 role="application"
-                aria-label="Arrumar a oficina. Setas para mover, seta para cima roda, seta para baixo desce, espaço larga, P pausa."
+                aria-label={t('Arrumar a oficina. Setas para mover, seta para cima roda, seta para baixo desce, espaço larga, P pausa.')}
                 onClick={() => boardRef.current?.focus()}
             >
                 <div className="pn-game-well" style={{ width: COLS * cell, height: ROWS * cell }}>
@@ -346,24 +348,24 @@ export default function WorkshopGame({ onBest }) {
             </div>
             <div className="pn-game-side">
                 <dl className="pn-game-nums">
-                    <div><dt className="pn-lab">Pontos</dt><dd className="pn-disp">{stats.score}</dd></div>
-                    <div><dt className="pn-lab">Prateleiras</dt><dd className="pn-disp">{stats.lines}</dd></div>
-                    <div><dt className="pn-lab">Nível</dt><dd className="pn-disp">{stats.level}</dd></div>
-                    <div><dt className="pn-lab">Recorde</dt><dd className="pn-disp">{best}</dd></div>
+                    <div><dt className="pn-lab">{t('Pontos')}</dt><dd className="pn-disp">{stats.score}</dd></div>
+                    <div><dt className="pn-lab">{t('Prateleiras')}</dt><dd className="pn-disp">{stats.lines}</dd></div>
+                    <div><dt className="pn-lab">{t('Nível')}</dt><dd className="pn-disp">{stats.level}</dd></div>
+                    <div><dt className="pn-lab">{t('Recorde')}</dt><dd className="pn-disp">{best}</dd></div>
                 </dl>
                 <div className="pn-game-stat">
-                    <span className="pn-lab">A seguir{nextName ? ` · ${nextName}` : ''}</span>
+                    <span className="pn-lab">{t('A seguir')}{nextName ? ` · ${t(nextName)}` : ''}</span>
                     <canvas ref={nextRef} width={56} height={28} style={{ width: 56, height: 28 }} aria-hidden="true" />
                 </div>
-                <div className="pn-game-pad" role="group" aria-label="Comandos">
-                    <button type="button" aria-label="Mover para a esquerda" onClick={() => act('left')}>◀</button>
-                    <button type="button" aria-label="Rodar" onClick={() => act('rotate')}>⟳</button>
-                    <button type="button" aria-label="Mover para a direita" onClick={() => act('right')}>▶</button>
-                    <button type="button" aria-label="Descer" onClick={() => act('down')}>▼</button>
-                    <button type="button" aria-label="Largar" className="pn-game-wide" onClick={() => act('drop')}>Largar</button>
+                <div className="pn-game-pad" role="group" aria-label={t('Comandos')}>
+                    <button type="button" aria-label={t('Mover para a esquerda')} onClick={() => act('left')}>◀</button>
+                    <button type="button" aria-label={t('Rodar')} onClick={() => act('rotate')}>⟳</button>
+                    <button type="button" aria-label={t('Mover para a direita')} onClick={() => act('right')}>▶</button>
+                    <button type="button" aria-label={t('Descer')} onClick={() => act('down')}>▼</button>
+                    <button type="button" aria-label={t('Largar')} className="pn-game-wide" onClick={() => act('drop')}>{t('Largar')}</button>
                 </div>
-                {status === 'playing' && <button type="button" className="ui-link pn-game-pause" onClick={pause}>Pausa</button>}
-                <p className="pn-game-help">Setas · ↑ roda · espaço larga · P pausa</p>
+                {status === 'playing' && <button type="button" className="ui-link pn-game-pause" onClick={pause}>{t('Pausa')}</button>}
+                <p className="pn-game-help">{t('Setas · ↑ roda · espaço larga · P pausa')}</p>
             </div>
             <span className="pn-sr" aria-live="polite">{announce}</span>
         </div>

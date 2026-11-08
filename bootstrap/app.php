@@ -12,11 +12,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
+            \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        $middleware->alias(['role' => \App\Http\Middleware\EnsureRole::class]);
+        // A língua escolhida antes de entrar fica num cookie simples (não precisa de ser cifrado)
+        $middleware->encryptCookies(except: ['lang']);
 
         // Railway (e outros PaaS) termina o HTTPS num proxy à frente da app.
         $middleware->trustProxies(at: '*');

@@ -44,8 +44,8 @@ class Tasks
                 'kind' => 'Mensagem',
                 'title' => $t['name'],
                 'course' => $t['context'],
-                'text' => ($t['unread'] === 1 ? '1 mensagem por ler' : "{$t['unread']} mensagens por ler").', '.$t['when'].'.',
-                'cta' => 'Ler a mensagem',
+                'text' => trans_choice('{1} 1 mensagem por ler, :when.|[2,*] :count mensagens por ler, :when.', $t['unread'], ['when' => $t['when']]),
+                'cta' => __('Ler a mensagem'),
                 'url' => '/dashboard?conversa='.$t['key'],
             ];
         }
@@ -58,9 +58,9 @@ class Tasks
             $tasks[] = [
                 'kind' => 'Curso atribuído',
                 'title' => $c['title'],
-                'course' => 'pela tua empresa',
-                'text' => "Atribuído a {$c['assigned']}. Ainda não começaste.",
-                'cta' => 'Começar o curso',
+                'course' => __('pela tua empresa'),
+                'text' => __('Atribuído a :date. Ainda não começaste.', ['date' => $c['assigned']]),
+                'cta' => __('Começar o curso'),
                 'url' => $c['url'],
             ];
         }
@@ -69,27 +69,27 @@ class Tasks
         if ($user->hasRole('team_leader') && $user->company) {
             $people = $this->attention($user->company);
             if ($people) {
-                $names = collect($people)->take(3)->implode(', ').(count($people) > 3 ? ' e mais '.(count($people) - 3) : '');
+                $names = collect($people)->take(3)->implode(', ').(count($people) > 3 ? ' '.__('e mais :n', ['n' => count($people) - 3]) : '');
                 $tasks[] = [
                     'kind' => 'Equipa',
-                    'title' => count($people) === 1 ? '1 pessoa precisa de atenção' : count($people).' pessoas precisam de atenção',
+                    'title' => trans_choice('{1} 1 pessoa precisa de atenção|[2,*] :count pessoas precisam de atenção', count($people)),
                     'course' => $user->company->name,
-                    'text' => "{$names}: fora do prazo, parado há mais de ".self::STALLED_DAYS.' dias ou ainda sem entrar.',
-                    'cta' => 'Ver a equipa',
+                    'text' => __(':names: fora do prazo, parado há mais de :days dias ou ainda sem entrar.', ['names' => $names, 'days' => self::STALLED_DAYS]),
+                    'cta' => __('Ver a equipa'),
                     'url' => '/equipa',
                 ];
             }
         }
 
         // Formador: presenças por confirmar (alunos que já fizeram as aulas e só esperam a presença para o certificado)
-        if ($user->hasRole('formador') || $user->hasRole('admin')) {
+        if ($user->canDo('cursos.criar') || $user->canDo('cursos.todos')) {
             foreach ($this->attendanceWaiting($user) as $row) {
                 $tasks[] = [
                     'kind' => 'Presença',
                     'title' => $row['course']->title,
-                    'course' => $row['count'] === 1 ? '1 aluno' : "{$row['count']} alunos",
-                    'text' => ($row['count'] === 1 ? 'Um aluno já fez' : "{$row['count']} alunos já fizeram").' as aulas e esperam que confirmes a presença para receberem o certificado.',
-                    'cta' => 'Confirmar presença',
+                    'course' => trans_choice('{1} 1 aluno|[2,*] :count alunos', $row['count']),
+                    'text' => trans_choice('{1} Um aluno já fez as aulas e espera que confirmes a presença para receber o certificado.|[2,*] :count alunos já fizeram as aulas e esperam que confirmes a presença para receberem o certificado.', $row['count']),
+                    'cta' => __('Confirmar presença'),
                     'url' => '/formador/cursos?presenca='.$row['course']->ulid,
                 ];
             }
@@ -116,7 +116,7 @@ class Tasks
         if ($user->hasRole('team_leader') && $user->company) {
             $counts['team'] = count($this->attention($user->company));
         }
-        if ($user->hasRole('formador') || $user->hasRole('admin')) {
+        if ($user->canDo('cursos.criar') || $user->canDo('cursos.todos')) {
             $counts['builder'] = collect($this->attendanceWaiting($user))->sum('count');
         }
 

@@ -56,9 +56,9 @@ class RequestController extends Controller
                 ])->values(),
             ]),
             'open' => (int) $request->query('pedido') ?: null,
-            'statuses' => ContactRequest::STATUSES,
-            'kinds' => ContactRequest::KINDS,
-            'changeTypes' => ContactRequest::CHANGE_TYPES,
+            'statuses' => ContactRequest::labels(ContactRequest::STATUSES),
+            'kinds' => ContactRequest::labels(ContactRequest::KINDS),
+            'changeTypes' => ContactRequest::labels(ContactRequest::CHANGE_TYPES),
             'courses' => Course::where('status', 'published')->orderBy('title')->get(['id', 'title']),
         ]);
     }
@@ -74,14 +74,15 @@ class RequestController extends Controller
             'assigned_to' => $contactRequest->assigned_to ?? $me->id,
         ]);
 
-        $sent = PlatformMail::deliver($contactRequest->email, new PlatformMail(
-            subjectLine: "Re: o seu pedido #{$contactRequest->id} · T.Academy",
-            heading: 'Olá '.Str::before($contactRequest->name, ' ').',',
-            lines: ['A equipa de gestão de cursos da T.Academy respondeu ao seu pedido:'],
+        $recipient = User::where('email', $contactRequest->email)->first();
+        $sent = PlatformMail::inLocaleOf($recipient ?? 'pt', fn () => PlatformMail::deliver($contactRequest->email, new PlatformMail(
+            subjectLine: __('Re: o seu pedido #:id · T.Academy', ['id' => $contactRequest->id]),
+            heading: __('Olá :name,', ['name' => Str::before($contactRequest->name, ' ')]),
+            lines: [__('A equipa de gestão de cursos da T.Academy respondeu ao seu pedido:')],
             quote: $data['body'],
-        ));
+        )));
 
-        return back()->with('status', $sent ? "Resposta enviada por email para {$contactRequest->email}." : 'Resposta guardada, mas o email não foi enviado (ver configuração de email).');
+        return back()->with('status', $sent ? __('Resposta enviada por email para :email.', ['email' => $contactRequest->email]) : __('Resposta guardada, mas o email não foi enviado (ver configuração de email).'));
     }
 
     public function update(Request $request, ContactRequest $contactRequest): RedirectResponse
@@ -100,7 +101,7 @@ class RequestController extends Controller
     /** Pedido de compra (empresa) pago → cria a equipa e envia os convites. */
     public function createTeam(Request $request, ContactRequest $contactRequest): RedirectResponse
     {
-        abort_unless($contactRequest->kind === 'compra' && $contactRequest->status === 'pago' && ! $contactRequest->company_id, 422, 'Este pedido não está pronto para criar equipa.');
+        abort_unless($contactRequest->kind === 'compra' && $contactRequest->status === 'pago' && ! $contactRequest->company_id, 422, __('Este pedido não está pronto para criar equipa.'));
 
         $data = $request->validate([
             'company' => ['required', 'string', 'max:150'],
@@ -112,31 +113,31 @@ class RequestController extends Controller
             'people.*.name' => ['required', 'string', 'max:150'],
             'people.*.email' => ['required', 'email', 'max:150'],
             'leader' => ['required', 'email'],
-        ], ['people.*.name.required' => 'Falta o nome.', 'people.*.email.*' => 'Email inválido.']);
+        ], ['people.*.name.required' => __('Falta o nome.'), 'people.*.email.*' => __('Email inválido.')]);
 
         $company = $this->teams->createFromRequest($contactRequest, $data, $request->user());
 
-        return to_route('staff.teams.show', $company)->with('status', 'Equipa criada. Os convites foram enviados por email.');
+        return to_route('staff.teams.show', $company)->with('status', __('Equipa criada. Os convites foram enviados por email.'));
     }
 
     /** Compra a título pessoal (pagamento simulado, estado "Pago") → dá acesso ao curso. */
     public function authorizePurchase(Request $request, ContactRequest $contactRequest): RedirectResponse
     {
         abort_unless($contactRequest->kind === 'compra' && $contactRequest->type === 'particular' && $contactRequest->status === 'pago'
-            && $contactRequest->user_id && $contactRequest->course_id, 422, 'Este pedido não é uma compra pessoal paga.');
+            && $contactRequest->user_id && $contactRequest->course_id, 422, __('Este pedido não é uma compra pessoal paga.'));
 
         $student = User::findOrFail($contactRequest->user_id);
         $this->teams->enroll($student, $contactRequest->course_id, null);
         $contactRequest->update(['status' => 'concluido', 'assigned_to' => $contactRequest->assigned_to ?? $request->user()->id]);
 
-        PlatformMail::deliver($student->email, new PlatformMail(
-            subjectLine: 'Já tens acesso ao curso '.$contactRequest->course->title,
-            heading: 'Olá '.Str::before($student->name, ' ').', o teu curso está pronto',
-            lines: ["A tua compra do curso {$contactRequest->course->title} foi autorizada."],
-            actionText: 'Começar o curso',
+        PlatformMail::inLocaleOf($student, fn () => PlatformMail::deliver($student->email, new PlatformMail(
+            subjectLine: __('Já tens acesso ao curso :course', ['course' => $contactRequest->course->title]),
+            heading: __('Olá :name, o teu curso está pronto', ['name' => Str::before($student->name, ' ')]),
+            lines: [__('A tua compra do curso :course foi autorizada.', ['course' => $contactRequest->course->title])],
+            actionText: __('Começar o curso'),
             actionUrl: url('/plataforma/cursos'),
-        ));
+        )));
 
-        return back()->with('status', "Acesso autorizado. {$student->name} já tem o curso.");
+        return back()->with('status', __('Acesso autorizado. :name já tem o curso.', ['name' => $student->name]));
     }
 }

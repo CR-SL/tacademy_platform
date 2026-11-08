@@ -1,0 +1,106 @@
+/* Administração (DESIGN.md: caixas retas sobre a bancada, um só amarelo, cápsulas no que se carrega) */
+.ad-shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 0; min-height: calc(100vh - 64px); }
+.ad-side { position: sticky; top: 64px; align-self: start; height: calc(100vh - 64px); display: flex; flex-direction: column; gap: 2px; padding: 16px 12px; background: var(--color-surface); border-right: 1px solid var(--color-line); overflow-y: auto; }
+.ad-side .pn-lab { padding: 14px 10px 6px; }
+.ad-side a { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 10px; border-radius: 6px; font-size: 14px; font-weight: 500; color: var(--color-text); }
+.ad-side a svg { width: 18px; height: 18px; flex: none; color: var(--color-muted); }
+.ad-side a:hover { background: var(--color-surface2); color: var(--color-ink); }
+.ad-side a[aria-current="page"] { background: var(--color-surface2); color: var(--color-ink); font-weight: 600; box-shadow: inset 3px 0 0 var(--color-accent); }
+.ad-side a[aria-current="page"] svg { color: var(--color-ink); }
+.ad-main { min-width: 0; padding: 22px 24px 72px; }
+.ad-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+.ad-head h1 { font-size: clamp(26px, 2.6vw, 34px); font-weight: 800; letter-spacing: -.015em; line-height: 1.05; }
+.ad-head p { margin-top: 6px; color: var(--color-muted); }
+.ad-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.ad-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; margin-top: 12px; }
+.ad-row > * { min-width: 0; }
+.ad-box { background: var(--color-surface); }
+.ad-box-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 0 18px; border-bottom: 1px solid var(--color-line); }
+.ad-box-b { padding: 16px 18px 18px; }
+.ad-empty { padding: 18px 0; color: var(--color-muted); font-size: 13.5px; }
+.ad-note { margin-top: 10px; font-size: 12.5px; color: var(--color-muted); }
+
+/* Colunas no tempo */
+.ad-cols { display: flex; align-items: flex-end; gap: 4px; height: 170px; padding-top: 8px; }
+.ad-col { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; }
+.ad-col i { display: block; width: 100%; max-width: 40px; min-height: 2px; background: var(--color-accent); border-radius: 4px 4px 0 0; }
+.ad-col span { height: 14px; font-size: 11px; color: var(--color-muted); white-space: nowrap; }
+.ad-col:hover i { filter: brightness(.92); }
+
+/* Barras horizontais e conclusão */
+.ad-hbar { display: grid; grid-template-columns: minmax(150px, 1.2fr) 2fr 72px; align-items: center; gap: 12px; padding: 7px 0; }
+.ad-hbar-n { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13.5px; }
+.ad-hbar-t { height: 14px; }
+.ad-hbar-t i { display: block; height: 100%; min-width: 2px; background: var(--color-accent); border-radius: 0 4px 4px 0; }
+.ad-hbar-v { text-align: right; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ad-stack { display: flex; gap: 2px; height: 14px; }
+.ad-stack i { display: block; height: 100%; }
+.ad-stack i:last-child { border-radius: 0 4px 4px 0; }
+.ad-s1 { background: var(--color-accent); }
+.ad-s2 { background: var(--color-muted); }
+.ad-s3 { background: var(--color-pill); }
+.ad-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 10px; font-size: 12.5px; color: var(--color-text); }
+.ad-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.ad-legend i { width: 10px; height: 10px; border-radius: 2px; }
+.ad-tip { position: fixed; z-index: 80; pointer-events: none; max-width: 230px; padding: 7px 10px; background: var(--color-ink); color: var(--color-on-ink); font-size: 12.5px; border-radius: 6px; box-shadow: 0 10px 30px rgba(0, 0, 0, .2); }
+
+/* A precisar de atenção */
+.ad-att { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--color-line); }
+.ad-att:last-child { border-bottom: 0; }
+.ad-att i { flex: none; width: 8px; height: 8px; margin-top: 7px; border-radius: 99px; background: var(--color-accent); }
+.ad-att b { display: block; font-size: 14px; font-weight: 600; }
+.ad-att small { display: block; margin-top: 2px; font-size: 12.5px; color: var(--color-muted); }
+.ad-att a:hover b { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Tabelas */
+.ad-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ad-table th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--color-muted); border-bottom: 1px solid var(--color-line); white-space: nowrap; }
+.ad-table td { padding: 11px 12px; border-bottom: 1px solid var(--color-line); vertical-align: middle; }
+.ad-table tr:last-child td { border-bottom: 0; }
+.ad-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.ad-table tbody tr:hover { background: color-mix(in srgb, var(--color-surface2) 55%, transparent); }
+.ad-table img { width: 56px; height: 40px; object-fit: cover; }
+.ad-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ad-av { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 999px; background: var(--color-surface2); font-size: 11px; font-weight: 700; }
+.ad-who b { display: block; font-weight: 600; }
+.ad-who small { display: block; font-size: 12px; color: var(--color-muted); }
+.ad-dim { opacity: .55; }
+
+/* Permissões */
+.ad-matrix th:not(:first-child), .ad-matrix td:not(:first-child) { text-align: center; width: 110px; }
+.ad-tick { width: 28px; height: 28px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--color-surface2); color: transparent; transition: background .15s, color .15s; }
+.ad-tick[aria-pressed="true"] { background: var(--color-ink); color: var(--color-on-ink); }
+.ad-tick:disabled { cursor: not-allowed; opacity: .6; }
+.ad-tick svg { width: 14px; height: 14px; }
+.ad-roles { display: grid; gap: 6px; }
+.ad-roles label { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-line); cursor: pointer; }
+.ad-roles label:has(input:checked) { box-shadow: inset 0 0 0 2px var(--color-ink); }
+.ad-roles input { margin-top: 3px; accent-color: var(--color-accent); }
+.ad-roles b { display: block; font-size: 14px; }
+.ad-roles small { display: block; font-size: 12.5px; color: var(--color-muted); }
+
+/* Página de um curso */
+.ad-hero { display: grid; grid-template-columns: 180px minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 16px; background: var(--color-surface); }
+.ad-hero img { width: 180px; height: 112px; object-fit: cover; }
+.ad-hero h1 { margin: 6px 0; font-size: 26px; font-weight: 800; letter-spacing: -.015em; line-height: 1.1; }
+.ad-hero .acts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.ad-kpis5 { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 12px; }
+.ad-row2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+
+@media (max-width: 1100px) { .ad-kpis5 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1000px) {
+    .ad-shell { grid-template-columns: 1fr; }
+    .ad-side { position: static; height: auto; flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--color-line); padding: 8px 12px; }
+    .ad-side .pn-lab { display: none; }
+    .ad-side a { flex: none; }
+    .ad-kpis, .ad-kpis5 { grid-template-columns: 1fr 1fr; }
+    .ad-row, .ad-row2 { grid-template-columns: 1fr; }
+    .ad-main { padding: 16px 12px 72px; }
+    .ad-hero { grid-template-columns: 1fr; }
+    .ad-hero img { width: 100%; height: 150px; }
+    .ad-hero .acts { justify-content: flex-start; }
+    .ad-hbar { grid-template-columns: minmax(110px, 1fr) 1.4fr 56px; }
+}
+
+/* A Administração ocupa a largura toda (menu lateral colado à esquerda) */
+.pn-main:has(> .ad-shell) { padding: 0; }

@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
 import '../../css/courses.css';
 
+import { t } from '@/i18n';
+
 // Catálogo dentro da plataforma: o mesmo da landing (/cursos, courses.js), com separadores por área,
 // pesquisa e aba lateral com o detalhe, mas em React e com a navbar da plataforma.
 
@@ -10,6 +12,8 @@ const norm = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
 const euro = (v) => v.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 const dur = (m) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, '0') : ''}` : `${m} min`);
 const textOf = (c) => `${c.title} ${c.areaName} ${c.level} ${c.description}`;
+// Conta a abertura do curso para as estatísticas da Administração (sem bloquear nada se falhar)
+const countView = (c) => window.axios.post(`/plataforma/cursos/${encodeURIComponent(c.slug)}/visto`).catch(() => {});
 const SUGGESTIONS = ['Diagnóstico', 'OBD', 'Eletrónica', 'Bateria', 'Gestão'];
 
 // Mantém o estado do Inertia no histórico ao mudar o ?curso= (link partilhável)
@@ -37,12 +41,12 @@ function Card({ c, onOpen }) {
         <a className="cc-card" href={`?curso=${encodeURIComponent(c.slug)}`} aria-haspopup="dialog" onClick={(e) => { e.preventDefault(); onOpen(c); }}>
             <span className="cc-lift"><span className="cc-ph">
                 <img src={c.image} alt="" loading="lazy" width="440" height="550" />
-                {c.ai && <span className="cc-badges"><span className="cc-badge">✦ Aula com IA</span></span>}
+                {c.ai && <span className="cc-badges"><span className="cc-badge">{t('✦ Aula com IA')}</span></span>}
                 <span className="cc-grad" aria-hidden="true" />
                 <span className="cc-txt">
-                    <span className="cc-mono">{c.areaName} · {c.level}</span>
+                    <span className="cc-mono">{c.areaName} · {t(c.level)}</span>
                     <span className="cc-ttl">{c.title}</span>
-                    <span className="cc-meta"><span>{dur(c.minutes)} · {c.lessons} aulas</span><span className="cc-price">{euro(c.price)}</span></span>
+                    <span className="cc-meta"><span>{dur(c.minutes)} · {t(':n aulas', { n: c.lessons })}</span><span className="cc-price">{euro(c.price)}</span></span>
                 </span>
             </span></span>
         </a>
@@ -53,9 +57,9 @@ function Card({ c, onOpen }) {
 function FootAction({ c, owned, pending }) {
     const [busy, setBusy] = useState(false);
     if (owned.includes(c.id)) {
-        return <Link className="cc-cta" href={`/plataforma/cursos/${encodeURIComponent(c.slug)}`}>Ir para o curso<span aria-hidden="true">→</span></Link>;
+        return <Link className="cc-cta" href={`/plataforma/cursos/${encodeURIComponent(c.slug)}`}>{t('Ir para o curso')}<span aria-hidden="true">→</span></Link>;
     }
-    if (pending.includes(c.id)) return <span className="cc-cta cc-wait">A aguardar autorização</span>;
+    if (pending.includes(c.id)) return <span className="cc-cta cc-wait">{t('A aguardar autorização')}</span>;
     const buy = () => router.post(`/cursos/${encodeURIComponent(c.slug)}/comprar`, {}, {
         preserveState: true,
         preserveScroll: true,
@@ -64,7 +68,7 @@ function FootAction({ c, owned, pending }) {
     });
     return (
         <button className="cc-cta" type="button" onClick={buy} disabled={busy}>
-            {busy ? 'A registar…' : 'Comprar curso'}<span aria-hidden="true">→</span>
+            {busy ? t('A registar…') : t('Comprar curso')}<span aria-hidden="true">→</span>
         </button>
     );
 }
@@ -72,8 +76,8 @@ function FootAction({ c, owned, pending }) {
 function Detail({ c, owned, pending, onClose }) {
     const closeRef = useRef(null);
     useEffect(() => {
-        const t = setTimeout(() => closeRef.current?.focus({ preventScroll: true }), 60);
-        return () => clearTimeout(t);
+        const tx = setTimeout(() => closeRef.current?.focus({ preventScroll: true }), 60);
+        return () => clearTimeout(tx);
     }, [c.id]);
 
     return (
@@ -83,40 +87,40 @@ function Detail({ c, owned, pending, onClose }) {
                 <div className="cc-d-scroll">
                     <div className="cc-d-hero">
                         <img src={c.image} alt="" />
-                        <button ref={closeRef} className="cc-x" type="button" onClick={onClose} aria-label="Fechar detalhes do curso"><CloseIcon /></button>
+                        <button ref={closeRef} className="cc-x" type="button" onClick={onClose} aria-label={t('Fechar detalhes do curso')}><CloseIcon /></button>
                     </div>
                     <div className="cc-d-body">
                         <div className="cc-d-head">
-                            <span className="cc-mono">{c.areaName} · {c.level}</span>
+                            <span className="cc-mono">{c.areaName} · {t(c.level)}</span>
                             <h2 id="cc-d-title">{c.title}</h2>
-                            {c.ai && <span className="cc-tag">✦ Aula com IA</span>}
+                            {c.ai && <span className="cc-tag">{t('✦ Aula com IA')}</span>}
                         </div>
                         <div className="cc-stats">
-                            <span><small>Duração</small><b>{dur(c.minutes)}</b></span>
-                            <span><small>Aulas</small><b>{c.lessons}</b></span>
-                            <span><small>Módulos</small><b>{(c.modules || []).length}</b></span>
-                            <span><small>Formador</small><b>{c.instructor || 'A definir'}</b></span>
+                            <span><small>{t('Duração')}</small><b>{dur(c.minutes)}</b></span>
+                            <span><small>{t('Aulas')}</small><b>{c.lessons}</b></span>
+                            <span><small>{t('Módulos')}</small><b>{(c.modules || []).length}</b></span>
+                            <span><small>{t('Formador')}</small><b>{c.instructor || t('A definir')}</b></span>
                         </div>
                         {c.description && <p className="cc-short">{c.description}</p>}
                         <div className="cc-prog">
-                            <b>Programa</b>
+                            <b>{t('Programa')}</b>
                             <div className="cc-prog-box">
                                 {(c.modules || []).length ? c.modules.map((m, n) => (
                                     <div className="cc-mod" key={n}>
                                         <h3><span>{String(n + 1).padStart(2, '0')}</span>{m.title}</h3>
                                         <ul>
                                             {(m.lessons || []).map((l, k) => (
-                                                <li key={k}><span>{l.title}{l.ai && <span className="cc-ai">IA</span>}</span><em>{l.minutes} min</em></li>
+                                                <li key={k}><span>{l.title}{l.ai && <span className="cc-ai">{t('IA')}</span>}</span><em>{l.minutes} min</em></li>
                                             ))}
                                         </ul>
                                     </div>
-                                )) : <p style={{ margin: '14px 0' }}>Programa em preparação.</p>}
+                                )) : <p style={{ margin: '14px 0' }}>{t('Programa em preparação.')}</p>}
                             </div>
                         </div>
                     </div>
                 </div>
                 <div className="cc-d-foot">
-                    <span><small>Preço</small><b>{euro(c.price)}</b></span>
+                    <span><small>{t('Preço')}</small><b>{euro(c.price)}</b></span>
                     <FootAction c={c} owned={owned} pending={pending} />
                 </div>
             </aside>
@@ -128,8 +132,8 @@ function Search({ initial, courses, onApply, onPick, onClose }) {
     const [v, setV] = useState(initial);
     const inputRef = useRef(null);
     useEffect(() => {
-        const t = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 60);
-        return () => clearTimeout(t);
+        const tx = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 60);
+        return () => clearTimeout(tx);
     }, []);
     const q = v.trim();
     const all = q ? courses.filter((c) => norm(textOf(c)).includes(norm(q))) : [];
@@ -137,7 +141,7 @@ function Search({ initial, courses, onApply, onPick, onClose }) {
     return (
         <>
             <div className="cc-scrim" onClick={onClose} />
-            <div className="cc-sheet" role="dialog" aria-modal="true" aria-label="Pesquisar cursos">
+            <div className="cc-sheet" role="dialog" aria-modal="true" aria-label={t('Pesquisar cursos')}>
                 <div className="cc-sheet-in">
                     <div className="cc-field">
                         <SearchIcon size={26} />
@@ -147,15 +151,15 @@ function Search({ initial, courses, onApply, onPick, onClose }) {
                             value={v}
                             onChange={(e) => setV(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && onApply(q)}
-                            placeholder="O que quer aprender?"
-                            aria-label="Pesquisar cursos"
+                            placeholder={t('O que quer aprender?')}
+                            aria-label={t('Pesquisar cursos')}
                             autoComplete="off"
                         />
-                        <button className="cc-x" type="button" onClick={onClose} aria-label="Fechar pesquisa"><CloseIcon /></button>
+                        <button className="cc-x" type="button" onClick={onClose} aria-label={t('Fechar pesquisa')}><CloseIcon /></button>
                     </div>
                     {!q ? (
                         <div>
-                            <span className="cc-mono">Sugestões</span>
+                            <span className="cc-mono">{t('Sugestões')}</span>
                             <div className="cc-sugg">
                                 {SUGGESTIONS.map((s) => (
                                     <button key={s} className="cc-chip" type="button" onClick={() => { setV(s); inputRef.current?.focus(); }}>{s}</button>
@@ -164,18 +168,18 @@ function Search({ initial, courses, onApply, onPick, onClose }) {
                         </div>
                     ) : (
                         <div>
-                            <span className="cc-mono">{all.length} {all.length === 1 ? 'resultado' : 'resultados'}</span>
+                            <span className="cc-mono">{all.length} {all.length === 1 ? t('resultado') : t('resultados')}</span>
                             <div className="cc-results">
                                 {all.slice(0, 6).map((c) => (
                                     <button key={c.id} className="cc-res" type="button" onClick={() => onPick(c)}>
                                         <img src={c.image} alt="" />
-                                        <span style={{ flex: 1, minWidth: 0 }}><b>{c.title}</b><span className="cc-mono">{c.areaName} · {c.level}</span></span>
+                                        <span style={{ flex: 1, minWidth: 0 }}><b>{c.title}</b><span className="cc-mono">{c.areaName} · {t(c.level)}</span></span>
                                         <span className="cc-p">{euro(c.price)}</span>
                                     </button>
                                 ))}
                                 {all.length
-                                    ? <button className="cc-pill" type="button" onClick={() => onApply(q)}>Ver todos os {all.length} resultados</button>
-                                    : <span className="cc-nores">Nenhum curso encontrado. Experimente «diagnóstico», «bateria» ou «gestão».</span>}
+                                    ? <button className="cc-pill" type="button" onClick={() => onApply(q)}>{t('Ver todos os :n resultados', { n: all.length })}</button>
+                                    : <span className="cc-nores">{t('Nenhum curso encontrado. Experimente «diagnóstico», «bateria» ou «gestão».')}</span>}
                             </div>
                         </div>
                     )}
@@ -199,15 +203,15 @@ export default function Catalog({ courses, areas, owned, pending }) {
         const params = new URLSearchParams(location.search);
         if (courses.some((c) => c.area === params.get('area'))) setArea(params.get('area'));
         const c = courses.find((x) => x.slug === params.get('curso'));
-        if (c) setDetail(c);
+        if (c) { setDetail(c); countView(c); }
     }, []);
 
     // Aviso depois de uma compra (vem da sessão)
     useEffect(() => {
         if (!flash?.status) return;
         setNotice(flash.status);
-        const t = setTimeout(() => setNotice(null), 6000);
-        return () => clearTimeout(t);
+        const tx = setTimeout(() => setNotice(null), 6000);
+        return () => clearTimeout(tx);
     }, [flash]);
 
     const open = (c) => {
@@ -215,6 +219,7 @@ export default function Catalog({ courses, areas, owned, pending }) {
         setSearching(false);
         setDetail(c);
         setUrl(`?curso=${encodeURIComponent(c.slug)}`);
+        countView(c);
     };
     const close = () => {
         setDetail(null);
@@ -243,35 +248,35 @@ export default function Catalog({ courses, areas, owned, pending }) {
 
     return (
         <StudentLayout>
-            <Head title="Cursos" />
+            <Head title={t('Cursos')} />
 
             <div className="cc-app">
                 <div className="cc">
                     <div className="cc-top">
-                        <span className="cc-mono">Catálogo</span>
-                        <h1>{shown.length} {shown.length === 1 ? 'curso' : 'cursos'} disponíveis</h1>
+                        <span className="cc-mono">{t('Catálogo')}</span>
+                        <h1>{shown.length} {shown.length === 1 ? t('curso') : t('cursos')}{' '}{t('disponíveis')}</h1>
                     </div>
 
                     <div className="cc-filters">
-                        <nav className="cc-tabs" aria-label="Filtrar por área">
-                            <button className="cc-tab" type="button" aria-pressed={area === 'all'} onClick={() => setArea('all')}>Todas</button>
+                        <nav className="cc-tabs" aria-label={t('Filtrar por área')}>
+                            <button className="cc-tab" type="button" aria-pressed={area === 'all'} onClick={() => setArea('all')}>{t('Todas')}</button>
                             {areas.map((a) => (
                                 <button key={a.slug} className="cc-tab" type="button" aria-pressed={area === a.slug} onClick={() => setArea(a.slug)}>{a.name}</button>
                             ))}
                         </nav>
-                        <button className="cc-sbtn" type="button" onClick={openSearch} aria-label="Pesquisar cursos" aria-expanded={searching}>
+                        <button className="cc-sbtn" type="button" onClick={openSearch} aria-label={t('Pesquisar cursos')} aria-expanded={searching}>
                             <SearchIcon />
                         </button>
                     </div>
                     {query && (
-                        <div className="cc-qline">A mostrar resultados para <b>«{query}»</b><button className="cc-chip" type="button" onClick={() => setQuery('')}>Limpar ✕</button></div>
+                        <div className="cc-qline">{t('A mostrar resultados para')}{' '}<b>«{query}»</b><button className="cc-chip" type="button" onClick={() => setQuery('')}>{t('Limpar ✕')}</button></div>
                     )}
 
                     <div className="cc-grid">
                         {shown.map((c) => <Card key={c.id} c={c} onOpen={open} />)}
                     </div>
                     {!shown.length && (
-                        <div className="cc-empty"><b>Nenhum curso corresponde a estes filtros</b><span>Limpe a pesquisa ou escolha «Todas» para ver o catálogo completo.</span></div>
+                        <div className="cc-empty"><b>{t('Nenhum curso corresponde a estes filtros')}</b><span>{t('Limpe a pesquisa ou escolha «Todas» para ver o catálogo completo.')}</span></div>
                     )}
                 </div>
 

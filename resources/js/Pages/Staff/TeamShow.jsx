@@ -5,6 +5,8 @@ import TeamReport from '@/Components/Teams/TeamReport';
 import MembersEditor from '@/Components/Teams/MembersEditor';
 import { Box, btn, Drawer, FlashToast, inputCls, PageHead } from '@/Components/Teams/ui';
 
+import { t } from '@/i18n';
+
 // Equipa vista pelo Gestor de Cursos/admin: o mesmo que o team leader vê + gerir membros, lugares e cursos.
 export default function TeamShow({ team, report, courses, pending }) {
     const [editing, setEditing] = useState(false);
@@ -13,26 +15,26 @@ export default function TeamShow({ team, report, courses, pending }) {
         <StudentLayout>
             <Head title={team.name} />
             <PageHead
-                back={{ href: '/gestao/equipas', label: 'Voltar às equipas' }}
+                back={{ href: '/gestao/equipas', label: t('Voltar às equipas') }}
                 title={team.name}
-                sub={`${report.members.length} membros · ${report.courses.length} ${report.courses.length === 1 ? 'curso' : 'cursos'}${team.created ? ` · criada a ${team.created}` : ''}${team.nif ? ` · NIF ${team.nif}` : ''}`}
+                sub={t(':length membros · :lengthx :v3:v4:v5', { length: report.members.length, lengthx: report.courses.length, v3: report.courses.length === 1 ? t('curso') : t('cursos'), v4: team.created ? t(' · criada a :created', { created: team.created }) : '', v5: team.nif ? t(' · NIF :nif', { nif: team.nif }) : '' })}
             >
-                <button type="button" className={btn.dark} onClick={() => setEditing(true)}>Gerir membros</button>
+                <button type="button" className={btn.dark} onClick={() => setEditing(true)}>{t('Gerir membros')}</button>
             </PageHead>
 
             {pending.length > 0 && (
                 <div className="mb-5 bg-accent/15 px-5 py-4">
-                    <p className="font-display font-bold">{pending.length === 1 ? 'Há 1 pedido de alteração' : `Há ${pending.length} pedidos de alteração`} desta equipa</p>
+                    <p className="font-display font-bold">{pending.length === 1 ? t('Há 1 pedido de alteração') : t('Há :length pedidos de alteração', { length: pending.length })}{' '}{t('desta equipa')}</p>
                     {pending.map((p) => (
                         <p key={p.id} className="mt-1 text-sm">
-                            <b>#{p.id} · {p.change}</b>{p.people.length ? `: ${p.people.map((x) => `${x.name} (${x.email})`).join(', ')}` : ''}{p.packs ? ` · +${p.packs} ${p.packs === 1 ? 'pack' : 'packs'}` : ''} <span className="text-muted">· {p.date}</span>
+                            <b>#{p.id} · {p.change}</b>{p.people.length ? `: ${p.people.map((x) => `${x.name} (${x.email})`).join(', ')}` : ''}{p.packs ? ` · +${p.packs} ${p.packs === 1 ? t('pack') : t('packs')}` : ''} <span className="text-muted">· {p.date}</span>
                         </p>
                     ))}
-                    <button type="button" className="mt-2 font-display text-[13px] font-semibold text-accent-ink hover:text-ink" onClick={() => setEditing(true)}>Tratar em “Gerir membros” →</button>
+                    <button type="button" className="mt-2 font-display text-[13px] font-semibold text-accent-ink hover:text-ink" onClick={() => setEditing(true)}>{t('Tratar em “Gerir membros” →')}</button>
                 </div>
             )}
 
-            <TeamReport team={team} report={report} note="O team leader vê esta mesma página, mas não pode adicionar nem retirar pessoas." />
+            <TeamReport team={team} report={report} note={t('O team leader vê esta mesma página, mas não pode adicionar nem retirar pessoas.')} />
 
             {editing && <EditTeam team={team} report={report} courses={courses} pending={pending} onClose={() => setEditing(false)} />}
             <FlashToast />
@@ -70,20 +72,20 @@ function EditTeam({ team, report, courses, pending, onClose }) {
 
     return (
         <Drawer
-            sub="Gerir membros"
+            sub={t('Gerir membros')}
             title={team.name}
             onClose={onClose}
             footer={
                 <>
-                    <span className="text-[13px] text-muted">Pessoas novas recebem convite; quem sai perde o acesso aos cursos da equipa.</span>
+                    <span className="text-[13px] text-muted">{t('Pessoas novas recebem convite; quem sai perde o acesso aos cursos da equipa.')}</span>
                     <span className="flex-1" />
-                    <button type="button" className={btn.accent} disabled={busy || people.length > packs * 10} onClick={save}>{busy ? 'A guardar…' : 'Guardar alterações'}</button>
+                    <button type="button" className={btn.accent} disabled={busy || people.length > packs * 10} onClick={save}>{busy ? t('A guardar…') : t('Guardar alterações')}</button>
                 </>
             }
         >
-            <Box title="Cursos e lugares">
+            <Box title={t('Cursos e lugares')}>
                 <label className="mb-3 flex items-center gap-3 text-sm">
-                    <span className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">Packs de 10 lugares</span>
+                    <span className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">{t('Packs de 10 lugares')}</span>
                     <input type="number" min="1" max="50" className={`${inputCls} w-24`} value={packs} onChange={(e) => setPacks(Math.max(1, parseInt(e.target.value, 10) || 1))} />
                 </label>
                 <div className="flex flex-col gap-1">
@@ -95,16 +97,16 @@ function EditTeam({ team, report, courses, pending, onClose }) {
                         </label>
                     ))}
                 </div>
-                {errors.course_ids && <p className="mt-2 text-sm text-live-ink">A equipa tem de ter pelo menos um curso.</p>}
+                {errors.course_ids && <p className="mt-2 text-sm text-live-ink">{t('A equipa tem de ter pelo menos um curso.')}</p>}
             </Box>
             <MembersEditor people={people} setPeople={setPeople} leader={leader} setLeader={setLeader} seats={packs * 10} errors={errors} />
             {pending.length > 0 && (
-                <Box title="Pedidos de alteração">
+                <Box title={t('Pedidos de alteração')}>
                     {pending.map((p) => (
                         <label key={p.id} className="flex items-center gap-2 py-1 text-sm">
                             <input type="checkbox" className="text-accent focus:ring-accent" checked={resolve.includes(p.id)}
                                 onChange={(e) => setResolve(e.target.checked ? [...resolve, p.id] : resolve.filter((x) => x !== p.id))} />
-                            Marcar o pedido #{p.id} ({p.change}) como concluído
+                            {t('Marcar o pedido #')}{p.id} ({p.change}{t(') como concluído')}
                         </label>
                     ))}
                 </Box>

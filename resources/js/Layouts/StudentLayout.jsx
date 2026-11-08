@@ -4,34 +4,34 @@ import { Toast } from '@/Components/ui';
 import { useEffect, useRef, useState } from 'react';
 import useTheme from '@/hooks/useTheme';
 import {
-    IconBook, IconCatalog, IconCreate, IconDoc, IconHome, IconInbox, IconMoon, IconSun, IconTeam, IconTest, IconUser,
+    IconAdmin, IconBook, IconCatalog, IconCreate, IconDoc, IconHome, IconInbox, IconMoon, IconSun, IconTeam, IconTest, IconUser,
 } from '@/Components/Panels/icons';
 
-// Navegação da plataforma (a aparência decidida a 2026-11-04): logótipo e opções à esquerda.
-const baseNav = [
-    { key: 'home', label: 'Início', href: '/dashboard', Icon: IconHome, count: 'home', countLabel: ['mensagem por ler', 'mensagens por ler'] },
-    { key: 'mine', label: 'Os meus cursos', short: 'Cursos', href: '/plataforma/meus-cursos', Icon: IconBook, count: 'mine', countLabel: ['curso atribuído por começar', 'cursos atribuídos por começar'] },
-    { key: 'tests', label: 'Avaliações', href: '/plataforma/avaliacoes', Icon: IconTest },
-    { key: 'docs', label: 'Documentos', href: '/plataforma/documentos', Icon: IconDoc },
-    { key: 'catalog', label: 'Catálogo', href: '/plataforma/cursos', Icon: IconCatalog, exact: true },
-];
-const requestsItem = { key: 'requests', label: 'Pedidos', href: '/gestao/pedidos', Icon: IconInbox, badge: true };
-const teamsItem = { key: 'teams', label: 'Equipas', href: '/gestao/equipas', Icon: IconTeam };
+import { t } from '@/i18n';
+import LanguageToggle from '@/Components/LanguageToggle';
 
-// Cada perfil vê as suas opções: Equipas (team leader), Pedidos/Equipas (gestor de cursos e admin), cursos (formador/admin)
-function navFor(role) {
-    switch (role) {
-        case 'team_leader':
-            return [...baseNav, { key: 'team', label: 'Equipas', href: '/equipa', Icon: IconTeam, count: 'team', countLabel: ['pessoa precisa de atenção', 'pessoas precisam de atenção'] }];
-        case 'gestor_cursos':
-            return [...baseNav, requestsItem, teamsItem];
-        case 'formador':
-            return [...baseNav, { key: 'builder', label: 'Criar cursos', short: 'Criar', href: '/formador/cursos', Icon: IconCreate, tag: 'Formador', count: 'builder', countLabel: ['presença por confirmar', 'presenças por confirmar'] }];
-        case 'admin':
-            return [...baseNav, requestsItem, teamsItem, { key: 'builder', label: 'Gerir cursos', short: 'Gerir', href: '/formador/cursos', Icon: IconCreate, tag: 'Admin', count: 'builder', countLabel: ['presença por confirmar', 'presenças por confirmar'] }];
-        default:
-            return baseNav;
-    }
+// Navegação da plataforma (a aparência decidida a 2026-11-04): logótipo e opções à esquerda.
+const baseNav = () => [
+    { key: 'home', label: t('Início'), href: '/dashboard', Icon: IconHome, count: 'home', countLabel: [t('mensagem por ler'), t('mensagens por ler')] },
+    { key: 'mine', label: t('Os meus cursos'), short: t('Cursos'), href: '/plataforma/meus-cursos', Icon: IconBook, count: 'mine', countLabel: [t('curso atribuído por começar'), t('cursos atribuídos por começar')] },
+    { key: 'tests', label: t('Avaliações'), href: '/plataforma/avaliacoes', Icon: IconTest },
+    { key: 'docs', label: t('Documentos'), href: '/plataforma/documentos', Icon: IconDoc },
+    { key: 'catalog', label: t('Catálogo'), href: '/plataforma/cursos', Icon: IconCatalog, exact: true },
+];
+const requestsItem = () => ({ key: 'requests', label: t('Pedidos'), href: '/gestao/pedidos', Icon: IconInbox, badge: true });
+const teamsItem = () => ({ key: 'teams', label: t('Equipas'), href: '/gestao/equipas', Icon: IconTeam });
+
+// Cada pessoa vê as opções das permissões do seu perfil (Administração › Permissões)
+function navFor(can = {}, role) {
+    const items = [...baseNav()];
+    // Equipa do team leader (a da sua empresa); quem gere todas as equipas usa a da gestão
+    if (can.equipa && !can.equipas) items.push({ key: 'team', label: t('Equipas'), href: '/equipa', Icon: IconTeam, count: 'team', countLabel: [t('pessoa precisa de atenção'), t('pessoas precisam de atenção')] });
+    if (can.pedidos) items.push(requestsItem());
+    if (can.equipas) items.push(teamsItem());
+    if (can['cursos.todos']) items.push({ key: 'builder', label: t('Gerir cursos'), short: t('Gerir'), href: '/formador/cursos', Icon: IconCreate, tag: role === 'admin' ? t('Admin') : undefined, count: 'builder', countLabel: [t('presença por confirmar'), t('presenças por confirmar')] });
+    else if (can['cursos.criar']) items.push({ key: 'builder', label: t('Criar cursos'), short: t('Criar'), href: '/formador/cursos', Icon: IconCreate, tag: t('Formador'), count: 'builder', countLabel: [t('presença por confirmar'), t('presenças por confirmar')] });
+    if (can.estatisticas || can.pessoas) items.push({ key: 'admin', label: t('Administração'), short: t('Admin'), href: '/administracao', Icon: IconAdmin });
+    return items;
 }
 
 // Número amarelo na navegação, com o significado escondido para leitores de ecrã ("3 mensagens por ler")
@@ -62,7 +62,7 @@ function Bell({ inbox }) {
         <div ref={ref} className="relative">
             <button
                 type="button"
-                aria-label={`Notificações${inbox.count ? `: ${inbox.count} pedidos novos` : ''}`}
+                aria-label={t('Notificações:v1', { v1: inbox.count ? t(': :count pedidos novos', { count: inbox.count }) : '' })}
                 aria-expanded={open}
                 onClick={() => setOpen((o) => !o)}
                 className="pn-icon relative"
@@ -75,15 +75,15 @@ function Bell({ inbox }) {
             </button>
             {open && (
                 <div className="absolute right-0 top-12 z-40 w-[320px] max-w-[calc(100vw-32px)] bg-surface shadow-[0_14px_40px_rgba(0,0,0,.18)]">
-                    <p className="border-b border-line px-4 py-3 text-sm font-bold">Pedidos novos</p>
+                    <p className="border-b border-line px-4 py-3 text-sm font-bold">{t('Pedidos novos')}</p>
                     {inbox.items.length ? inbox.items.map((r) => (
                         <Link key={r.id} href={`/gestao/pedidos?pedido=${r.id}`} onClick={() => setOpen(false)} className="block border-b border-line px-4 py-3 text-sm hover:bg-page">
                             <b>#{r.id}</b> · {r.kind}
                             <small className="block text-xs text-muted">{r.who} · {r.ago}</small>
                         </Link>
-                    )) : <p className="px-4 py-6 text-center text-sm text-muted">Sem pedidos novos.</p>}
+                    )) : <p className="px-4 py-6 text-center text-sm text-muted">{t('Sem pedidos novos.')}</p>}
                     <Link href="/gestao/pedidos" onClick={() => setOpen(false)} className="block px-4 py-3 text-center text-[13px] font-semibold underline underline-offset-4">
-                        Ver todos os pedidos
+                        {t('Ver todos os pedidos')}
                     </Link>
                 </div>
             )}
@@ -106,21 +106,16 @@ export function formatXp(n = 0) {
 }
 
 export default function StudentLayout({ children, navTools }) {
-    const { auth, staffInbox, access, navCounts } = usePage().props;
+    const { auth, staffInbox, access, navCounts, can } = usePage().props;
     const currentUrl = usePage().url;
     const user = auth?.user ?? {};
-    const navItems = navFor(auth?.role);
+    const navItems = navFor(can, auth?.role);
     const { theme, toggle } = useTheme();
     const dark = theme === 'dark';
     const [notice, setNotice] = useState(null);
     const noticeTimer = useRef(null);
     useEffect(() => () => clearTimeout(noticeTimer.current), []);
 
-    const langNotice = () => {
-        setNotice('Para já, a plataforma só existe em português.');
-        clearTimeout(noticeTimer.current);
-        noticeTimer.current = setTimeout(() => setNotice(null), 2600);
-    };
 
     const isActive = ({ href, exact }) => {
         const path = currentUrl.split('?')[0];
@@ -135,15 +130,15 @@ export default function StudentLayout({ children, navTools }) {
     return (
         <div className="min-h-screen bg-page text-ink">
             <header className="pn-nav">
-                <Link href="/dashboard" className="pn-logo" aria-label="T.Academy, início">
+                <Link href="/dashboard" className="pn-logo" aria-label={t('T.Academy, início')}>
                     <img className="ta-logo-light" src="/images/brand/logo-nav.png" alt="T.Academy" />
                     <img className="ta-logo-dark" src="/images/brand/logo-nav-dark.png" alt="" />
                 </Link>
-                <nav className="pn-nav-links" aria-label="Principal">
+                <nav className="pn-nav-links" aria-label={t('Principal')}>
                     {navItems.map((item) => (
                         <Link key={item.key} href={item.href} className={active(item) ? 'pn-on' : undefined} aria-current={active(item) ? 'page' : undefined}>
                             {item.label}
-                            {item.badge && <Count n={staffInbox?.count} label={['pedido novo', 'pedidos novos']} />}
+                            {item.badge && <Count n={staffInbox?.count} label={[t('pedido novo'), t('pedidos novos')]} />}
                             {item.count && <Count n={navCounts?.[item.count]} label={item.countLabel} />}
                             {item.tag && <span className="pn-tag">{item.tag}</span>}
                         </Link>
@@ -152,21 +147,21 @@ export default function StudentLayout({ children, navTools }) {
                 <div className="pn-nav-end">
                     {navTools}
                     {staffInbox && <Bell inbox={staffInbox} />}
-                    <button type="button" className="pn-lang" onClick={langNotice}>PT · EN</button>
-                    <button type="button" className="pn-icon" onClick={toggle} aria-label={dark ? 'Mudar para tema claro' : 'Mudar para tema escuro'} title={dark ? 'Tema claro' : 'Tema escuro'}>
+                    <LanguageToggle />
+                    <button type="button" className="pn-icon" onClick={toggle} aria-label={dark ? t('Mudar para tema claro') : t('Mudar para tema escuro')} title={dark ? t('Tema claro') : t('Tema escuro')}>
                         {dark ? <IconSun /> : <IconMoon />}
                     </button>
                     <Dropdown>
                         <Dropdown.Trigger>
-                            <button type="button" aria-label="Menu da conta" className="pn-account"><IconUser /></button>
+                            <button type="button" aria-label={t('Menu da conta')} className="pn-account"><IconUser /></button>
                         </Dropdown.Trigger>
                         <Dropdown.Content>
                             <div className="border-b border-line px-4 py-3">
-                                <p className="truncate text-sm font-bold text-ink">{user.name ?? 'Aluno'}</p>
+                                <p className="truncate text-sm font-bold text-ink">{user.name ?? t('Aluno')}</p>
                                 <p className="truncate text-xs text-muted">{user.email}</p>
                             </div>
-                            <Dropdown.Link href="/definicoes">Definições</Dropdown.Link>
-                            <Dropdown.Link href="/logout" method="post" as="button">Terminar sessão</Dropdown.Link>
+                            <Dropdown.Link href="/definicoes">{t('Definições')}</Dropdown.Link>
+                            <Dropdown.Link href="/logout" method="post" as="button">{t('Terminar sessão')}</Dropdown.Link>
                         </Dropdown.Content>
                     </Dropdown>
                 </div>
@@ -175,13 +170,13 @@ export default function StudentLayout({ children, navTools }) {
             <main className="pn-main">{children}</main>
 
             {/* Barra de baixo (janelas estreitas): mesma navegação da barra de cima */}
-            <nav className="pn-tabbar" aria-label="Principal">
+            <nav className="pn-tabbar" aria-label={t('Principal')}>
                 {navItems.map((item) => {
                     const { key, label, short, href, Icon, badge, count, countLabel } = item;
                     return (
                         <Link key={key} href={href} aria-label={label} className={active(item) ? 'pn-on' : undefined} aria-current={active(item) ? 'page' : undefined}>
                             <Icon />
-                            {badge && <Count n={staffInbox?.count} label={['pedido novo', 'pedidos novos']} />}
+                            {badge && <Count n={staffInbox?.count} label={[t('pedido novo'), t('pedidos novos')]} />}
                             {count && <Count n={navCounts?.[count]} label={countLabel} />}
                             {short ?? label}
                         </Link>

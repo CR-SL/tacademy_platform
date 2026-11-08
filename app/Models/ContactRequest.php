@@ -41,6 +41,12 @@ class ContactRequest extends Model
         'cancelado' => 'Cancelado',
     ];
 
+    /** Rótulos para mostrar (as constantes ficam em português; traduz-se aqui, na língua de quem vê). */
+    public static function labels(array $map): array
+    {
+        return array_map(fn ($label) => __($label), $map);
+    }
+
     public const OPEN = ['novo', 'em_esclarecimento', 'aguardar_pagamento', 'pago', 'equipa_criada'];
 
     public const CHANGE_TYPES = [

@@ -1,6 +1,7 @@
 @import './ui.css';
 @import './panels.css';
 @import './entrada.css';
+@import './admin.css';
 
 @tailwind base;
 @tailwind components;

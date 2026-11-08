@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\AreaController;
+use App\Http\Controllers\Admin\PeopleController as AdminPeopleController;
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\CourseViewController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CourseMessageController;
 use App\Http\Controllers\DashboardController;
@@ -8,6 +12,7 @@ use App\Http\Controllers\Instructor\CourseBuilderController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Learn\CourseController as LearnCourseController;
 use App\Http\Controllers\Learn\LessonController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PanelLayoutController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicCourseController;
@@ -23,6 +28,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [AuthenticatedSessionController::class, 'create'])->middleware('guest')->name('home');
 Route::permanentRedirect('/home', '/');
 
+// Língua da plataforma (botão PT · EN e Definições); funciona com e sem sessão
+Route::put('/lingua', LocaleController::class)->middleware('throttle:30,1')->name('locale');
+
 // Catálogo público de cursos (Blade)
 Route::get('/cursos', PublicCourseController::class)->name('courses');
 
@@ -37,6 +45,11 @@ Route::get('/dashboard', DashboardController::class)
     ->name('dashboard');
 
 // Catálogo dentro da plataforma (com sessão). O /cursos é o catálogo público.
+// Clique num curso do catálogo (para as estatísticas da Administração)
+Route::post('/plataforma/cursos/{course:slug}/visto', CourseViewController::class)
+    ->middleware(['auth', 'throttle:120,1'])
+    ->name('catalog.view');
+
 Route::get('/plataforma/cursos', CatalogController::class)
     ->middleware(['auth', 'verified'])
     ->name('catalog');
@@ -90,7 +103,7 @@ Route::post('/cursos/{course:slug}/comprar', [PurchaseController::class, 'store'
     ->name('courses.purchase');
 
 // "Equipa": só o team leader, e só a sua equipa
-Route::middleware(['auth', 'verified', 'role:team_leader'])->group(function () {
+Route::middleware(['auth', 'verified', 'can:equipa'])->group(function () {
     Route::get('/equipa', [TeamController::class, 'show'])->name('team.show');
     Route::post('/equipa/pedidos', [TeamController::class, 'requestChange'])->middleware('throttle:10,1')->name('team.request');
     Route::post('/equipa/lembretes', [TeamController::class, 'remind'])->middleware('throttle:10,1')->name('team.remind');
@@ -98,15 +111,35 @@ Route::middleware(['auth', 'verified', 'role:team_leader'])->group(function () {
 });
 
 // "Pedidos" e "Equipas": Gestor de Cursos e admin
-Route::middleware(['auth', 'verified', 'role:gestor_cursos,admin'])->prefix('gestao')->name('staff.')->group(function () {
-    Route::get('/pedidos', [RequestController::class, 'index'])->name('requests.index');
-    Route::patch('/pedidos/{contactRequest}', [RequestController::class, 'update'])->name('requests.update');
-    Route::post('/pedidos/{contactRequest}/responder', [RequestController::class, 'reply'])->name('requests.reply');
-    Route::post('/pedidos/{contactRequest}/equipa', [RequestController::class, 'createTeam'])->name('requests.team');
-    Route::post('/pedidos/{contactRequest}/autorizar', [RequestController::class, 'authorizePurchase'])->name('requests.authorize');
-    Route::get('/equipas', [StaffTeamController::class, 'index'])->name('teams.index');
-    Route::get('/equipas/{company}', [StaffTeamController::class, 'show'])->name('teams.show');
-    Route::put('/equipas/{company}', [StaffTeamController::class, 'update'])->name('teams.update');
+Route::middleware(['auth', 'verified'])->prefix('gestao')->name('staff.')->group(function () {
+    Route::middleware('can:pedidos')->group(function () {
+        Route::get('/pedidos', [RequestController::class, 'index'])->name('requests.index');
+        Route::patch('/pedidos/{contactRequest}', [RequestController::class, 'update'])->name('requests.update');
+        Route::post('/pedidos/{contactRequest}/responder', [RequestController::class, 'reply'])->name('requests.reply');
+        Route::post('/pedidos/{contactRequest}/equipa', [RequestController::class, 'createTeam'])->name('requests.team');
+        Route::post('/pedidos/{contactRequest}/autorizar', [RequestController::class, 'authorizePurchase'])->name('requests.authorize');
+    });
+    Route::middleware('can:equipas')->group(function () {
+        Route::get('/equipas', [StaffTeamController::class, 'index'])->name('teams.index');
+        Route::get('/equipas/{company}', [StaffTeamController::class, 'show'])->name('teams.show');
+        Route::put('/equipas/{company}', [StaffTeamController::class, 'update'])->name('teams.update');
+    });
+});
+
+// Administração: estatísticas, catálogo, pessoas e permissões (cada secção pede a sua permissão)
+Route::middleware(['auth', 'verified'])->prefix('administracao')->name('admin.')->group(function () {
+    Route::get('/cursos/{course}', [AdminController::class, 'course'])->middleware('can:estatisticas')->name('course');
+    Route::post('/pessoas', [AdminPeopleController::class, 'store'])->middleware(['can:pessoas', 'throttle:30,1'])->name('people.store');
+    Route::put('/pessoas/{user}', [AdminPeopleController::class, 'update'])->middleware('can:pessoas')->name('people.update');
+    Route::delete('/pessoas/{user}', [AdminPeopleController::class, 'destroy'])->middleware('can:pessoas')->name('people.destroy');
+    Route::post('/pessoas/{id}/reativar', [AdminPeopleController::class, 'restore'])->middleware('can:pessoas')->name('people.restore');
+    Route::put('/permissoes', [AdminPeopleController::class, 'permissions'])->middleware('can:pessoas')->name('permissions');
+    Route::middleware('can:cursos.todos')->group(function () {
+        Route::post('/areas', [AreaController::class, 'store'])->name('areas.store');
+        Route::put('/areas/{category}', [AreaController::class, 'update'])->name('areas.update');
+        Route::delete('/areas/{category}', [AreaController::class, 'destroy'])->name('areas.destroy');
+    });
+    Route::get('/{section?}', [AdminController::class, 'index'])->whereIn('section', AdminController::SECTIONS)->name('index');
 });
 
 Route::middleware('auth')->group(function () {

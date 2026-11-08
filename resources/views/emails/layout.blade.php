@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt">
+<html lang="{{ app()->getLocale() === 'en' ? 'en' : 'pt-PT' }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,7 +16,7 @@
                 @yield('content')
             </td></tr>
             <tr><td style="padding:18px 28px;background:#18181B;color:#9095A0;font-size:12px;">
-                T.Academy · Formação e gestão de talentos para o setor automóvel
+                {{ __('T.Academy · Formação e gestão de talentos para o setor automóvel') }}
             </td></tr>
         </table>
     </td></tr>

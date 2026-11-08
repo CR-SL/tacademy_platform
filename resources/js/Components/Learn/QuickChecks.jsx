@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { t } from '@/i18n';
+
 // Perguntas rápidas do fim do vídeo: são opcionais e não contam para a nota. Cada pergunta só se responde uma vez.
 export default function QuickChecks({ lessonUlid, checks, canSave, onChange, onCompleted }) {
     const [items, setItems] = useState(checks);
@@ -30,7 +32,7 @@ export default function QuickChecks({ lessonUlid, checks, canSave, onChange, onC
             {items.map((c, qi) => (
                 <div key={c.id}>
                     <p className="mb-2 font-display font-semibold">{qi + 1}. {c.question}</p>
-                    <div className="flex flex-col gap-1.5" role="group" aria-label={`Pergunta ${qi + 1}`}>
+                    <div className="flex flex-col gap-1.5" role="group" aria-label={t('Pergunta :v1', { v1: qi + 1 })}>
                         {c.options.map((o, i) => {
                             const answered = c.chosen != null;
                             const right = answered && c.correct === i;
@@ -46,8 +48,8 @@ export default function QuickChecks({ lessonUlid, checks, canSave, onChange, onC
                                     }`}
                                 >
                                     <span className="flex-1">{o}</span>
-                                    {right && <span className="font-mono text-[11px] font-semibold uppercase text-success-ink"><span aria-hidden="true">✓ </span>Certa</span>}
-                                    {wrong && <span className="font-mono text-[11px] font-semibold uppercase text-live-ink"><span aria-hidden="true">✗ </span>A tua resposta</span>}
+                                    {right && <span className="font-mono text-[11px] font-semibold uppercase text-success-ink"><span aria-hidden="true">✓ </span>{t('Certa')}</span>}
+                                    {wrong && <span className="font-mono text-[11px] font-semibold uppercase text-live-ink"><span aria-hidden="true">✗ </span>{t('A tua resposta')}</span>}
                                 </button>
                             );
                         })}

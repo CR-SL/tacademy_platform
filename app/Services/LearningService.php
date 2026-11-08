@@ -159,10 +159,10 @@ class LearningService
         $quiz = $lesson->quiz()->with('questions.options')->firstOrFail();
         $attempts = QuizAttempt::where('user_id', $user->id)->where('quiz_id', $quiz->id)->get();
         if ($attempts->contains('passed', true)) {
-            throw ValidationException::withMessages(['quiz' => 'Já passaste neste teste.']);
+            throw ValidationException::withMessages(['quiz' => __('Já passaste neste teste.')]);
         }
         if ($attempts->count() >= $this->maxAttempts($quiz)) {
-            throw ValidationException::withMessages(['quiz' => 'Já usaste todas as tentativas.']);
+            throw ValidationException::withMessages(['quiz' => __('Já usaste todas as tentativas.')]);
         }
 
         $clean = [];
@@ -170,7 +170,7 @@ class LearningService
         foreach ($quiz->questions as $q) {
             $chosen = (int) ($answers[$q->id] ?? 0);
             if (! $q->options->contains('id', $chosen)) {
-                throw ValidationException::withMessages(['quiz' => 'Responde a todas as perguntas.']);
+                throw ValidationException::withMessages(['quiz' => __('Responde a todas as perguntas.')]);
             }
             $clean[$q->id] = $chosen;
             if ($q->options->firstWhere('id', $chosen)->is_correct) $right++;

@@ -22,6 +22,7 @@ export const IconDoc = () => <Line size={20}><path d="M7 3h7l4 4v14H7z" /><path 
 export const IconTeam = () => <Line size={20}><circle cx="9" cy="9" r="3.500" /><path d="M3 20c.6-3.500 3-5.500 6-5.500s5.400 2 6 5.500" /><path d="M16 6a3 3 0 0 1 0 6M18 15c1.700.7 2.700 2.400 3 5" /></Line>;
 export const IconCatalog = () => <Line size={20}><circle cx="11" cy="11" r="6.500" /><path d="m16 16 4.500 4.500" /></Line>;
 export const IconInbox = () => <Line size={20}><path d="M4 13V5h16v8" /><path d="M4 13v6h16v-6h-5l-1.500 2.500h-3L9 13z" /></Line>;
+export const IconAdmin = () => <Line size={20}><path d="M4 20V11M10 20V5M16 20v-6M2 20h20" /></Line>;
 export const IconCreate = () => <Line size={20}><path d="M12 5v14M5 12h14" /></Line>;
 
 export const IconGrip = () => (

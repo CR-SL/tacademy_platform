@@ -1,9 +1,15 @@
+import { usePage } from '@inertiajs/react';
 import { Panel } from './ui';
 import { formatEuro, formatMinutes, levelLabels } from './format';
 import { checklist, lessonCount, totalMinutes } from './model';
 
+import { t } from '@/i18n';
+
 // Passo 4 · Rever e publicar: o cartão do catálogo e o que ainda falta.
 export default function StepReview({ c, categories, shortMax, goTo, onPublish, onUnpublish, publishing, error }) {
+    // Sem permissão para publicar (Administração › Permissões), o curso fica em rascunho até alguém o publicar
+    const { can } = usePage().props;
+    const canPublish = can?.['cursos.publicar'] || can?.['cursos.todos'];
     const items = checklist(c, shortMax);
     const ready = items.every((i) => i[2]);
     const area = categories.find((x) => x.id === c.category_id)?.name;
@@ -12,43 +18,43 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
 
     return (
         <Panel
-            title={published ? 'Curso publicado' : 'Rever e publicar'}
+            title={published ? t('Curso publicado') : t('Rever e publicar')}
             sub={published
-                ? 'Este curso está no catálogo. As alterações que fizeres ficam visíveis para os alunos logo que são guardadas.'
-                : 'Assim fica o cartão no catálogo. Ao publicar, o curso fica logo visível para os alunos.'}
+                ? t('Este curso está no catálogo. As alterações que fizeres ficam visíveis para os alunos logo que são guardadas.')
+                : t('Assim fica o cartão no catálogo. Ao publicar, o curso fica logo visível para os alunos.')}
         >
             <div className="grid items-start gap-7 md:grid-cols-[300px_1fr]">
                 <div className="relative aspect-[4/5] max-w-[300px] overflow-hidden bg-carbon text-white">
                     {c.thumbnail_url && <img src={c.thumbnail_url} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent from-35% to-black/85" />
                     <span className="absolute right-3.5 top-3.5 rounded-full bg-accent px-3 py-1 font-display text-[13px] font-bold text-on-accent">
-                        {c.is_free ? 'Grátis' : formatEuro(c.price)}
+                        {c.is_free ? t('Grátis') : formatEuro(c.price)}
                     </span>
                     <div className="absolute inset-x-[18px] bottom-[18px]">
                         <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-white/75">
-                            {area ?? 'Área'} · {levelLabels[c.level] ?? 'Nível'}
+                            {area ?? t('Área')} · {levelLabels[c.level] ?? t('Nível')}
                         </span>
-                        <h3 className="mb-1 mt-1.5 font-display text-[21px] font-semibold leading-[1.15]">{c.title || 'Título do curso'}</h3>
-                        <p className="text-[13px] text-white/80">{formatMinutes(totalMinutes(c))} · {lessonCount(c)} aulas</p>
+                        <h3 className="mb-1 mt-1.5 font-display text-[21px] font-semibold leading-[1.15]">{c.title || t('Título do curso')}</h3>
+                        <p className="text-[13px] text-white/80">{formatMinutes(totalMinutes(c))} · {t(':n aulas', { n: lessonCount(c) })}</p>
                     </div>
                 </div>
 
                 <div>
                     <div className="mb-5 grid grid-cols-2 gap-2.5 lg:grid-cols-5">
-                        <Fact label="Duração" value={formatMinutes(totalMinutes(c))} />
-                        <Fact label="Módulos" value={c.modules.length} />
-                        <Fact label="Acesso" value={c.access_months ? `${c.access_months} meses` : 'Vitalício'} />
-                        <Fact label="Prazo" value={c.deadline_days ? (c.deadline_days === 180 ? '6 meses' : `${c.deadline_days} dias`) : 'Sem prazo'} />
-                        <Fact label="Certificado" value={c.certificate_enabled ? (c.requires_attendance ? 'Sim · com presença' : 'Sim') : 'Não'} />
+                        <Fact label={t('Duração')} value={formatMinutes(totalMinutes(c))} />
+                        <Fact label={t('Módulos')} value={c.modules.length} />
+                        <Fact label={t('Acesso')} value={c.access_months ? t(':n meses', { n: c.access_months }) : t('Vitalício')} />
+                        <Fact label={t('Prazo')} value={c.deadline_days ? (c.deadline_days === 180 ? t('6 meses') : t(':n dias', { n: c.deadline_days })) : t('Sem prazo')} />
+                        <Fact label={t('Certificado')} value={c.certificate_enabled ? (c.requires_attendance ? 'Sim · com presença' : 'Sim') : 'Não'} />
                     </div>
                     {ai && (
                         <p className="mb-4">
-                            <span className="rounded-full bg-accent px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-on-accent">✦ Inclui aula com IA</span>
+                            <span className="rounded-full bg-accent px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-on-accent">{t('✦ Inclui aula com IA')}</span>
                         </p>
                     )}
 
                     <span className="font-display text-[13px] font-semibold uppercase tracking-[0.04em]">
-                        {published ? 'Verificação' : 'Antes de publicar'}
+                        {published ? t('Verificação') : t('Antes de publicar')}
                     </span>
                     <ul className="mb-5 mt-1">
                         {items.map(([text, step, ok]) => (
@@ -59,7 +65,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                                 {text}
                                 {!ok && (
                                     <button type="button" onClick={() => goTo(step)} className="ml-auto font-display text-[13px] font-semibold text-accent-ink hover:text-ink">
-                                        Corrigir →
+                                        {t('Corrigir →')}
                                     </button>
                                 )}
                             </li>
@@ -76,7 +82,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                                 rel="noopener"
                                 className="ui-btn ui-btn-line"
                             >
-                                👁 Ver como aluno
+                                {t('👁 Ver como aluno')}
                             </a>
                         )}
                         {published && c.slug && (
@@ -86,22 +92,24 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                                 rel="noopener"
                                 className="ui-btn ui-btn-line"
                             >
-                                Ver no catálogo ↗
+                                {t('Ver no catálogo ↗')}
                             </a>
                         )}
                         {published ? (
                             <button type="button" onClick={onUnpublish} className="ui-btn ui-btn-soft">
-                                Passar a rascunho
+                                {t('Passar a rascunho')}
                             </button>
+                        ) : !canPublish ? (
+                            <p className="text-[13.5px] text-muted">{t('O teu perfil não publica cursos. Quando estiver pronto, pede a um admin para o publicar.')}</p>
                         ) : (
                             <button
                                 type="button"
                                 onClick={onPublish}
                                 disabled={!ready || publishing}
-                                title={ready ? undefined : 'Completa os pontos em falta'}
+                                title={ready ? undefined : t('Completa os pontos em falta')}
                                 className="ui-btn ui-btn-accent"
                             >
-                                {publishing ? 'A publicar…' : 'Publicar curso ▶'}
+                                {publishing ? t('A publicar…') : t('Publicar curso ▶')}
                             </button>
                         )}
                     </div>

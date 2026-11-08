@@ -1,21 +1,23 @@
 import { Field, inputCls, Panel, Seg, Toggle } from './ui';
 
+import { t } from '@/i18n';
+
 const DEADLINES = [[null, 'Sem prazo'], [30, '30 dias'], [60, '60 dias'], [90, '90 dias'], [180, '6 meses']];
 
 // Passo 3 · Preço e acesso.
 export default function StepPrice({ c, update }) {
-    const lessons = c.modules.flatMap((m, mi) => m.lessons.map((l, li) => [l.key, `${mi + 1}.${li + 1} ${l.title || 'Aula sem título'}`]));
+    const lessons = c.modules.flatMap((m, mi) => m.lessons.map((l, li) => [l.key, `${mi + 1}.${li + 1} ${l.title || t('Aula sem título')}`]));
 
     return (
         <div className="space-y-4">
-            <Panel title="Preço" sub="Valor final pago pelo aluno, com IVA incluído.">
+            <Panel title={t('Preço')} sub={t('Valor final pago pelo aluno, com IVA incluído.')}>
                 <div className="mb-4">
-                    <Seg label="Tipo de preço" options={[[false, 'Pago'], [true, 'Gratuito']]} value={c.is_free} onChange={(v) => update((d) => { d.is_free = v; })} />
+                    <Seg label={t('Tipo de preço')} options={[[false, t('Pago')], [true, t('Gratuito')]]} value={c.is_free} onChange={(v) => update((d) => { d.is_free = v; })} />
                 </div>
                 {c.is_free ? (
-                    <p className="text-muted">O curso aparece no catálogo como <b className="text-ink">Grátis</b>.</p>
+                    <p className="text-muted">{t('O curso aparece no catálogo como')}{' '}<b className="text-ink">{t('Grátis')}</b>.</p>
                 ) : (
-                    <Field label="Preço" htmlFor="f-price" required className="mb-0">
+                    <Field label={t('Preço')} htmlFor="f-price" required className="mb-0">
                         <div className="flex max-w-[240px]">
                             <input
                                 id="f-price"
@@ -35,11 +37,11 @@ export default function StepPrice({ c, update }) {
                 )}
             </Panel>
 
-            <Panel title="Acesso e conclusão" sub="Durante quanto tempo o aluno tem acesso e o que conta para terminar o curso.">
-                <Field label="Validade do acesso">
+            <Panel title={t('Acesso e conclusão')} sub={t('Durante quanto tempo o aluno tem acesso e o que conta para terminar o curso.')}>
+                <Field label={t('Validade do acesso')}>
                     <Seg
-                        label="Validade do acesso"
-                        options={[[null, 'Vitalício'], [12, '12 meses'], [6, '6 meses'], [3, '3 meses']]}
+                        label={t('Validade do acesso')}
+                        options={[[null, t('Vitalício')], [12, t('12 meses')], [6, t('6 meses')], [3, t('3 meses')]]}
                         value={c.access_months}
                         onChange={(v) => update((d) => {
                             d.access_months = v;
@@ -47,32 +49,32 @@ export default function StepPrice({ c, update }) {
                         })}
                     />
                 </Field>
-                <Field label="Prazo para concluir" help="Conta a partir da inscrição. Uma empresa pode definir outro prazo para a sua equipa.">
+                <Field label={t('Prazo para concluir')} help={t('Conta a partir da inscrição. Uma empresa pode definir outro prazo para a sua equipa.')}>
                     <Seg
-                        label="Prazo para concluir"
-                        options={DEADLINES.filter(([d]) => !d || !c.access_months || d <= c.access_months * 30)}
+                        label={t('Prazo para concluir')}
+                        options={DEADLINES.map(([d, l]) => [d, t(l)]).filter(([d]) => !d || !c.access_months || d <= c.access_months * 30)}
                         value={c.deadline_days}
                         onChange={(v) => update((d) => { d.deadline_days = v; })}
                     />
                 </Field>
-                <Toggle checked={c.certificate_enabled} onChange={(v) => update((d) => { d.certificate_enabled = v; })} title="Emitir certificado">
-                    O aluno recebe um certificado T.Academy ao concluir.
+                <Toggle checked={c.certificate_enabled} onChange={(v) => update((d) => { d.certificate_enabled = v; })} title={t('Emitir certificado')}>
+                    {t('O aluno recebe um certificado T.Academy ao concluir.')}
                 </Toggle>
                 {c.certificate_enabled && (
                     <div className="flex flex-wrap gap-6 pb-3.5 pl-[52px]">
-                        <Range label="Aulas vistas" min={50} value={c.certificate_min_progress} onChange={(v) => update((d) => { d.certificate_min_progress = v; })} />
-                        <Range label="Nota mínima nos testes" min={0} value={c.certificate_min_score} onChange={(v) => update((d) => { d.certificate_min_score = v; })} />
+                        <Range label={t('Aulas vistas')} min={50} value={c.certificate_min_progress} onChange={(v) => update((d) => { d.certificate_min_progress = v; })} />
+                        <Range label={t('Nota mínima nos testes')} min={0} value={c.certificate_min_score} onChange={(v) => update((d) => { d.certificate_min_score = v; })} />
                     </div>
                 )}
                 {c.certificate_enabled && (
-                    <Toggle checked={c.requires_attendance} onChange={(v) => update((d) => { d.requires_attendance = v; })} title="Exigir presença">
-                        O certificado só é emitido depois de confirmares a presença do aluno, em “Os meus cursos” › Alunos.
+                    <Toggle checked={c.requires_attendance} onChange={(v) => update((d) => { d.requires_attendance = v; })} title={t('Exigir presença')}>
+                        {t('O certificado só é emitido depois de confirmares a presença do aluno, em “Os meus cursos” › Alunos.')}
                     </Toggle>
                 )}
-                <Field label="Aula de amostra grátis" htmlFor="f-sample" className="mb-0 mt-2" help="Quem ainda não comprou pode ver esta aula para experimentar.">
+                <Field label={t('Aula de amostra grátis')} htmlFor="f-sample" className="mb-0 mt-2" help={t('Quem ainda não comprou pode ver esta aula para experimentar.')}>
                     <select id="f-sample" className={inputCls} value={c.sample_lesson_key} onChange={(e) => update((d) => { d.sample_lesson_key = e.target.value; })}>
-                        <option value="">Nenhuma</option>
-                        {lessons.map(([k, t]) => <option key={k} value={k}>{t}</option>)}
+                        <option value="">{t('Nenhuma')}</option>
+                        {lessons.map(([k, tx]) => <option key={k} value={k}>{tx}</option>)}
                     </select>
                 </Field>
             </Panel>

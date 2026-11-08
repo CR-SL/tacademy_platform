@@ -40,14 +40,14 @@ class ContactRequestForm extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Escreve o teu nome.',
-            'name.min' => 'Escreve o teu nome.',
-            'email.required' => 'Escreve o teu email.',
-            'email.email' => 'Escreve um email válido, ex.: nome@oficina.pt.',
-            'company.required_if' => 'Indica o nome da empresa ou oficina.',
-            'message.required' => 'Escreve a tua pergunta ou pedido.',
-            'message.min' => 'Escreve a tua pergunta ou pedido.',
-            'consent.accepted' => 'Para respondermos, precisamos que aceites o uso dos teus dados.',
+            'name.required' => __('Escreve o teu nome.'),
+            'name.min' => __('Escreve o teu nome.'),
+            'email.required' => __('Escreve o teu email.'),
+            'email.email' => __('Escreve um email válido, ex.: nome@oficina.pt.'),
+            'company.required_if' => __('Indica o nome da empresa ou oficina.'),
+            'message.required' => __('Escreve a tua pergunta ou pedido.'),
+            'message.min' => __('Escreve a tua pergunta ou pedido.'),
+            'consent.accepted' => __('Para respondermos, precisamos que aceites o uso dos teus dados.'),
         ];
     }
 }

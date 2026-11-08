@@ -2,6 +2,9 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button, Field } from '@/Components/ui';
 
+import { t } from '@/i18n';
+import LanguageToggle from '@/Components/LanguageToggle';
+
 // Entrada da plataforma (exemplo C, escolhido a 2026-11-08): em cada visita, as peças do pássaro
 // juntam-se, o pássaro fica inteiro e voa até ao lugar dele no logótipo, centrado por cima de
 // Entrar e Criar conta; ao pousar, aparecem o nome e a frase.
@@ -118,11 +121,11 @@ function Intro({ target, onLeave, onDone }) {
         // A linha amarela enche enquanto tudo acontece
         anims.push(fillRef.current.firstChild.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: 2200, delay: 200, easing: EASE_FLY, fill: 'both' }));
 
-        const t = setTimeout(leave, 2650);
+        const tx = setTimeout(leave, 2650);
         const key = (e) => { if (['Escape', 'Enter', ' '].includes(e.key)) { e.preventDefault(); leave(); } };
         window.addEventListener('keydown', key);
         return () => {
-            clearTimeout(t);
+            clearTimeout(tx);
             window.removeEventListener('keydown', key);
             anims.forEach((a) => a.cancel());
         };
@@ -138,7 +141,7 @@ function Intro({ target, onLeave, onDone }) {
                 <img data-name className="en-phrase" src={`${IMG}/phrase.png`} alt="" />
             </div>
             <div ref={fillRef} className="en-fill"><i /></div>
-            <button type="button" className="en-skip" onClick={leave} tabIndex={-1}>Saltar</button>
+            <button type="button" className="en-skip" onClick={leave} tabIndex={-1}>{t('Saltar')}</button>
         </div>
     );
 }
@@ -152,24 +155,24 @@ function LoginForm({ canResetPassword }) {
     };
     return (
         <form onSubmit={submit} className="en-form" noValidate>
-            <Field id="email" label="Email" error={errors.email}>
+            <Field id="email" label={t('Email')} error={errors.email}>
                 <input id="email" type="email" className="ui-input" autoComplete="email" placeholder="nome@oficina.pt" value={data.email} onChange={(e) => setData('email', e.target.value)} />
             </Field>
             <div className="en-pw-row">
-                <label htmlFor="password" className="ui-label">Palavra-passe</label>
-                {canResetPassword && <a href={route('password.request')} className="en-link">Esqueceste-te?</a>}
+                <label htmlFor="password" className="ui-label">{t('Palavra-passe')}</label>
+                {canResetPassword && <a href={route('password.request')} className="en-link">{t('Esqueceste-te?')}</a>}
             </div>
             <Field id="password" error={errors.password} className="en-pw-field">
                 <div className="en-pw">
                     <input id="password" type={show ? 'text' : 'password'} className="ui-input" autoComplete="current-password" value={data.password} onChange={(e) => setData('password', e.target.value)} aria-invalid={errors.password ? true : undefined} aria-describedby={errors.password ? 'password-err' : undefined} />
-                    <button type="button" onClick={() => setShow((s) => !s)} aria-pressed={show} aria-controls="password">{show ? 'Esconder' : 'Mostrar'}</button>
+                    <button type="button" onClick={() => setShow((s) => !s)} aria-pressed={show} aria-controls="password">{show ? t('Esconder') : t('Mostrar')}</button>
                 </div>
             </Field>
             <label className="en-check">
                 <input type="checkbox" className="ui-check" checked={data.remember} onChange={(e) => setData('remember', e.target.checked)} />
-                Manter a sessão iniciada neste dispositivo
+                {t('Manter a sessão iniciada neste dispositivo')}
             </label>
-            <Button type="submit" variant="accent" size="lg" block disabled={processing}>{processing ? 'A entrar…' : 'Entrar'}</Button>
+            <Button type="submit" variant="accent" size="lg" block disabled={processing}>{processing ? t('A entrar…') : t('Entrar')}</Button>
         </form>
     );
 }
@@ -183,19 +186,19 @@ function RegisterForm() {
     };
     return (
         <form onSubmit={submit} className="en-form" noValidate>
-            <Field id="name" label="Nome" error={errors.name}>
-                <input id="name" className="ui-input" autoComplete="name" placeholder="Nome e apelido" value={data.name} onChange={(e) => setData('name', e.target.value)} />
+            <Field id="name" label={t('Nome')} error={errors.name}>
+                <input id="name" className="ui-input" autoComplete="name" placeholder={t('Nome e apelido')} value={data.name} onChange={(e) => setData('name', e.target.value)} />
             </Field>
-            <Field id="email" label="Email" error={errors.email}>
+            <Field id="email" label={t('Email')} error={errors.email}>
                 <input id="email" type="email" className="ui-input" autoComplete="email" placeholder="nome@oficina.pt" value={data.email} onChange={(e) => setData('email', e.target.value)} />
             </Field>
-            <Field id="password" label="Palavra-passe" hint="Pelo menos 8 carateres." error={errors.password}>
+            <Field id="password" label="Palavra-passe" hint={t('Pelo menos 8 carateres.')} error={errors.password}>
                 <div className="en-pw">
                     <input id="password" type={show ? 'text' : 'password'} className="ui-input" autoComplete="new-password" value={data.password} onChange={(e) => setData('password', e.target.value)} aria-invalid={errors.password ? true : undefined} aria-describedby={errors.password ? 'password-err' : 'password-hint'} />
-                    <button type="button" onClick={() => setShow((s) => !s)} aria-pressed={show} aria-controls="password">{show ? 'Esconder' : 'Mostrar'}</button>
+                    <button type="button" onClick={() => setShow((s) => !s)} aria-pressed={show} aria-controls="password">{show ? t('Esconder') : t('Mostrar')}</button>
                 </div>
             </Field>
-            <Button type="submit" variant="accent" size="lg" block disabled={processing}>{processing ? 'A criar a conta…' : 'Criar conta'}</Button>
+            <Button type="submit" variant="accent" size="lg" block disabled={processing}>{processing ? t('A criar a conta…') : t('Criar conta')}</Button>
         </form>
     );
 }
@@ -208,7 +211,7 @@ export default function Entrada({ mode: startMode = 'entrar', status, canResetPa
     const birdRef = useRef(null);
     const tabsRef = useRef(null);
     const [reveal, setReveal] = useState(false); // nome e frase a aparecer depois de o pássaro pousar
-    const c = COPY[mode];
+    const c = { ...COPY[mode], title: t(COPY[mode].title), sub: t(COPY[mode].sub), head: t(COPY[mode].head) };
 
     // O separador ativo fica no endereço (/login ou /register), sem recarregar
     const pick = (m, focus) => {
@@ -227,20 +230,22 @@ export default function Entrada({ mode: startMode = 'entrar', status, canResetPa
             <Head title={c.head} />
             {phase !== 'ready' && <Intro target={birdRef} onLeave={() => setPhase('landing')} onDone={() => { setReveal(true); setPhase('ready'); }} />}
 
+            <div className="en-top"><span /><LanguageToggle /></div>
+
             <main className="en-col">
                 {status && <p className="en-status" role="status">{status}</p>}
 
                 <div className="en-tabs-wrap">
                     <h2 className={`en-logo ${reveal ? 'en-logo-reveal' : ''}`}>
-                        <img className="en-logo-bird" src={LOGO} alt="T.Academy · Gestão de talentos" />
+                        <img className="en-logo-bird" src={LOGO} alt={t('T.Academy · Gestão de talentos')} />
                         <img className="en-logo-text" src={LOGO} alt="" aria-hidden="true" />
                         <span ref={birdRef} className="en-logo-box" aria-hidden="true" />
                     </h2>
-                    <div ref={tabsRef} className="en-tabs" role="tablist" aria-label="Entrar ou criar conta"
+                    <div ref={tabsRef} className="en-tabs" role="tablist" aria-label={t('Entrar ou criar conta')}
                         onKeyDown={(e) => { if (['ArrowLeft', 'ArrowRight'].includes(e.key)) pick(mode === 'entrar' ? 'criar' : 'entrar', true); }}>
                         {['entrar', 'criar'].map((m) => (
                             <button key={m} type="button" role="tab" data-tab={m} id={`tab-${m}`} aria-selected={mode === m} aria-controls="en-panel" tabIndex={mode === m ? 0 : -1} onClick={() => pick(m)}>
-                                {COPY[m].head}
+                                {t(COPY[m].head)}
                             </button>
                         ))}
                     </div>
@@ -256,19 +261,19 @@ export default function Entrada({ mode: startMode = 'entrar', status, canResetPa
                     <div className="en-company">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16" /><path d="M15 9h4a1 1 0 0 1 1 1v11" /><path d="M8 8h3M8 12h3M8 16h3M3 21h18" /></svg>
                         <div>
-                            <b>Foste convidado pela tua empresa?</b>
-                            <p>Não precisas de criar conta. Abre o email que recebeste e define a tua palavra-passe.</p>
-                            <a href={route('password.request')} className="en-link">Não recebi o email</a>
+                            <b>{t('Foste convidado pela tua empresa?')}</b>
+                            <p>{t('Não precisas de criar conta. Abre o email que recebeste e define a tua palavra-passe.')}</p>
+                            <a href={route('password.request')} className="en-link">{t('Não recebi o email')}</a>
                         </div>
                     </div>
                     <a href="/cursos" className="en-catalog">
-                        <span><b>Ver os cursos sem conta</b><small>Espreita o catálogo e os preços antes de te registares.</small></span>
+                        <span><b>{t('Ver os cursos sem conta')}</b><small>{t('Espreita o catálogo e os preços antes de te registares.')}</small></span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                     </a>
                 </div>
             </main>
 
-            <footer className="en-foot">© T.Academy · Gestão de talentos</footer>
+            <footer className="en-foot">{t('© T.Academy · Gestão de talentos')}</footer>
         </div>
     );
 }

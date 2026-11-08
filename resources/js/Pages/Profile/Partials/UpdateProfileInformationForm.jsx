@@ -5,6 +5,8 @@ import TextInput from '@/Components/TextInput';
 import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 
+import { t } from '@/i18n';
+
 export default function UpdateProfileInformation({
     mustVerifyEmail,
     status,
@@ -28,11 +30,11 @@ export default function UpdateProfileInformation({
         <section className={className}>
             <header>
                 <h2 className="font-display text-lg font-bold text-ink">
-                    Os teus dados
+                    {t('Os teus dados')}
                 </h2>
 
                 <p className="mt-1 text-sm text-muted">
-                    O teu nome e o email com que entras na plataforma.
+                    {t('O teu nome e o email com que entras na plataforma.')}
                 </p>
             </header>
 
@@ -72,27 +74,27 @@ export default function UpdateProfileInformation({
                 {mustVerifyEmail && user.email_verified_at === null && (
                     <div>
                         <p className="mt-2 text-sm text-ink">
-                            Ainda não confirmaste este email.{' '}
+                            {t('Ainda não confirmaste este email.')}{' '}
                             <Link
                                 href={route('verification.send')}
                                 method="post"
                                 as="button"
                                 className="text-sm text-muted underline hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                             >
-                                Enviar outro link de confirmação
+                                {t('Enviar outro link de confirmação')}
                             </Link>
                         </p>
 
                         {status === 'verification-link-sent' && (
                             <div className="mt-2 text-sm font-semibold text-accent-ink">
-                                Enviámos um link novo para o teu email.
+                                {t('Enviámos um link novo para o teu email.')}
                             </div>
                         )}
                     </div>
                 )}
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>{processing ? 'A guardar…' : 'Guardar'}</PrimaryButton>
+                    <PrimaryButton disabled={processing}>{processing ? t('A guardar…') : t('Guardar')}</PrimaryButton>
 
                     <Transition
                         show={recentlySuccessful}
@@ -102,7 +104,7 @@ export default function UpdateProfileInformation({
                         leaveTo="opacity-0"
                     >
                         <p className="text-sm text-muted">
-                            Guardado.
+                            {t('Guardado.')}
                         </p>
                     </Transition>
                 </div>

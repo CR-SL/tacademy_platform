@@ -36,7 +36,7 @@ class LessonController extends Controller
         $lessons = $this->learning->lessons($course);
         $done = $access['mode'] === 'enrolled' ? $this->learning->completedIds($user, $lessons) : collect();
         if (! $this->learning->canOpen($access, $course, $lesson)) {
-            return to_route('learn.course', $course->slug)->with('status', 'Esta aula só abre para quem está inscrito no curso.');
+            return to_route('learn.course', $course->slug)->with('status', __('Esta aula só abre para quem está inscrito no curso.'));
         }
 
         if ($access['mode'] === 'enrolled' && $this->finishOnOpen($user, $lesson)) {
@@ -140,7 +140,7 @@ class LessonController extends Controller
         $data = $request->validate(['answers' => ['required', 'array']]);
         $attempt = $this->learning->submitQuiz($request->user(), $lesson, $data['answers']);
 
-        return back()->with('status', $attempt->passed ? $this->doneMessage($request->user(), $course, 'Passaste no teste!') : 'Tentativa registada. Revê as respostas.');
+        return back()->with('status', $attempt->passed ? $this->doneMessage($request->user(), $course, __('Passaste no teste!')) : __('Tentativa registada. Revê as respostas.'));
     }
 
     /** Só quem está inscrito (dentro da validade) pode registar progresso. */
@@ -148,7 +148,7 @@ class LessonController extends Controller
     {
         $course = $lesson->module->course;
         $access = $this->learning->access($user, $course);
-        abort_unless($access['mode'] === 'enrolled', 403, 'Inscreve-te no curso para guardar o progresso.');
+        abort_unless($access['mode'] === 'enrolled', 403, __('Inscreve-te no curso para guardar o progresso.'));
 
         return [$course];
     }
@@ -185,9 +185,10 @@ class LessonController extends Controller
 
     private function doneMessage(User $user, Course $course, string $prefix = 'Aula concluída!'): string
     {
+        $prefix = __($prefix);
         $cert = $this->newCertificate($user, $course);
 
-        return $cert ? "{$prefix} Curso concluído. Certificado {$cert->certificate_number} emitido." : $prefix;
+        return $cert ? __(':prefix Curso concluído. Certificado :number emitido.', ['prefix' => $prefix, 'number' => $cert->certificate_number]) : $prefix;
     }
 
     private function notePayload(LessonNote $note): array

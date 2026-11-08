@@ -76,7 +76,7 @@ class TeamController extends Controller
             'pending' => ContactRequest::where('company_id', $company->id)->where('kind', 'alteracao')->whereIn('status', ContactRequest::OPEN)
                 ->latest()->get()->map(fn ($r) => [
                     'id' => $r->id,
-                    'change' => ContactRequest::CHANGE_TYPES[$r->change_type] ?? $r->change_type,
+                    'change' => __(ContactRequest::CHANGE_TYPES[$r->change_type] ?? $r->change_type),
                     'people' => $r->people ?? [],
                     'packs' => $r->packs,
                     'course_id' => $r->course_id,
@@ -99,7 +99,7 @@ class TeamController extends Controller
             'leader' => ['required', 'email'],
             'resolve' => ['nullable', 'array'], // pedidos de alteração que ficam concluídos
             'resolve.*' => ['integer'],
-        ], ['people.*.name.required' => 'Falta o nome.', 'people.*.email.*' => 'Email inválido.']);
+        ], ['people.*.name.required' => __('Falta o nome.'), 'people.*.email.*' => __('Email inválido.')]);
 
         $company->update(['packs' => $data['packs']]);
         $company->courses()->sync($data['course_ids']);
@@ -112,6 +112,6 @@ class TeamController extends Controller
                 ->update(['status' => 'concluido', 'assigned_to' => $request->user()->id]);
         }
 
-        return back()->with('status', 'Equipa atualizada.');
+        return back()->with('status', __('Equipa atualizada.'));
     }
 }

@@ -37,6 +37,12 @@ class HandleInertiaRequests extends Middleware
                 // Perfil (aluno, formador, team_leader, gestor_cursos, admin): mostra "Os meus cursos" na navbar
                 'role' => $request->user()?->role?->name,
             ],
+            // O que a pessoa pode fazer (menu e botões); o servidor volta sempre a verificar
+            'can' => fn () => $request->user()
+                ? collect(\App\Support\Permissions::keys())->mapWithKeys(fn ($p) => [$p => $request->user()->canDo($p)])
+                : [],
+            // Língua da plataforma (pt | en); as traduções estão em lang/en.json
+            'locale' => fn () => app()->getLocale(),
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
             ],
@@ -48,7 +54,7 @@ class HandleInertiaRequests extends Middleware
                     'count' => ContactRequest::where('status', 'novo')->count(),
                     'items' => ContactRequest::where('status', 'novo')->latest()->limit(6)->get()->map(fn ($r) => [
                         'id' => $r->id,
-                        'kind' => ContactRequest::KINDS[$r->kind] ?? $r->kind,
+                        'kind' => __(ContactRequest::KINDS[$r->kind] ?? $r->kind),
                         'who' => $r->company ?: $r->name,
                         'ago' => $r->created_at?->diffForHumans(),
                     ]),

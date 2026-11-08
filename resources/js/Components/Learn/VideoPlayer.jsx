@@ -1,6 +1,8 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import CinemaPlayer from '@/Components/Learn/CinemaPlayer';
 
+import { t } from '@/i18n';
+
 // Leitor da aula de vídeo. Conta os segundos REALMENTE reproduzidos num mapa de bits (1 bit por segundo):
 // saltar à frente não conta e rever não conta duas vezes. Grava a posição para retomar e envia o progresso.
 // Vídeos nossos (HLS .m3u8 ou MP4) usam o leitor próprio (CinemaPlayer); YouTube e Vimeo usam a API do leitor;
@@ -50,14 +52,14 @@ const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initia
         }
     };
     // Regista o avanço de lastT até t (até 3 s de diferença = reprodução normal, mesmo a 2×; mais = salto)
-    const advance = (t) => {
+    const advance = (tx) => {
         const st = state.current;
-        if (st.lastT != null && t > st.lastT && t - st.lastT <= 3) {
-            for (let s = st.lastT; s < t; s++) mark(s);
+        if (st.lastT != null && tx > st.lastT && tx - st.lastT <= 3) {
+            for (let s = st.lastT; s < tx; s++) mark(s);
             onWatched?.(count(), st.duration);
         }
-        st.lastT = t;
-        st.position = t;
+        st.lastT = tx;
+        st.position = tx;
         redraw((n) => n + 1);
     };
 
@@ -161,11 +163,11 @@ const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initia
     if (source.kind === 'link') {
         return (
             <div className="flex aspect-video flex-col items-center justify-center gap-4 bg-carbon p-6 text-center text-white">
-                <p className="max-w-md text-white/80">Este vídeo abre noutro separador. O tempo conta enquanto esta página estiver aberta depois de carregares em «Abrir vídeo».</p>
+                <p className="max-w-md text-white/80">{t('Este vídeo abre noutro separador. O tempo conta enquanto esta página estiver aberta depois de carregares em «Abrir vídeo».')}</p>
                 <a href={source.url} target="_blank" rel="noopener noreferrer"
                     onClick={() => { state.current.playing = true; }}
                     className="ui-btn ui-btn-accent">
-                    Abrir vídeo ↗
+                    {t('Abrir vídeo ↗')}
                 </a>
             </div>
         );
@@ -176,8 +178,8 @@ const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initia
         return (
             <CinemaPlayer ref={player} src={source.url} startAt={initial.position} map={map.current} duration={st.duration}
                 onReady={(d) => { st.duration = Math.floor(d) || st.duration; onWatched?.(count(), st.duration); }}
-                onPlay={(t) => { st.playing = true; st.lastT = Math.floor(t); }}
-                onTime={(t) => { if (st.playing) advance(Math.floor(t)); }}
+                onPlay={(tx) => { st.playing = true; st.lastT = Math.floor(tx); }}
+                onTime={(tx) => { if (st.playing) advance(Math.floor(tx)); }}
                 onPause={() => { st.playing = false; save(); }} />
         );
     }
@@ -202,7 +204,7 @@ function WatchedBar({ map, duration, position }) {
     }
     const pct = (s) => `${(s / duration) * 100}%`;
     return (
-        <div className="mx-3.5 my-3 h-1.5 bg-white/20" title="O que já viste deste vídeo">
+        <div className="mx-3.5 my-3 h-1.5 bg-white/20" title={t('O que já viste deste vídeo')}>
             <div className="relative h-full">
                 {seg.map(([a, b]) => <i key={a} className="absolute inset-y-0 bg-accent" style={{ left: pct(a), width: pct(b - a) }} />)}
                 <span className="absolute -inset-y-1 left-[90%] w-0.5 bg-white/60" aria-hidden="true" />

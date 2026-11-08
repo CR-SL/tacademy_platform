@@ -8,9 +8,11 @@ import { IconArrow, IconCheck, IconPlay, IconTri } from '@/Components/Panels/ico
 import usePanelBoard from '@/Components/Panels/usePanelBoard';
 import WorkshopGame from '@/Components/Panels/WorkshopGame';
 
+import { t } from '@/i18n';
+
 function greeting() {
     const h = new Date().getHours();
-    return h < 12 ? 'Bom dia' : h < 20 ? 'Boa tarde' : 'Boa noite';
+    return h < 12 ? t('Bom dia') : h < 20 ? t('Boa tarde') : t('Boa noite');
 }
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -29,7 +31,7 @@ function pendingSummary(pending) {
     if (team) parts.push(team.title.charAt(0).toLowerCase() + team.title.slice(1));
     Object.entries(KIND_SUMMARY).forEach(([kind, [one, many]]) => {
         const n = pending.filter((p) => p.kind === kind).length;
-        if (n) parts.push(plural(n, one, many));
+        if (n) parts.push(plural(n, t(one), t(many)));
     });
     return parts.join(' · ') || null;
 }
@@ -38,7 +40,7 @@ function CoursesPanel({ courses, resume }) {
     const [open, setOpen] = useState(() => resume?.modules.find((m) => m.current)?.id ?? null);
 
     if (!courses.length) {
-        return <EmptyPanel title="Ainda não tens cursos" text="Quando te inscreveres num curso, aparece aqui." href="/plataforma/cursos" cta="Ver o catálogo" />;
+        return <EmptyPanel title={t('Ainda não tens cursos')} text={t('Quando te inscreveres num curso, aparece aqui.')} href="/plataforma/cursos" cta={t('Ver o catálogo')} />;
     }
 
     return (
@@ -49,13 +51,13 @@ function CoursesPanel({ courses, resume }) {
                     <span>
                         <b>{c.title}</b>
                         <Bar value={c.pct} />
-                        <small className={c.deadline?.late ? 'pn-late-t' : undefined}>{c.state === 'feito' ? '✓ Concluído' : `${c.pct}%`}{c.company ? ' · Empresa' : ' · Curso próprio'}{c.expired ? ' · Acesso terminado' : c.deadline ? ` · ${c.deadline.late ? 'Fora do prazo' : `Até ${c.deadline.date.slice(0, 5)}`}` : ''}</small>
+                        <small className={c.deadline?.late ? 'pn-late-t' : undefined}>{c.state === 'feito' ? t('✓ Concluído') : `${c.pct}%`}{c.company ? t(' · Empresa') : t(' · Curso próprio')}{c.expired ? t(' · Acesso terminado') : c.deadline ? ` · ${c.deadline.late ? t('Fora do prazo') : t('Até :v1', { v1: c.deadline.date.slice(0, 5) })}` : ''}</small>
                     </span>
                 </Link>
             ))}
             {resume && (
                 <>
-                    <div className="pn-sub-h pn-lab">{resume.course} · Módulos</div>
+                    <div className="pn-sub-h pn-lab">{resume.course}{' '}{t('· Módulos')}</div>
                     {resume.modules.map((m, i) => {
                         const isOpen = open === m.id;
                         return (
@@ -88,10 +90,10 @@ function ContinueBody({ resume, hasCourses }) {
     if (!resume) {
         return (
             <>
-                <h3 className="pn-disp">{hasCourses ? 'Concluíste os teus cursos' : 'Ainda não começaste nenhum curso'}</h3>
-                <p>{hasCourses ? 'Vê o catálogo para escolheres o próximo.' : 'Escolhe um curso no catálogo para começares.'}</p>
+                <h3 className="pn-disp">{hasCourses ? t('Concluíste os teus cursos') : t('Ainda não começaste nenhum curso')}</h3>
+                <p>{hasCourses ? t('Vê o catálogo para escolheres o próximo.') : t('Escolhe um curso no catálogo para começares.')}</p>
                 <div className="pn-acts" style={{ marginTop: 'auto' }}>
-                    <Link href="/plataforma/cursos" className="ui-btn">Ver o catálogo<IconArrow /></Link>
+                    <Link href="/plataforma/cursos" className="ui-btn">{t('Ver o catálogo')}<IconArrow /></Link>
                 </div>
             </>
         );
@@ -100,11 +102,11 @@ function ContinueBody({ resume, hasCourses }) {
     return (
         <>
             <h3 className="pn-disp">{resume.lesson}</h3>
-            <p>{resume.left === 1 ? `Falta esta aula para fechares ${resume.module}.` : `Faltam ${resume.left} aulas para fechares ${resume.module}.`}</p>
+            <p>{resume.left === 1 ? t('Falta esta aula para fechares :module.', { module: resume.module }) : t('Faltam :left aulas para fechares :module.', { left: resume.left, module: resume.module })}</p>
             <div className="pn-prog"><Bar value={resume.pct} /></div>
             <div className="pn-acts">
-                <Link href={resume.url} className="ui-btn">Continuar a aula<IconArrow /></Link>
-                <Link href={resume.courseUrl} className="ui-btn ui-btn-soft">Ver o curso</Link>
+                <Link href={resume.url} className="ui-btn">{t('Continuar a aula')}<IconArrow /></Link>
+                <Link href={resume.courseUrl} className="ui-btn ui-btn-soft">{t('Ver o curso')}</Link>
             </div>
         </>
     );
@@ -112,12 +114,12 @@ function ContinueBody({ resume, hasCourses }) {
 
 function PendingPanel({ pending }) {
     const [open, setOpen] = useState(0);
-    if (!pending.length) return <p className="pn-empty">Não tens nada por fazer agora.</p>;
+    if (!pending.length) return <p className="pn-empty">{t('Não tens nada por fazer agora.')}</p>;
 
     return pending.map((p, i) => (
         <div key={`${p.kind}-${p.url}`} className="pn-pend">
             <button type="button" aria-expanded={open === i} onClick={() => setOpen(open === i ? null : i)}>
-                <span><span className="pn-lab">{p.kind} · {p.course}</span><b>{p.title}</b></span>
+                <span><span className="pn-lab">{t(p.kind)} · {p.course}</span><b>{p.title}</b></span>
                 <IconTri />
             </button>
             {open === i && (
@@ -132,7 +134,7 @@ function PendingPanel({ pending }) {
 }
 
 function ResultsPanel({ results }) {
-    if (!results.length) return <p className="pn-empty">Ainda não fizeste nenhum teste.</p>;
+    if (!results.length) return <p className="pn-empty">{t('Ainda não fizeste nenhum teste.')}</p>;
 
     return (
         <>
@@ -142,14 +144,14 @@ function ResultsPanel({ results }) {
                     <b>{r.score}%</b>
                 </Link>
             ))}
-            <div className="pn-foot"><Link href="/plataforma/avaliacoes" className="ui-link">Ver todas as avaliações</Link></div>
+            <div className="pn-foot"><Link href="/plataforma/avaliacoes" className="ui-link">{t('Ver todas as avaliações')}</Link></div>
         </>
     );
 }
 
 function NotesPanel({ notes }) {
     const [q, setQ] = useState('');
-    if (!notes.length) return <p className="pn-empty">Ainda não tens notas. Podes escrevê-las durante as aulas.</p>;
+    if (!notes.length) return <p className="pn-empty">{t('Ainda não tens notas. Podes escrevê-las durante as aulas.')}</p>;
 
     const term = q.trim().toLowerCase();
     const list = notes.filter((n) => !term || `${n.body} ${n.course} ${n.lesson}`.toLowerCase().includes(term));
@@ -157,10 +159,10 @@ function NotesPanel({ notes }) {
     return (
         <>
             <label className="pn-search">
-                <span className="pn-sr">Procurar nas notas</span>
-                <input type="search" placeholder="Procurar nas notas" value={q} onChange={(e) => setQ(e.target.value)} />
+                <span className="pn-sr">{t('Procurar nas notas')}</span>
+                <input type="search" placeholder={t('Procurar nas notas')} value={q} onChange={(e) => setQ(e.target.value)} />
             </label>
-            {list.length === 0 && <p className="pn-empty">Nenhuma nota com “{q}”.</p>}
+            {list.length === 0 && <p className="pn-empty">{t('Nenhuma nota com “')}{q}”.</p>}
             {list.map((n) => (
                 <Link key={n.id} href={n.url} className="pn-note">
                     <span className="pn-where">
@@ -183,28 +185,28 @@ function SuggestionsPanel({ suggestions, paused }) {
         let raf = 0;
         let last = performance.now();
         let acc = car.scrollLeft;
-        const step = (t) => {
+        const step = (tx) => {
             const half = car.scrollWidth / 2;
             const held = car.matches(':hover') || car.contains(document.activeElement);
             if (!held && half > car.clientWidth) {
-                acc += (t - last) * 0.025;
+                acc += (tx - last) * 0.025;
                 if (acc >= half) acc -= half;
                 car.scrollLeft = acc;
             } else {
                 acc = car.scrollLeft;
             }
-            last = t;
+            last = tx;
             raf = requestAnimationFrame(step);
         };
         raf = requestAnimationFrame(step);
         return () => cancelAnimationFrame(raf);
     }, [paused]);
 
-    if (!suggestions.length) return <p className="pn-empty">Já estás inscrito em todos os cursos do catálogo.</p>;
+    if (!suggestions.length) return <p className="pn-empty">{t('Já estás inscrito em todos os cursos do catálogo.')}</p>;
 
     const items = [...suggestions, ...suggestions];
     return (
-        <div className="pn-car" ref={ref} tabIndex={0} aria-label="Cursos sugeridos">
+        <div className="pn-car" ref={ref} tabIndex={0} aria-label={t('Cursos sugeridos')}>
             {items.map((c, i) => {
                 const copy = i >= suggestions.length;
                 return (
@@ -216,7 +218,7 @@ function SuggestionsPanel({ suggestions, paused }) {
                                 <h3 className="pn-disp">{c.title}</h3>
                                 <div className="pn-card-f">
                                     <span>{c.minutes ? formatMinutes(c.minutes) : ''}</span>
-                                    <Link href={c.url} className="pn-price" tabIndex={copy ? -1 : undefined}>{c.free ? 'Grátis' : formatEuro(c.price)}</Link>
+                                    <Link href={c.url} className="pn-price" tabIndex={copy ? -1 : undefined}>{c.free ? t('Grátis') : formatEuro(c.price)}</Link>
                                 </div>
                             </div>
                         </div>
@@ -239,70 +241,70 @@ export default function Dashboard({ courses, resume, pending, results, notes, me
     const { auth } = usePage().props;
     const firstName = (auth?.user?.name ?? '').split(' ')[0];
     const startWith = new URLSearchParams(window.location.search).get('conversa');
-    const unread = messages.threads.reduce((n, t) => n + (t.unread > 0 ? 1 : 0), 0);
+    const unread = messages.threads.reduce((n, tx) => n + (tx.unread > 0 ? 1 : 0), 0);
     const counts = { curso: 0, novo: 0, feito: 0 };
     courses.forEach((c) => { counts[c.state] += 1; });
 
     const panels = {
         cursos: {
-            title: 'Os meus cursos', x: 0, y: 0, w: 5, h: 22,
-            summary: [counts.curso && `${counts.curso} em curso`, counts.novo && `${counts.novo} por começar`, counts.feito && plural(counts.feito, 'concluído', 'concluídos')].filter(Boolean).join(' · '),
+            title: t('Os meus cursos'), x: 0, y: 0, w: 5, h: 22,
+            summary: [counts.curso && t(':curso em curso', { curso: counts.curso }), counts.novo && t(':novo por começar', { novo: counts.novo }), counts.feito && plural(counts.feito, t('concluído'), t('concluídos'))].filter(Boolean).join(' · '),
             body: <CoursesPanel courses={courses} resume={resume} />,
         },
         continuar: {
-            title: 'Continuar', x: 5, y: 0, w: 14, h: 9,
-            label: resume ? ['Continuar', resume.course, lessonNumber(resume) && `Aula ${lessonNumber(resume)}`].filter(Boolean).join(' · ') : 'Continuar',
+            title: t('Continuar'), x: 5, y: 0, w: 14, h: 9,
+            label: resume ? [t('Continuar'), resume.course, lessonNumber(resume) && t('Aula :v1', { v1: lessonNumber(resume) })].filter(Boolean).join(' · ') : t('Continuar'),
             summary: resume?.lesson,
             hero: { image: resume?.image ?? '/images/cursos/cta-oficina.jpg', stamp: resume?.stamp },
-            mini: resume && <Link href={resume.url} className="ui-btn pn-rt-c" aria-label="Continuar a aula" title="Continuar a aula"><IconPlay /></Link>,
+            mini: resume && <Link href={resume.url} className="ui-btn pn-rt-c" aria-label={t('Continuar a aula')} title={t('Continuar a aula')}><IconPlay /></Link>,
             body: <ContinueBody resume={resume} hasCourses={courses.length > 0} />,
         },
         pendentes: {
-            title: 'Pendentes', x: 5, y: 9, w: 7, h: 13,
-            label: `Pendentes · ${pending.length}`,
-            summary: pendingSummary(pending) ?? 'Nada por fazer',
+            title: t('Pendentes'), x: 5, y: 9, w: 7, h: 13,
+            label: t('Pendentes · :length', { length: pending.length }),
+            summary: pendingSummary(pending) ?? t('Nada por fazer'),
             body: <PendingPanel pending={pending} />,
         },
         resultados: {
-            title: 'Resultados', x: 12, y: 9, w: 7, h: 13,
-            summary: results[0] ? `Último: ${results[0].score}%` : 'Sem testes feitos',
+            title: t('Resultados'), x: 12, y: 9, w: 7, h: 13,
+            summary: results[0] ? t('Último: :score%', { score: results[0].score }) : t('Sem testes feitos'),
             body: <ResultsPanel results={results} />,
         },
         alex: { ...alexDef(alexUrl, 0, 22), compact: false },
         notas: {
-            title: 'As minhas notas', x: 0, y: 22, w: 12, h: 11,
-            label: `As minhas notas · ${notes.length}`,
-            summary: notes[0] ? `Última em ${notes[0].lesson}` : 'Sem notas',
+            title: t('As minhas notas'), x: 0, y: 22, w: 12, h: 11,
+            label: t('As minhas notas · :length', { length: notes.length }),
+            summary: notes[0] ? t('Última em :lesson', { lesson: notes[0].lesson }) : t('Sem notas'),
             body: <NotesPanel notes={notes} />,
         },
         mensagens: {
-            title: 'Mensagens', x: 12, y: 22, w: 12, h: 11,
-            label: unread ? `Mensagens · ${unread} por ler` : 'Mensagens',
-            summary: messages.threads[0] ? `${messages.threads[0].name}, ${messages.threads[0].when}` : 'Sem mensagens',
+            title: t('Mensagens'), x: 12, y: 22, w: 12, h: 11,
+            label: unread ? t('Mensagens · :unread por ler', { unread }) : t('Mensagens'),
+            summary: messages.threads[0] ? `${messages.threads[0].name}, ${messages.threads[0].when}` : t('Sem mensagens'),
             body: <MessagesPanel key={startWith ?? ''} messages={messages} startWith={startWith} />,
         },
         sugestoes: {
-            title: 'Sugestões', x: 0, y: 33, w: 24, h: 13,
-            label: 'Sugeridos para ti · Passa o rato para parar',
-            summary: plural(suggestions.length, 'curso', 'cursos'),
+            title: t('Sugestões'), x: 0, y: 33, w: 24, h: 13,
+            label: t('Sugeridos para ti · Passa o rato para parar'),
+            summary: plural(suggestions.length, t('curso'), t('cursos')),
             body: <SuggestionsPanel suggestions={suggestions} />,
         },
         pausa: {
-            title: 'Pausa', x: 0, y: 46, w: 8, h: 14, compact: true,
-            label: 'Pausa · Arrumar a oficina',
-            summary: best ? `Recorde: ${best} pontos` : 'Um minijogo para descontrair',
+            title: t('Pausa'), x: 0, y: 46, w: 8, h: 14, compact: true,
+            label: t('Pausa · Arrumar a oficina'),
+            summary: best ? t('Recorde: :best pontos', { best }) : t('Um minijogo para descontrair'),
             body: <WorkshopGame onBest={setBest} />,
         },
     };
 
     const board = usePanelBoard({ view: 'home', panels, saved: savedLayout });
-    const summaryLine = pendingSummary(pending) ?? (resume ? 'Tudo em dia' : null);
+    const summaryLine = pendingSummary(pending) ?? (resume ? t('Tudo em dia') : null);
 
     // Primeiro uso: sem cursos, sem tarefas e sem conversas, o Início é só boas-vindas (as caixas aparecem com o primeiro curso)
     if (!courses.length && !pending.length && !messages.threads.length) {
         return (
             <StudentLayout>
-                <Head title="Início" />
+                <Head title={t('Início')} />
                 <Welcome firstName={firstName} starter={starter} />
             </StudentLayout>
         );
@@ -310,7 +312,7 @@ export default function Dashboard({ courses, resume, pending, results, notes, me
 
     return (
         <StudentLayout navTools={<PanelsMenu board={board} />}>
-            <Head title="Início" />
+            <Head title={t('Início')} />
             <div className="pn-root">
                 <div className="pn-top">
                     <h1 className="pn-disp">{greeting()}{firstName ? `, ${firstName}` : ''}.</h1>
@@ -326,14 +328,14 @@ export default function Dashboard({ courses, resume, pending, results, notes, me
 function Welcome({ firstName, starter }) {
     return (
         <div className="pn-root mx-auto max-w-[1180px] py-4 sm:py-10">
-            <h1 className="pn-disp text-[clamp(32px,4.4vw,52px)] leading-[1.02]">Olá{firstName ? `, ${firstName}` : ''}.</h1>
+            <h1 className="pn-disp text-[clamp(32px,4.4vw,52px)] leading-[1.02]">{t('Olá')}{firstName ? `, ${firstName}` : ''}.</h1>
             <p className="mt-3 max-w-[56ch] text-[17px] text-text">
-                Escolhe o teu primeiro curso. Vês as aulas no computador ou no telemóvel e continuas sempre onde ficaste.
+                {t('Escolhe o teu primeiro curso. Vês as aulas no computador ou no telemóvel e continuas sempre onde ficaste.')}
             </p>
 
             {starter.length > 0 && (
                 <section aria-labelledby="w-start" className="mt-10">
-                    <h2 id="w-start" className="pn-lab mb-3">Cursos mais recentes</h2>
+                    <h2 id="w-start" className="pn-lab mb-3">{t('Cursos mais recentes')}</h2>
                     <div className="grid gap-3 md:grid-cols-3">
                         {starter.map((c) => (
                             <Link key={c.id} href={c.url} className="group flex flex-col bg-surface transition-colors hover:bg-surface2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
@@ -345,8 +347,8 @@ function Welcome({ firstName, starter }) {
                                     <b className="pn-disp text-[20px] leading-[1.15]">{c.title}</b>
                                     {c.short && <span className="line-clamp-2 text-[14px] text-text">{c.short}</span>}
                                     <span className="mt-auto flex items-center justify-between gap-3 pt-3 text-[13px] text-muted">
-                                        <span>{[c.lessons ? plural(c.lessons, 'aula', 'aulas') : null, c.minutes ? formatMinutes(c.minutes) : null].filter(Boolean).join(' · ')}</span>
-                                        <b className="font-display text-[15px] text-ink">{c.free ? 'Grátis' : formatEuro(c.price)}</b>
+                                        <span>{[c.lessons ? plural(c.lessons, t('aula'), t('aulas')) : null, c.minutes ? formatMinutes(c.minutes) : null].filter(Boolean).join(' · ')}</span>
+                                        <b className="font-display text-[15px] text-ink">{c.free ? t('Grátis') : formatEuro(c.price)}</b>
                                     </span>
                                 </span>
                             </Link>
@@ -356,8 +358,8 @@ function Welcome({ firstName, starter }) {
             )}
 
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-                <Link href="/plataforma/cursos" className="ui-btn ui-btn-accent">Ver o catálogo</Link>
-                <p className="text-[14px] text-muted">Vens de uma empresa? Os cursos que ela te atribuir aparecem aqui.</p>
+                <Link href="/plataforma/cursos" className="ui-btn ui-btn-accent">{t('Ver o catálogo')}</Link>
+                <p className="text-[14px] text-muted">{t('Vens de uma empresa? Os cursos que ela te atribuir aparecem aqui.')}</p>
             </div>
         </div>
     );

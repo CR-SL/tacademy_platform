@@ -40,6 +40,22 @@ class PlatformMail extends Mailable
     }
 
     /**
+     * Monta e envia um email na língua de quem o recebe: a da conta, ou português para quem não tem conta
+     * (respostas a contactos, por exemplo). A língua de quem carregou no botão volta no fim.
+     */
+    public static function inLocaleOf(\App\Models\User|string|null $who, callable $send): mixed
+    {
+        $locale = $who instanceof \App\Models\User ? $who->preferredLocale() : ($who ?: config('app.locale', 'pt'));
+        $previous = app()->getLocale();
+        \App\Http\Middleware\SetLocale::apply($locale);
+        try {
+            return $send();
+        } finally {
+            \App\Http\Middleware\SetLocale::apply($previous);
+        }
+    }
+
+    /**
      * Envia sem interromper o pedido se o email falhar (ex.: SMTP ainda por configurar):
      * o erro fica no log e a ação na plataforma continua.
      */

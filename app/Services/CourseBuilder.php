@@ -208,18 +208,18 @@ class CourseBuilder
         $lessons = $course->modules->flatMap->lessons;
         $problems = [];
 
-        if (! trim($course->title)) $problems[] = ['Título do curso', 0];
-        if (! $course->category_id || ! $course->level) $problems[] = ['Área e nível', 0];
-        if (! $course->thumbnail_url) $problems[] = ['Imagem de capa', 0];
+        if (! trim($course->title)) $problems[] = [__('Título do curso'), 0];
+        if (! $course->category_id || ! $course->level) $problems[] = [__('Área e nível'), 0];
+        if (! $course->thumbnail_url) $problems[] = [__('Imagem de capa'), 0];
         if (! trim((string) $course->short_description) || mb_strlen($course->short_description) > self::SHORT_MAX) {
-            $problems[] = ['Descrição curta', 0];
+            $problems[] = [__('Descrição curta'), 0];
         }
-        if ($lessons->isEmpty()) $problems[] = ['Pelo menos 1 módulo com 1 aula', 1];
-        if ($course->modules->contains(fn ($m) => ! trim($m->title))) $problems[] = ['Todos os módulos têm título', 1];
+        if ($lessons->isEmpty()) $problems[] = [__('Pelo menos 1 módulo com 1 aula'), 1];
+        if ($course->modules->contains(fn ($m) => ! trim($m->title))) $problems[] = [__('Todos os módulos têm título'), 1];
         if ($lessons->contains(fn ($l) => ! $this->lessonComplete($l))) {
-            $problems[] = ['Todas as aulas completas (título + link/conteúdo)', 1];
+            $problems[] = [__('Todas as aulas completas (título + link/conteúdo)'), 1];
         }
-        if (! $course->is_free && (float) $course->price <= 0) $problems[] = ['Preço definido', 2];
+        if (! $course->is_free && (float) $course->price <= 0) $problems[] = [__('Preço definido'), 2];
 
         return $problems;
     }

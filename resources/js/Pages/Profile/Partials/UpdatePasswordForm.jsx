@@ -6,6 +6,8 @@ import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { useRef } from 'react';
 
+import { t } from '@/i18n';
+
 export default function UpdatePasswordForm({ className = '' }) {
     const passwordInput = useRef();
     const currentPasswordInput = useRef();
@@ -48,11 +50,11 @@ export default function UpdatePasswordForm({ className = '' }) {
         <section className={className}>
             <header>
                 <h2 className="font-display text-lg font-bold text-ink">
-                    Mudar a palavra-passe
+                    {t('Mudar a palavra-passe')}
                 </h2>
 
                 <p className="mt-1 text-sm text-muted">
-                    Usa uma palavra-passe longa, que não uses noutros sítios.
+                    {t('Usa uma palavra-passe longa, que não uses noutros sítios.')}
                 </p>
             </header>
 
@@ -121,7 +123,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>{processing ? 'A guardar…' : 'Mudar a palavra-passe'}</PrimaryButton>
+                    <PrimaryButton disabled={processing}>{processing ? t('A guardar…') : t('Mudar a palavra-passe')}</PrimaryButton>
 
                     <Transition
                         show={recentlySuccessful}
@@ -131,7 +133,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                         leaveTo="opacity-0"
                     >
                         <p className="text-sm text-muted">
-                            Palavra-passe alterada.
+                            {t('Palavra-passe alterada.')}
                         </p>
                     </Transition>
                 </div>
