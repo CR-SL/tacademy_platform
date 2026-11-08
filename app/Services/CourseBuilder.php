@@ -319,8 +319,8 @@ class CourseBuilder
 
             return;
         }
-        $quiz = $lesson->quiz()->firstOrCreate([], ['title' => $lesson->title ?: 'Quiz']);
-        $quiz->update(['title' => $lesson->title ?: 'Quiz']);
+        $quiz = $lesson->quiz()->firstOrCreate([], ['title' => $lesson->title ?: 'Teste']);
+        $quiz->update(['title' => $lesson->title ?: 'Teste']);
         $quiz->questions()->delete(); // as opções vão em cascata
         foreach (array_values($questions) as $qi => $q) {
             $question = $quiz->questions()->create(['question' => trim($q['question'] ?? ''), 'order_index' => $qi]);

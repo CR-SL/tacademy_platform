@@ -25,7 +25,7 @@ function Files({ course, query }) {
                 </div>
             </div>
             {types.length > 1 && (
-                <div className="pn-d-f pn-pills" role="group" aria-label="Filtrar por tipo">
+                <div className="pn-d-f ui-pills" role="group" aria-label="Filtrar por tipo">
                     {['Todos', ...types].map((t) => <button key={t} type="button" aria-pressed={type === t} onClick={() => setType(t)}>{t}</button>)}
                 </div>
             )}
@@ -40,8 +40,8 @@ function Files({ course, query }) {
                             <span className="pn-file">{f.type}</span>
                             <span className="pn-tx">{f.name}<small>{f.lesson}{f.size ? ` · ${formatBytes(f.size)}` : ''}</small></span>
                             <span className="pn-acts">
-                                <a href={f.url} target="_blank" rel="noopener noreferrer" className="pn-btn pn-soft pn-sm">Abrir</a>
-                                <a href={f.url} download className="pn-btn pn-line pn-sm">Descarregar</a>
+                                <a href={f.url} target="_blank" rel="noopener noreferrer" className="ui-btn ui-btn-soft ui-btn-sm">Abrir</a>
+                                <a href={f.url} download className="ui-btn ui-btn-line ui-btn-sm">Descarregar</a>
                             </span>
                         </div>
                     ))}

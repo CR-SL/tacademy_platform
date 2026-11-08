@@ -35,13 +35,13 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
         return (
             <div className="p-5 sm:p-7">
                 {meta}
-                <div className={`ta-cut-12 mb-5 flex flex-wrap items-center gap-4 p-5 ${last.passed ? 'bg-[#2F9E5B14]' : 'bg-live/10'}`}>
-                    <span className={`font-display text-[40px] font-bold leading-none ${last.passed ? 'text-[#2F9E5B]' : 'text-live'}`}>{last.score}%</span>
+                <div className={`mb-5 flex flex-wrap items-center gap-4 p-5 ${last.passed ? 'bg-success/10' : 'bg-live/10'}`}>
+                    <span className={`font-display text-[40px] font-bold leading-none ${last.passed ? 'text-success-ink' : 'text-live-ink'}`}>{last.score}%</span>
                     <div>
                         <p className="font-display text-lg font-bold">{last.passed ? 'Passaste no teste!' : 'Ainda não chegaste à nota mínima'}</p>
                         <p className="text-sm text-muted">
                             Tentativa {used} de {quiz.max}.{' '}
-                            {last.passed ? 'A aula ficou concluída.' : left > 0 ? `Tens mais ${left} tentativa${left > 1 ? 's' : ''}.` : 'Já usaste todas as tentativas — fala com o formador.'}
+                            {last.passed ? 'A aula ficou concluída.' : left > 0 ? `Tens mais ${left} tentativa${left > 1 ? 's' : ''}.` : 'Já usaste todas as tentativas. Fala com o formador.'}
                         </p>
                     </div>
                 </div>
@@ -51,19 +51,19 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
                     return (
                         <div key={q.id} className="border-t border-line py-4 first:border-t-0">
                             <p className="mb-2 flex gap-2 font-display font-semibold">
-                                <span className={ok ? 'text-[#2F9E5B]' : 'text-live'} aria-label={ok ? 'Certa' : 'Errada'}>{ok ? '✓' : '✗'}</span>
+                                <span className={ok ? 'text-success-ink' : 'text-live-ink'} aria-label={ok ? 'Certa' : 'Errada'}>{ok ? '✓' : '✗'}</span>
                                 {qi + 1}. {q.question}
                             </p>
                             {q.options.map((o) => {
                                 const mine = Number(chosen) === o.id;
                                 const isRight = q.correct === o.id;
                                 return (
-                                    <div key={o.id} className={`ta-cut-8 mb-1.5 flex items-center gap-2 border-[1.5px] px-3 py-2.5 text-[15px] ${
-                                        isRight ? 'border-[#2F9E5B] bg-[#2F9E5B14]' : mine ? (ok ? 'border-[#2F9E5B] bg-[#2F9E5B14]' : 'border-live bg-live/10') : 'border-transparent bg-page text-muted'
+                                    <div key={o.id} className={`mb-1.5 flex items-center gap-2 border-[1.5px] px-3 py-2.5 text-[15px] ${
+                                        isRight ? 'border-success bg-success/10' : mine ? (ok ? 'border-success bg-success/10' : 'border-live bg-live/10') : 'border-transparent bg-page text-muted'
                                     }`}>
                                         <span className="flex-1">{o.text}</span>
-                                        {mine && <span className={`font-mono text-[11px] font-semibold ${ok ? 'text-[#2F9E5B]' : 'text-live'}`}>{ok ? '✓ A TUA RESPOSTA' : '✗ A TUA RESPOSTA'}</span>}
-                                        {isRight && !mine && <span className="font-mono text-[11px] font-semibold text-[#2F9E5B]">✓ CERTA</span>}
+                                        {mine && <span className={`font-mono text-[11px] font-semibold uppercase ${ok ? 'text-success-ink' : 'text-live-ink'}`}><span aria-hidden="true">{ok ? '✓ ' : '✗ '}</span>A tua resposta</span>}
+                                        {isRight && !mine && <span className="font-mono text-[11px] font-semibold uppercase text-success-ink"><span aria-hidden="true">✓ </span>Certa</span>}
                                     </div>
                                 );
                             })}
@@ -75,7 +75,7 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
                     {!quiz.passed && left > 0 && ' As respostas certas aparecem quando passares ou esgotares as tentativas.'}
                 </p>
                 {!quiz.passed && left > 0 && canSave && (
-                    <button type="button" onClick={() => setRetrying(true)} className="ta-cut-8 ta-press mt-4 bg-ink px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-on-ink">
+                    <button type="button" onClick={() => setRetrying(true)} className="ui-btn mt-4">
                         Tentar outra vez
                     </button>
                 )}
@@ -90,7 +90,7 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
                 <fieldset key={q.id} className="border-t border-line py-4 first:border-t-0">
                     <legend className="mb-2 font-display font-semibold">{qi + 1}. {q.question}</legend>
                     {q.options.map((o) => (
-                        <label key={o.id} className={`ta-cut-8 mb-1.5 flex cursor-pointer items-center gap-2.5 border-[1.5px] px-3 py-2.5 text-[15px] ${
+                        <label key={o.id} className={`mb-1.5 flex cursor-pointer items-center gap-2.5 border-[1.5px] px-3 py-2.5 text-[15px] ${
                             answers[q.id] === o.id ? 'border-accent bg-accent/10' : 'border-transparent bg-page hover:border-line'
                         }`}>
                             <input type="radio" name={`q${q.id}`} className="text-accent focus:ring-accent" checked={answers[q.id] === o.id}
@@ -103,7 +103,7 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
             {canSave ? (
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                     <button type="button" disabled={!all || busy} onClick={submit}
-                        className="ta-cut-8 ta-press bg-accent px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-on-accent disabled:cursor-not-allowed disabled:opacity-45">
+                        className="ui-btn ui-btn-accent">
                         {busy ? 'A entregar…' : 'Entregar respostas'}
                     </button>
                     <span className="text-[13px] text-muted">{all ? 'Depois de entregar não podes mudar as respostas.' : 'Responde a todas as perguntas para entregar.'}</span>

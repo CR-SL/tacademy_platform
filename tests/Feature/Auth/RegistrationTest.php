@@ -13,7 +13,8 @@ class RegistrationTest extends TestCase
     {
         $response = $this->get('/register');
 
-        $response->assertStatus(200);
+        // O registo é o separador Criar conta da entrada
+        $response->assertOk()->assertInertia(fn ($p) => $p->component('Auth/Entrada')->where('mode', 'criar'));
     }
 
     public function test_new_users_can_register(): void
@@ -22,7 +23,6 @@ class RegistrationTest extends TestCase
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => 'password',
-            'password_confirmation' => 'password',
         ]);
 
         $this->assertAuthenticated();

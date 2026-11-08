@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
 import TeamReport from '@/Components/Teams/TeamReport';
@@ -13,7 +13,7 @@ export default function TeamShow({ team, report, courses, pending }) {
         <StudentLayout>
             <Head title={team.name} />
             <PageHead
-                over={<Link href="/gestao/equipas" className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted hover:text-ink">← Equipas</Link>}
+                back={{ href: '/gestao/equipas', label: 'Voltar às equipas' }}
                 title={team.name}
                 sub={`${report.members.length} membros · ${report.courses.length} ${report.courses.length === 1 ? 'curso' : 'cursos'}${team.created ? ` · criada a ${team.created}` : ''}${team.nif ? ` · NIF ${team.nif}` : ''}`}
             >
@@ -21,11 +21,11 @@ export default function TeamShow({ team, report, courses, pending }) {
             </PageHead>
 
             {pending.length > 0 && (
-                <div className="ta-cut-12 mb-5 bg-accent/15 px-5 py-4">
+                <div className="mb-5 bg-accent/15 px-5 py-4">
                     <p className="font-display font-bold">{pending.length === 1 ? 'Há 1 pedido de alteração' : `Há ${pending.length} pedidos de alteração`} desta equipa</p>
                     {pending.map((p) => (
                         <p key={p.id} className="mt-1 text-sm">
-                            <b>#{p.id} · {p.change}</b>{p.people.length ? ` — ${p.people.map((x) => `${x.name} (${x.email})`).join(', ')}` : ''}{p.packs ? ` — +${p.packs} pack(s)` : ''} <span className="text-muted">· {p.date}</span>
+                            <b>#{p.id} · {p.change}</b>{p.people.length ? `: ${p.people.map((x) => `${x.name} (${x.email})`).join(', ')}` : ''}{p.packs ? ` · +${p.packs} ${p.packs === 1 ? 'pack' : 'packs'}` : ''} <span className="text-muted">· {p.date}</span>
                         </p>
                     ))}
                     <button type="button" className="mt-2 font-display text-[13px] font-semibold text-accent-ink hover:text-ink" onClick={() => setEditing(true)}>Tratar em “Gerir membros” →</button>
@@ -70,7 +70,7 @@ function EditTeam({ team, report, courses, pending, onClose }) {
 
     return (
         <Drawer
-            over="Gerir membros"
+            sub="Gerir membros"
             title={team.name}
             onClose={onClose}
             footer={
@@ -95,7 +95,7 @@ function EditTeam({ team, report, courses, pending, onClose }) {
                         </label>
                     ))}
                 </div>
-                {errors.course_ids && <p className="mt-2 text-sm text-live">A equipa tem de ter pelo menos um curso.</p>}
+                {errors.course_ids && <p className="mt-2 text-sm text-live-ink">A equipa tem de ter pelo menos um curso.</p>}
             </Box>
             <MembersEditor people={people} setPeople={setPeople} leader={leader} setLeader={setLeader} seats={packs * 10} errors={errors} />
             {pending.length > 0 && (

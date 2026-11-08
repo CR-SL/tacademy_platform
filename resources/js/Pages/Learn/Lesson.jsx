@@ -293,8 +293,8 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                             <button type="button" className="al-ic" aria-label="Menu da conta"><IconUser size={18} /></button>
                         </Dropdown.Trigger>
                         <Dropdown.Content>
-                            <Dropdown.Link href="/dashboard">Dashboard</Dropdown.Link>
-                            <Dropdown.Link href="/profile">Perfil</Dropdown.Link>
+                            <Dropdown.Link href="/dashboard">Início</Dropdown.Link>
+                            <Dropdown.Link href="/definicoes">Definições</Dropdown.Link>
                             <Dropdown.Link href="/logout" method="post" as="button">Terminar sessão</Dropdown.Link>
                         </Dropdown.Content>
                     </Dropdown>

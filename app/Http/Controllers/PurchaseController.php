@@ -43,6 +43,6 @@ class PurchaseController extends Controller
         $r->messages()->create(['user_id' => $user->id, 'author' => $user->name, 'body' => $r->message]);
         $teams->notifyStaff($r->load('course'));
 
-        return $back('Compra registada! Vais receber acesso assim que a equipa de gestão de cursos a autorizar.');
+        return $back('Compra registada. Ficas com acesso assim que o gestor de cursos a autorizar.');
     }
 }

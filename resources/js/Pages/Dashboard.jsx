@@ -15,11 +15,23 @@ function greeting() {
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-// "1 prazo a acabar · 2 testes por fazer"
+// Resumo da lista de tarefas: "1 mensagem por ler · 2 testes por fazer"
+const KIND_SUMMARY = {
+    Mensagem: ['mensagem por ler', 'mensagens por ler'],
+    'Curso atribuído': ['curso por começar', 'cursos por começar'],
+    Presença: ['curso com presenças por confirmar', 'cursos com presenças por confirmar'],
+    Prazo: ['prazo a acabar', 'prazos a acabar'],
+    Teste: ['teste por fazer', 'testes por fazer'],
+};
 function pendingSummary(pending) {
-    const late = pending.filter((p) => p.kind === 'Prazo').length;
-    const tests = pending.length - late;
-    return [late && plural(late, 'prazo a acabar', 'prazos a acabar'), tests && plural(tests, 'teste por fazer', 'testes por fazer')].filter(Boolean).join(' · ') || null;
+    const parts = [];
+    const team = pending.find((p) => p.kind === 'Equipa');
+    if (team) parts.push(team.title.charAt(0).toLowerCase() + team.title.slice(1));
+    Object.entries(KIND_SUMMARY).forEach(([kind, [one, many]]) => {
+        const n = pending.filter((p) => p.kind === kind).length;
+        if (n) parts.push(plural(n, one, many));
+    });
+    return parts.join(' · ') || null;
 }
 
 function CoursesPanel({ courses, resume }) {
@@ -79,7 +91,7 @@ function ContinueBody({ resume, hasCourses }) {
                 <h3 className="pn-disp">{hasCourses ? 'Concluíste os teus cursos' : 'Ainda não começaste nenhum curso'}</h3>
                 <p>{hasCourses ? 'Vê o catálogo para escolheres o próximo.' : 'Escolhe um curso no catálogo para começares.'}</p>
                 <div className="pn-acts" style={{ marginTop: 'auto' }}>
-                    <Link href="/plataforma/cursos" className="pn-btn">Ver o catálogo<IconArrow /></Link>
+                    <Link href="/plataforma/cursos" className="ui-btn">Ver o catálogo<IconArrow /></Link>
                 </div>
             </>
         );
@@ -91,8 +103,8 @@ function ContinueBody({ resume, hasCourses }) {
             <p>{resume.left === 1 ? `Falta esta aula para fechares ${resume.module}.` : `Faltam ${resume.left} aulas para fechares ${resume.module}.`}</p>
             <div className="pn-prog"><Bar value={resume.pct} /></div>
             <div className="pn-acts">
-                <Link href={resume.url} className="pn-btn">Continuar a aula<IconArrow /></Link>
-                <Link href={resume.courseUrl} className="pn-btn pn-soft">Ver o curso</Link>
+                <Link href={resume.url} className="ui-btn">Continuar a aula<IconArrow /></Link>
+                <Link href={resume.courseUrl} className="ui-btn ui-btn-soft">Ver o curso</Link>
             </div>
         </>
     );
@@ -100,10 +112,10 @@ function ContinueBody({ resume, hasCourses }) {
 
 function PendingPanel({ pending }) {
     const [open, setOpen] = useState(0);
-    if (!pending.length) return <p className="pn-empty">Não tens testes nem prazos por cumprir.</p>;
+    if (!pending.length) return <p className="pn-empty">Não tens nada por fazer agora.</p>;
 
     return pending.map((p, i) => (
-        <div key={p.url} className="pn-pend">
+        <div key={`${p.kind}-${p.url}`} className="pn-pend">
             <button type="button" aria-expanded={open === i} onClick={() => setOpen(open === i ? null : i)}>
                 <span><span className="pn-lab">{p.kind} · {p.course}</span><b>{p.title}</b></span>
                 <IconTri />
@@ -112,7 +124,7 @@ function PendingPanel({ pending }) {
                 <div className="pn-pend-c">
                     {p.text}
                     <br />
-                    <Link href={p.url} className="pn-btn">{p.cta}</Link>
+                    <Link href={p.url} className="ui-btn">{p.cta}</Link>
                 </div>
             )}
         </div>
@@ -130,7 +142,7 @@ function ResultsPanel({ results }) {
                     <b>{r.score}%</b>
                 </Link>
             ))}
-            <div className="pn-foot"><Link href="/plataforma/avaliacoes" className="pn-link">Ver todas as avaliações</Link></div>
+            <div className="pn-foot"><Link href="/plataforma/avaliacoes" className="ui-link">Ver todas as avaliações</Link></div>
         </>
     );
 }
@@ -222,7 +234,7 @@ function lessonNumber(resume) {
     return i >= 0 && j >= 0 ? `${i + 1}.${j + 1}` : null;
 }
 
-export default function Dashboard({ courses, resume, pending, results, notes, messages, suggestions, alexUrl, savedLayout }) {
+export default function Dashboard({ courses, resume, pending, results, notes, messages, suggestions, starter, alexUrl, savedLayout }) {
     const [best, setBest] = useState(0);
     const { auth } = usePage().props;
     const firstName = (auth?.user?.name ?? '').split(' ')[0];
@@ -242,7 +254,7 @@ export default function Dashboard({ courses, resume, pending, results, notes, me
             label: resume ? ['Continuar', resume.course, lessonNumber(resume) && `Aula ${lessonNumber(resume)}`].filter(Boolean).join(' · ') : 'Continuar',
             summary: resume?.lesson,
             hero: { image: resume?.image ?? '/images/cursos/cta-oficina.jpg', stamp: resume?.stamp },
-            mini: resume && <Link href={resume.url} className="pn-btn pn-rt-c" aria-label="Continuar a aula" title="Continuar a aula"><IconPlay /></Link>,
+            mini: resume && <Link href={resume.url} className="ui-btn pn-rt-c" aria-label="Continuar a aula" title="Continuar a aula"><IconPlay /></Link>,
             body: <ContinueBody resume={resume} hasCourses={courses.length > 0} />,
         },
         pendentes: {
@@ -267,7 +279,7 @@ export default function Dashboard({ courses, resume, pending, results, notes, me
             title: 'Mensagens', x: 12, y: 22, w: 12, h: 11,
             label: unread ? `Mensagens · ${unread} por ler` : 'Mensagens',
             summary: messages.threads[0] ? `${messages.threads[0].name}, ${messages.threads[0].when}` : 'Sem mensagens',
-            body: <MessagesPanel messages={messages} startWith={startWith} />,
+            body: <MessagesPanel key={startWith ?? ''} messages={messages} startWith={startWith} />,
         },
         sugestoes: {
             title: 'Sugestões', x: 0, y: 33, w: 24, h: 13,
@@ -286,6 +298,16 @@ export default function Dashboard({ courses, resume, pending, results, notes, me
     const board = usePanelBoard({ view: 'home', panels, saved: savedLayout });
     const summaryLine = pendingSummary(pending) ?? (resume ? 'Tudo em dia' : null);
 
+    // Primeiro uso: sem cursos, sem tarefas e sem conversas, o Início é só boas-vindas (as caixas aparecem com o primeiro curso)
+    if (!courses.length && !pending.length && !messages.threads.length) {
+        return (
+            <StudentLayout>
+                <Head title="Início" />
+                <Welcome firstName={firstName} starter={starter} />
+            </StudentLayout>
+        );
+    }
+
     return (
         <StudentLayout navTools={<PanelsMenu board={board} />}>
             <Head title="Início" />
@@ -297,5 +319,46 @@ export default function Dashboard({ courses, resume, pending, results, notes, me
             </div>
             <PanelBoard board={board} />
         </StudentLayout>
+    );
+}
+
+/** Primeiro uso (opção A, 2026-11-08): boas-vindas e três cursos reais do catálogo. */
+function Welcome({ firstName, starter }) {
+    return (
+        <div className="pn-root mx-auto max-w-[1180px] py-4 sm:py-10">
+            <h1 className="pn-disp text-[clamp(32px,4.4vw,52px)] leading-[1.02]">Olá{firstName ? `, ${firstName}` : ''}.</h1>
+            <p className="mt-3 max-w-[56ch] text-[17px] text-text">
+                Escolhe o teu primeiro curso. Vês as aulas no computador ou no telemóvel e continuas sempre onde ficaste.
+            </p>
+
+            {starter.length > 0 && (
+                <section aria-labelledby="w-start" className="mt-10">
+                    <h2 id="w-start" className="pn-lab mb-3">Cursos mais recentes</h2>
+                    <div className="grid gap-3 md:grid-cols-3">
+                        {starter.map((c) => (
+                            <Link key={c.id} href={c.url} className="group flex flex-col bg-surface transition-colors hover:bg-surface2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                                <span className="block aspect-[16/9] overflow-hidden bg-carbon">
+                                    <img src={c.image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none" />
+                                </span>
+                                <span className="flex flex-1 flex-col gap-2 p-[18px]">
+                                    <span className="pn-lab">{[c.area, levelLabels[c.level] ?? c.level].filter(Boolean).join(' · ')}</span>
+                                    <b className="pn-disp text-[20px] leading-[1.15]">{c.title}</b>
+                                    {c.short && <span className="line-clamp-2 text-[14px] text-text">{c.short}</span>}
+                                    <span className="mt-auto flex items-center justify-between gap-3 pt-3 text-[13px] text-muted">
+                                        <span>{[c.lessons ? plural(c.lessons, 'aula', 'aulas') : null, c.minutes ? formatMinutes(c.minutes) : null].filter(Boolean).join(' · ')}</span>
+                                        <b className="font-display text-[15px] text-ink">{c.free ? 'Grátis' : formatEuro(c.price)}</b>
+                                    </span>
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+                <Link href="/plataforma/cursos" className="ui-btn ui-btn-accent">Ver o catálogo</Link>
+                <p className="text-[14px] text-muted">Vens de uma empresa? Os cursos que ela te atribuir aparecem aqui.</p>
+            </div>
+        </div>
     );
 }

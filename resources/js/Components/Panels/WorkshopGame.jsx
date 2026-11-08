@@ -339,7 +339,7 @@ export default function WorkshopGame({ onBest }) {
                         <div className="pn-game-ov">
                             <b className="pn-disp">{overlay.title}</b>
                             <p>{overlay.text}</p>
-                            <button type="button" className="pn-btn pn-sm" onClick={overlay.onClick}>{overlay.cta}</button>
+                            <button type="button" className="ui-btn ui-btn-sm" onClick={overlay.onClick}>{overlay.cta}</button>
                         </div>
                     )}
                 </div>
@@ -362,7 +362,7 @@ export default function WorkshopGame({ onBest }) {
                     <button type="button" aria-label="Descer" onClick={() => act('down')}>▼</button>
                     <button type="button" aria-label="Largar" className="pn-game-wide" onClick={() => act('drop')}>Largar</button>
                 </div>
-                {status === 'playing' && <button type="button" className="pn-link pn-game-pause" onClick={pause}>Pausa</button>}
+                {status === 'playing' && <button type="button" className="ui-link pn-game-pause" onClick={pause}>Pausa</button>}
                 <p className="pn-game-help">Setas · ↑ roda · espaço larga · P pausa</p>
             </div>
             <span className="pn-sr" aria-live="polite">{announce}</span>

@@ -47,13 +47,12 @@ export default function UpdatePasswordForm({ className = '' }) {
     return (
         <section className={className}>
             <header>
-                <h2 className="font-display text-lg font-bold uppercase tracking-[0.04em] text-ink">
-                    Update Password
+                <h2 className="font-display text-lg font-bold text-ink">
+                    Mudar a palavra-passe
                 </h2>
 
                 <p className="mt-1 text-sm text-muted">
-                    Ensure your account is using a long, random password to stay
-                    secure.
+                    Usa uma palavra-passe longa, que não uses noutros sítios.
                 </p>
             </header>
 
@@ -61,7 +60,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 <div>
                     <InputLabel
                         htmlFor="current_password"
-                        value="Current Password"
+                        value="Palavra-passe atual"
                     />
 
                     <TextInput
@@ -83,7 +82,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="password" value="New Password" />
+                    <InputLabel htmlFor="password" value="Palavra-passe nova" />
 
                     <TextInput
                         id="password"
@@ -101,7 +100,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 <div>
                     <InputLabel
                         htmlFor="password_confirmation"
-                        value="Confirm Password"
+                        value="Repetir a palavra-passe nova"
                     />
 
                     <TextInput
@@ -122,7 +121,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                    <PrimaryButton disabled={processing}>{processing ? 'A guardar…' : 'Mudar a palavra-passe'}</PrimaryButton>
 
                     <Transition
                         show={recentlySuccessful}
@@ -132,7 +131,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                         leaveTo="opacity-0"
                     >
                         <p className="text-sm text-muted">
-                            Saved.
+                            Palavra-passe alterada.
                         </p>
                     </Transition>
                 </div>

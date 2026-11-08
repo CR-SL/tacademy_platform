@@ -40,6 +40,8 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
             ],
+            // Números da navegação (o que pede ação): mensagens por ler, cursos atribuídos por começar, equipa, presenças
+            'navCounts' => fn () => $request->user() ? app(\App\Services\Tasks::class)->navCounts($request->user()) : [],
             // Sino do Gestor de Cursos/admin: pedidos novos
             'staffInbox' => fn () => $request->user()?->isCourseStaff()
                 ? [

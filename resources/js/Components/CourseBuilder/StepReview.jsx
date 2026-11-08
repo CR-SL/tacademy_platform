@@ -18,7 +18,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                 : 'Assim fica o cartão no catálogo. Ao publicar, o curso fica logo visível para os alunos.'}
         >
             <div className="grid items-start gap-7 md:grid-cols-[300px_1fr]">
-                <div className="relative aspect-[4/5] max-w-[300px] overflow-hidden rounded-[8px] bg-[#222] text-white">
+                <div className="relative aspect-[4/5] max-w-[300px] overflow-hidden bg-carbon text-white">
                     {c.thumbnail_url && <img src={c.thumbnail_url} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent from-35% to-black/85" />
                     <span className="absolute right-3.5 top-3.5 rounded-full bg-accent px-3 py-1 font-display text-[13px] font-bold text-on-accent">
@@ -43,7 +43,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                     </div>
                     {ai && (
                         <p className="mb-4">
-                            <span className="ta-cut-8 bg-accent px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-on-accent">✦ Inclui aula com IA</span>
+                            <span className="rounded-full bg-accent px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-on-accent">✦ Inclui aula com IA</span>
                         </p>
                     )}
 
@@ -53,7 +53,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                     <ul className="mb-5 mt-1">
                         {items.map(([text, step, ok]) => (
                             <li key={text} className={`flex items-center gap-2.5 border-b border-line py-2.5 ${ok ? '' : 'text-muted'}`}>
-                                <i className={`flex h-5 w-5 flex-none items-center justify-center text-xs font-bold not-italic ${ok ? 'bg-[#2F9E5B22] text-[#2F9E5B]' : 'bg-live/10 text-live'}`}>
+                                <i className={`flex h-5 w-5 flex-none items-center justify-center text-xs font-bold not-italic ${ok ? 'bg-success/10 text-success-ink' : 'bg-live/10 text-live-ink'}`}>
                                     {ok ? '✓' : '!'}
                                 </i>
                                 {text}
@@ -66,7 +66,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                         ))}
                     </ul>
 
-                    {error && <p role="alert" className="mb-3 text-sm text-live">{error}</p>}
+                    {error && <p role="alert" className="mb-3 text-sm text-live-ink">{error}</p>}
 
                     <div className="flex flex-wrap gap-2.5">
                         {c.ulid && c.slug && (
@@ -74,7 +74,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                                 href={`/plataforma/cursos/${c.slug}`}
                                 target="_blank"
                                 rel="noopener"
-                                className="ta-cut-8 px-4 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] shadow-[inset_0_0_0_1px_var(--color-line)] hover:bg-page"
+                                className="ui-btn ui-btn-line"
                             >
                                 👁 Ver como aluno
                             </a>
@@ -84,13 +84,13 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                                 href={`/cursos?curso=${c.slug}`}
                                 target="_blank"
                                 rel="noopener"
-                                className="ta-cut-8 px-4 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] shadow-[inset_0_0_0_1px_var(--color-line)] hover:bg-page"
+                                className="ui-btn ui-btn-line"
                             >
                                 Ver no catálogo ↗
                             </a>
                         )}
                         {published ? (
-                            <button type="button" onClick={onUnpublish} className="ta-cut-8 px-4 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-muted shadow-[inset_0_0_0_1px_var(--color-line)] hover:text-ink">
+                            <button type="button" onClick={onUnpublish} className="ui-btn ui-btn-soft">
                                 Passar a rascunho
                             </button>
                         ) : (
@@ -99,7 +99,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                                 onClick={onPublish}
                                 disabled={!ready || publishing}
                                 title={ready ? undefined : 'Completa os pontos em falta'}
-                                className="ta-cut-8 ta-press bg-accent px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-on-accent disabled:cursor-not-allowed disabled:opacity-45"
+                                className="ui-btn ui-btn-accent"
                             >
                                 {publishing ? 'A publicar…' : 'Publicar curso ▶'}
                             </button>

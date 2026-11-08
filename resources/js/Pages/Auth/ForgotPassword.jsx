@@ -29,7 +29,7 @@ export default function ForgotPassword({ status }) {
             </p>
 
             {status && (
-                <div className="mb-4 ta-cut-8 bg-accent px-3 py-2 text-sm font-semibold text-on-accent">
+                <div className="mb-4 bg-accent px-3 py-2 text-sm font-semibold text-on-accent">
                     {status}
                 </div>
             )}

@@ -38,7 +38,7 @@ export default function TeamReport({ team, report, note }) {
                 <Kpi label="Precisam de atenção" value={attention} alert={attention > 0} hint="parados ou sem entrar" />
             </div>
 
-            <div className="ta-cut-16 bg-surface p-4 sm:p-5">
+            <div className="bg-surface p-4 sm:p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     {report.courses.length > 0
                         ? <Tabs label="Cursos da equipa" items={report.courses.map((c) => [c.id, c.title])} value={courseId} onChange={setCourseId} />
@@ -60,7 +60,7 @@ export default function TeamReport({ team, report, note }) {
                                         <Td>
                                             <b className="block font-semibold">
                                                 {m.name}
-                                                {m.leader && <span className="ml-1.5 bg-ink px-1.5 py-0.5 align-[1px] font-mono text-[9.5px] font-bold tracking-[0.08em] text-on-ink">TEAM LEADER</span>}
+                                                {m.leader && <span className="ml-1.5 align-[1px]"><Chip tone="dark">Team leader</Chip></span>}
                                             </b>
                                             <small className="text-[12.5px] text-muted">{m.email}</small>
                                         </Td>
@@ -71,7 +71,7 @@ export default function TeamReport({ team, report, note }) {
                                                 : s.stalled ? <Chip tone="warn">Parado · {s.last}</Chip>
                                                 : s.last ?? <span className="text-muted">Ainda não começou</span>}
                                         </Td>
-                                        <Td>{s.certificate ? <Chip tone="ok">✓ Emitido</Chip> : <span className="text-muted">—</span>}</Td>
+                                        <Td>{s.certificate ? <Chip tone="ok">Emitido</Chip> : <span className="text-muted">—</span>}</Td>
                                     </tr>
                                 );
                             })}

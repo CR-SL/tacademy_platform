@@ -99,7 +99,7 @@ class CourseBuilderController extends Controller
         }
         $course->update(['status' => 'published']);
 
-        return to_route('instructor.courses.index')->with('status', "“{$course->title}” publicado — já está no catálogo.");
+        return to_route('instructor.courses.index')->with('status', "“{$course->title}” publicado. Já está no catálogo.");
     }
 
     public function unpublish(Course $course): RedirectResponse

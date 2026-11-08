@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { IconX } from '@/Components/Learn/LessonIcons';
+import { useConfirm } from '@/Components/ui';
 
 const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 const byTime = (a, b) => (a.position ?? -1) - (b.position ?? -1) || a.id - b.id;
@@ -11,6 +12,7 @@ export default function LessonNotes({ lessonUlid, title, initial, canSave, hasVi
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
     const url = `/plataforma/aulas/${lessonUlid}/notas`;
+    const [confirm, confirmDialog] = useConfirm();
 
     const add = async (e) => {
         e.preventDefault();
@@ -29,7 +31,7 @@ export default function LessonNotes({ lessonUlid, title, initial, canSave, hasVi
     };
 
     const remove = async (note) => {
-        if (!window.confirm('Apagar esta nota?')) return;
+        if (!(await confirm({ title: 'Apagar esta nota?', action: 'Apagar a nota', danger: true }))) return;
         try {
             await window.axios.delete(`${url}/${note.id}`);
             setNotes((n) => n.filter((x) => x.id !== note.id));
@@ -59,6 +61,7 @@ export default function LessonNotes({ lessonUlid, title, initial, canSave, hasVi
                 <input value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={2000} placeholder="Escrever nota" aria-label="Escrever nota" autoComplete="off" disabled={!canSave} />
                 <button type="submit" className="al-pill" disabled={!canSave || busy || !draft.trim()}>Guardar</button>
             </form>
+            {confirmDialog}
         </>
     );
 }

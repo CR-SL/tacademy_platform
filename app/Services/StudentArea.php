@@ -92,6 +92,7 @@ class StudentArea
                 'expired' => $expiry?->isPast() ?? false,
                 'expires' => $expiry?->format('d/m/Y'),
                 'completed' => $e->completed_at?->translatedFormat('j M Y'),
+                'assigned' => $e->assigned_at?->format('d/m/Y'),
                 'deadline' => $expiry?->isPast() ? null : $e->deadlineInfo($lessons->isNotEmpty() && $finished === $lessons->count()),
             ];
         })->all();
@@ -349,6 +350,30 @@ class StudentArea
     }
 
     /** Cursos publicados em que o aluno não está inscrito; primeiro os das áreas que já estuda. */
+    /** Primeiro uso: os três cursos publicados mais recentes (reais), para quem ainda não tem nenhum. */
+    public function starter(User $user): array
+    {
+        return Course::with('category')
+            ->where('status', 'published')
+            ->where(fn ($q) => $q->whereNull('instructor_id')->orWhere('instructor_id', '!=', $user->id))
+            ->latest()
+            ->take(3)
+            ->get()
+            ->map(fn (Course $c) => [
+                'id' => $c->id,
+                'title' => $c->title,
+                'area' => $c->category?->name,
+                'level' => $c->level,
+                'minutes' => $c->duration_minutes,
+                'lessons' => $c->lessons()->count(),
+                'price' => (float) $c->price,
+                'free' => (bool) $c->is_free,
+                'image' => $this->image($c),
+                'short' => $c->short_description,
+                'url' => '/plataforma/cursos/'.$c->slug,
+            ])->values()->all();
+    }
+
     public function suggestions(User $user): array
     {
         $enrollments = $this->enrollments($user);

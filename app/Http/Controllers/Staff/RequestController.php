@@ -116,7 +116,7 @@ class RequestController extends Controller
 
         $company = $this->teams->createFromRequest($contactRequest, $data, $request->user());
 
-        return to_route('staff.teams.show', $company)->with('status', 'Equipa criada — os convites foram enviados por email.');
+        return to_route('staff.teams.show', $company)->with('status', 'Equipa criada. Os convites foram enviados por email.');
     }
 
     /** Compra a título pessoal (pagamento simulado, estado "Pago") → dá acesso ao curso. */
@@ -137,6 +137,6 @@ class RequestController extends Controller
             actionUrl: url('/plataforma/cursos'),
         ));
 
-        return back()->with('status', "Acesso autorizado — {$student->name} já tem o curso.");
+        return back()->with('status', "Acesso autorizado. {$student->name} já tem o curso.");
     }
 }

@@ -216,4 +216,59 @@ class StudentPanelsTest extends TestCase
             ->where('savedLayout', null)
         );
     }
+
+    public function test_a_student_without_courses_gets_the_welcome_with_real_courses(): void
+    {
+        $this->actingAs($this->user('aluno'))->get('/dashboard')->assertInertia(fn ($page) => $page
+            ->has('courses', 0)
+            ->has('pending', 0)
+            ->has('messages.threads', 0)
+            ->has('starter', 1)
+            ->where('starter.0.title', 'Calibração de ADAS')
+            ->where('starter.0.lessons', 3)
+        );
+
+        // Com um curso, deixa de ser o primeiro uso
+        $this->actingAs($this->student)->get('/dashboard')->assertInertia(fn ($page) => $page->has('starter', 0));
+    }
+
+    public function test_unread_messages_and_assigned_courses_become_tasks_and_nav_counts(): void
+    {
+        CourseMessage::create(['course_id' => $this->course->id, 'student_id' => $this->student->id, 'sender_id' => $this->instructor->id, 'body' => 'Viste o vídeo do radar?']);
+        Enrollment::where('user_id', $this->student->id)->update(['assigned_at' => now()]);
+
+        $this->actingAs($this->student)->get('/dashboard')->assertInertia(fn ($page) => $page
+            ->where('pending.0.kind', 'Mensagem')
+            ->where('pending.0.url', '/dashboard?conversa='.$this->course->id.'-'.$this->student->id)
+            ->where('pending.1.kind', 'Curso atribuído')
+            ->where('pending.1.cta', 'Começar o curso')
+            ->where('navCounts.home', 1)
+            ->where('navCounts.mine', 1)
+        );
+
+        // Lida a mensagem e começado o curso, as tarefas e os números desaparecem
+        CourseMessage::query()->update(['read_at' => now()]);
+        LessonProgress::create(['user_id' => $this->student->id, 'lesson_id' => $this->lessons[0]->id, 'status' => 'completed', 'progress_percent' => 100]);
+        $this->actingAs($this->student)->get('/dashboard')->assertInertia(fn ($page) => $page
+            ->where('navCounts', [])
+            ->has('pending', 0)
+        );
+    }
+
+    public function test_the_instructor_sees_attendance_waiting_for_confirmation(): void
+    {
+        $this->course->update(['requires_attendance' => true]);
+        foreach ($this->lessons as $l) {
+            LessonProgress::create(['user_id' => $this->student->id, 'lesson_id' => $l->id, 'status' => 'completed', 'progress_percent' => 100]);
+        }
+
+        $this->actingAs($this->instructor)->get('/dashboard')->assertInertia(fn ($page) => $page
+            ->where('pending.0.kind', 'Presença')
+            ->where('pending.0.url', '/formador/cursos?presenca='.$this->course->ulid)
+            ->where('navCounts.builder', 1)
+        );
+
+        Enrollment::where('user_id', $this->student->id)->update(['attended_at' => now()]);
+        $this->actingAs($this->instructor)->get('/dashboard')->assertInertia(fn ($page) => $page->missing('navCounts.builder'));
+    }
 }

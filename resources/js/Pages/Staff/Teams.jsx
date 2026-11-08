@@ -1,11 +1,10 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
-import { Chip, FlashToast, Kpi, Over, PageHead, Progress, Tabs, Td, Th } from '@/Components/Teams/ui';
+import { Chip, FlashToast, Kpi, PageHead, Progress, Tabs, Td, Th } from '@/Components/Teams/ui';
 
 // "Equipas" do Gestor de Cursos e do admin: equipas de empresas e alunos individuais.
 export default function Teams({ teams, individuals, newRequests }) {
-    const { auth } = usePage().props;
     const [tab, setTab] = useState('equipas');
     const seats = teams.reduce((a, t) => a + t.seats, 0);
     const used = teams.reduce((a, t) => a + t.members, 0);
@@ -13,7 +12,7 @@ export default function Teams({ teams, individuals, newRequests }) {
     return (
         <StudentLayout>
             <Head title="Equipas" />
-            <PageHead over={<Over>{auth.role === 'admin' ? 'Administração' : 'Gestão de cursos'}</Over>} title="Equipas" sub="Todas as equipas de empresas e os alunos individuais." />
+            <PageHead title="Equipas" sub="Todas as equipas de empresas e os alunos individuais." />
 
             <div className="mb-5 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
                 <Kpi label="Equipas" value={teams.length} />
@@ -25,7 +24,7 @@ export default function Teams({ teams, individuals, newRequests }) {
 
             <Tabs label="Ver" value={tab} onChange={setTab} items={[['equipas', 'Equipas', teams.length], ['individuais', 'Alunos individuais', individuals.length]]} />
 
-            <div className="ta-cut-16 overflow-x-auto bg-surface px-3.5 py-2">
+            <div className="overflow-x-auto bg-surface px-3.5 py-2">
                 {tab === 'equipas' ? (
                     teams.length ? (
                         <table className="w-full border-collapse text-[15px]">
@@ -66,7 +65,7 @@ export default function Teams({ teams, individuals, newRequests }) {
                                 ))}
                             </tbody>
                         </table>
-                        <p className="px-3 py-3 text-[12.5px] text-muted">ⓘ Cursos comprados a título pessoal. Quem também pertence a uma equipa aparece com a etiqueta da equipa — o team leader não vê estes cursos.</p>
+                        <p className="px-3 py-3 text-[12.5px] text-muted">ⓘ Cursos comprados a título pessoal. Quem também pertence a uma equipa aparece com a etiqueta da equipa: o team leader não vê estes cursos.</p>
                     </>
                 ) : <p className="px-4 py-10 text-center text-muted">Ainda não há alunos com cursos a título pessoal.</p>}
             </div>

@@ -1,0 +1,112 @@
+/*
+ | Componentes base da plataforma (DESIGN.md › Components): um só conjunto de botões e campos.
+ | Usar as classes ui-* ou os componentes de resources/js/Components/ui/.
+ | Duas formas: cápsula para o que se carrega, retângulo reto para o que contém.
+ */
+
+/* ---------- Botões ---------- */
+.ui-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-ink);
+    color: var(--color-on-ink);
+    font-family: Archivo, system-ui, sans-serif;
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform .15s, background-color .15s, color .15s, box-shadow .15s;
+}
+.ui-btn:active:not(:disabled) { transform: scale(.98); }
+.ui-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.ui-btn:disabled, .ui-btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+.ui-btn svg { width: 18px; height: 18px; flex: none; }
+
+.ui-btn-accent { background: var(--color-accent); color: var(--color-on-accent); }
+.ui-btn-accent:hover:not(:disabled) { background: color-mix(in srgb, var(--color-accent) 88%, #fff); }
+.ui-btn-soft { background: var(--color-surface2); color: var(--color-ink); font-weight: 600; }
+.ui-btn-soft:hover:not(:disabled) { background: var(--color-pill); }
+.ui-btn-line { background: transparent; color: var(--color-ink); box-shadow: inset 0 0 0 1px var(--color-ink); font-weight: 600; }
+.ui-btn-line:hover:not(:disabled) { background: var(--color-surface2); }
+.ui-btn-danger { background: var(--color-live); color: #fff; }
+.ui-btn-danger:hover:not(:disabled) { background: color-mix(in srgb, var(--color-live) 88%, #000); }
+/* Sobre fotografia ou carvão: fundo branco translúcido */
+.ui-btn-glass { background: rgba(255, 255, 255, .15); color: #fff; font-weight: 600; }
+.ui-btn-glass:hover:not(:disabled) { background: rgba(255, 255, 255, .25); }
+.ui-btn-sm { height: 36px; padding: 0 16px; }
+.ui-btn-lg { height: 52px; padding: 0 24px; font-size: 15px; }
+.ui-btn-block { display: flex; width: 100%; }
+.ui-btn-icon { width: 44px; padding: 0; }
+.ui-btn-icon.ui-btn-sm { width: 36px; }
+
+/* Ligação de terceira linha */
+.ui-link { font-weight: 600; color: var(--color-ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.ui-link:hover { text-decoration-thickness: 2px; }
+
+/* ---------- Campos ---------- */
+.ui-label { display: block; font-size: 12.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-ink); }
+.ui-input {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-field);
+    border-radius: 0;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: Archivo, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.4;
+    box-shadow: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+textarea.ui-input { min-height: 96px; resize: vertical; }
+select.ui-input { padding-right: 36px; }
+.ui-input::placeholder { color: var(--color-muted); opacity: .85; }
+.ui-input:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent); }
+.ui-input[aria-invalid="true"] { border-color: var(--color-live); }
+.ui-input:disabled { opacity: .55; cursor: not-allowed; }
+.ui-hint { font-size: 12.5px; color: var(--color-muted); }
+.ui-err { font-size: 13px; color: var(--color-live-ink); }
+.ui-check { width: 18px; height: 18px; border-radius: 0; border-color: var(--color-field); color: var(--color-accent); }
+.ui-check:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent); }
+
+/* ---------- Estado ---------- */
+/* Etiqueta de estado: cápsula, fundo a ~10% da cor e texto na versão -ink */
+.ui-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; background: var(--color-surface2); color: var(--color-muted); font-size: 11px; font-weight: 600; letter-spacing: .06em; line-height: 1.3; text-transform: uppercase; white-space: nowrap; }
+.ui-chip-ok { background: color-mix(in srgb, var(--color-success) 12%, transparent); color: var(--color-success-ink); }
+.ui-chip-warn { background: color-mix(in srgb, var(--color-accent) 16%, transparent); color: var(--color-accent-ink); }
+.ui-chip-bad { background: color-mix(in srgb, var(--color-live) 11%, transparent); color: var(--color-live-ink); }
+.ui-chip-info { background: color-mix(in srgb, var(--color-info) 11%, transparent); color: var(--color-info-ink); }
+.ui-chip-dark { background: var(--color-ink); color: var(--color-on-ink); }
+
+/* Barra de progresso: trilho de 6px, preenchimento amarelo, cantos retos */
+.ui-bar { display: block; height: 6px; background: var(--color-track); }
+.ui-bar i { display: block; height: 100%; background: var(--color-accent); transition: width .9s cubic-bezier(.2, .8, .2, 1); }
+@media (prefers-reduced-motion: reduce) { .ui-bar i { transition: none; } }
+
+/* ---------- Organizar ---------- */
+/* Separadores de filtro: cápsulas de 36px; a escolhida em tinta */
+.ui-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.ui-pills button { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--color-surface2); color: var(--color-ink); font-size: 14px; font-weight: 600; white-space: nowrap; transition: background-color .15s, color .15s; }
+.ui-pills button:hover { background: var(--color-pill); }
+.ui-pills button[aria-pressed="true"] { background: var(--color-ink); color: var(--color-on-ink); }
+.ui-pills button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.ui-pills em { font-size: 12px; font-style: normal; font-weight: 600; opacity: .7; }
+
+/* ---------- Camadas ---------- */
+/* Aviso rápido: em baixo ao centro; no telemóvel fica acima da barra de navegação */
+.ui-toast { position: fixed; left: 50%; bottom: 24px; z-index: 70; max-width: calc(100vw - 32px); padding: 10px 16px; background: var(--color-ink); color: var(--color-on-ink); font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none; transform: translate(-50%, 16px); transition: opacity .18s, transform .18s cubic-bezier(.16, 1, .3, 1); }
+.ui-toast.ui-on { opacity: 1; transform: translate(-50%, 0); }
+.ui-toast:empty { padding: 0; }
+@media (max-width: 600px) { .ui-toast { bottom: 84px; } }
+@media (prefers-reduced-motion: reduce) { .ui-toast { transition: opacity .18s; transform: translate(-50%, 0); } }

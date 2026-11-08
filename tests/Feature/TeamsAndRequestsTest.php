@@ -254,4 +254,34 @@ class TeamsAndRequestsTest extends TestCase
         // Um aluno não usa estas ações
         $this->actingAs($sergio)->post('/equipa/lembretes', ['course_id' => $course->id, 'members' => [$leader->id]])->assertForbidden();
     }
+
+    public function test_a_student_can_turn_off_the_team_leader_reminders(): void
+    {
+        $course = $this->course('Diagnóstico OBD');
+        $company = $this->createTeam($this->user('gestor_cursos'), $this->paidCompanyRequest($course), $course);
+        $leader = User::where('email', 'paulo@moura.pt')->first();
+        $sergio = User::where('email', 'sergio@moura.pt')->first();
+
+        // Nas Definições, quem está numa equipa vê a opção e desliga os lembretes
+        $this->actingAs($sergio)->get('/definicoes')->assertInertia(fn ($p) => $p->where('inTeam', true));
+        $this->actingAs($sergio)->putJson('/definicoes/notificacoes', ['reminders' => false])->assertNoContent();
+        $this->assertFalse($sergio->fresh()->email_reminders);
+
+        // O team leader vê que desligou e o lembrete não sai
+        $this->actingAs($leader)->get('/equipa')->assertInertia(fn ($p) => $p
+            ->where('report.members.1.remindersOff', true)
+            ->where("report.members.1.courses.{$course->id}.remindable", false));
+        Mail::fake();
+        $this->actingAs($leader)->post('/equipa/lembretes', ['course_id' => $course->id, 'members' => [$sergio->id]])
+            ->assertSessionHas('status', 'Nenhum lembrete enviado: quem escolheste já concluiu o curso, recebeu um lembrete há pouco ou desligou os lembretes.');
+        Mail::assertNothingSent();
+
+        // Os cursos atribuídos continuam a chegar por email
+        $this->actingAs($leader)->post('/equipa/atribuir', ['course_id' => $course->id, 'members' => [$sergio->id]])->assertSessionHasNoErrors();
+        Mail::assertSent(PlatformMail::class, fn ($m) => $m->hasTo('sergio@moura.pt'));
+
+        // Volta a ligar
+        $this->actingAs($sergio)->putJson('/definicoes/notificacoes', ['reminders' => true])->assertNoContent();
+        $this->assertTrue($sergio->fresh()->email_reminders);
+    }
 }

@@ -30,8 +30,8 @@ function Detail({ r }) {
                 <div className="pn-note-b">Esta tentativa não tem o detalhe das respostas.</div>
             )}
             <div className="pn-acts">
-                <Link href={r.url} className="pn-btn">Rever a aula</Link>
-                {r.courseId && <Link href={`/dashboard?conversa=${r.courseId}`} className="pn-btn pn-soft">Perguntar ao formador</Link>}
+                <Link href={r.url} className="ui-btn">Rever a aula</Link>
+                {r.courseId && <Link href={`/dashboard?conversa=${r.courseId}`} className="ui-btn ui-btn-soft">Perguntar ao formador</Link>}
             </div>
         </div>
     );

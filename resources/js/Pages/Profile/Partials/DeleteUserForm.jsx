@@ -1,12 +1,9 @@
-import DangerButton from '@/Components/DangerButton';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
 import Modal from '@/Components/Modal';
-import SecondaryButton from '@/Components/SecondaryButton';
-import TextInput from '@/Components/TextInput';
+import { Button, Field } from '@/Components/ui';
 import { useForm } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 
+// Apagar a conta: pede a palavra-passe numa janela de confirmação, porque não se pode desfazer.
 export default function DeleteUserForm({ className = '' }) {
     const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
     const passwordInput = useRef();
@@ -23,10 +20,6 @@ export default function DeleteUserForm({ className = '' }) {
         password: '',
     });
 
-    const confirmUserDeletion = () => {
-        setConfirmingUserDeletion(true);
-    };
-
     const deleteUser = (e) => {
         e.preventDefault();
 
@@ -40,7 +33,6 @@ export default function DeleteUserForm({ className = '' }) {
 
     const closeModal = () => {
         setConfirmingUserDeletion(false);
-
         clearErrors();
         reset();
     };
@@ -48,70 +40,44 @@ export default function DeleteUserForm({ className = '' }) {
     return (
         <section className={`space-y-6 ${className}`}>
             <header>
-                <h2 className="font-display text-lg font-bold uppercase tracking-[0.04em] text-ink">
-                    Delete Account
-                </h2>
-
+                <h2 className="font-display text-lg font-bold text-ink">Apagar a conta</h2>
                 <p className="mt-1 text-sm text-muted">
-                    Once your account is deleted, all of its resources and data
-                    will be permanently deleted. Before deleting your account,
-                    please download any data or information that you wish to
-                    retain.
+                    Perdes os cursos, o progresso, as notas e os certificados. Isto não se pode desfazer.
                 </p>
             </header>
 
-            <DangerButton onClick={confirmUserDeletion}>
-                Delete Account
-            </DangerButton>
+            <Button variant="danger" onClick={() => setConfirmingUserDeletion(true)}>
+                Apagar a conta
+            </Button>
 
-            <Modal show={confirmingUserDeletion} onClose={closeModal}>
+            <Modal show={confirmingUserDeletion} onClose={closeModal} maxWidth="md">
                 <form onSubmit={deleteUser} className="p-6">
-                    <h2 className="font-display text-lg font-bold uppercase tracking-[0.04em] text-ink">
-                        Are you sure you want to delete your account?
-                    </h2>
-
-                    <p className="mt-1 text-sm text-muted">
-                        Once your account is deleted, all of its resources and
-                        data will be permanently deleted. Please enter your
-                        password to confirm you would like to permanently delete
-                        your account.
+                    <h2 className="font-display text-xl font-extrabold leading-tight">Apagar a tua conta?</h2>
+                    <p className="mt-2 text-text">
+                        Perdes os cursos, o progresso, as notas e os certificados. Isto não se pode desfazer.
                     </p>
 
-                    <div className="mt-6">
-                        <InputLabel
-                            htmlFor="password"
-                            value="Password"
-                            className="sr-only"
-                        />
-
-                        <TextInput
+                    <Field id="password" label="Palavra-passe" hint="Escreve a tua palavra-passe para confirmar." error={errors.password} className="mt-6">
+                        <input
                             id="password"
                             type="password"
                             name="password"
+                            autoComplete="current-password"
                             ref={passwordInput}
                             value={data.password}
-                            onChange={(e) =>
-                                setData('password', e.target.value)
-                            }
-                            className="mt-1 block w-3/4"
-                            isFocused
-                            placeholder="Password"
+                            onChange={(e) => setData('password', e.target.value)}
+                            className="ui-input"
+                            autoFocus
                         />
+                    </Field>
 
-                        <InputError
-                            message={errors.password}
-                            className="mt-2"
-                        />
-                    </div>
-
-                    <div className="mt-6 flex justify-end">
-                        <SecondaryButton onClick={closeModal}>
-                            Cancel
-                        </SecondaryButton>
-
-                        <DangerButton className="ms-3" disabled={processing}>
-                            Delete Account
-                        </DangerButton>
+                    <div className="mt-6 flex flex-wrap gap-2.5">
+                        <Button type="submit" variant="danger" disabled={processing}>
+                            {processing ? 'A apagar…' : 'Apagar a conta'}
+                        </Button>
+                        <Button variant="soft" onClick={closeModal}>
+                            Cancelar
+                        </Button>
                     </div>
                 </form>
             </Modal>

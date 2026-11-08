@@ -11,7 +11,7 @@ export default function GuestLayout({ children }) {
                 <Logo className="h-9" />
             </a>
 
-            <div className="ta-cut-16 w-full bg-surface px-6 py-7 sm:max-w-md">{children}</div>
+            <div className="w-full bg-surface px-6 py-7 sm:max-w-md">{children}</div>
         </div>
     );
 }

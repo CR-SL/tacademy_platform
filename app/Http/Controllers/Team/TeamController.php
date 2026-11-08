@@ -57,15 +57,15 @@ class TeamController extends Controller
         ['sent' => $sent, 'skipped' => $skipped] = $this->teams->remind($company, $request->user(), $course, $data['members'], $data['message'] ?? null);
 
         $status = match (true) {
-            $sent === 0 => 'Nenhum lembrete enviado: quem escolheste já concluiu o curso ou recebeu um lembrete há pouco.',
-            $skipped > 0 => ($sent === 1 ? '1 lembrete enviado' : "{$sent} lembretes enviados").". {$skipped} ".($skipped === 1 ? 'pessoa ficou' : 'pessoas ficaram').' de fora (já concluíram ou receberam um lembrete há pouco).',
+            $sent === 0 => 'Nenhum lembrete enviado: quem escolheste já concluiu o curso, recebeu um lembrete há pouco ou desligou os lembretes.',
+            $skipped > 0 => ($sent === 1 ? '1 lembrete enviado' : "{$sent} lembretes enviados").". {$skipped} ".($skipped === 1 ? 'pessoa ficou' : 'pessoas ficaram').' de fora (já concluíram, receberam um lembrete há pouco ou desligaram os lembretes).',
             default => $sent === 1 ? 'Lembrete enviado.' : "{$sent} lembretes enviados.",
         };
 
         return back()->with('status', $status);
     }
 
-    /** "Atribuir formação": um curso da equipa às pessoas escolhidas, com prazo opcional. */
+    /** "Atribuir curso": um curso da equipa às pessoas escolhidas, com prazo opcional. */
     public function assign(Request $request): RedirectResponse
     {
         $company = $request->user()->company;
@@ -81,7 +81,7 @@ class TeamController extends Controller
         $course = $company->courses()->findOrFail($data['course_id']);
         $n = $this->teams->assign($company, $request->user(), $course, $data['members'], $data['due_at'] ?? null, $data['message'] ?? null);
 
-        return back()->with('status', ($n === 1 ? 'Formação atribuída a 1 pessoa' : "Formação atribuída a {$n} pessoas").' — receberam um email.');
+        return back()->with('status', ($n === 1 ? 'Curso atribuído a 1 pessoa. Recebeu um email.' : "Curso atribuído a {$n} pessoas. Receberam um email."));
     }
 
     private function peopleRules($company): array
@@ -144,6 +144,6 @@ class TeamController extends Controller
         $r->messages()->create(['user_id' => $user->id, 'author' => $user->name, 'body' => $r->message]);
         $this->teams->notifyStaff($r->load('course'));
 
-        return back()->with('status', 'Pedido enviado — a equipa de gestão de cursos foi notificada.');
+        return back()->with('status', 'Pedido enviado. O gestor de cursos foi avisado.');
     }
 }

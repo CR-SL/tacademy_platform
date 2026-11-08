@@ -28,11 +28,13 @@ function Person({ team, report, member, course, onAction }) {
             </div>
             {s.enrolled && (
                 <div className="pn-p-acts">
-                    <button type="button" className="pn-btn pn-sm" disabled={!s.remindable} onClick={() => onAction('remind', [member.id])}>Enviar lembrete</button>
-                    <button type="button" className="pn-btn pn-soft pn-sm" onClick={() => onAction('assign', [member.id])}>{s.due ? 'Mudar o prazo' : 'Atribuir com prazo'}</button>
+                    <button type="button" className="ui-btn ui-btn-sm" disabled={!s.remindable} onClick={() => onAction('remind', [member.id])}>Enviar lembrete</button>
+                    <button type="button" className="ui-btn ui-btn-soft ui-btn-sm" onClick={() => onAction('assign', [member.id])}>{s.due ? 'Mudar o prazo' : 'Atribuir com prazo'}</button>
                     <small>
-                        {[s.assigned && `Atribuído a ${s.assigned}`, s.reminded && `Último lembrete ${s.reminded}`].filter(Boolean).join(' · ')
-                            || (s.progress === 100 ? 'Curso concluído.' : 'Ainda sem lembretes.')}
+                        {member.remindersOff && s.progress !== 100
+                            ? ['Desligou os lembretes por email', s.assigned && `Atribuído a ${s.assigned}`].filter(Boolean).join(' · ')
+                            : [s.assigned && `Atribuído a ${s.assigned}`, s.reminded && `Último lembrete ${s.reminded}`].filter(Boolean).join(' · ')
+                                || (s.progress === 100 ? 'Curso concluído.' : 'Ainda sem lembretes.')}
                     </small>
                 </div>
             )}
@@ -69,7 +71,7 @@ export default function Show({ team, report, otherCourses, changeTypes, alexUrl,
             body: (
                 <>
                     {report.courses.length > 1 && (
-                        <div className="pn-team-t pn-pills" role="group" aria-label="Curso">
+                        <div className="pn-team-t ui-pills" role="group" aria-label="Curso">
                             {report.courses.map((c) => <button key={c.id} type="button" aria-pressed={course === c.id} onClick={() => setCourse(c.id)}>{c.title}</button>)}
                         </div>
                     )}
@@ -105,14 +107,14 @@ export default function Show({ team, report, otherCourses, changeTypes, alexUrl,
         <StudentLayout navTools={<PanelsMenu board={board} />}>
             <Head title="Equipa" />
             <Crumb label={`Equipas · ${team.name}`}>
-                <button type="button" className="pn-btn pn-soft pn-sm" onClick={() => exportTeamCsv(team, report, course)}>Exportar (Excel)</button>
+                <button type="button" className="ui-btn ui-btn-soft ui-btn-sm" onClick={() => exportTeamCsv(team, report, course)}>Exportar (Excel)</button>
                 {report.courses.length > 0 && members.length > 0 && (
                     <>
-                        <button type="button" className="pn-btn pn-soft pn-sm" onClick={() => setAction({ mode: 'remind', members: null })}>Enviar lembrete</button>
-                        <button type="button" className="pn-btn pn-soft pn-sm" onClick={() => setAction({ mode: 'assign', members: null })}>Atribuir formação</button>
+                        <button type="button" className="ui-btn ui-btn-soft ui-btn-sm" onClick={() => setAction({ mode: 'remind', members: null })}>Enviar lembrete</button>
+                        <button type="button" className="ui-btn ui-btn-soft ui-btn-sm" onClick={() => setAction({ mode: 'assign', members: null })}>Atribuir curso</button>
                     </>
                 )}
-                <button type="button" className="pn-btn pn-sm" onClick={() => setAsking(true)}>Pedir alteração</button>
+                <button type="button" className="ui-btn ui-btn-sm" onClick={() => setAsking(true)}>Pedir alteração</button>
             </Crumb>
             <PanelBoard board={board} />
 
@@ -141,7 +143,7 @@ export default function Show({ team, report, otherCourses, changeTypes, alexUrl,
     );
 }
 
-// "Enviar lembrete" e "Atribuir formação": escolher o curso da equipa, as pessoas e, ao atribuir, o prazo.
+// "Enviar lembrete" e "Atribuir curso": escolher o curso da equipa, as pessoas e, ao atribuir, o prazo.
 function PeopleAction({ mode, team, report, course, initial, onClose }) {
     const remind = mode === 'remind';
     const stats = (m, c) => m.courses[c] ?? {};
@@ -164,21 +166,21 @@ function PeopleAction({ mode, team, report, course, initial, onClose }) {
         e.preventDefault();
         post(remind ? '/equipa/lembretes' : '/equipa/atribuir', { preserveScroll: true, onSuccess: onClose });
     };
-    const err = (k) => errors[k] && <span className="text-[13px] text-live">{errors[k]}</span>;
+    const err = (k) => errors[k] && <span className="text-[13px] text-live-ink">{errors[k]}</span>;
     const chosen = data.members.filter((id) => pickable.some((m) => m.id === id)).length;
 
     return (
         <Drawer
-            over={team.name}
-            title={remind ? 'Enviar lembrete' : 'Atribuir formação'}
+            sub={team.name}
+            title={remind ? 'Enviar lembrete' : 'Atribuir curso'}
             onClose={onClose}
             width="w-[min(520px,100%)]"
-            footer={<><span className="flex-1 text-[13px] text-muted">{chosen} {chosen === 1 ? 'pessoa escolhida' : 'pessoas escolhidas'}</span><button type="submit" form="people-form" disabled={processing || chosen === 0} className={btn.accent}>{processing ? 'A enviar…' : remind ? 'Enviar lembrete' : 'Atribuir'}</button></>}
+            footer={<><span className="flex-1 text-[13px] text-muted">{chosen} {chosen === 1 ? 'pessoa escolhida' : 'pessoas escolhidas'}</span><button type="submit" form="people-form" disabled={processing || chosen === 0} className={btn.accent}>{processing ? 'A enviar…' : `${remind ? 'Enviar lembrete' : 'Atribuir'}${chosen ? ` a ${chosen} ${chosen === 1 ? 'pessoa' : 'pessoas'}` : ''}`}</button></>}
         >
             <form id="people-form" onSubmit={submit} className="flex flex-col gap-4">
                 <p className="text-muted">
                     {remind
-                        ? 'Cada pessoa recebe um email com o progresso no curso e o prazo, se houver. Quem já concluiu ou recebeu um lembrete nas últimas horas fica de fora.'
+                        ? 'Cada pessoa recebe um email com o progresso no curso e o prazo, se houver. Quem já concluiu, recebeu um lembrete nas últimas horas ou desligou os lembretes fica de fora.'
                         : 'Cada pessoa recebe um email com o curso e o prazo. Sem data, cada pessoa mantém o prazo que já tinha.'}
                 </p>
                 <Field label="Curso" id="p-course">
@@ -245,11 +247,11 @@ function ChangeRequest({ team, members, otherCourses, changeTypes, onClose }) {
         e.preventDefault();
         post('/equipa/pedidos', { preserveScroll: true, onSuccess: onClose });
     };
-    const err = (k) => errors[k] && <span className="text-[13px] text-live">{errors[k]}</span>;
+    const err = (k) => errors[k] && <span className="text-[13px] text-live-ink">{errors[k]}</span>;
 
     return (
         <Drawer
-            over={team.name}
+            sub={team.name}
             title="Pedir alteração"
             onClose={onClose}
             width="w-[min(520px,100%)]"
@@ -259,7 +261,7 @@ function ChangeRequest({ team, members, otherCourses, changeTypes, onClose }) {
                 <p className="text-muted">O pedido vai para a equipa de gestão de cursos da T.Academy, que trata da alteração e te responde por email.</p>
                 <div>
                     <span className="mb-1.5 block font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">O que precisas?</span>
-                    <div role="group" aria-label="Tipo de alteração" className="ta-cut-8 inline-flex flex-wrap gap-[3px] bg-surface2 p-[3px]">
+                    <div role="group" aria-label="Tipo de alteração" className="inline-flex flex-wrap gap-[3px] bg-surface2 p-[3px]">
                         {Object.entries(changeTypes).map(([k, label]) => (
                             <button key={k} type="button" aria-pressed={data.change_type === k} onClick={() => setData('change_type', k)}
                                 className={`px-3 py-2 font-display text-[13px] font-semibold ${data.change_type === k ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'}`}>
@@ -279,8 +281,8 @@ function ChangeRequest({ team, members, otherCourses, changeTypes, onClose }) {
                             <input id="c-email" type="email" className={inputCls} value={data.email} maxLength={150} placeholder="email@empresa.pt" onChange={(e) => setData('email', e.target.value)} />
                             {err('email')}
                         </Field>
-                        <p className={`text-[12.5px] ${free > 0 ? 'text-muted' : 'text-live'}`}>
-                            {free > 0 ? `Lugares livres: ${free}.` : 'Não há lugares livres — o gestor de cursos vai propor um pack adicional.'}
+                        <p className={`text-[12.5px] ${free > 0 ? 'text-muted' : 'text-live-ink'}`}>
+                            {free > 0 ? `Lugares livres: ${free}.` : 'Não há lugares livres. O gestor de cursos vai propor um pack adicional.'}
                         </p>
                     </>
                 )}

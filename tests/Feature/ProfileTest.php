@@ -16,9 +16,30 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->get('/profile');
+            ->get('/definicoes');
 
         $response->assertOk();
+    }
+
+    public function test_old_profile_address_goes_to_settings(): void
+    {
+        $this->actingAs(User::factory()->create())->get('/profile')->assertRedirect('/definicoes');
+    }
+
+    public function test_theme_is_saved_on_the_account(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->putJson('/definicoes/tema', ['theme' => 'system'])->assertNoContent();
+        $this->assertSame('system', $user->refresh()->theme);
+
+        $this->actingAs($user)->putJson('/definicoes/tema', ['theme' => 'roxo'])->assertUnprocessable();
+        $this->assertSame('system', $user->refresh()->theme);
+    }
+
+    public function test_theme_needs_a_session(): void
+    {
+        $this->putJson('/definicoes/tema', ['theme' => 'dark'])->assertUnauthorized();
     }
 
     public function test_profile_information_can_be_updated(): void
@@ -34,7 +55,7 @@ class ProfileTest extends TestCase
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect('/definicoes');
 
         $user->refresh();
 
@@ -56,7 +77,7 @@ class ProfileTest extends TestCase
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect('/definicoes');
 
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
@@ -86,14 +107,14 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->from('/profile')
+            ->from('/definicoes')
             ->delete('/profile', [
                 'password' => 'wrong-password',
             ]);
 
         $response
             ->assertSessionHasErrors('password')
-            ->assertRedirect('/profile');
+            ->assertRedirect('/definicoes');
 
         $this->assertNotNull($user->fresh());
     }

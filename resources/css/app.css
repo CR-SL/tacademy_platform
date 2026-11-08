@@ -1,4 +1,6 @@
+@import './ui.css';
 @import './panels.css';
+@import './entrada.css';
 
 @tailwind base;
 @tailwind components;
@@ -26,7 +28,12 @@
     --color-track: #EFEBE4;
     --color-pill: #D9D5CB;
     --color-field: #CFCBBF;
-    --color-live: #E5484D;
+    --color-live: #E5484D;        /* alerta: preenchimentos e contornos */
+    --color-live-ink: #C2272D;    /* alerta como texto (5.6:1 sobre branco) */
+    --color-success: #2F9E5B;
+    --color-success-ink: #1D7442; /* sucesso como texto */
+    --color-info: #3A6FD8;
+    --color-info-ink: #2353B5;    /* info como texto */
     color-scheme: light;
 }
 
@@ -43,6 +50,12 @@
     --color-track: #2C2F36;
     --color-pill: #3C3F46;
     --color-field: #3C3F46;
+    --color-live: #F2555A;
+    --color-live-ink: #FF8A8D;
+    --color-success: #3DB873;
+    --color-success-ink: #63CF92;
+    --color-info: #5B8EEB;
+    --color-info-ink: #8DB2F5;
     color-scheme: dark;
 }
 
@@ -58,12 +71,9 @@ body {
 [data-theme='dark'] .ta-logo-dark { display: block; }
 
 /*
- | Cantos (2026-11-04): os botões e etiquetas (ta-cut-8) são cápsulas; as caixas não têm cantos arredondados.
- | Os nomes ficam para não mexer nas páginas que os usam.
+ | Cantos: cápsula (rounded-full) para o que se carrega, retângulo reto para o que contém.
+ | As antigas classes ta-cut-* saíram a 2026-11-07 (ver DESIGN.md).
  */
-button.ta-cut-8:not(:has(img)),
-a.ta-cut-8:not(:has(img)),
-span.ta-cut-8 { clip-path: inset(0 round 999px); }
 
 /* Barras e anéis animam de 0 até ao valor ao montar */
 .ta-fill {

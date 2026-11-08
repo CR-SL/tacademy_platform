@@ -92,10 +92,10 @@ function Detail({ c, owned, pending, onClose }) {
                             {c.ai && <span className="cc-tag">✦ Aula com IA</span>}
                         </div>
                         <div className="cc-stats">
-                            <span><small>DURAÇÃO</small><b>{dur(c.minutes)}</b></span>
-                            <span><small>AULAS</small><b>{c.lessons}</b></span>
-                            <span><small>MÓDULOS</small><b>{(c.modules || []).length}</b></span>
-                            <span><small>FORMADOR</small><b>{c.instructor || 'A definir'}</b></span>
+                            <span><small>Duração</small><b>{dur(c.minutes)}</b></span>
+                            <span><small>Aulas</small><b>{c.lessons}</b></span>
+                            <span><small>Módulos</small><b>{(c.modules || []).length}</b></span>
+                            <span><small>Formador</small><b>{c.instructor || 'A definir'}</b></span>
                         </div>
                         {c.description && <p className="cc-short">{c.description}</p>}
                         <div className="cc-prog">
@@ -116,7 +116,7 @@ function Detail({ c, owned, pending, onClose }) {
                     </div>
                 </div>
                 <div className="cc-d-foot">
-                    <span><small>PREÇO</small><b>{euro(c.price)}</b></span>
+                    <span><small>Preço</small><b>{euro(c.price)}</b></span>
                     <FootAction c={c} owned={owned} pending={pending} />
                 </div>
             </aside>

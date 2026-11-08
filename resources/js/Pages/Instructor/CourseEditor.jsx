@@ -6,6 +6,7 @@ import StepProgram from '@/Components/CourseBuilder/StepProgram';
 import StepPrice from '@/Components/CourseBuilder/StepPrice';
 import StepReview from '@/Components/CourseBuilder/StepReview';
 import { blankCourse, checklist } from '@/Components/CourseBuilder/model';
+import { useConfirm } from '@/Components/ui';
 
 const STEPS = [
     ['Informação', 'Título, área, capa'],
@@ -147,8 +148,9 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
         });
     };
 
+    const [confirm, confirmDialog] = useConfirm();
     const unpublish = async () => {
-        if (!confirm('Passar o curso a rascunho? Sai do catálogo até voltar a publicar.')) return;
+        if (!(await confirm({ title: 'Passar o curso a rascunho?', body: 'Sai do catálogo até voltar a publicar.', action: 'Passar a rascunho' }))) return;
         await flush();
         router.post(`/formador/cursos/${ulid.current}/rascunho`, {}, {
             preserveScroll: true,
@@ -158,7 +160,7 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
 
     const doneStep = (i) => checklist(c, shortMax).filter((x) => x[1] === i).every((x) => x[2]);
     const saveLabel = {
-        new: 'Começa a preencher — guarda sozinho',
+        new: 'Começa a preencher. Fica guardado sozinho.',
         pending: 'Alterações por guardar…',
         saving: 'A guardar…',
         saved: c.status === 'published' ? 'Guardado · publicado' : 'Rascunho guardado',
@@ -170,7 +172,7 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
             <Head title={c.title ? `Editar · ${c.title}` : 'Criar curso'} />
 
             <div className="grid items-start gap-7 lg:grid-cols-[260px_1fr]">
-                <aside className="ta-cut-12 flex gap-1 overflow-x-auto bg-surface p-3 lg:sticky lg:top-[90px] lg:flex-col lg:p-[18px]">
+                <aside className="flex gap-1 overflow-x-auto bg-surface p-3 lg:sticky lg:top-[90px] lg:flex-col lg:p-[18px]">
                     <Link href="/formador/cursos" className="mb-3 hidden items-center gap-1.5 font-display text-[13px] font-semibold text-muted hover:text-ink lg:inline-flex">
                         ← Os meus cursos
                     </Link>
@@ -184,7 +186,7 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
                                 aria-current={i === step ? 'step' : undefined}
                                 className={`flex flex-none items-center gap-3 p-2 text-left lg:w-full lg:p-2.5 ${i === step ? 'bg-page' : 'hover:bg-page/60'}`}
                             >
-                                <span className={`ta-cut-8 flex h-[30px] w-[30px] flex-none items-center justify-center font-display text-sm font-bold ${
+                                <span className={`rounded-full flex h-[30px] w-[30px] flex-none items-center justify-center font-display text-sm font-bold ${
                                     i === step ? 'bg-accent text-on-accent' : done ? 'bg-ink text-on-ink' : 'bg-surface2 text-muted'
                                 }`}>
                                     {done ? '✓' : i + 1}
@@ -197,14 +199,14 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
                         );
                     })}
                     <div role="status" className="mt-3.5 hidden items-center gap-2 border-t border-line pt-3.5 text-[12.5px] text-muted lg:flex">
-                        <i className={`h-2 w-2 flex-none rounded-full ${save === 'error' ? 'bg-live' : save === 'saved' ? 'bg-[#2F9E5B]' : save === 'new' ? 'bg-track' : 'bg-accent'}`} />
-                        <span className={save === 'error' ? 'text-live' : ''}>{saveLabel}</span>
+                        <i className={`h-2 w-2 flex-none rounded-full ${save === 'error' ? 'bg-live' : save === 'saved' ? 'bg-success' : save === 'new' ? 'bg-track' : 'bg-accent'}`} />
+                        <span className={save === 'error' ? 'text-live-ink' : ''}>{saveLabel}</span>
                     </div>
                 </aside>
 
                 <section className="min-w-0">
                     {save === 'error' && (
-                        <p role="alert" className="ta-cut-8 mb-3 bg-live/10 px-4 py-2.5 text-sm text-live lg:hidden">{saveError}</p>
+                        <p role="alert" className="mb-3 bg-live/10 px-4 py-2.5 text-sm text-live-ink lg:hidden">{saveError}</p>
                     )}
                     {step === 0 && <StepInfo c={c} update={update} categories={categories} library={library} shortMax={shortMax} upload={upload} />}
                     {step === 1 && <StepProgram c={c} update={update} upload={upload} openKey={openKey} setOpenKey={setOpenKey} />}
@@ -224,18 +226,19 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
 
                     <div className="mt-4 flex flex-wrap justify-between gap-3">
                         {step > 0 ? (
-                            <button type="button" onClick={() => goTo(step - 1)} className="ta-cut-8 ta-press bg-surface px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em]">
+                            <button type="button" onClick={() => goTo(step - 1)} className="ui-btn ui-btn-soft">
                                 ← Anterior
                             </button>
                         ) : <span />}
                         {step < 3 && (
-                            <button type="button" onClick={() => goTo(step + 1)} className="ta-cut-8 ta-press bg-ink px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-on-ink">
+                            <button type="button" onClick={() => goTo(step + 1)} className="ui-btn">
                                 Seguinte →
                             </button>
                         )}
                     </div>
                 </section>
             </div>
+            {confirmDialog}
         </StudentLayout>
     );
 }

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="light">
+@php($themePref = auth()->user()?->theme)
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ $themePref === 'dark' ? 'dark' : 'light' }}" data-theme-pref="{{ $themePref }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,11 +9,12 @@
 
         <link rel="icon" type="image/png" href="/images/brand/passarinho.png">
 
-        <!-- Tema guardado pelo utilizador, aplicado antes de pintar (evita o flash claro→escuro) -->
+        <!-- Tema: o da conta (Definições) ou, sem sessão, o deste browser. Aplicado antes de pintar (evita o flash claro→escuro). -->
         <script>
             try {
-                var t = localStorage.getItem('ta-theme');
-                if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+                var p = document.documentElement.getAttribute('data-theme-pref') || localStorage.getItem('ta-theme') || 'light';
+                if (p === 'system') p = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', p === 'dark' ? 'dark' : 'light');
             } catch (e) {}
         </script>
 

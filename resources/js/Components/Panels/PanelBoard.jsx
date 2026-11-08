@@ -1,9 +1,10 @@
 import { Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { IconArrow, IconBack, IconCorner, IconFold, IconGrip, IconPanels, IconX } from './icons';
+import { Bar as UiBar, Toast } from '@/Components/ui';
 
 export function Bar({ value }) {
-    return <span className="pn-bar"><i style={{ width: `${value}%` }} /></span>;
+    return <UiBar value={value} className="mt-[5px]" />;
 }
 
 // Numeração como no exemplo: "Módulo 3 · Radar". Não repete quando o título já traz "Módulo"
@@ -82,7 +83,7 @@ export default function PanelBoard({ board }) {
                 {lifted && <div className="pn-ph" style={{ '--x': lifted.x, '--y': lifted.y, '--w': lifted.w, '--h': flags(gesture.lifted).h }} />}
             </div>
             <div className="pn-sr" aria-live="polite">{message}</div>
-            <div className={`pn-toast ${toast ? 'pn-on' : ''}`} role="status">{toast}</div>
+            <Toast message={toast} />
         </div>
     );
 }
@@ -142,10 +143,10 @@ export function AlexPanel({ url }) {
             <img className="pn-alex-p" src="/images/alex.png" alt="Alex, o tutor do curso, numa oficina" />
             <div className="pn-alex-c">
                 {url ? (
-                    <Link href={url} className="pn-btn pn-line">Falar com o Alex</Link>
+                    <Link href={url} className="ui-btn ui-btn-line">Falar com o Alex</Link>
                 ) : (
                     <>
-                        <button type="button" className="pn-btn pn-line" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>Falar com o Alex</button>
+                        <button type="button" className="ui-btn ui-btn-line" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>Falar com o Alex</button>
                         <p className="pn-alex-note">O Alex vai estar disponível em breve.</p>
                     </>
                 )}
@@ -163,7 +164,7 @@ export function EmptyPanel({ title, text, href, cta }) {
         <div className="pn-empty-c">
             <h3 className="pn-disp">{title}</h3>
             {text && <p>{text}</p>}
-            {href && <Link href={href} className="pn-btn">{cta}<IconArrow /></Link>}
+            {href && <Link href={href} className="ui-btn">{cta}<IconArrow /></Link>}
         </div>
     );
 }

@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { initials } from '@/Layouts/StudentLayout';
 import { IconBack } from './icons';
 
-const options = { preserveScroll: true, preserveState: true, only: ['messages', 'errors'] };
+// Ao ler ou enviar, atualiza também as tarefas do Início e os números da navegação
+const options = { preserveScroll: true, preserveState: true, only: ['messages', 'pending', 'navCounts', 'errors'] };
 
 // Mensagens com o formador: lista das conversas, conversa aberta e início de uma nova.
 export default function MessagesPanel({ messages, startWith }) {
@@ -11,7 +12,7 @@ export default function MessagesPanel({ messages, startWith }) {
     const { threads, canStart } = messages;
     const [openKey, setOpenKey] = useState(() => {
         if (!startWith) return null;
-        return threads.find((t) => String(t.course_id) === String(startWith))?.key ?? null;
+        return threads.find((t) => t.key === startWith || String(t.course_id) === String(startWith))?.key ?? null;
     });
     const [newCourse, setNewCourse] = useState(() => {
         const wanted = canStart.find((c) => String(c.id) === String(startWith));
@@ -21,6 +22,14 @@ export default function MessagesPanel({ messages, startWith }) {
     const [sending, setSending] = useState(false);
     const threadRef = useRef(null);
     const thread = threads.find((t) => t.key === openKey);
+
+    // Aberta a partir de uma tarefa do Início (?conversa=…): marca como lida e mostra a caixa
+    useEffect(() => {
+        if (!startWith || !thread) return;
+        if (thread.unread) router.post('/plataforma/mensagens/lidas', { course_id: thread.course_id, student_id: thread.student_id }, options);
+        threadRef.current?.closest('.pn-box')?.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const openThread = (t) => {
         setOpenKey(t.key);
@@ -64,7 +73,7 @@ export default function MessagesPanel({ messages, startWith }) {
                 <form className="pn-reply" onSubmit={(e) => send(e, { course_id: thread.course_id, student_id: thread.student_id })}>
                     <label className="pn-sr" htmlFor="pn-reply-text">Responder a {thread.name}</label>
                     <textarea id="pn-reply-text" rows={2} maxLength={3000} placeholder="Escreve a tua resposta" value={body} onChange={(e) => setBody(e.target.value)} />
-                    <button type="submit" className="pn-btn pn-sm" disabled={sending}>{sending ? 'A enviar…' : 'Enviar'}</button>
+                    <button type="submit" className="ui-btn ui-btn-sm" disabled={sending}>{sending ? 'A enviar…' : 'Enviar'}</button>
                 </form>
             </div>
         );
@@ -84,7 +93,7 @@ export default function MessagesPanel({ messages, startWith }) {
                             <label className="pn-sr" htmlFor="pn-new-text">Mensagem</label>
                             <span className="pn-reply" style={{ flexBasis: '100%', padding: 0, border: 0 }}>
                                 <textarea id="pn-new-text" rows={2} maxLength={3000} placeholder="Escreve a tua dúvida" value={body} onChange={(e) => setBody(e.target.value)} />
-                                <button type="submit" className="pn-btn pn-sm" disabled={sending}>{sending ? 'A enviar…' : 'Enviar'}</button>
+                                <button type="submit" className="ui-btn ui-btn-sm" disabled={sending}>{sending ? 'A enviar…' : 'Enviar'}</button>
                             </span>
                         </>
                     )}

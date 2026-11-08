@@ -2,7 +2,8 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
 import MembersEditor from '@/Components/Teams/MembersEditor';
-import { Box, btn, Chip, Drawer, FlashToast, inputCls, Over, PageHead, Tabs, Td, Th } from '@/Components/Teams/ui';
+import { Box, btn, Chip, Drawer, FlashToast, inputCls, PageHead, Tabs, Td, Th } from '@/Components/Teams/ui';
+import { useConfirm } from '@/Components/ui';
 
 const tone = { novo: 'bad', em_esclarecimento: 'info', aguardar_pagamento: 'warn', pago: 'ok', equipa_criada: 'dark', concluido: 'mut', cancelado: 'mut' };
 const FLOW = ['novo', 'em_esclarecimento', 'aguardar_pagamento', 'pago', 'equipa_criada', 'concluido'];
@@ -23,10 +24,10 @@ export default function Requests({ requests, open, statuses, kinds, changeTypes,
     return (
         <StudentLayout>
             <Head title="Pedidos" />
-            <PageHead over={<Over>Gestão de cursos</Over>} title="Pedidos" sub="Esclarecimentos, compras de cursos e alterações pedidas pelos team leaders." />
+            <PageHead title="Pedidos" sub="Esclarecimentos, compras de cursos e alterações pedidas pelos team leaders." />
             <Tabs label="Filtrar por estado" items={filters} value={filter} onChange={setFilter} />
 
-            <div className="ta-cut-16 bg-surface px-3.5 py-2">
+            <div className="bg-surface px-3.5 py-2">
                 {rows.length ? (
                     <div className="overflow-x-auto">
                         <table className="w-full border-collapse text-[15px]">
@@ -77,15 +78,16 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
         e.preventDefault();
         reply.post(`/gestao/pedidos/${r.id}/responder`, { preserveScroll: true, preserveState: true, onSuccess: () => reply.reset() });
     };
-    const authorize = () => {
-        if (confirm(`Autorizar o acesso de ${r.name} ao curso “${r.course?.title}”?`)) {
+    const [confirm, confirmDialog] = useConfirm();
+    const authorize = async () => {
+        if (await confirm({ title: `Autorizar o acesso de ${r.name}?`, body: `Passa a ter acesso ao curso “${r.course?.title}”.`, action: 'Autorizar o acesso' })) {
             router.post(`/gestao/pedidos/${r.id}/autorizar`, {}, { preserveScroll: true, preserveState: true });
         }
     };
 
     return (
         <Drawer
-            over={`Pedido #${r.id} · ${kinds[r.kind]}${personal ? ' (pessoal)' : ''}`}
+            sub={`Pedido #${r.id} · ${kinds[r.kind]}${personal ? ' (pessoal)' : ''}`}
             title={r.company || r.name}
             onClose={onClose}
             footer={
@@ -120,7 +122,7 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
                 </div>
             )}
             {personal && r.status === 'pago' && (
-                <p className="ta-cut-8 bg-accent/15 px-4 py-3 text-sm">Compra a título pessoal com pagamento <b>simulado</b> (o pagamento pela plataforma ainda não está ativo). Ao autorizar, o aluno passa a ter o curso.</p>
+                <p className="bg-accent/15 px-4 py-3 text-sm">Compra a título pessoal com pagamento <b>simulado</b> (o pagamento pela plataforma ainda não está ativo). Ao autorizar, o aluno passa a ter o curso.</p>
             )}
 
             <Box title="Contacto">
@@ -151,7 +153,7 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
             <Box title="Conversa">
                 <div className="flex flex-col gap-2">
                     {r.messages.length ? r.messages.map((m, i) => (
-                        <div key={i} className={`ta-cut-8 px-3.5 py-3 text-sm ${m.staff ? 'ml-8 bg-accent/10' : 'bg-page'}`}>
+                        <div key={i} className={`px-3.5 py-3 text-sm ${m.staff ? 'ml-8 bg-accent/10' : 'bg-page'}`}>
                             <p className="mb-1 flex justify-between gap-3 font-display text-[12.5px] font-semibold">{m.author}<small className="font-sans font-normal text-muted">{m.when}</small></p>
                             <p className="whitespace-pre-line">{m.body}</p>
                         </div>
@@ -161,12 +163,13 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
                     <label htmlFor="reply" className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">Responder</label>
                     <textarea id="reply" rows={4} className={inputCls} value={reply.data.body} maxLength={5000}
                         placeholder={`A resposta é enviada por email para ${r.email}`} onChange={(e) => reply.setData('body', e.target.value)} />
-                    {reply.errors.body && <span className="text-[13px] text-live">{reply.errors.body}</span>}
+                    {reply.errors.body && <span className="text-[13px] text-live-ink">{reply.errors.body}</span>}
                     <button type="submit" disabled={reply.processing || !reply.data.body.trim()} className={`${btn.line} self-end disabled:opacity-45`}>
                         {reply.processing ? 'A enviar…' : 'Enviar resposta'}
                     </button>
                 </form>
             </Box>
+            {confirmDialog}
         </Drawer>
     );
 }
@@ -192,7 +195,7 @@ function CreateTeam({ r, courses, onClose }) {
 
     return (
         <Drawer
-            over={`Criar equipa · pedido #${r.id}`}
+            sub={`Criar equipa · pedido #${r.id}`}
             title={company || 'Nova equipa'}
             onClose={onClose}
             footer={
@@ -210,7 +213,7 @@ function CreateTeam({ r, courses, onClose }) {
                     <label className="flex flex-col gap-1.5 text-sm">
                         <span className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">Nome</span>
                         <input className={inputCls} value={company} maxLength={150} onChange={(e) => setCompany(e.target.value)} />
-                        {errors.company && <span className="text-live">{errors.company}</span>}
+                        {errors.company && <span className="text-live-ink">{errors.company}</span>}
                     </label>
                     <label className="flex flex-col gap-1.5 text-sm">
                         <span className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">NIF</span>
@@ -232,7 +235,7 @@ function CreateTeam({ r, courses, onClose }) {
                         </label>
                     ))}
                 </div>
-                {errors.course_ids && <p className="mt-2 text-sm text-live">Escolhe pelo menos um curso.</p>}
+                {errors.course_ids && <p className="mt-2 text-sm text-live-ink">Escolhe pelo menos um curso.</p>}
                 <p className="mt-2 text-[12.5px] text-muted">Todos os membros da equipa têm acesso a todos os cursos escolhidos.</p>
             </Box>
             <MembersEditor people={people} setPeople={setPeople} leader={leader} setLeader={setLeader} seats={packs * 10} errors={errors} />

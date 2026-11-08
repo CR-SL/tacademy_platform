@@ -7,7 +7,7 @@ export default function MembersEditor({ people, setPeople, leader, setLeader, se
     const over = people.length > seats;
 
     return (
-        <Box title="Membros" right={<span className={`font-mono text-[11px] tracking-[0.08em] ${over ? 'text-live' : 'text-muted'}`}>{people.length} / {seats} LUGARES</span>}>
+        <Box title="Membros" right={<span className={`font-mono text-[11px] tracking-[0.08em] ${over ? 'text-live-ink' : 'text-muted'}`}>{people.length} / {seats} LUGARES</span>}>
             <div className="flex flex-col gap-1.5">
                 {people.map((p, i) => (
                     <div key={i} className="grid grid-cols-[1fr_auto] items-center gap-1.5 sm:grid-cols-[1fr_1.3fr_auto_auto]">
@@ -23,7 +23,7 @@ export default function MembersEditor({ people, setPeople, leader, setLeader, se
                             Team leader
                         </label>
                         <button type="button" aria-label={`Retirar ${p.name || 'pessoa'}`} onClick={() => setPeople(people.filter((_, j) => j !== i))}
-                            className="h-8 w-8 bg-surface2 text-muted hover:text-live">✕</button>
+                            className="h-8 w-8 bg-surface2 text-muted hover:text-live-ink">✕</button>
                     </div>
                 ))}
             </div>
@@ -31,11 +31,11 @@ export default function MembersEditor({ people, setPeople, leader, setLeader, se
                 + Adicionar pessoa
             </button>
             {(errors.people || errors.leader || Object.keys(errors).some((k) => k.startsWith('people.'))) && (
-                <p role="alert" className="mt-2 text-sm text-live">
+                <p role="alert" className="mt-2 text-sm text-live-ink">
                     {errors.people || errors.leader || 'Verifica os nomes e emails assinalados.'}
                 </p>
             )}
-            {over && <p className="mt-2 text-sm text-live">Há mais pessoas do que lugares — junta um pack ou retira alguém.</p>}
+            {over && <p className="mt-2 text-sm text-live-ink">Há mais pessoas do que lugares. Junta um pack ou retira alguém.</p>}
             <p className="mt-3 text-[12.5px] text-muted">O team leader também ocupa um lugar. Pessoas novas recebem um email para definir a palavra-passe; quem sai deixa de ter acesso aos cursos da equipa (mantém os certificados).</p>
         </Box>
     );

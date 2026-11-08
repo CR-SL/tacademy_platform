@@ -1,11 +1,12 @@
 // Peças de formulário do editor de cursos (mesmo visual do resto da plataforma).
 
-export const inputCls =
-    'w-full border border-line bg-page px-3 py-2.5 text-[15px] text-ink placeholder:text-muted/70 focus:border-accent focus:bg-surface focus:outline-none focus:ring-[3px] focus:ring-accent/20';
+import { inputCls } from '@/Components/ui';
+
+export { inputCls };
 
 export function Panel({ title, sub, children }) {
     return (
-        <section className="ta-cut-16 bg-surface p-5 sm:p-7">
+        <section className="bg-surface p-5 sm:p-7">
             {title && <h2 className="font-display text-[26px] font-bold leading-tight tracking-[-0.01em]">{title}</h2>}
             {sub && <p className="mb-6 mt-1.5 text-muted">{sub}</p>}
             {children}
@@ -37,7 +38,7 @@ export function Field({ label, htmlFor, required, hint, help, children, classNam
 
 export function Seg({ options, value, onChange, label }) {
     return (
-        <div role="group" aria-label={label} className="ta-cut-8 inline-flex flex-wrap gap-[3px] bg-page p-[3px]">
+        <div role="group" aria-label={label} className="inline-flex flex-wrap gap-[3px] bg-page p-[3px]">
             {options.map(([v, text]) => (
                 <button
                     key={String(v)}
@@ -75,7 +76,7 @@ export function IconButton({ label, danger, className = '', ...props }) {
             aria-label={label}
             title={label}
             className={`inline-flex h-8 w-8 flex-none items-center justify-center bg-surface2 text-muted transition-colors hover:bg-track disabled:opacity-35 ${
-                danger ? 'hover:text-live' : 'hover:text-ink'
+                danger ? 'hover:text-live-ink' : 'hover:text-ink'
             } ${className}`}
             {...props}
         />

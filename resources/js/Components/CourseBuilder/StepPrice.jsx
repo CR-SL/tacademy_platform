@@ -61,7 +61,7 @@ export default function StepPrice({ c, update }) {
                 {c.certificate_enabled && (
                     <div className="flex flex-wrap gap-6 pb-3.5 pl-[52px]">
                         <Range label="Aulas vistas" min={50} value={c.certificate_min_progress} onChange={(v) => update((d) => { d.certificate_min_progress = v; })} />
-                        <Range label="Nota mínima nos quizzes" min={0} value={c.certificate_min_score} onChange={(v) => update((d) => { d.certificate_min_score = v; })} />
+                        <Range label="Nota mínima nos testes" min={0} value={c.certificate_min_score} onChange={(v) => update((d) => { d.certificate_min_score = v; })} />
                     </div>
                 )}
                 {c.certificate_enabled && (

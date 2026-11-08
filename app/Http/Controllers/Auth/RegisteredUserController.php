@@ -22,7 +22,8 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('Auth/Register');
+        // O registo vive na mesma página da entrada, no separador Criar conta
+        return Inertia::render('Auth/Entrada', ['mode' => 'criar', 'canResetPassword' => true]);
     }
 
     /**
@@ -35,7 +36,7 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => ['required', Rules\Password::defaults()], // um só campo, com "Mostrar"
         ]);
 
         // Quem se regista publicamente é sempre aluno (o perfil é criado se ainda não existir).

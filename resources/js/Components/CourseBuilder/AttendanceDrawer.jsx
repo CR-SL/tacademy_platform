@@ -32,14 +32,14 @@ export default function AttendanceDrawer({ course, onClose }) {
 
     return (
         <Drawer
-            over={course.title}
+            sub={course.title}
             title="Presença dos alunos"
             onClose={close}
             width="w-[min(560px,100%)]"
             footer={students && <span className="text-[13px] text-muted">{present} de {students.length} com presença confirmada</span>}
         >
             <p className="text-muted">Este curso exige presença para o certificado. Confirma quem esteve presente; o certificado sai assim que o aluno cumprir também as aulas e os testes.</p>
-            {error && <p role="alert" className="text-[13.5px] text-live">{error}</p>}
+            {error && <p role="alert" className="text-[13.5px] text-live-ink">{error}</p>}
             {!students && !error && <p className="text-muted">A carregar…</p>}
             {students?.length === 0 && <p className="text-muted">O curso ainda não tem alunos.</p>}
             {students?.length > 0 && (

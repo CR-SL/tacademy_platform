@@ -237,7 +237,7 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
 
             {waiting && <span className="pointer-events-none absolute left-1/2 top-1/2 -ml-[22px] -mt-[22px] h-11 w-11 animate-spin rounded-full border-[3px] border-white/25 border-t-accent" aria-hidden="true" />}
             {flash && (
-                <span className="ta-cut-8 pointer-events-none absolute left-1/2 top-6 z-[4] -translate-x-1/2 bg-[rgba(24,24,27,.85)] px-3 py-1.5 font-display text-sm font-semibold" role="status">{flash}</span>
+                <span className="rounded-full pointer-events-none absolute left-1/2 top-6 z-[4] -translate-x-1/2 bg-[rgba(24,24,27,.85)] px-3 py-1.5 font-display text-sm font-semibold" role="status">{flash}</span>
             )}
 
             {!started && (
@@ -274,7 +274,7 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
                     </div>
                 )}
                 {menu && (
-                    <div className="ta-cut-12 absolute bottom-full right-0 mb-2 flex w-44 flex-col overflow-auto bg-[rgba(24,24,27,.95)] p-2" style={{ maxHeight: Math.max(120, (root.current?.clientHeight ?? 300) - 90) }}>
+                    <div className="absolute bottom-full right-0 mb-2 flex w-44 flex-col overflow-auto bg-[rgba(24,24,27,.95)] p-2" style={{ maxHeight: Math.max(120, (root.current?.clientHeight ?? 300) - 90) }}>
                         <span className="px-2 pb-1.5 pt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-white/60">{menu === 'speed' ? 'Velocidade' : 'Qualidade'}</span>
                         {menu === 'speed' ? RATES.map((r) => (
                             <button key={r} type="button" onClick={() => setSpeed(r)} aria-pressed={rate === r} className={menuItem(rate === r)}>
@@ -289,10 +289,10 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
                         ))}
                     </div>
                 )}
-                <div className="ta-cut-8 flex items-center gap-0.5 whitespace-nowrap bg-[rgba(24,24,27,.74)] p-1 backdrop-blur-md">
+                <div className="flex items-center gap-0.5 whitespace-nowrap bg-[rgba(24,24,27,.74)] p-1 backdrop-blur-md">
                     <button type="button" onClick={() => skip(-10)} aria-label="Recuar 10 segundos" className={`${BTN} max-sm:hidden`}><Icon d={BACK} /></button>
                     <button type="button" onClick={toggle} aria-label={playing ? 'Pausar' : 'Reproduzir'}
-                        className="ta-cut-8 mx-0.5 grid h-8 w-9 place-items-center bg-accent text-on-accent">
+                        className="rounded-full mx-0.5 grid h-8 w-9 place-items-center bg-accent text-on-accent">
                         <Icon d={playing ? PAUSE : PLAY} />
                     </button>
                     <button type="button" onClick={() => skip(10)} aria-label="Avançar 10 segundos" className={`${BTN} max-sm:hidden`}><Icon d={FWD} /></button>

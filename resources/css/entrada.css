@@ -1,0 +1,85 @@
+/* Entrada da plataforma (Pages/Auth/Entrada.jsx): intro do pássaro + Entrar / Criar conta.
+   Sempre em claro: o data-theme="light" da página repõe os tokens claros mesmo com o tema escuro ligado. */
+
+.en-page { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; padding: 18px 20px calc(24px + env(safe-area-inset-bottom)); background: var(--color-bg); color: var(--color-ink); color-scheme: light; }
+.en-top { width: 100%; max-width: 1200px; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 40px; }
+.en-brand { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--color-muted); }
+.en-col { width: 100%; max-width: 400px; margin: auto 0; padding: 32px 0 24px; }
+.en-foot { font-size: 12px; color: var(--color-muted); }
+
+/* O conteúdo aparece quando o pássaro começa a voar */
+.en-col > *, .en-top, .en-foot { transition: opacity .6s cubic-bezier(.16, 1, .3, 1), transform .7s cubic-bezier(.16, 1, .3, 1); }
+.en-pre .en-col > *:not(.en-tabs-wrap), .en-pre .en-top, .en-pre .en-foot { opacity: 0; transform: translateY(14px); }
+.en-pre .en-tabs { opacity: 0; }
+.en-pre.en-landing .en-col > *:not(.en-tabs-wrap), .en-pre.en-landing .en-top, .en-pre.en-landing .en-foot, .en-pre.en-landing .en-tabs { opacity: 1; transform: none; }
+.en-pre.en-landing .en-panel { transition-delay: .25s; }
+.en-pre.en-landing .en-more { transition-delay: .4s; }
+.en-tabs { transition: opacity .5s cubic-bezier(.16, 1, .3, 1); }
+
+.en-status { margin: 0 0 18px; padding: 12px 16px; background: var(--color-surface2); font-size: 14px; }
+
+/* Logótipo centrado por cima dos separadores. São duas cópias da mesma imagem: o pássaro (onde o voo
+   pousa) e o nome com a frase, que aparecem da esquerda para a direita depois de o pássaro pousar. */
+.en-tabs-wrap { position: relative; }
+.en-logo { position: relative; width: min(260px, 72vw); aspect-ratio: 721 / 170; margin: 0 auto 30px; }
+.en-logo img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.en-logo-bird { clip-path: inset(0 78.5% 0 0); }
+.en-logo-text { clip-path: inset(0 0 0 21.5%); }
+.en-logo-box { position: absolute; left: 0; top: 0; width: 21.08%; height: 100%; }
+.en-pre .en-logo img { opacity: 0; }
+.en-logo-reveal .en-logo-text { animation: en-name .75s cubic-bezier(.16, 1, .3, 1) .08s both; }
+@keyframes en-name {
+    from { clip-path: inset(0 100% 0 21.5%); transform: translateX(-10px); opacity: 0; }
+    to { clip-path: inset(0 0 0 21.5%); transform: none; opacity: 1; }
+}
+.en-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 3px; background: var(--color-surface2); border-radius: 999px; }
+.en-tabs button { height: 40px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--color-muted); transition: background .2s, color .2s; }
+.en-tabs button[aria-selected="true"] { background: var(--color-ink); color: var(--color-on-ink); }
+.en-tabs button:not([aria-selected="true"]):hover { color: var(--color-ink); }
+.en-tabs button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+.en-title { margin: 26px 0 4px; font-size: 30px; font-weight: 800; line-height: 1.05; letter-spacing: -.015em; }
+.en-sub { margin: 0 0 20px; color: var(--color-text); }
+.en-form { display: flex; flex-direction: column; gap: 14px; }
+.en-form .ui-input { height: 48px; }
+.en-form .ui-btn { margin-top: 4px; }
+.en-pw-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: -8px; }
+.en-pw { position: relative; }
+.en-pw .ui-input { padding-right: 92px; }
+.en-pw button { position: absolute; top: 6px; right: 6px; height: 36px; padding: 0 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--color-muted); }
+.en-pw button:hover { background: var(--color-surface2); color: var(--color-ink); }
+.en-check { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--color-text); cursor: pointer; }
+.en-link { font-size: 13px; font-weight: 600; color: var(--color-ink); text-decoration: underline; text-underline-offset: 3px; }
+
+.en-more { display: flex; flex-direction: column; gap: 10px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--color-line); }
+.en-company { display: flex; gap: 12px; padding: 14px 16px; background: var(--color-surface2); }
+.en-company svg { width: 20px; height: 20px; flex: none; margin-top: 1px; color: var(--color-accent-ink); }
+.en-company b { display: block; font-size: 14px; }
+.en-company p { margin: 2px 0 4px; font-size: 13px; color: var(--color-text); }
+.en-catalog { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; box-shadow: inset 0 0 0 1px var(--color-line); color: var(--color-ink); text-decoration: none; transition: background .15s; }
+.en-catalog:hover { background: var(--color-surface2); }
+.en-catalog b { display: block; font-size: 14px; }
+.en-catalog small { font-size: 13px; color: var(--color-muted); }
+.en-catalog svg { width: 18px; height: 18px; flex: none; transition: transform .2s cubic-bezier(.16, 1, .3, 1); }
+.en-catalog:hover svg { transform: translateX(3px); }
+
+/* Intro: fundo claro da bancada, que sobe quando o pássaro levanta voo */
+.en-intro { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: var(--color-bg); clip-path: inset(0 0 0 0); transition: clip-path .9s cubic-bezier(.76, 0, .24, 1); }
+.en-intro.en-intro-out { clip-path: inset(0 0 100% 0); pointer-events: none; }
+.en-mark { position: relative; width: min(78vw, 620px); aspect-ratio: 2884 / 1600; }
+.en-mark img { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.en-fill { position: absolute; left: 50%; bottom: max(40px, 9vh); width: min(56vw, 280px); height: 3px; transform: translateX(-50%); background: var(--color-surface2); overflow: hidden; }
+.en-fill i { position: absolute; inset: 0; background: var(--color-accent); transform: scaleX(0); transform-origin: left; }
+.en-skip { position: absolute; top: 18px; right: 18px; height: 36px; padding: 0 14px; border-radius: 999px; font-size: 13.5px; font-weight: 600; color: var(--color-muted); }
+.en-skip:hover { background: var(--color-surface2); color: var(--color-ink); }
+.en-mark .en-phrase { filter: brightness(.42); } /* a frase da imagem é cinzenta clara, feita para fundo escuro */
+.en-flyer { position: fixed; z-index: 70; aspect-ratio: 2884 / 1600; pointer-events: none; transform-origin: 0 0; }
+.en-flyer img { width: 100%; height: 100%; }
+
+@media (max-width: 600px) {
+    .en-col { padding-top: 20px; }
+    .en-title { font-size: 27px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .en-col > *, .en-top, .en-foot, .en-tabs { transition: none; }
+}

@@ -18,8 +18,8 @@ export default function Program({ slug, program }) {
                         const locked = l.status === 'locked';
                         const row = (
                             <>
-                                <span className={`ta-cut-8 flex h-[26px] w-[26px] flex-none items-center justify-center font-mono text-[11px] font-bold ${
-                                    l.status === 'done' ? 'bg-[#2F9E5B] text-white' : l.current ? 'bg-accent text-on-accent' : 'bg-surface2 text-muted'
+                                <span className={`rounded-full flex h-[26px] w-[26px] flex-none items-center justify-center font-mono text-[11px] font-bold ${
+                                    l.status === 'done' ? 'bg-success text-white' : l.current ? 'bg-accent text-on-accent' : 'bg-surface2 text-muted'
                                 }`} aria-hidden="true">
                                     {l.status === 'done' ? '✓' : locked ? '🔒' : l.current ? '▶' : ''}
                                 </span>

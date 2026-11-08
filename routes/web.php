@@ -5,7 +5,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CourseMessageController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Instructor\CourseBuilderController;
-use App\Http\Controllers\LandingController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Learn\CourseController as LearnCourseController;
 use App\Http\Controllers\Learn\LessonController;
 use App\Http\Controllers\PanelLayoutController;
@@ -18,8 +18,9 @@ use App\Http\Controllers\StudentAreaController;
 use App\Http\Controllers\Team\TeamController;
 use Illuminate\Support\Facades\Route;
 
-// Landing page pública (Blade). /home é um atalho para a mesma página.
-Route::get('/', LandingController::class)->name('home');
+// Entrada da plataforma: quem já tem sessão vai para o Início (middleware guest).
+// O website (landing Blade) deixou de estar em /; os ficheiros ficam até ser retirado de vez.
+Route::get('/', [AuthenticatedSessionController::class, 'create'])->middleware('guest')->name('home');
 Route::permanentRedirect('/home', '/');
 
 // Catálogo público de cursos (Blade)
@@ -109,7 +110,11 @@ Route::middleware(['auth', 'verified', 'role:gestor_cursos,admin'])->prefix('ges
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    // Definições (conta, aparência). /profile ficou como endereço antigo e leva para aqui.
+    Route::get('/definicoes', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/definicoes/tema', [ProfileController::class, 'theme'])->name('profile.theme');
+    Route::put('/definicoes/notificacoes', [ProfileController::class, 'notifications'])->name('profile.notifications');
+    Route::redirect('/profile', '/definicoes');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });

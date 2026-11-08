@@ -140,7 +140,7 @@ class LessonController extends Controller
         $data = $request->validate(['answers' => ['required', 'array']]);
         $attempt = $this->learning->submitQuiz($request->user(), $lesson, $data['answers']);
 
-        return back()->with('status', $attempt->passed ? $this->doneMessage($request->user(), $course, 'Passaste no teste!') : 'Tentativa registada — revê as respostas.');
+        return back()->with('status', $attempt->passed ? $this->doneMessage($request->user(), $course, 'Passaste no teste!') : 'Tentativa registada. Revê as respostas.');
     }
 
     /** Só quem está inscrito (dentro da validade) pode registar progresso. */
@@ -187,7 +187,7 @@ class LessonController extends Controller
     {
         $cert = $this->newCertificate($user, $course);
 
-        return $cert ? "{$prefix} Curso concluído — certificado {$cert->certificate_number} emitido 🎉" : $prefix;
+        return $cert ? "{$prefix} Curso concluído. Certificado {$cert->certificate_number} emitido." : $prefix;
     }
 
     private function notePayload(LessonNote $note): array

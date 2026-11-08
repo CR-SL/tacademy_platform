@@ -99,7 +99,7 @@
 .cc-tag { align-self: flex-start; padding: 5px 11px; border-radius: 999px; background: var(--accent); font-size: 12px; font-weight: 600; }
 .cc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1px; border-radius: 8px; overflow: hidden; background: var(--cc-line); }
 .cc-stats span { background: #fff; padding: 14px; display: flex; flex-direction: column; gap: 2px; }
-.cc-stats small { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--cc-mut); }
+.cc-stats small { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--cc-mut); }
 .cc-stats b { font-family: var(--display); font-weight: 500; font-size: 17px; }
 .cc-short { margin: 0; font-size: 16px; color: var(--cc-body); max-width: 60ch; }
 .cc-prog { display: flex; flex-direction: column; gap: 10px; }
@@ -114,7 +114,7 @@
 .cc-mod li em { font-style: normal; font-family: var(--mono); font-size: 12px; color: var(--cc-mut); white-space: nowrap; }
 .cc-mod .cc-ai { font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--accent); color: var(--cc-ink); margin-left: 6px; }
 .cc-d-foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px 16px 32px; background: #fff; box-shadow: 0 -1px 0 var(--cc-soft); }
-.cc-d-foot small { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--cc-mut); }
+.cc-d-foot small { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--cc-mut); }
 .cc-d-foot b { font-family: var(--display); font-weight: 600; font-size: 24px; letter-spacing: -0.02em; }
 .cc-cta { display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 22px; border-radius: 999px; background: var(--cc-ink); color: #fff !important; font-size: 15px; font-weight: 500; transition: transform .3s var(--cc-ease), background .3s ease; }
 .cc-cta:hover { background: #2A2A2A; }

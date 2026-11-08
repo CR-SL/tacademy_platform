@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
+import { Toast } from '@/Components/ui';
 import { useEffect, useRef, useState } from 'react';
 import useTheme from '@/hooks/useTheme';
 import {
@@ -8,8 +9,8 @@ import {
 
 // Navegação da plataforma (a aparência decidida a 2026-11-04): logótipo e opções à esquerda.
 const baseNav = [
-    { key: 'home', label: 'Início', href: '/dashboard', Icon: IconHome },
-    { key: 'mine', label: 'Os meus cursos', short: 'Cursos', href: '/plataforma/meus-cursos', Icon: IconBook },
+    { key: 'home', label: 'Início', href: '/dashboard', Icon: IconHome, count: 'home', countLabel: ['mensagem por ler', 'mensagens por ler'] },
+    { key: 'mine', label: 'Os meus cursos', short: 'Cursos', href: '/plataforma/meus-cursos', Icon: IconBook, count: 'mine', countLabel: ['curso atribuído por começar', 'cursos atribuídos por começar'] },
     { key: 'tests', label: 'Avaliações', href: '/plataforma/avaliacoes', Icon: IconTest },
     { key: 'docs', label: 'Documentos', href: '/plataforma/documentos', Icon: IconDoc },
     { key: 'catalog', label: 'Catálogo', href: '/plataforma/cursos', Icon: IconCatalog, exact: true },
@@ -21,21 +22,27 @@ const teamsItem = { key: 'teams', label: 'Equipas', href: '/gestao/equipas', Ico
 function navFor(role) {
     switch (role) {
         case 'team_leader':
-            return [...baseNav, { key: 'team', label: 'Equipas', href: '/equipa', Icon: IconTeam }];
+            return [...baseNav, { key: 'team', label: 'Equipas', href: '/equipa', Icon: IconTeam, count: 'team', countLabel: ['pessoa precisa de atenção', 'pessoas precisam de atenção'] }];
         case 'gestor_cursos':
             return [...baseNav, requestsItem, teamsItem];
         case 'formador':
-            return [...baseNav, { key: 'builder', label: 'Criar cursos', short: 'Criar', href: '/formador/cursos', Icon: IconCreate, tag: 'Formador' }];
+            return [...baseNav, { key: 'builder', label: 'Criar cursos', short: 'Criar', href: '/formador/cursos', Icon: IconCreate, tag: 'Formador', count: 'builder', countLabel: ['presença por confirmar', 'presenças por confirmar'] }];
         case 'admin':
-            return [...baseNav, requestsItem, teamsItem, { key: 'builder', label: 'Gerir cursos', short: 'Gerir', href: '/formador/cursos', Icon: IconCreate, tag: 'Admin' }];
+            return [...baseNav, requestsItem, teamsItem, { key: 'builder', label: 'Gerir cursos', short: 'Gerir', href: '/formador/cursos', Icon: IconCreate, tag: 'Admin', count: 'builder', countLabel: ['presença por confirmar', 'presenças por confirmar'] }];
         default:
             return baseNav;
     }
 }
 
-function Count({ n }) {
+// Número amarelo na navegação, com o significado escondido para leitores de ecrã ("3 mensagens por ler")
+function Count({ n, label }) {
     if (!n) return null;
-    return <span className="pn-count">{n > 99 ? '99+' : n}</span>;
+    return (
+        <span className="pn-count">
+            {n > 99 ? '99+' : n}
+            {label && <span className="pn-sr"> {n === 1 ? label[0] : label[1]}</span>}
+        </span>
+    );
 }
 
 // Sino do Gestor de Cursos/admin: pedidos novos
@@ -99,7 +106,7 @@ export function formatXp(n = 0) {
 }
 
 export default function StudentLayout({ children, navTools }) {
-    const { auth, staffInbox, access } = usePage().props;
+    const { auth, staffInbox, access, navCounts } = usePage().props;
     const currentUrl = usePage().url;
     const user = auth?.user ?? {};
     const navItems = navFor(auth?.role);
@@ -136,7 +143,8 @@ export default function StudentLayout({ children, navTools }) {
                     {navItems.map((item) => (
                         <Link key={item.key} href={item.href} className={active(item) ? 'pn-on' : undefined} aria-current={active(item) ? 'page' : undefined}>
                             {item.label}
-                            {item.badge && <Count n={staffInbox?.count} />}
+                            {item.badge && <Count n={staffInbox?.count} label={['pedido novo', 'pedidos novos']} />}
+                            {item.count && <Count n={navCounts?.[item.count]} label={item.countLabel} />}
                             {item.tag && <span className="pn-tag">{item.tag}</span>}
                         </Link>
                     ))}
@@ -157,7 +165,7 @@ export default function StudentLayout({ children, navTools }) {
                                 <p className="truncate text-sm font-bold text-ink">{user.name ?? 'Aluno'}</p>
                                 <p className="truncate text-xs text-muted">{user.email}</p>
                             </div>
-                            <Dropdown.Link href="/profile">Perfil</Dropdown.Link>
+                            <Dropdown.Link href="/definicoes">Definições</Dropdown.Link>
                             <Dropdown.Link href="/logout" method="post" as="button">Terminar sessão</Dropdown.Link>
                         </Dropdown.Content>
                     </Dropdown>
@@ -169,18 +177,19 @@ export default function StudentLayout({ children, navTools }) {
             {/* Barra de baixo (janelas estreitas): mesma navegação da barra de cima */}
             <nav className="pn-tabbar" aria-label="Principal">
                 {navItems.map((item) => {
-                    const { key, label, short, href, Icon, badge } = item;
+                    const { key, label, short, href, Icon, badge, count, countLabel } = item;
                     return (
                         <Link key={key} href={href} aria-label={label} className={active(item) ? 'pn-on' : undefined} aria-current={active(item) ? 'page' : undefined}>
                             <Icon />
-                            {badge && <Count n={staffInbox?.count} />}
+                            {badge && <Count n={staffInbox?.count} label={['pedido novo', 'pedidos novos']} />}
+                            {count && <Count n={navCounts?.[count]} label={countLabel} />}
                             {short ?? label}
                         </Link>
                     );
                 })}
             </nav>
 
-            <div className={`pn-toast ${notice ? 'pn-on' : ''}`} role="status">{notice}</div>
+            <Toast message={notice} />
         </div>
     );
 }

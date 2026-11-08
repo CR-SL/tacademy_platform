@@ -149,7 +149,7 @@ class TeamService
             $token = Password::broker()->createToken($user);
             $url = url(route('password.reset', ['token' => $token, 'email' => $user->email], false));
             PlatformMail::deliver($user->email, new PlatformMail(
-                subjectLine: "Bem-vindo à T.Academy — equipa {$company->name}",
+                subjectLine: "Bem-vindo à T.Academy (equipa {$company->name})",
                 heading: "Olá {$first}, já tens acesso à T.Academy",
                 lines: ["Foste incluído na equipa {$company->name}, com acesso a: {$courses}.", 'Define a tua palavra-passe para começar.'],
                 actionText: 'Definir palavra-passe',
@@ -189,6 +189,7 @@ class TeamService
                     'email' => $u->email,
                     'leader' => $u->hasRole('team_leader'),
                     'invited' => $u->last_active_at === null && $progress->isEmpty(),
+                    'remindersOff' => ! $u->email_reminders,
                     'courses' => $courses->mapWithKeys(function ($c) use ($u, $progress, $lessonIds, $enrolled) {
                         $ids = $lessonIds[$c->id];
                         $mine = $progress->whereIn('lesson_id', $ids);
@@ -204,7 +205,7 @@ class TeamService
                             'late' => $deadline['late'] ?? false,
                             'assigned' => $e?->assigned_at?->format('d/m/Y'),
                             'reminded' => $e?->reminded_at?->diffForHumans(),
-                            'remindable' => $e && ! $this->remindedRecently($e) && ($ids->isEmpty() || $done < $ids->count()),
+                            'remindable' => $e && $u->email_reminders && ! $this->remindedRecently($e) && ($ids->isEmpty() || $done < $ids->count()),
                             'progress' => $ids->count() ? (int) round($done / $ids->count() * 100) : 0,
                             'score' => $this->quizScore($u->id, $ids),
                             'last' => $last ? \Illuminate\Support\Carbon::parse($last)->diffForHumans() : null,
@@ -226,8 +227,8 @@ class TeamService
     }
 
     /**
-     * Lembrete por email às pessoas escolhidas, num curso da equipa. Quem já concluiu o curso
-     * ou recebeu um lembrete há pouco fica de fora.
+     * Lembrete por email às pessoas escolhidas, num curso da equipa. Quem já concluiu o curso,
+     * recebeu um lembrete há pouco ou desligou os lembretes nas Definições fica de fora.
      *
      * @return array{sent: int, skipped: int}
      */
@@ -241,7 +242,7 @@ class TeamService
             $e = Enrollment::with('course')->where('user_id', $u->id)->where('course_id', $course->id)->where('company_id', $company->id)->first();
             $done = LessonProgress::where('user_id', $u->id)->whereIn('lesson_id', $lessonIds)->where('status', 'completed')->count();
             $finished = $lessonIds->isNotEmpty() && $done >= $lessonIds->count();
-            if (! $e || $finished || $this->remindedRecently($e)) {
+            if (! $e || $finished || $this->remindedRecently($e) || ! $u->email_reminders) {
                 continue;
             }
 
@@ -291,8 +292,8 @@ class TeamService
             $action = $this->entryAction($u, $course, 'Abrir o curso');
             $deadline = Enrollment::with('course')->where('user_id', $u->id)->where('course_id', $course->id)->first()?->deadlineInfo(false);
             PlatformMail::deliver($u->email, new PlatformMail(
-                subjectLine: "Tens uma formação atribuída: {$course->title}",
-                heading: "Olá {$first}, tens uma formação para fazer",
+                subjectLine: "Tens um curso atribuído: {$course->title}",
+                heading: "Olá {$first}, tens um curso para fazer",
                 lines: array_filter([
                     "{$leader->name}, da equipa {$company->name}, atribuiu-te o curso {$course->title}.",
                     $deadline ? 'Prazo para concluir: '.$deadline['date'].'.' : null,

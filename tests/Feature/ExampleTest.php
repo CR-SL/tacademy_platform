@@ -9,12 +9,10 @@ class ExampleTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_the_landing_page_returns_a_successful_response(): void
+    public function test_the_root_opens_the_platform_entry(): void
     {
-        $this->get('/')
-            ->assertStatus(200)
-            ->assertSee('Um bom técnico')
-            ->assertSee('Quem Somos');
+        // O website saiu de /: a raiz é a entrada da plataforma
+        $this->get('/')->assertOk()->assertInertia(fn ($p) => $p->component('Auth/Entrada'));
     }
 
     public function test_home_redirects_to_the_landing_page(): void

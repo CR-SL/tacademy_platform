@@ -56,7 +56,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                 <Field label="Imagem de capa" required>
                     <div className="grid gap-5 sm:grid-cols-[200px_1fr]">
                         <div
-                            className="ta-cut-12 relative flex aspect-[4/5] items-center justify-center overflow-hidden p-4 text-center text-[13px] text-muted"
+                            className="relative flex aspect-[4/5] items-center justify-center overflow-hidden p-4 text-center text-[13px] text-muted"
                             style={{ background: 'repeating-linear-gradient(135deg, var(--color-surface2) 0 9px, var(--color-bg) 9px 18px)' }}
                         >
                             {c.thumbnail_url ? (
@@ -67,7 +67,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                         </div>
                         <div>
                             <label
-                                className={`ta-cut-8 block cursor-pointer border-[1.5px] border-dashed bg-page p-5 text-center text-muted transition-colors hover:border-accent hover:text-ink ${drag ? 'border-accent text-ink' : 'border-line'}`}
+                                className={`block cursor-pointer border-[1.5px] border-dashed bg-page p-5 text-center text-muted transition-colors hover:border-accent hover:text-ink ${drag ? 'border-accent text-ink' : 'border-line'}`}
                                 onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
                                 onDragLeave={() => setDrag(false)}
                                 onDrop={(e) => { e.preventDefault(); setDrag(false); sendCover(e.dataTransfer.files[0]); }}
@@ -77,7 +77,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                                 <br />
                                 <small>JPG, PNG ou WebP · até 5 MB</small>
                             </label>
-                            {err && <p className="mt-2 text-[13px] text-live">{err}</p>}
+                            {err && <p className="mt-2 text-[13px] text-live-ink">{err}</p>}
                             <p className="mt-3 text-[12.5px] text-muted">…ou escolhe uma da biblioteca da T.Academy:</p>
                             <div className="mt-2 grid grid-cols-4 gap-1.5 sm:grid-cols-6">
                                 {library.map((src) => (
@@ -87,7 +87,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                                         aria-label="Usar esta imagem"
                                         aria-pressed={c.thumbnail_url === src}
                                         onClick={() => update((d) => { d.thumbnail_url = src; })}
-                                        className={`ta-cut-8 aspect-square overflow-hidden border-2 ${c.thumbnail_url === src ? 'border-accent' : 'border-transparent'}`}
+                                        className={`aspect-square overflow-hidden border-2 ${c.thumbnail_url === src ? 'border-accent' : 'border-transparent'}`}
                                     >
                                         <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
                                     </button>
@@ -97,7 +97,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                     </div>
                 </Field>
 
-                <Field label="Descrição curta" htmlFor="f-short" required help="Uma frase que resume o curso — aparece no cartão do catálogo.">
+                <Field label="Descrição curta" htmlFor="f-short" required help="Uma frase que resume o curso. Aparece no cartão do catálogo.">
                     <textarea
                         id="f-short"
                         rows={2}
@@ -106,7 +106,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                         maxLength={200}
                         onChange={(e) => update((d) => { d.short_description = e.target.value; })}
                     />
-                    <span className={`self-end font-mono text-[11px] ${c.short_description.length > shortMax ? 'text-live' : 'text-muted'}`}>
+                    <span className={`self-end font-mono text-[11px] ${c.short_description.length > shortMax ? 'text-live-ink' : 'text-muted'}`}>
                         {c.short_description.length}/{shortMax}
                     </span>
                 </Field>

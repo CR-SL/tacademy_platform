@@ -47,7 +47,7 @@ function CoursesList({ courses }) {
         <div className="pn-page-c">
             <div className="pn-page-t">
                 <h3 className="pn-disp">Os meus cursos</h3>
-                <div className="pn-pills" role="group" aria-label="Filtrar cursos">
+                <div className="ui-pills" role="group" aria-label="Filtrar cursos">
                     <button type="button" aria-pressed={filter === 'todos'} onClick={() => setFilter('todos')}>Todos · {courses.length}</button>
                     {states.map((s) => (
                         <button key={s} type="button" aria-pressed={filter === s} onClick={() => setFilter(s)}>

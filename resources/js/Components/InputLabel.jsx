@@ -1,17 +1,6 @@
-export default function InputLabel({
-    value,
-    className = '',
-    children,
-    ...props
-}) {
+export default function InputLabel({ value, className = '', children, ...props }) {
     return (
-        <label
-            {...props}
-            className={
-                `block font-display text-[13px] font-semibold uppercase tracking-[0.06em] text-muted ` +
-                className
-            }
-        >
+        <label {...props} className={`ui-label ${className}`}>
             {value ? value : children}
         </label>
     );

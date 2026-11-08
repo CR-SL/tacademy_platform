@@ -22,6 +22,8 @@ class ProfileController extends Controller
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
+            // Só quem pertence a uma equipa recebe lembretes do team leader
+            'inTeam' => $request->user()->company_id !== null,
         ]);
     }
 
@@ -39,6 +41,24 @@ class ProfileController extends Controller
         $request->user()->save();
 
         return Redirect::route('profile.edit');
+    }
+
+    /** Tema escolhido nas Definições ou no botão da navegação (claro, escuro ou automático). */
+    public function theme(Request $request): SymfonyResponse
+    {
+        $data = $request->validate(['theme' => ['required', 'in:light,dark,system']]);
+        $request->user()->forceFill(['theme' => $data['theme']])->save();
+
+        return response()->noContent();
+    }
+
+    /** Notificações por email que a pessoa pode desligar (por agora, os lembretes do team leader). */
+    public function notifications(Request $request): SymfonyResponse
+    {
+        $data = $request->validate(['reminders' => ['required', 'boolean']]);
+        $request->user()->forceFill(['email_reminders' => $data['reminders']])->save();
+
+        return response()->noContent();
     }
 
     /**

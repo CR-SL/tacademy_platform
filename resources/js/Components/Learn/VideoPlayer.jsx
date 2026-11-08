@@ -164,7 +164,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initia
                 <p className="max-w-md text-white/80">Este vídeo abre noutro separador. O tempo conta enquanto esta página estiver aberta depois de carregares em «Abrir vídeo».</p>
                 <a href={source.url} target="_blank" rel="noopener noreferrer"
                     onClick={() => { state.current.playing = true; }}
-                    className="ta-cut-8 bg-accent px-5 py-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-on-accent">
+                    className="ui-btn ui-btn-accent">
                     Abrir vídeo ↗
                 </a>
             </div>

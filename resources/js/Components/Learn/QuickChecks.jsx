@@ -41,13 +41,13 @@ export default function QuickChecks({ lessonUlid, checks, canSave, onChange, onC
                                     type="button"
                                     disabled={answered || busy === c.id}
                                     onClick={() => answer(c, i)}
-                                    className={`ta-cut-8 flex items-center gap-2 border-[1.5px] px-3 py-2.5 text-left text-[15px] transition-colors ${
-                                        right ? 'border-[#2F9E5B] bg-[#2F9E5B14]' : wrong ? 'border-live bg-live/10' : answered ? 'border-transparent bg-page text-muted' : 'border-transparent bg-page hover:border-accent'
+                                    className={`rounded-full flex items-center gap-2 border-[1.5px] px-3 py-2.5 text-left text-[15px] transition-colors ${
+                                        right ? 'border-success bg-success/10' : wrong ? 'border-live bg-live/10' : answered ? 'border-transparent bg-page text-muted' : 'border-transparent bg-page hover:border-accent'
                                     }`}
                                 >
                                     <span className="flex-1">{o}</span>
-                                    {right && <span className="font-mono text-[11px] font-semibold text-[#2F9E5B]">✓ CERTA</span>}
-                                    {wrong && <span className="font-mono text-[11px] font-semibold text-live">✗ A TUA RESPOSTA</span>}
+                                    {right && <span className="font-mono text-[11px] font-semibold uppercase text-success-ink"><span aria-hidden="true">✓ </span>Certa</span>}
+                                    {wrong && <span className="font-mono text-[11px] font-semibold uppercase text-live-ink"><span aria-hidden="true">✗ </span>A tua resposta</span>}
                                 </button>
                             );
                         })}

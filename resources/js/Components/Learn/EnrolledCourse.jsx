@@ -122,7 +122,7 @@ export default function EnrolledCourse({ course, access, progress, program, next
         <StudentLayout navTools={<PanelsMenu board={board} />}>
             <Head title={course.title} />
             <Crumb label={<Link href="/plataforma/meus-cursos">Os meus cursos · {course.title}</Link>}>
-                {next && <Link href={lessonUrl(next)} className="pn-btn pn-sm">{nextLabel}<IconArrow /></Link>}
+                {next && <Link href={lessonUrl(next)} className="ui-btn ui-btn-sm">{nextLabel}<IconArrow /></Link>}
             </Crumb>
             <PanelBoard board={board} />
             <FlashToast />

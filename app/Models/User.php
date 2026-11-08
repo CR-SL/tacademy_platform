@@ -26,6 +26,8 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'phone',
         'avatar_url',
+        'theme',
+        'email_reminders',
         'level',
         'streak_days',
         'last_active_at',
@@ -45,6 +47,7 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
             'streak_days' => 'integer',
             'panel_layouts' => 'array',
+            'email_reminders' => 'boolean',
         ];
     }
 
