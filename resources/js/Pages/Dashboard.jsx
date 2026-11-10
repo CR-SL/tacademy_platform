@@ -94,9 +94,19 @@ export default function Dashboard(props) {
         ?? (pending.length ? t(':n por fazer', { n: pending.length }) : (props.resume || hasWork ? t('Tudo em dia') : null));
 
     return (
-        <StudentLayout navTools={<PanelsMenu board={board} />}>
+        <StudentLayout navTools={(
+            <>
+                {/* Cumprimento e resumo na barra, ao lado de Painéis visíveis (2026-11-10) */}
+                <div className="pn-hello">
+                    <h1 className="pn-disp">{greeting()}{firstName ? `, ${firstName}` : ''}.</h1>
+                    {summaryLine && <p>{summaryLine}</p>}
+                </div>
+                <PanelsMenu board={board} />
+            </>
+        )}>
             <Head title={t('Início')} />
-            <div className="pn-root">
+            {/* Janelas estreitas: a barra não tem espaço, o cumprimento fica por cima das caixas */}
+            <div className="pn-root pn-hello-narrow">
                 <div className="pn-top">
                     <h1 className="pn-disp">{greeting()}{firstName ? `, ${firstName}` : ''}.</h1>
                     {summaryLine && <p>{summaryLine}</p>}

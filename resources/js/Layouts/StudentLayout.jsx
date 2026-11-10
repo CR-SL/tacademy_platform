@@ -179,7 +179,8 @@ export default function StudentLayout({ children, navTools }) {
                 <div className="pn-nav-end">
                     {navTools}
                     {staffInbox && <Bell inbox={staffInbox} />}
-                    <LanguageToggle />
+                    {/* Língua: nas Definições (2026-11-10); quem não tem conta muda-a aqui */}
+                    {guest && <LanguageToggle />}
                     <button type="button" className="pn-icon" onClick={toggle} aria-label={dark ? t('Mudar para tema claro') : t('Mudar para tema escuro')} title={dark ? t('Tema claro') : t('Tema escuro')}>
                         {dark ? <IconSun /> : <IconMoon />}
                     </button>
