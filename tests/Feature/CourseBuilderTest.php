@@ -80,7 +80,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_the_role_is_shared_with_the_navbar(): void
     {
-        $this->actingAs($this->user('formador'))->get('/formador')
+        $this->actingAs($this->user('formador'))->get('/dashboard')
             ->assertInertia(fn ($page) => $page->where('auth.role', 'formador'));
     }
 
@@ -157,13 +157,13 @@ class CourseBuilderTest extends TestCase
         $this->actingAs($formador)->postJson('/formador/cursos', $this->payload());
         $course = Course::firstOrFail();
 
-        $this->get('/cursos')->assertDontSee('Sistemas de Injeção Common Rail');
+        $this->get('/plataforma/cursos')->assertInertia(fn ($p) => $p->has('courses', 0));
 
         $this->actingAs($formador)->post("/formador/cursos/{$course->ulid}/publicar")
             ->assertRedirect('/formador/cursos');
 
         $this->assertSame('published', $course->fresh()->status);
-        $this->get('/cursos')->assertSee('Sistemas de Injeção Common Rail');
+        $this->get('/plataforma/cursos')->assertInertia(fn ($p) => $p->where('courses.0.title', 'Sistemas de Injeção Common Rail'));
     }
 
     public function test_the_cover_must_come_from_the_library_or_an_upload(): void

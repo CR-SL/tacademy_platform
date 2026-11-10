@@ -82,17 +82,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                                 rel="noopener"
                                 className="ui-btn ui-btn-line"
                             >
-                                {t('👁 Ver como aluno')}
-                            </a>
-                        )}
-                        {published && c.slug && (
-                            <a
-                                href={`/cursos?curso=${c.slug}`}
-                                target="_blank"
-                                rel="noopener"
-                                className="ui-btn ui-btn-line"
-                            >
-                                {t('Ver no catálogo ↗')}
+                                {t('Pré-visualizar como aluno')}
                             </a>
                         )}
                         {published ? (

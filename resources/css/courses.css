@@ -1,6 +1,6 @@
 /*
- | Catálogo público de cursos (/cursos) — versão "como o artifact" (exemplo 4).
- | Usa a navbar e o rodapé do landing.css; aqui só o catálogo, a pesquisa e a aba de detalhe.
+ | Catálogo da plataforma (/plataforma/cursos, Catalog.jsx): cartões, pesquisa e aba de detalhe.
+ | O /cursos público (Blade) saiu a 2026-11-10; as regras .landing-courses ficaram sem uso.
  */
 .landing-courses {
     --cc-paper: #F7F6F3;
@@ -181,3 +181,7 @@
 .cc-app .cc-cta.cc-wait { background: var(--color-surface2); color: var(--color-muted) !important; }
 /* Texto escuro sobre o amarelo e sobre as fotografias, nos dois temas */
 .cc-app .cc-cta span, .cc-app .cc-price, .cc-app .cc-tag, .cc-app .cc-ai, .cc-app .cc-badge, .cc-app .cc-d-hero .cc-x { color: #18181B; }
+/* Sem sessão: "Entrar para comprar" e, por baixo, criar conta */
+.cc-app .cc-guest { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.cc-app .cc-guest-new { font-size: 13px; color: var(--color-muted); text-decoration: underline; text-underline-offset: 3px; }
+.cc-app .cc-guest-new:hover { color: var(--color-ink); }

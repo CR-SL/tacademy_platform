@@ -1,4 +1,4 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button, Field } from '@/Components/ui';
 
@@ -266,14 +266,15 @@ export default function Entrada({ mode: startMode = 'entrar', status, canResetPa
                             <a href={route('password.request')} className="en-link">{t('Não recebi o email')}</a>
                         </div>
                     </div>
-                    <a href="/cursos" className="en-catalog">
+                    {/* Catálogo aberto a quem ainda não tem conta; comprar pede sessão */}
+                    <Link href="/plataforma/cursos" className="en-catalog">
                         <span><b>{t('Ver os cursos sem conta')}</b><small>{t('Espreita o catálogo e os preços antes de te registares.')}</small></span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                    </a>
+                    </Link>
                 </div>
             </main>
 
-            <footer className="en-foot">{t('© T.Academy · Gestão de talentos')}</footer>
+            <footer className="en-foot">{t('© T.Academy · Gestão de talentos')} · <Link href="/plataforma/contactos" className="underline underline-offset-4">{t('Contactos')}</Link></footer>
         </div>
     );
 }

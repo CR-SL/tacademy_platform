@@ -32,28 +32,24 @@ Route::permanentRedirect('/home', '/');
 // Língua da plataforma (botão PT · EN e Definições); funciona com e sem sessão
 Route::put('/lingua', LocaleController::class)->middleware('throttle:30,1')->name('locale');
 
-// Catálogo público de cursos (Blade)
-Route::get('/cursos', PublicCourseController::class)->name('courses');
+// As páginas públicas antigas (Blade) saíram a 2026-11-10: a plataforma é só uma app.
+// Os links antigos continuam a funcionar e levam ao catálogo e aos contactos da plataforma.
+Route::permanentRedirect('/cursos', '/plataforma/cursos');
+Route::permanentRedirect('/contactos', '/plataforma/contactos');
 
-// Contactos (público): formulário com limite de 5 envios por minuto por IP
-Route::get('/contactos', [ContactController::class, 'show'])->name('contacts');
-Route::post('/contactos', [ContactController::class, 'store'])
-    ->middleware('throttle:5,1')
-    ->name('contacts.store');
+// Catálogo e contactos abertos a quem ainda não tem conta; comprar pede sessão
+Route::get('/plataforma/cursos', CatalogController::class)->name('catalog');
+Route::get('/plataforma/contactos', [ContactController::class, 'show'])->name('contacts');
+Route::post('/plataforma/contactos', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contacts.store');
 
 Route::get('/dashboard', DashboardController::class)
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-// Catálogo dentro da plataforma (com sessão). O /cursos é o catálogo público.
 // Clique num curso do catálogo (para as estatísticas da Administração)
 Route::post('/plataforma/cursos/{course:slug}/visto', CourseViewController::class)
     ->middleware(['auth', 'throttle:120,1'])
     ->name('catalog.view');
-
-Route::get('/plataforma/cursos', CatalogController::class)
-    ->middleware(['auth', 'verified'])
-    ->name('catalog');
 
 // Páginas em painéis do aluno, disposição das caixas e mensagens com o formador
 Route::middleware(['auth', 'verified'])->prefix('plataforma')->group(function () {
@@ -99,11 +95,12 @@ Route::middleware(['auth', 'verified', 'can:viewAny,App\Models\Course'])
         Route::post('/videos', 'uploadVideo')->middleware('throttle:1200,1')->name('videos');
     });
 
-// Início e Avaliações do formador (navegação "só o seu trabalho")
+// Avaliações do formador (navegação "só o seu trabalho")
 Route::middleware(['auth', 'verified', 'can:viewAny,App\Models\Course'])
     ->prefix('formador')->name('instructor.')->controller(InstructorHomeController::class)
     ->group(function () {
-        Route::get('/', 'home')->name('home');
+        // O Início do formador passou para o Início de todos (/dashboard), com ?conversa=… das mensagens
+        Route::get('/', fn (\Illuminate\Http\Request $r) => redirect('/dashboard'.($r->getQueryString() ? '?'.$r->getQueryString() : '')))->name('home');
         Route::get('/avaliacoes', 'assessments')->name('assessments');
     });
 

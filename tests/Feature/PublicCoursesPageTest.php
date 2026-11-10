@@ -31,31 +31,33 @@ class PublicCoursesPageTest extends TestCase
         ]);
     }
 
-    public function test_the_public_catalog_lists_published_courses_for_guests(): void
+    public function test_guests_see_the_platform_catalog_with_published_courses_only(): void
     {
         $this->course('Diagnóstico de Sistemas OBD-II');
         $this->course('Curso em rascunho', 'draft');
 
-        $this->get('/cursos')
+        $this->get('/plataforma/cursos')
             ->assertOk()
-            ->assertSee('Diagnóstico de Sistemas OBD-II')
-            ->assertDontSee('Curso em rascunho')
-            ->assertSee('1 curso', false)
-            ->assertSee('Diagnóstico Automóvel')
-            ->assertDontSee('Já é formando');
+            ->assertInertia(fn ($page) => $page->component('Catalog')
+                ->has('courses', 1)
+                ->where('courses.0.title', 'Diagnóstico de Sistemas OBD-II')
+                ->where('areas.0.name', 'Diagnóstico Automóvel')
+                ->where('owned', []));
     }
 
-    public function test_each_card_links_to_its_course_detail(): void
+    public function test_buying_without_a_session_signs_in_and_returns_to_the_course(): void
     {
         $this->course('Redes CAN Bus no Automóvel');
 
-        $this->get('/cursos')->assertSee('/cursos?curso=redes-can-bus-no-automovel', false);
+        $this->get('/plataforma/cursos?curso=redes-can-bus-no-automovel&entrar=1')
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('url.intended', route('catalog', ['curso' => 'redes-can-bus-no-automovel']));
+        $this->get('/plataforma/cursos?curso=redes-can-bus-no-automovel&entrar=1&conta=nova')->assertRedirect(route('register'));
+        $this->post('/cursos/redes-can-bus-no-automovel/comprar')->assertRedirect(route('login'));
     }
 
-    public function test_the_platform_catalog_moved_and_still_requires_login(): void
+    public function test_signed_in_users_still_open_the_catalog(): void
     {
-        $this->get('/plataforma/cursos')->assertRedirect(route('login'));
-
         $role = Role::firstOrCreate(['name' => 'aluno']);
         $user = User::factory()->create(['role_id' => $role->id]);
         $this->actingAs($user)->get('/plataforma/cursos')->assertOk();

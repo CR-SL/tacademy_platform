@@ -6,28 +6,43 @@ use App\Http\Requests\ContactRequestForm;
 use App\Models\ContactRequest;
 use App\Models\Course;
 use App\Services\TeamService;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 /**
- * Página pública de contactos: pedido de contacto, redes sociais e FAQs.
+ * Contactos da plataforma: pedido de contacto, redes sociais e FAQs.
  */
 class ContactController extends Controller
 {
-    public function show(): View
+    /** Contactos da plataforma (menu da conta, ajuda da aula e entrada): com ou sem sessão. */
+    public function show(Request $request): Response
     {
-        return view('contactos', [
+        return Inertia::render('Contacts', [
             'courses' => Course::where('status', 'published')->orderBy('title')->get(['id', 'title']),
             'teamSizes' => ContactRequest::TEAM_SIZES,
             'faqs' => config('tacademy.faqs'),
             'contact' => config('tacademy.contact'),
             'social' => config('tacademy.social'),
+            'sent' => $request->session()->get('contact_sent'),
         ]);
     }
 
+    /** O pedido entra nos Pedidos do Gestor de Cursos; com sessão, com o nome e o email da conta. */
     public function store(ContactRequestForm $request, TeamService $teams): RedirectResponse
     {
         $data = $request->validated();
+        $this->createRequest($data, $teams, $request->user()?->id);
+
+        return redirect()->route('contacts')->with('contact_sent', [
+            'name' => strtok($data['name'], ' '),
+            'email' => $data['email'],
+        ]);
+    }
+
+    private function createRequest(array $data, TeamService $teams, ?int $userId = null): ContactRequest
+    {
         $isCompany = $data['type'] === 'empresa';
         $people = $isCompany ? $this->parsePeople($data['participants'] ?? '') : [];
 
@@ -40,16 +55,12 @@ class ContactController extends Controller
             'team_size' => $isCompany ? ($data['team_size'] ?? null) : null,
             'people' => $people ?: null,
             'consent_at' => now(),
+            'user_id' => $userId,
         ]);
-        $r->messages()->create(['author' => $r->name, 'body' => $r->message]);
+        $r->messages()->create(['user_id' => $userId, 'author' => $r->name, 'body' => $r->message]);
         $teams->notifyStaff($r->load('course'));
 
-        return redirect()
-            ->to(route('contacts').'#pedir-contacto')
-            ->with('contact_sent', [
-                'name' => strtok($data['name'], ' '),
-                'email' => $data['email'],
-            ]);
+        return $r;
     }
 
     /**

@@ -181,7 +181,7 @@ class StudentPanelsTest extends TestCase
     {
         $this->actingAs($this->student)->post('/plataforma/mensagens', ['course_id' => $this->course->id, 'body' => 'Tenho uma dúvida.'])->assertRedirect();
 
-        $this->actingAs($this->instructor)->get('/formador')->assertInertia(fn ($page) => $page
+        $this->actingAs($this->instructor)->get('/dashboard')->assertInertia(fn ($page) => $page
             ->where('messages.threads.0.name', $this->student->name)
             ->where('messages.threads.0.unread', 1)
         );
@@ -281,13 +281,13 @@ class StudentPanelsTest extends TestCase
         }
 
         // O Início do formador mostra a presença por confirmar no curso e no número da barra
-        $this->actingAs($this->instructor)->get('/formador')->assertInertia(fn ($page) => $page
-            ->component('Instructor/Home')
-            ->where('courses.0.attendance', 1)
+        $this->actingAs($this->instructor)->get('/dashboard')->assertInertia(fn ($page) => $page
+            ->component('Dashboard')
+            ->where('teaching.0.attendance', 1)
             ->where('navCounts.builder', 1)
         );
 
         Enrollment::where('user_id', $this->student->id)->update(['attended_at' => now()]);
-        $this->actingAs($this->instructor)->get('/formador')->assertInertia(fn ($page) => $page->missing('navCounts.builder'));
+        $this->actingAs($this->instructor)->get('/dashboard')->assertInertia(fn ($page) => $page->missing('navCounts.builder'));
     }
 }

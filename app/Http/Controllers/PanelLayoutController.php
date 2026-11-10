@@ -10,9 +10,9 @@ use Illuminate\Validation\ValidationException;
 /** Guarda a disposição das caixas de cada utilizador, por página. */
 class PanelLayoutController extends Controller
 {
-    private const VIEWS = ['home', 'cursos', 'curso', 'avaliacoes', 'documentos', 'equipas', 'formador'];
+    private const VIEWS = ['home', 'cursos', 'curso', 'avaliacoes', 'documentos', 'equipas', 'formador', 'trabalho', 'inicio'];
 
-    private const MAX_PANELS = 12;
+    private const MAX_PANELS = 16;
 
     public function update(Request $request, string $view): Response
     {

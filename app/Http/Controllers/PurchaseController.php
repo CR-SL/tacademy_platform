@@ -18,8 +18,8 @@ class PurchaseController extends Controller
     {
         abort_unless($course->status === 'published', 404);
         $user = $request->user();
-        // Volta à página de onde veio (catálogo público ou página do curso na plataforma), com o aviso nos dois formatos
-        $back = fn (string $msg) => redirect()->back(fallback: route('courses', ['curso' => $course->slug]))->with('purchase', $msg)->with('status', $msg);
+        // Volta à página de onde veio (catálogo ou página do curso), com o aviso nos dois formatos
+        $back = fn (string $msg) => redirect()->back(fallback: route('catalog', ['curso' => $course->slug]))->with('purchase', $msg)->with('status', $msg);
 
         if ($user->enrollments()->where('course_id', $course->id)->exists()) {
             return $back(__('Já tens acesso a este curso.'));

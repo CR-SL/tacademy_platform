@@ -90,7 +90,7 @@ class TeamsAndRequestsTest extends TestCase
         $gestor = $this->user('gestor_cursos');
         $course = $this->course('Diagnóstico OBD-II');
 
-        $this->post('/contactos', [
+        $this->post('/plataforma/contactos', [
             'type' => 'empresa', 'name' => 'Paulo Moura', 'email' => 'paulo@moura.pt', 'company' => 'Oficina Moura',
             'course_id' => $course->id, 'message' => 'Queremos o curso para a equipa.', 'consent' => '1',
             'participants' => "Paulo Moura, paulo@moura.pt\nSérgio Moura; sergio@moura.pt\nlinha sem email",

@@ -10,6 +10,8 @@ class Permissions
 {
     /** chave => o que deixa fazer (texto em português; traduz-se ao mostrar) */
     public const ALL = [
+        // Caixas de aprender no Início (2026-11-10): os seus cursos, continuar, notas, resultados, sugestões
+        'aprender' => 'Fazer cursos (as caixas de aluno no Início)',
         'cursos.criar' => 'Criar e editar os próprios cursos',
         'cursos.publicar' => 'Publicar os próprios cursos no catálogo',
         'cursos.todos' => 'Editar qualquer curso do catálogo',
@@ -21,9 +23,9 @@ class Permissions
     ];
 
     public const DEFAULTS = [
-        'aluno' => [],
+        'aluno' => ['aprender'],
         'formador' => ['cursos.criar', 'cursos.publicar'],
-        'team_leader' => ['equipa'],
+        'team_leader' => ['aprender', 'equipa'],
         'gestor_cursos' => ['pedidos', 'equipas'],
     ];
 

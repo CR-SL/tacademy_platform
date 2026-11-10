@@ -5,15 +5,15 @@ import '../../css/courses.css';
 
 import { t } from '@/i18n';
 
-// Catálogo dentro da plataforma: o mesmo da landing (/cursos, courses.js), com separadores por área,
-// pesquisa e aba lateral com o detalhe, mas em React e com a navbar da plataforma.
+// Catálogo da plataforma, aberto a quem ainda não tem conta: separadores por área, pesquisa
+// e aba lateral com o detalhe. Comprar pede sessão.
 
 const norm = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const euro = (v) => v.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 const dur = (m) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, '0') : ''}` : `${m} min`);
 const textOf = (c) => `${c.title} ${c.areaName} ${c.level} ${c.description}`;
 // Conta a abertura do curso para as estatísticas da Administração (sem bloquear nada se falhar)
-const countView = (c) => window.axios.post(`/plataforma/cursos/${encodeURIComponent(c.slug)}/visto`).catch(() => {});
+const countView = (c, guest) => !guest && window.axios.post(`/plataforma/cursos/${encodeURIComponent(c.slug)}/visto`).catch(() => {});
 const SUGGESTIONS = ['Diagnóstico', 'OBD', 'Eletrónica', 'Bateria', 'Gestão'];
 
 // Mantém o estado do Inertia no histórico ao mudar o ?curso= (link partilhável)
@@ -54,8 +54,18 @@ function Card({ c, onOpen }) {
 }
 
 // Botão do rodapé do detalhe: ir para o curso, compra pendente ou comprar (simulado)
-function FootAction({ c, owned, pending }) {
+function FootAction({ c, owned, pending, guest }) {
     const [busy, setBusy] = useState(false);
+    // Sem sessão: entrar (ou criar conta) e voltar a este curso para comprar
+    if (guest) {
+        const to = (extra = '') => `/plataforma/cursos?curso=${encodeURIComponent(c.slug)}&entrar=1${extra}`;
+        return (
+            <span className="cc-guest">
+                <a className="cc-cta" href={to()}>{t('Entrar para comprar')}<span aria-hidden="true">→</span></a>
+                <a className="cc-guest-new" href={to('&conta=nova')}>{t('Ainda não tenho conta')}</a>
+            </span>
+        );
+    }
     if (owned.includes(c.id)) {
         return <Link className="cc-cta" href={`/plataforma/cursos/${encodeURIComponent(c.slug)}`}>{t('Ir para o curso')}<span aria-hidden="true">→</span></Link>;
     }
@@ -73,7 +83,7 @@ function FootAction({ c, owned, pending }) {
     );
 }
 
-function Detail({ c, owned, pending, onClose }) {
+function Detail({ c, owned, pending, guest, onClose }) {
     const closeRef = useRef(null);
     useEffect(() => {
         const tx = setTimeout(() => closeRef.current?.focus({ preventScroll: true }), 60);
@@ -121,7 +131,7 @@ function Detail({ c, owned, pending, onClose }) {
                 </div>
                 <div className="cc-d-foot">
                     <span><small>{t('Preço')}</small><b>{euro(c.price)}</b></span>
-                    <FootAction c={c} owned={owned} pending={pending} />
+                    <FootAction c={c} owned={owned} pending={pending} guest={guest} />
                 </div>
             </aside>
         </>
@@ -190,7 +200,8 @@ function Search({ initial, courses, onApply, onPick, onClose }) {
 }
 
 export default function Catalog({ courses, areas, owned, pending }) {
-    const { flash } = usePage().props;
+    const { flash, auth } = usePage().props;
+    const guest = !auth?.user;
     const [area, setArea] = useState('all');
     const [query, setQuery] = useState('');
     const [detail, setDetail] = useState(null);
@@ -203,7 +214,7 @@ export default function Catalog({ courses, areas, owned, pending }) {
         const params = new URLSearchParams(location.search);
         if (courses.some((c) => c.area === params.get('area'))) setArea(params.get('area'));
         const c = courses.find((x) => x.slug === params.get('curso'));
-        if (c) { setDetail(c); countView(c); }
+        if (c) { setDetail(c); countView(c, guest); }
     }, []);
 
     // Aviso depois de uma compra (vem da sessão)
@@ -219,7 +230,7 @@ export default function Catalog({ courses, areas, owned, pending }) {
         setSearching(false);
         setDetail(c);
         setUrl(`?curso=${encodeURIComponent(c.slug)}`);
-        countView(c);
+        countView(c, guest);
     };
     const close = () => {
         setDetail(null);
@@ -281,7 +292,7 @@ export default function Catalog({ courses, areas, owned, pending }) {
                 </div>
 
                 {searching && <Search initial={query} courses={courses} onApply={applySearch} onPick={open} onClose={closeSearch} />}
-                {current && <Detail c={current} owned={owned} pending={pending} onClose={close} />}
+                {current && <Detail c={current} owned={owned} pending={pending} guest={guest} onClose={close} />}
                 {notice && <div className="cc-notice" role="status">{notice}</div>}
             </div>
         </StudentLayout>

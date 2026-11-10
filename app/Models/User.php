@@ -111,20 +111,28 @@ class User extends Authenticatable implements HasLocalePreference
         return in_array($this->role?->name, ['formador', 'gestor_cursos', 'admin'], true);
     }
 
-    /** Primeira página depois de entrar (e do logótipo): o Início do aluno, ou o trabalho de cada perfil. */
+    /**
+     * Início de trabalho (2026-11-10): formador, gestor de cursos ou admin com pelo menos uma
+     * permissão de trabalho. Sem nenhuma (permissões retiradas), fica com o Início do aluno.
+     */
+    public function hasWork(): bool
+    {
+        return $this->worksOnly() && collect(['estatisticas', 'pessoas', 'pedidos', 'equipas', 'cursos.todos', 'cursos.criar'])
+            ->contains(fn ($p) => $this->canDo($p));
+    }
+
+    /**
+     * Caixas de aprender no Início: quem tem "Fazer cursos" ou, sem nenhuma permissão de trabalho,
+     * quem ficaria sem caixas (o mesmo que a barra faz).
+     */
+    public function learns(): bool
+    {
+        return $this->canDo('aprender') || ! $this->hasWork();
+    }
+
+    /** Primeira página depois de entrar (e do logótipo): o Início, igual para todos (cada um vê as suas caixas). */
     public function homeUrl(): string
     {
-        if (! $this->worksOnly()) {
-            return '/dashboard';
-        }
-
-        return match (true) {
-            $this->canDo('estatisticas') || $this->canDo('pessoas') => '/administracao',
-            $this->canDo('cursos.criar') && ! $this->canDo('cursos.todos') => '/formador',
-            $this->canDo('pedidos') => '/gestao/pedidos',
-            $this->canDo('equipas') => '/gestao/equipas',
-            $this->canDo('cursos.todos') => '/formador/cursos',
-            default => '/dashboard',
-        };
+        return '/dashboard';
     }
 }

@@ -35,18 +35,43 @@ class WorkNavigationTest extends TestCase
     public function test_each_profile_starts_in_its_own_work(): void
     {
         $this->actingAs($this->user('aluno'))->get('/dashboard')->assertOk()
-            ->assertInertia(fn ($p) => $p->component('Dashboard')->where('auth.worksOnly', false)->where('auth.home', '/dashboard'));
+            ->assertInertia(fn ($p) => $p->component('Dashboard')->where('auth.worksOnly', false)->where('auth.home', '/dashboard')
+                ->where('learns', true)->has('courses')->has('suggestions')->missing('team')->missing('teaching')->missing('requests'));
         $leader = $this->user('team_leader', ['company_id' => Company::create(['name' => 'Oficina X', 'packs' => 1])->id]);
-        $this->actingAs($leader)->get('/dashboard')->assertOk()->assertInertia(fn ($p) => $p->component('Dashboard'));
+        // Team leader: as caixas de aprender e a da sua equipa
+        $this->actingAs($leader)->get('/dashboard')->assertOk()->assertInertia(fn ($p) => $p->component('Dashboard')
+            ->where('learns', true)->has('courses')->where('team.name', 'Oficina X')->has('team.attention'));
 
-        $this->actingAs($this->user('formador'))->get('/dashboard')->assertRedirect('/formador');
-        $this->actingAs($this->user('gestor_cursos'))->get('/dashboard')->assertRedirect('/gestao/pedidos');
-        $this->actingAs($this->user('admin'))->get('/dashboard')->assertRedirect('/administracao');
+        // Sem "Fazer cursos", o aluno deixa de ter as caixas de aprender (e com ela volta a tê-las)
+        $role = Role::where('name', 'formador')->first();
+        $role->forceFill(['permissions' => ['cursos.criar', 'aprender']])->save();
+        $this->actingAs($this->user('formador'))->get('/dashboard')->assertInertia(fn ($p) => $p->where('learns', true)->has('courses')->has('teaching'));
+        $role->forceFill(['permissions' => null])->save();
 
-        // A ligação de uma mensagem leva o formador à conversa no seu Início
-        $this->actingAs($this->user('formador'))->get('/dashboard?conversa=3-7')->assertRedirect('/formador?conversa=3-7');
-        $this->actingAs($this->user('formador'))->get('/formador')->assertOk()
-            ->assertInertia(fn ($p) => $p->component('Instructor/Home')->where('auth.worksOnly', true)->where('auth.home', '/formador'));
+        // Formador, gestor e admin: o mesmo Início de trabalho, só com as caixas das suas permissões
+        $this->actingAs($this->user('formador'))->get('/dashboard')->assertOk()->assertInertia(fn ($p) => $p
+            ->component('Dashboard')->where('auth.worksOnly', true)->where('auth.home', '/dashboard')
+            ->where('learns', false)->has('pending')->has('teaching')->has('messages')->missing('courses')->missing('requests')->missing('overview')->missing('catalog'));
+        $this->actingAs($this->user('gestor_cursos'))->get('/dashboard')->assertOk()->assertInertia(fn ($p) => $p
+            ->component('Dashboard')->has('requests')->has('purchases')->has('teams')->missing('courses')->missing('teaching')->where('messages', null)->missing('overview')->missing('people'));
+        $this->actingAs($this->user('admin'))->get('/dashboard')->assertOk()->assertInertia(fn ($p) => $p
+            ->component('Dashboard')->has('overview')->has('attention')->has('people')->has('requests')->has('catalog')->has('teaching')->where('learns', true));
+
+        // A disposição das caixas do Início de trabalho fica guardada (até 16 caixas: o admin tem 13)
+        $admin = $this->user('admin');
+        $items = collect(range(1, 13))->mapWithKeys(fn ($i) => [str_repeat('a', $i) => ['x' => 0, 'y' => $i * 11, 'w' => 8, 'h' => 11]])->all();
+        $this->actingAs($admin)->putJson('/plataforma/paineis/inicio', ['items' => $items, 'collapsed' => [], 'hidden' => ['a'], 'order' => []])->assertNoContent();
+        $this->actingAs($admin)->get('/dashboard')->assertInertia(fn ($p) => $p->where('savedLayout.hidden', ['a']));
+
+        // Quem ainda não mexeu nas caixas desde que há um só Início fica com a disposição que tinha
+        $formador = $this->user('formador');
+        $old = ['items' => ['cursos' => ['x' => 0, 'y' => 0, 'w' => 24, 'h' => 11]], 'collapsed' => [], 'hidden' => ['cursos'], 'order' => ['cursos']];
+        $formador->forceFill(['panel_layouts' => ['formador' => $old]])->save();
+        $this->actingAs($formador)->get('/dashboard')->assertInertia(fn ($p) => $p
+            ->where('savedLayout.items.ensino.w', 24)->where('savedLayout.hidden', ['ensino'])->missing('savedLayout.items.cursos'));
+
+        // O endereço antigo do Início do formador leva ao Início (com a conversa das mensagens)
+        $this->actingAs($this->user('formador'))->get('/formador?conversa=3-7')->assertRedirect('/dashboard?conversa=3-7');
     }
 
     public function test_the_trainer_home_and_assessments_show_their_students_results(): void
@@ -69,11 +94,11 @@ class WorkNavigationTest extends TestCase
         QuizAttempt::create(['user_id' => $rui->id, 'quiz_id' => $quiz->id, 'score' => 50, 'passed' => false, 'attempted_at' => now()->subDays(3)]);
         QuizAttempt::create(['user_id' => $rui->id, 'quiz_id' => $quiz->id, 'score' => 90, 'passed' => true, 'attempted_at' => now()->subDays(2)]);
 
-        $this->actingAs($formador)->get('/formador')->assertInertia(fn ($p) => $p
-            ->component('Instructor/Home')
-            ->where('courses.0.title', 'Calibração de ADAS')
-            ->where('courses.0.students', 2)
-            ->where('attention', 1)
+        $this->actingAs($formador)->get('/dashboard')->assertInertia(fn ($p) => $p
+            ->component('Dashboard')
+            ->where('teaching.0.title', 'Calibração de ADAS')
+            ->where('teaching.0.students', 2)
+            ->where('failing', 1)
             ->where('assessments.0.student', 'Ana Sousa') // quem ainda não passou vem primeiro
             ->where('navCounts.ftests', 1));
 

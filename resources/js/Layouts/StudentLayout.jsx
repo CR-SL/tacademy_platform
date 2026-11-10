@@ -13,11 +13,17 @@ import LanguageToggle from '@/Components/LanguageToggle';
 // Navegação da plataforma (a aparência decidida a 2026-11-04): logótipo e opções à esquerda.
 const baseNav = () => [
     { key: 'home', label: t('Início'), href: '/dashboard', Icon: IconHome, count: 'home', countLabel: [t('mensagem por ler'), t('mensagens por ler')] },
-    { key: 'catalog', label: t('Catálogo'), href: '/plataforma/cursos', Icon: IconCatalog, exact: true },
+    catalogItem(),
     { key: 'mine', label: t('Os meus cursos'), short: t('Cursos'), href: '/plataforma/meus-cursos', Icon: IconBook, count: 'mine', countLabel: [t('curso atribuído por começar'), t('cursos atribuídos por começar')] },
     { key: 'docs', label: t('Documentos'), href: '/plataforma/documentos', Icon: IconDoc },
     { key: 'tests', label: t('Avaliações'), href: '/plataforma/avaliacoes', Icon: IconTest },
     { key: 'certs', label: t('Certificados'), href: '/plataforma/certificados', Icon: IconCert },
+];
+const catalogItem = () => ({ key: 'catalog', label: t('Catálogo'), href: '/plataforma/cursos', Icon: IconCatalog, exact: true });
+// Quem ainda não tem conta: só o catálogo e os contactos (comprar pede sessão)
+const guestNav = () => [
+    catalogItem(),
+    { key: 'contacts', label: t('Contactos'), href: '/plataforma/contactos', Icon: IconInbox, exact: true },
 ];
 const requestsItem = () => ({ key: 'requests', label: t('Pedidos'), href: '/gestao/pedidos', Icon: IconInbox, badge: true });
 const teamsItem = () => ({ key: 'teams', label: t('Equipas'), href: '/gestao/equipas', Icon: IconTeam });
@@ -30,7 +36,6 @@ function workNav(can = {}) {
     if (can.estatisticas || can.pessoas) items.push({ key: 'admin', label: t('Administração'), short: t('Admin'), href: '/administracao', Icon: IconAdmin });
     if (can['cursos.criar'] && !can['cursos.todos']) {
         items.push(
-            { key: 'f-home', label: t('Início'), href: '/formador', exact: true, Icon: IconHome, count: 'home', countLabel: [t('mensagem por ler'), t('mensagens por ler')] },
             { key: 'builder', label: t('Os meus cursos'), short: t('Cursos'), href: '/formador/cursos', Icon: IconBook, count: 'builder', countLabel: builderCount },
             { key: 'f-tests', label: t('Avaliações'), href: '/formador/avaliacoes', Icon: IconTest, count: 'ftests', countLabel: [t('aluno ainda não passou'), t('alunos ainda não passaram')] },
         );
@@ -38,11 +43,14 @@ function workNav(can = {}) {
     if (can.pedidos) items.push(requestsItem());
     if (can.equipas) items.push(teamsItem());
     if (can['cursos.todos']) items.push({ key: 'builder', label: t('Gerir cursos'), short: t('Cursos'), href: '/formador/cursos', Icon: IconCreate, count: 'builder', countLabel: builderCount });
+    // Início (o mesmo de todos, com as caixas das suas permissões) e, ao lado, o Catálogo
+    if (items.length) items.unshift({ key: 'home', label: t('Início'), href: '/dashboard', exact: true, Icon: IconHome, count: 'home', countLabel: [t('mensagem por ler'), t('mensagens por ler')] }, catalogItem());
     return items;
 }
 
 // Cada pessoa vê as opções das permissões do seu perfil (Administração › Permissões)
-function navFor(can = {}, role, worksOnly = false) {
+function navFor(can = {}, role, worksOnly = false, guest = false) {
+    if (guest) return guestNav();
     // Sem nenhuma opção de trabalho (permissões retiradas), volta à barra do aluno
     const work = worksOnly ? workNav(can) : [];
     if (work.length) return work;
@@ -132,7 +140,8 @@ export default function StudentLayout({ children, navTools }) {
     const { auth, staffInbox, access, navCounts, can } = usePage().props;
     const currentUrl = usePage().url;
     const user = auth?.user ?? {};
-    const navItems = navFor(can, auth?.role, auth?.worksOnly);
+    const guest = !auth?.user;
+    const navItems = navFor(can, auth?.role, auth?.worksOnly, guest);
     const { theme, toggle } = useTheme();
     const dark = theme === 'dark';
     const [notice, setNotice] = useState(null);
@@ -174,19 +183,23 @@ export default function StudentLayout({ children, navTools }) {
                     <button type="button" className="pn-icon" onClick={toggle} aria-label={dark ? t('Mudar para tema claro') : t('Mudar para tema escuro')} title={dark ? t('Tema claro') : t('Tema escuro')}>
                         {dark ? <IconSun /> : <IconMoon />}
                     </button>
-                    <Dropdown>
-                        <Dropdown.Trigger>
-                            <button type="button" aria-label={t('Menu da conta')} className="pn-account"><IconUser /></button>
-                        </Dropdown.Trigger>
-                        <Dropdown.Content>
-                            <div className="border-b border-line px-4 py-3">
-                                <p className="truncate text-sm font-bold text-ink">{user.name ?? t('Aluno')}</p>
-                                <p className="truncate text-xs text-muted">{user.email}</p>
-                            </div>
-                            <Dropdown.Link href="/definicoes">{t('Definições')}</Dropdown.Link>
-                            <Dropdown.Link href="/logout" method="post" as="button">{t('Terminar sessão')}</Dropdown.Link>
-                        </Dropdown.Content>
-                    </Dropdown>
+                    {/* Sem sessão não há menu da conta: entrar só pelo "Entrar para comprar" do catálogo */}
+                    {!guest && (
+                        <Dropdown>
+                            <Dropdown.Trigger>
+                                <button type="button" aria-label={t('Menu da conta')} className="pn-account"><IconUser /></button>
+                            </Dropdown.Trigger>
+                            <Dropdown.Content>
+                                <div className="border-b border-line px-4 py-3">
+                                    <p className="truncate text-sm font-bold text-ink">{user.name ?? t('Aluno')}</p>
+                                    <p className="truncate text-xs text-muted">{user.email}</p>
+                                </div>
+                                <Dropdown.Link href="/definicoes">{t('Definições')}</Dropdown.Link>
+                                <Dropdown.Link href="/plataforma/contactos">{t('Contactos')}</Dropdown.Link>
+                                <Dropdown.Link href="/logout" method="post" as="button">{t('Terminar sessão')}</Dropdown.Link>
+                            </Dropdown.Content>
+                        </Dropdown>
+                    )}
                 </div>
             </header>
 

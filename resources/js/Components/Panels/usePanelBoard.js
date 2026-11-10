@@ -94,7 +94,8 @@ function defaults(defs) {
     }));
     // No telemóvel, retomar a aula vem primeiro
     const order = ids.includes('continuar') ? ['continuar', ...ids.filter((id) => id !== 'continuar')] : ids;
-    return { items, collapsed: [], hidden: [], order };
+    // Caixas com hidden: true começam fechadas (abrem-se em Painéis visíveis)
+    return { items, collapsed: [], hidden: ids.filter((id) => defs[id].hidden), order };
 }
 
 // Junta o que está guardado aos painéis desta página: um painel novo entra no lugar inicial
@@ -118,7 +119,8 @@ function restore(defs, saved) {
     const layout = {
         items,
         collapsed: known(saved.collapsed),
-        hidden: known(saved.hidden),
+        // Uma caixa nova (que ainda não estava guardada) segue o seu valor inicial
+        hidden: [...known(saved.hidden), ...base.hidden.filter((id) => !saved.items[id])],
         order: [...order, ...base.order.filter((id) => !order.includes(id))],
     };
     layout.items = compact(layout, copy(items));

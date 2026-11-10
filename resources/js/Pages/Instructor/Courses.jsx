@@ -103,14 +103,9 @@ export default function Courses({ courses, isAdmin }) {
                                     </button>
                                 )}
                                 {c.status === 'published' ? (
-                                    <>
-                                        <a href={`/cursos?curso=${c.slug}`} target="_blank" rel="noopener" className={btnClass('line', 'sm')}>
-                                            {t('Ver no catálogo')}
-                                        </a>
-                                        <button type="button" onClick={() => unpublish(c)} className={btnClass('soft', 'sm')}>
-                                            {t('Despublicar')}
-                                        </button>
-                                    </>
+                                    <button type="button" onClick={() => unpublish(c)} className={btnClass('soft', 'sm')}>
+                                        {t('Despublicar')}
+                                    </button>
                                 ) : (
                                     <button type="button" onClick={() => remove(c)} className={btnClass('soft', 'sm')}>
                                         {t('Apagar')}

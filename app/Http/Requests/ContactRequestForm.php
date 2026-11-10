@@ -13,6 +13,14 @@ class ContactRequestForm extends FormRequest
         return true;
     }
 
+    /** Com sessão, o nome e o email vêm sempre da conta (o formulário nem os mostra). */
+    protected function prepareForValidation(): void
+    {
+        if ($user = $this->user()) {
+            $this->merge(['name' => $user->name, 'email' => $user->email]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */

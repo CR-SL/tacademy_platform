@@ -288,7 +288,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                     <small>{lesson.title}</small>
                 </div>
                 <div className="al-head-ic">
-                    <a className="al-ic" href="/contactos" target="_blank" rel="noopener noreferrer" aria-label={t('Ajuda (abre os contactos num separador novo)')}><IconHelp /></a>
+                    <a className="al-ic" href="/plataforma/contactos" target="_blank" rel="noopener noreferrer" aria-label={t('Ajuda (abre os contactos num separador novo)')}><IconHelp /></a>
                     <ThemeToggle className="!h-8 !w-8 !border-0 hover:bg-surface2" />
                     <Dropdown>
                         <Dropdown.Trigger>
@@ -297,6 +297,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                         <Dropdown.Content>
                             <Dropdown.Link href="/dashboard">{t('Início')}</Dropdown.Link>
                             <Dropdown.Link href="/definicoes">{t('Definições')}</Dropdown.Link>
+                            <Dropdown.Link href="/plataforma/contactos">{t('Contactos')}</Dropdown.Link>
                             <Dropdown.Link href="/logout" method="post" as="button">{t('Terminar sessão')}</Dropdown.Link>
                         </Dropdown.Content>
                     </Dropdown>
