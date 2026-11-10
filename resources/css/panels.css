@@ -55,7 +55,7 @@
 .pn-box-h h2 { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .pn-box-h .pn-sum { display: none; flex: 1 1 0; min-width: 0; margin-left: 8px; font-size: 13px; color: var(--color-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .pn-is-col .pn-box-h .pn-sum { display: block; }
-.pn-box-b { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--color-pill) transparent; }
+.pn-box-b { flex: 1; min-height: 0; overflow-y: auto; }
 .pn-is-col .pn-box-b, .pn-is-col .pn-edge.pn-s, .pn-is-col .pn-hero-p, .pn-is-col .pn-hero-b { display: none; }
 .pn-is-col .pn-rz.pn-se, .pn-is-col .pn-rz.pn-sw { cursor: ew-resize; }
 .pn-is-col .pn-box-h { border-bottom: 0; min-height: 60px; }
@@ -120,7 +120,7 @@
 .pn-hero-r { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .pn-hero .pn-box-h { border-bottom: 0; min-height: 44px; padding-top: 8px; }
 .pn-is-col .pn-hero .pn-box-h { min-height: 60px; padding-top: 0; }
-.pn-hero-b { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0 22px 20px 22px; overflow-y: auto; scrollbar-width: thin; }
+.pn-hero-b { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0 22px 20px 22px; overflow-y: auto; }
 .pn-hero .pn-box-h { padding-left: 22px; }
 .pn-hero-p { position: relative; flex: none; height: 130px; overflow: hidden; background: var(--color-surface2); }
 .pn-hero-p img { width: 100%; height: 100%; object-fit: cover; }
@@ -169,7 +169,7 @@
 .pn-float-d:not(.pn-is-col) .pn-tool:hover { background: #ffffff30; }
 
 /* Sugestões */
-.pn-car { display: flex; gap: 24px; height: 100%; padding: 20px 18px 16px; overflow-x: auto; scrollbar-width: thin; scrollbar-color: var(--color-pill) transparent; }
+.pn-car { display: flex; gap: 24px; height: 100%; padding: 20px 18px 16px; overflow-x: auto; }
 .pn-card { flex: none; display: flex; flex-direction: column; width: 270px; }
 .pn-card-p { position: relative; flex: 1; min-height: 240px; overflow: hidden; background: #111; color: #fff; }
 .pn-card-p img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }

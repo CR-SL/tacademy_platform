@@ -110,3 +110,16 @@ select.ui-input { padding-right: 36px; }
 .ui-toast:empty { padding: 0; }
 @media (max-width: 600px) { .ui-toast { bottom: 84px; } }
 @media (prefers-reduced-motion: reduce) { .ui-toast { transition: opacity .18s; transform: translate(-50%, 0); } }
+
+/*
+ | Barras de deslocamento (2026-11-10): só uma bolinha amarela, sem calha.
+ | A bolinha é desenhada no meio do "polegar", que continua a ser arrastável em todo o comprimento.
+ */
+::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-button { display: none; }
+::-webkit-scrollbar-thumb { background: radial-gradient(circle, var(--color-accent) 0 3.5px, transparent 4px) center / 10px 10px no-repeat; border: 0; }
+/* Firefox não desenha a bolinha: fica uma barra fina amarela */
+@supports not selector(::-webkit-scrollbar) {
+    * { scrollbar-width: thin; scrollbar-color: var(--color-accent) transparent; }
+}
