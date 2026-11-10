@@ -4,7 +4,7 @@ import { Toast } from '@/Components/ui';
 import { useEffect, useRef, useState } from 'react';
 import useTheme from '@/hooks/useTheme';
 import {
-    IconAdmin, IconBook, IconCatalog, IconCreate, IconDoc, IconHome, IconInbox, IconMoon, IconSun, IconTeam, IconTest, IconUser,
+    IconAdmin, IconBook, IconCatalog, IconCert, IconCreate, IconDoc, IconHome, IconInbox, IconMoon, IconSun, IconTeam, IconTest, IconUser,
 } from '@/Components/Panels/icons';
 
 import { t } from '@/i18n';
@@ -13,16 +13,39 @@ import LanguageToggle from '@/Components/LanguageToggle';
 // Navegação da plataforma (a aparência decidida a 2026-11-04): logótipo e opções à esquerda.
 const baseNav = () => [
     { key: 'home', label: t('Início'), href: '/dashboard', Icon: IconHome, count: 'home', countLabel: [t('mensagem por ler'), t('mensagens por ler')] },
-    { key: 'mine', label: t('Os meus cursos'), short: t('Cursos'), href: '/plataforma/meus-cursos', Icon: IconBook, count: 'mine', countLabel: [t('curso atribuído por começar'), t('cursos atribuídos por começar')] },
-    { key: 'tests', label: t('Avaliações'), href: '/plataforma/avaliacoes', Icon: IconTest },
-    { key: 'docs', label: t('Documentos'), href: '/plataforma/documentos', Icon: IconDoc },
     { key: 'catalog', label: t('Catálogo'), href: '/plataforma/cursos', Icon: IconCatalog, exact: true },
+    { key: 'mine', label: t('Os meus cursos'), short: t('Cursos'), href: '/plataforma/meus-cursos', Icon: IconBook, count: 'mine', countLabel: [t('curso atribuído por começar'), t('cursos atribuídos por começar')] },
+    { key: 'docs', label: t('Documentos'), href: '/plataforma/documentos', Icon: IconDoc },
+    { key: 'tests', label: t('Avaliações'), href: '/plataforma/avaliacoes', Icon: IconTest },
+    { key: 'certs', label: t('Certificados'), href: '/plataforma/certificados', Icon: IconCert },
 ];
 const requestsItem = () => ({ key: 'requests', label: t('Pedidos'), href: '/gestao/pedidos', Icon: IconInbox, badge: true });
 const teamsItem = () => ({ key: 'teams', label: t('Equipas'), href: '/gestao/equipas', Icon: IconTeam });
 
+const builderCount = [t('presença por confirmar'), t('presenças por confirmar')];
+
+// Formador, gestor de cursos e admin: só o seu trabalho, sem a parte do aluno (opção D, 2026-11-09)
+function workNav(can = {}) {
+    const items = [];
+    if (can.estatisticas || can.pessoas) items.push({ key: 'admin', label: t('Administração'), short: t('Admin'), href: '/administracao', Icon: IconAdmin });
+    if (can['cursos.criar'] && !can['cursos.todos']) {
+        items.push(
+            { key: 'f-home', label: t('Início'), href: '/formador', exact: true, Icon: IconHome, count: 'home', countLabel: [t('mensagem por ler'), t('mensagens por ler')] },
+            { key: 'builder', label: t('Os meus cursos'), short: t('Cursos'), href: '/formador/cursos', Icon: IconBook, count: 'builder', countLabel: builderCount },
+            { key: 'f-tests', label: t('Avaliações'), href: '/formador/avaliacoes', Icon: IconTest, count: 'ftests', countLabel: [t('aluno ainda não passou'), t('alunos ainda não passaram')] },
+        );
+    }
+    if (can.pedidos) items.push(requestsItem());
+    if (can.equipas) items.push(teamsItem());
+    if (can['cursos.todos']) items.push({ key: 'builder', label: t('Gerir cursos'), short: t('Cursos'), href: '/formador/cursos', Icon: IconCreate, count: 'builder', countLabel: builderCount });
+    return items;
+}
+
 // Cada pessoa vê as opções das permissões do seu perfil (Administração › Permissões)
-function navFor(can = {}, role) {
+function navFor(can = {}, role, worksOnly = false) {
+    // Sem nenhuma opção de trabalho (permissões retiradas), volta à barra do aluno
+    const work = worksOnly ? workNav(can) : [];
+    if (work.length) return work;
     const items = [...baseNav()];
     // Equipa do team leader (a da sua empresa); quem gere todas as equipas usa a da gestão
     if (can.equipa && !can.equipas) items.push({ key: 'team', label: t('Equipas'), href: '/equipa', Icon: IconTeam, count: 'team', countLabel: [t('pessoa precisa de atenção'), t('pessoas precisam de atenção')] });
@@ -109,7 +132,7 @@ export default function StudentLayout({ children, navTools }) {
     const { auth, staffInbox, access, navCounts, can } = usePage().props;
     const currentUrl = usePage().url;
     const user = auth?.user ?? {};
-    const navItems = navFor(can, auth?.role);
+    const navItems = navFor(can, auth?.role, auth?.worksOnly);
     const { theme, toggle } = useTheme();
     const dark = theme === 'dark';
     const [notice, setNotice] = useState(null);
@@ -130,7 +153,7 @@ export default function StudentLayout({ children, navTools }) {
     return (
         <div className="min-h-screen bg-page text-ink">
             <header className="pn-nav">
-                <Link href="/dashboard" className="pn-logo" aria-label={t('T.Academy, início')}>
+                <Link href={auth?.home ?? '/dashboard'} className="pn-logo" aria-label={t('T.Academy, início')}>
                     <img className="ta-logo-light" src="/images/brand/logo-nav.png" alt="T.Academy" />
                     <img className="ta-logo-dark" src="/images/brand/logo-nav-dark.png" alt="" />
                 </Link>

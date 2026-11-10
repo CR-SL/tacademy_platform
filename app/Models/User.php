@@ -101,4 +101,30 @@ class User extends Authenticatable implements HasLocalePreference
     {
         return $this->hasRole('team_leader') && $this->company_id !== null;
     }
+
+    /**
+     * Navegação "só o seu trabalho" (opção D, 2026-11-09): formador, gestor de cursos e admin
+     * não têm a parte do aluno na barra. Aluno e team leader ficam como estavam.
+     */
+    public function worksOnly(): bool
+    {
+        return in_array($this->role?->name, ['formador', 'gestor_cursos', 'admin'], true);
+    }
+
+    /** Primeira página depois de entrar (e do logótipo): o Início do aluno, ou o trabalho de cada perfil. */
+    public function homeUrl(): string
+    {
+        if (! $this->worksOnly()) {
+            return '/dashboard';
+        }
+
+        return match (true) {
+            $this->canDo('estatisticas') || $this->canDo('pessoas') => '/administracao',
+            $this->canDo('cursos.criar') && ! $this->canDo('cursos.todos') => '/formador',
+            $this->canDo('pedidos') => '/gestao/pedidos',
+            $this->canDo('equipas') => '/gestao/equipas',
+            $this->canDo('cursos.todos') => '/formador/cursos',
+            default => '/dashboard',
+        };
+    }
 }

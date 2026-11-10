@@ -30,6 +30,11 @@ class StudentAreaController extends Controller
         ]);
     }
 
+    public function certificates(Request $request): Response
+    {
+        return Inertia::render('Student/Certificates', $this->area->certificates($request->user()));
+    }
+
     public function documents(Request $request): Response
     {
         return Inertia::render('Student/Documents', [

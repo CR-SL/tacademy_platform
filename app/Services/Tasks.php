@@ -119,6 +119,10 @@ class Tasks
         if ($user->canDo('cursos.criar') || $user->canDo('cursos.todos')) {
             $counts['builder'] = collect($this->attendanceWaiting($user))->sum('count');
         }
+        // Formador: resultados dos seus alunos que ainda não passaram (Avaliações do formador)
+        if ($user->worksOnly() && $user->canDo('cursos.criar') && ! $user->canDo('cursos.todos')) {
+            $counts['ftests'] = app(InstructorArea::class)->attentionCount($user);
+        }
 
         return array_filter($counts);
     }
@@ -134,7 +138,7 @@ class Tasks
     }
 
     /** Cursos do formador que pedem presença, com quantos alunos já fizeram tudo e só falta a presença. */
-    private function attendanceWaiting(User $user): array
+    public function attendanceWaiting(User $user): array
     {
         $courses = Course::where('instructor_id', $user->id)->where('requires_attendance', true)->get();
         $out = [];

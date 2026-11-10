@@ -80,7 +80,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_the_role_is_shared_with_the_navbar(): void
     {
-        $this->actingAs($this->user('formador'))->get('/dashboard')
+        $this->actingAs($this->user('formador'))->get('/formador')
             ->assertInertia(fn ($page) => $page->where('auth.role', 'formador'));
     }
 

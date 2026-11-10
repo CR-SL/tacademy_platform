@@ -9,6 +9,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CourseMessageController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Instructor\CourseBuilderController;
+use App\Http\Controllers\Instructor\HomeController as InstructorHomeController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Learn\CourseController as LearnCourseController;
 use App\Http\Controllers\Learn\LessonController;
@@ -59,6 +60,7 @@ Route::middleware(['auth', 'verified'])->prefix('plataforma')->group(function ()
     Route::get('/meus-cursos', [StudentAreaController::class, 'courses'])->name('student.courses');
     Route::get('/avaliacoes', [StudentAreaController::class, 'assessments'])->name('student.assessments');
     Route::get('/documentos', [StudentAreaController::class, 'documents'])->name('student.documents');
+    Route::get('/certificados', [StudentAreaController::class, 'certificates'])->name('student.certificates');
     Route::put('/paineis/{view}', [PanelLayoutController::class, 'update'])->middleware('throttle:120,1')->name('panels.update');
     Route::delete('/paineis/{view}', [PanelLayoutController::class, 'destroy'])->middleware('throttle:120,1')->name('panels.destroy');
     Route::post('/mensagens', [CourseMessageController::class, 'store'])->middleware('throttle:30,1')->name('messages.store');
@@ -95,6 +97,14 @@ Route::middleware(['auth', 'verified', 'can:viewAny,App\Models\Course'])
         Route::post('/uploads', 'upload')->middleware('throttle:60,1')->name('uploads');
         // Vídeo da aula, enviado aos pedaços (cada pedido fica abaixo dos limites do PHP e do proxy)
         Route::post('/videos', 'uploadVideo')->middleware('throttle:1200,1')->name('videos');
+    });
+
+// Início e Avaliações do formador (navegação "só o seu trabalho")
+Route::middleware(['auth', 'verified', 'can:viewAny,App\Models\Course'])
+    ->prefix('formador')->name('instructor.')->controller(InstructorHomeController::class)
+    ->group(function () {
+        Route::get('/', 'home')->name('home');
+        Route::get('/avaliacoes', 'assessments')->name('assessments');
     });
 
 // Compra a título pessoal (pagamento simulado → pedido "Pago" que o Gestor de Cursos autoriza)

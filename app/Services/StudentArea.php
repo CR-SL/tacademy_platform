@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\CourseMessage;
 use App\Models\Enrollment;
@@ -452,6 +453,52 @@ class StudentArea
     }
 
     /** Disposição guardada de uma página, para o componente dos painéis. */
+    /**
+     * Certificados (página simples, 2026-11-10; o PDF vem depois): os que a pessoa já tem
+     * e os dos cursos em que está inscrita, com o que ainda falta para cada um.
+     */
+    public function certificates(User $user): array
+    {
+        $issued = Certificate::with('course')->where('user_id', $user->id)->where('status', 'valid')
+            ->latest('issued_at')->get()->filter(fn ($c) => $c->course);
+
+        $coming = $this->enrollments($user)
+            ->filter(fn (Enrollment $e) => $e->course->certificate_enabled && ! $issued->contains('course_id', $e->course_id))
+            ->map(function (Enrollment $e) use ($user) {
+                $lessons = $this->learning->lessons($e->course);
+                $s = $this->learning->certificateStatus($user, $e->course, $lessons, $this->learning->completedIds($user, $lessons));
+                $missing = [];
+                if (! $s['progress_ok']) {
+                    $missing[] = __('Concluir :min% das aulas (tens :now%)', ['min' => $s['min_progress'], 'now' => $s['progress']]);
+                }
+                if (! $s['score_ok']) {
+                    $missing[] = __('Nota mínima de :min% nos testes (tens :now%)', ['min' => $s['min_score'], 'now' => $s['score']]);
+                }
+                if (! $s['attendance_ok']) {
+                    $missing[] = __('Presença confirmada pelo formador');
+                }
+
+                return [
+                    'title' => $e->course->title,
+                    'image' => $this->image($e->course),
+                    'url' => '/plataforma/cursos/'.$e->course->slug,
+                    'progress' => $s['progress'],
+                    'missing' => $missing,
+                ];
+            })->values();
+
+        return [
+            'issued' => $issued->map(fn (Certificate $c) => [
+                'number' => $c->certificate_number,
+                'date' => $c->issued_at?->format('d/m/Y'),
+                'title' => $c->course->title,
+                'image' => $this->image($c->course),
+                'url' => '/plataforma/cursos/'.$c->course->slug,
+            ])->values()->all(),
+            'coming' => $coming->all(),
+        ];
+    }
+
     public function layout(User $user, string $view): ?array
     {
         return $user->panel_layouts[$view] ?? null;

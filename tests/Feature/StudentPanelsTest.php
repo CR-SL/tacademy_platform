@@ -181,7 +181,7 @@ class StudentPanelsTest extends TestCase
     {
         $this->actingAs($this->student)->post('/plataforma/mensagens', ['course_id' => $this->course->id, 'body' => 'Tenho uma dúvida.'])->assertRedirect();
 
-        $this->actingAs($this->instructor)->get('/dashboard')->assertInertia(fn ($page) => $page
+        $this->actingAs($this->instructor)->get('/formador')->assertInertia(fn ($page) => $page
             ->where('messages.threads.0.name', $this->student->name)
             ->where('messages.threads.0.unread', 1)
         );
@@ -255,6 +255,24 @@ class StudentPanelsTest extends TestCase
         );
     }
 
+    public function test_the_certificates_page_shows_issued_and_coming_certificates(): void
+    {
+        // A caminho: 1 de 3 aulas feitas
+        LessonProgress::create(['user_id' => $this->student->id, 'lesson_id' => $this->lessons[0]->id, 'status' => 'completed', 'progress_percent' => 100]);
+        $this->actingAs($this->student)->get('/plataforma/certificados')->assertOk()->assertInertia(fn ($page) => $page
+            ->component('Student/Certificates')
+            ->has('issued', 0)
+            ->where('coming.0.title', 'Calibração de ADAS')
+            ->where('coming.0.progress', 33)
+            ->where('coming.0.missing.0', 'Concluir 100% das aulas (tens 33%)'));
+
+        \App\Models\Certificate::create(['user_id' => $this->student->id, 'course_id' => $this->course->id, 'certificate_number' => 'TA-2026-ABC123', 'status' => 'valid', 'issued_at' => now()]);
+        $this->actingAs($this->student)->get('/plataforma/certificados')->assertInertia(fn ($page) => $page
+            ->where('issued.0.number', 'TA-2026-ABC123')
+            ->where('issued.0.title', 'Calibração de ADAS')
+            ->has('coming', 0));
+    }
+
     public function test_the_instructor_sees_attendance_waiting_for_confirmation(): void
     {
         $this->course->update(['requires_attendance' => true]);
@@ -262,13 +280,14 @@ class StudentPanelsTest extends TestCase
             LessonProgress::create(['user_id' => $this->student->id, 'lesson_id' => $l->id, 'status' => 'completed', 'progress_percent' => 100]);
         }
 
-        $this->actingAs($this->instructor)->get('/dashboard')->assertInertia(fn ($page) => $page
-            ->where('pending.0.kind', 'Presença')
-            ->where('pending.0.url', '/formador/cursos?presenca='.$this->course->ulid)
+        // O Início do formador mostra a presença por confirmar no curso e no número da barra
+        $this->actingAs($this->instructor)->get('/formador')->assertInertia(fn ($page) => $page
+            ->component('Instructor/Home')
+            ->where('courses.0.attendance', 1)
             ->where('navCounts.builder', 1)
         );
 
         Enrollment::where('user_id', $this->student->id)->update(['attended_at' => now()]);
-        $this->actingAs($this->instructor)->get('/dashboard')->assertInertia(fn ($page) => $page->missing('navCounts.builder'));
+        $this->actingAs($this->instructor)->get('/formador')->assertInertia(fn ($page) => $page->missing('navCounts.builder'));
     }
 }

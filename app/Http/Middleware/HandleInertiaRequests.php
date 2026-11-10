@@ -36,6 +36,9 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 // Perfil (aluno, formador, team_leader, gestor_cursos, admin): mostra "Os meus cursos" na navbar
                 'role' => $request->user()?->role?->name,
+                // Formador, gestor de cursos e admin: só o seu trabalho na barra (opção D)
+                'worksOnly' => (bool) $request->user()?->worksOnly(),
+                'home' => $request->user()?->homeUrl() ?? '/',
             ],
             // O que a pessoa pode fazer (menu e botões); o servidor volta sempre a verificar
             'can' => fn () => $request->user()

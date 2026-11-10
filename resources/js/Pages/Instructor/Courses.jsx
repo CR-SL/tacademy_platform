@@ -93,6 +93,10 @@ export default function Courses({ courses, isAdmin }) {
                                 <Link href={`/formador/cursos/${c.ulid}/editar`} className={btnClass('soft', 'sm')}>
                                     {t('Editar')}
                                 </Link>
+                                {/* Abre o curso como o aluno o vê, em modo de pré-visualização (não conta progresso) */}
+                                <Link href={`/plataforma/cursos/${c.slug}`} className={btnClass('soft', 'sm')}>
+                                    {t('Pré-visualizar como aluno')}
+                                </Link>
                                 {c.attendance && c.students > 0 && (
                                     <button type="button" onClick={() => setAttendance(c)} className={btnClass('soft', 'sm')}>
                                         {t('Alunos · Presença')}

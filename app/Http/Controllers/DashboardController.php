@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\StudentArea;
 use App\Services\Tasks;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -11,9 +12,15 @@ use Inertia\Response;
 /** Início: o dashboard em painéis (ver PRODUCT.md, "Nova aparência da plataforma"). */
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, StudentArea $area, Tasks $tasks): Response
+    public function __invoke(Request $request, StudentArea $area, Tasks $tasks): Response|RedirectResponse
     {
         $user = $request->user();
+        // Formador, gestor de cursos e admin começam no seu trabalho (mantém ?conversa=… das mensagens)
+        if ($user->worksOnly() && ($home = $user->homeUrl()) !== '/dashboard') {
+            $query = $request->getQueryString();
+
+            return redirect($home.($query ? '?'.$query : ''));
+        }
         $courses = $area->courses($user);
         $messages = $area->messages($user);
         // Pendentes: a lista de tarefas de cada perfil (mensagens, cursos atribuídos, equipa, presenças, prazos, testes)

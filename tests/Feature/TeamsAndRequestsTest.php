@@ -79,7 +79,7 @@ class TeamsAndRequestsTest extends TestCase
     {
         ContactRequest::create(['kind' => 'esclarecimento', 'type' => 'particular', 'name' => 'Vasco', 'email' => 'v@x.pt', 'message' => 'Olá']);
 
-        $this->actingAs($this->user('gestor_cursos'))->get('/dashboard')
+        $this->actingAs($this->user('gestor_cursos'))->get('/gestao/pedidos')
             ->assertInertia(fn ($page) => $page->where('staffInbox.count', 1));
         $this->actingAs($this->user('aluno'))->get('/dashboard')
             ->assertInertia(fn ($page) => $page->where('staffInbox', null));

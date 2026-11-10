@@ -24,6 +24,7 @@ export const IconCatalog = () => <Line size={20}><circle cx="11" cy="11" r="6.50
 export const IconInbox = () => <Line size={20}><path d="M4 13V5h16v8" /><path d="M4 13v6h16v-6h-5l-1.500 2.500h-3L9 13z" /></Line>;
 export const IconAdmin = () => <Line size={20}><path d="M4 20V11M10 20V5M16 20v-6M2 20h20" /></Line>;
 export const IconCreate = () => <Line size={20}><path d="M12 5v14M5 12h14" /></Line>;
+export const IconCert = () => <Line size={20}><circle cx="12" cy="9" r="5" /><path d="M9 13.500 7.500 21l4.500-2.500 4.500 2.500L15 13.500" /></Line>;
 
 export const IconGrip = () => (
     <svg width="8" height="14" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">

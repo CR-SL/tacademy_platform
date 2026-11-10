@@ -9,7 +9,7 @@ import { t } from '@/i18n';
 const options = { preserveScroll: true, preserveState: true, only: ['messages', 'pending', 'navCounts', 'errors'] };
 
 // Mensagens com o formador: lista das conversas, conversa aberta e início de uma nova.
-export default function MessagesPanel({ messages, startWith }) {
+export default function MessagesPanel({ messages, startWith, empty }) {
     const { errors } = usePage().props;
     const { threads, canStart } = messages;
     const [openKey, setOpenKey] = useState(() => {
@@ -113,7 +113,7 @@ export default function MessagesPanel({ messages, startWith }) {
                     <span className="pn-w">{tx.when}{tx.unread > 0 && <span className="pn-dot" aria-label={t('Por ler')} />}</span>
                 </button>
             ))}
-            {threads.length === 0 && canStart.length === 0 && <p className="pn-empty">{t('Ainda não tens mensagens. Podes falar com o formador quando estiveres inscrito num curso.')}</p>}
+            {threads.length === 0 && canStart.length === 0 && <p className="pn-empty">{empty ?? t('Ainda não tens mensagens. Podes falar com o formador quando estiveres inscrito num curso.')}</p>}
             {threads.length === 0 && canStart.length > 0 && <p className="pn-empty">{t('Ainda não tens mensagens. Escolhe um curso acima para falares com o formador.')}</p>}
         </>
     );
