@@ -1315,5 +1315,12 @@
     "Está toda a gente em dia.": "Everyone is on track.",
     "Ainda não entrou": "Has not signed in yet",
     "Parado há mais de 10 dias": "Inactive for more than 10 days",
-    "Fazer cursos (as caixas de aluno no Início)": "Take courses (the student boxes on the Home page)"
+    "Fazer cursos (as caixas de aluno no Início)": "Take courses (the student boxes on the Home page)",
+    "Fica sempre pelo menos uma caixa aberta.": "At least one box always stays open.",
+    "Trocar :title de lugar": "Swap :title with another box",
+    "Trocar de lugar": "Swap places",
+    "Trocar de lugar com": "Swap places with",
+    "fechada": "closed",
+    ":a e :b trocaram de lugar.": ":a and :b swapped places.",
+    ":b abriu no lugar de :a. Volta a abrir :a em Painéis visíveis, no topo.": ":b opened in place of :a. Reopen :a in Visible panels, at the top."
 }

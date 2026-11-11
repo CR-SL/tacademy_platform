@@ -69,15 +69,30 @@ function arrange(l, base, id, next, origin) {
     return compact(l, items, id);
 }
 
-// A caixa que se redimensiona fica no sítio. As outras mantêm o tamanho e só se afastam se ela lhes chegar
+// Só a caixa que se redimensiona muda (2026-11-11): as outras não se mexem. A caixa cresce até
+// encostar à do lado ou à de baixo e para aí; encolher deixa o espaço livre.
 function resizeTo(l, base, id, next) {
     const items = copy(base);
-    Object.assign(items[id], next);
-    const placed = [{ it: items[id], h: effH(l, id, items[id]) }];
-    shown(l, items)
-        .filter((k) => k !== id)
-        .sort((a, b) => items[a].y - items[b].y || items[a].x - items[b].x)
-        .forEach((k) => settle(l, k, items[k], placed));
+    const others = shown(l, base).filter((k) => k !== id);
+    const blocked = (c) => others.some((k) => hit(c, effH(l, id, c), base[k], effH(l, k, base[k])));
+    let c = { ...base[id] };
+    const tx = next.x ?? c.x;
+    const tw = next.w ?? c.w;
+    // Largura (pelo lado direito ou pelo esquerdo), uma coluna de cada vez
+    while (c.x !== tx || c.w !== tw) {
+        const n = { ...c };
+        if (tx < c.x) { n.x -= 1; n.w += 1; } else if (tx > c.x) { n.x += 1; n.w -= 1; } else n.w += Math.sign(tw - c.w);
+        if (n.w > c.w && blocked(n)) break;
+        c = n;
+    }
+    // Altura, uma linha de cada vez
+    const th = next.h ?? c.h;
+    while (c.h !== th) {
+        const n = { ...c, h: c.h + Math.sign(th - c.h) };
+        if (n.h > c.h && blocked(n)) break;
+        c = n;
+    }
+    items[id] = c;
     return items;
 }
 
@@ -327,7 +342,7 @@ export default function usePanelBoard({ view, panels, saved }) {
                 setItems(r.base);
                 return;
             }
-            setItems(compact(L.current, copy(L.current.items), r.id));
+            // As outras caixas ficam onde estavam (nada se arruma sozinho depois de redimensionar)
             persist();
             setMessage(sizeMessage(L.current, r.id, titles.current[r.id]));
         };
@@ -383,7 +398,7 @@ export default function usePanelBoard({ view, panels, saved }) {
             const id = h.closest('[data-mod]').dataset.mod;
             const def = defs.current[id];
             const sized = resizeTo(L.current, L.current.items, id, { w: def.w, h: def.h, x: clamp(L.current.items[id].x, 0, COLS - def.w) });
-            setItems(compact(L.current, sized, id));
+            setItems(sized);
             persist();
             setMessage(t(':v1: tamanho reposto.', { v1: titles.current[id] }));
         };
@@ -426,7 +441,7 @@ export default function usePanelBoard({ view, panels, saved }) {
                         next.w = clamp(it.w + arrows[0], MIN_W, COLS - it.x);
                     }
                 }
-                setItems(compact(l, resizeTo(l, l.items, id, next), id));
+                setItems(resizeTo(l, l.items, id, next));
                 setMessage(sizeMessage(L.current, id, titles.current[id]));
             }
             persist();
@@ -469,6 +484,11 @@ export default function usePanelBoard({ view, panels, saved }) {
 
     const hide = useCallback((id) => {
         const l = L.current;
+        // Fica sempre pelo menos uma caixa aberta
+        if (shown(l, l.items).length <= 1) {
+            showToast(t('Fica sempre pelo menos uma caixa aberta.'));
+            return;
+        }
         const next = { ...l, hidden: [...l.hidden, id] };
         next.items = compact(next, copy(l.items));
         setLayout(next);
@@ -483,6 +503,39 @@ export default function usePanelBoard({ view, panels, saved }) {
         setLayout(next);
         persist();
     }, [persist, setLayout]);
+
+    // Trocar de lugar pelo menu da caixa (2026-11-11): com as duas abertas, cada uma passa para o lugar
+    // (e o estado minimizado) da outra; com a outra fechada, ela abre aqui e esta fecha.
+    const swap = useCallback((a, b) => {
+        const l = L.current;
+        if (a === b || !l.items[a] || !l.items[b]) return;
+        const items = copy(l.items);
+        const aCol = l.collapsed.includes(a);
+        const bCol = l.collapsed.includes(b);
+        let collapsed = l.collapsed.filter((x) => x !== a && x !== b);
+        let { hidden } = l;
+        const order = [...l.order];
+        if (!l.hidden.includes(b)) {
+            items[a] = { ...l.items[b] };
+            items[b] = { ...l.items[a] };
+            if (bCol) collapsed.push(a);
+            if (aCol) collapsed.push(b);
+            const i = order.indexOf(a);
+            const j = order.indexOf(b);
+            if (i >= 0 && j >= 0) [order[i], order[j]] = [order[j], order[i]];
+            setMessage(t(':a e :b trocaram de lugar.', { a: titles.current[a], b: titles.current[b] }));
+        } else {
+            items[b] = { ...l.items[a] };
+            if (aCol) collapsed.push(b);
+            hidden = [...l.hidden.filter((x) => x !== b), a];
+            const i = order.indexOf(a);
+            const j = order.indexOf(b);
+            if (i >= 0 && j >= 0) { order.splice(j, 1); order.splice(order.indexOf(a), 0, b); }
+            showToast(t(':b abriu no lugar de :a. Volta a abrir :a em Painéis visíveis, no topo.', { a: titles.current[a], b: titles.current[b] }));
+        }
+        setLayout({ ...l, items, collapsed, hidden, order });
+        persist();
+    }, [persist, setLayout, showToast]);
 
     const reset = useCallback(() => {
         clearTimeout(saveTimer.current);
@@ -518,7 +571,7 @@ export default function usePanelBoard({ view, panels, saved }) {
     }, [layout]);
 
     return {
-        layout, narrow, gesture, rows, message, toast, boardRef, flags, toggleFold, hide, show, reset, showToast,
+        layout, narrow, gesture, rows, message, toast, boardRef, flags, toggleFold, hide, show, swap, reset, showToast,
         panels,
         titles: titles.current,
         visible: shown(layout, layout.items),
