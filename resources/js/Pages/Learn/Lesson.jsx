@@ -7,6 +7,7 @@ import VideoPlayer from '@/Components/Learn/VideoPlayer';
 import QuizRunner from '@/Components/Learn/QuizRunner';
 import QuickChecks from '@/Components/Learn/QuickChecks';
 import LessonNotes from '@/Components/Learn/LessonNotes';
+import MicCheck from '@/Components/Learn/MicCheck';
 import { ModulesRail, ModuleSheet, ModulesStrip } from '@/Components/Learn/LessonModules';
 import { IconCheck, IconDoc, IconDown, IconHelp, IconLeft, IconPen, IconRight, IconSide, IconUser, IconVideo, IconX } from '@/Components/Learn/LessonIcons';
 import { FlashToast } from '@/Components/Teams/ui';
@@ -16,6 +17,30 @@ import { t } from '@/i18n';
 
 const MIN_PANEL = 20; // nenhum painel fica com menos de 20%
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
+
+// Tempo do teste final com o avatar (2026-11-11): 10 minutos
+const EVALUATION_MIN = 10;
+
+// Botão Terminar com o tempo que falta; conta sozinho para não redesenhar a aula a cada segundo e termina aos 0:00
+function EvaluationEnd({ endsAt, onEnd }) {
+    const left = () => Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+    const [secs, setSecs] = useState(left);
+    useEffect(() => {
+        const id = setInterval(() => {
+            const s = left();
+            setSecs(s);
+            if (s <= 0) { clearInterval(id); onEnd(); }
+        }, 1000);
+        return () => clearInterval(id);
+    }, [endsAt]); // eslint-disable-line react-hooks/exhaustive-deps
+    const low = secs <= 120;
+    return (
+        <button type="button" className={`al-a-end ${low ? 'low' : ''}`} onClick={onEnd}
+            aria-label={t('Terminar a avaliação (faltam :time)', { time: fmt(secs) })}>
+            {t('Terminar')}<span className="al-a-time" aria-hidden="true">{fmt(secs)}</span>
+        </button>
+    );
+}
 const isVideoType = (tx) => tx === 'video_link' || tx === 'video_upload';
 const isPdf = (a) => /\.pdf$/i.test(a.url);
 
@@ -101,6 +126,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
     const [askStarted, setAskStarted] = useState(false);
     const [evaluation, setEvaluation] = useState(null); // null | 'intro' | 'run'
     const beforeEvaluation = useRef(null);
+    const [endsAt, setEndsAt] = useState(0);
     const [menu, setMenu] = useState(null);
     const [rail, setRail] = useState(memory.rail);
     const [minBar, setMinBar] = useState(false);
@@ -173,6 +199,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
         beforeEvaluation.current = { video: showVideo, material: showMaterial, notes: showNotes, checks: showChecks };
         pauseVideo();
         setShowVideo(false); setShowMaterial(false); setShowNotes(false); setShowChecks(false); setAsk(false); setRail(false); setSheet(null);
+        setEndsAt(Date.now() + EVALUATION_MIN * 60 * 1000);
         setEvaluation('run');
     };
     const endEvaluation = () => {
@@ -316,7 +343,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                         {/* Avatar: o iframe fica montado depois de aberto, para não perder a conversa */}
                         <section className={`al-panel al-a ${avatarOn ? '' : 'off'}`} aria-label={t('Avatar')} style={{ flexGrow: splitL }}>
                             {panelBar('ask', <IconUser />, true)}
-                            {running && <button type="button" className="al-a-end" onClick={endEvaluation}>{t('Terminar')}</button>}
+                            {running && <EvaluationEnd endsAt={endsAt} onEnd={endEvaluation} />}
                             {running ? (
                                 <div className="al-a-stage">
                                     <span className="al-orb" aria-hidden="true" />
@@ -421,6 +448,8 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                             <div>
                                 <h2>{t('Vai começar a avaliação.')}</h2>
                                 <p>{t('O teste final é feito com o avatar. Podes usar o microfone para responder às perguntas ou escrever a tua resposta.')}</p>
+                                <p>{t('Tens :min minutos. O tempo que falta aparece no botão Terminar.', { min: EVALUATION_MIN })}</p>
+                                <MicCheck />
                                 <div className="bs">{t('Boa sorte!')}</div>
                                 <button type="button" className="al-pill" onClick={startEvaluation}>{t('Continuar')}</button>
                             </div>

@@ -1322,5 +1322,15 @@
     "Trocar de lugar com": "Swap places with",
     "fechada": "closed",
     ":a e :b trocaram de lugar.": ":a and :b swapped places.",
-    ":b abriu no lugar de :a. Volta a abrir :a em Painéis visíveis, no topo.": ":b opened in place of :a. Reopen :a in Visible panels, at the top."
+    ":b abriu no lugar de :a. Volta a abrir :a em Painéis visíveis, no topo.": ":b opened in place of :a. Reopen :a in Visible panels, at the top.",
+    "Terminar a avaliação (faltam :time)": "End the assessment (:time left)",
+    "Tens :min minutos. O tempo que falta aparece no botão Terminar.": "You have :min minutes. The time left shows on the End button.",
+    "Testa o microfone antes de começar. O tempo só conta depois de carregares em Continuar.": "Test your microphone before you start. The timer only starts after you press Continue.",
+    "Autoriza o microfone no aviso do browser.": "Allow the microphone in the browser prompt.",
+    "Diz qualquer coisa em voz alta…": "Say something out loud…",
+    "O microfone está a funcionar.": "Your microphone is working.",
+    "O browser não deu acesso ao microfone. Autoriza-o no cadeado ao lado do endereço, ou responde por escrito.": "The browser blocked the microphone. Allow it from the padlock next to the address, or answer in writing.",
+    "Não encontrámos nenhum microfone. Podes responder por escrito.": "No microphone found. You can answer in writing.",
+    "Parar o teste": "Stop the test",
+    "Testar o microfone": "Test the microphone"
 }

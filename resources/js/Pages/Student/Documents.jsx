@@ -2,7 +2,7 @@ import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
 import { formatBytes } from '@/Components/CourseBuilder/format';
-import PanelBoard, { alexDef, Crumb, EmptyPanel, PanelsMenu } from '@/Components/Panels/PanelBoard';
+import PanelBoard, { alexDef, EmptyPanel, PanelsMenu } from '@/Components/Panels/PanelBoard';
 import usePanelBoard from '@/Components/Panels/usePanelBoard';
 
 import { t } from '@/i18n';
@@ -92,7 +92,6 @@ export default function Documents({ courses, alexUrl, savedLayout }) {
     return (
         <StudentLayout navTools={<PanelsMenu board={board} />}>
             <Head title={t('Documentos')} />
-            <Crumb label={t('Documentos')} />
             <PanelBoard board={board} />
         </StudentLayout>
     );
