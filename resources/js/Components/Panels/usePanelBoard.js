@@ -142,7 +142,7 @@ function restore(defs, saved) {
     return layout;
 }
 
-export default function usePanelBoard({ view, panels, saved, swappable = false }) {
+export default function usePanelBoard({ view, panels, saved }) {
     const titles = useRef({});
     titles.current = Object.fromEntries(Object.entries(panels).map(([id, p]) => [id, p.title]));
     const defs = useRef(panels);
@@ -504,39 +504,6 @@ export default function usePanelBoard({ view, panels, saved, swappable = false }
         persist();
     }, [persist, setLayout]);
 
-    // Trocar de lugar pelo menu da caixa (2026-11-11): com as duas abertas, cada uma passa para o lugar
-    // (e o estado minimizado) da outra; com a outra fechada, ela abre aqui e esta fecha.
-    const swap = useCallback((a, b) => {
-        const l = L.current;
-        if (a === b || !l.items[a] || !l.items[b]) return;
-        const items = copy(l.items);
-        const aCol = l.collapsed.includes(a);
-        const bCol = l.collapsed.includes(b);
-        let collapsed = l.collapsed.filter((x) => x !== a && x !== b);
-        let { hidden } = l;
-        const order = [...l.order];
-        if (!l.hidden.includes(b)) {
-            items[a] = { ...l.items[b] };
-            items[b] = { ...l.items[a] };
-            if (bCol) collapsed.push(a);
-            if (aCol) collapsed.push(b);
-            const i = order.indexOf(a);
-            const j = order.indexOf(b);
-            if (i >= 0 && j >= 0) [order[i], order[j]] = [order[j], order[i]];
-            setMessage(t(':a e :b trocaram de lugar.', { a: titles.current[a], b: titles.current[b] }));
-        } else {
-            items[b] = { ...l.items[a] };
-            if (aCol) collapsed.push(b);
-            hidden = [...l.hidden.filter((x) => x !== b), a];
-            const i = order.indexOf(a);
-            const j = order.indexOf(b);
-            if (i >= 0 && j >= 0) { order.splice(j, 1); order.splice(order.indexOf(a), 0, b); }
-            showToast(t(':b abriu no lugar de :a. Volta a abrir :a em Painéis visíveis, no topo.', { a: titles.current[a], b: titles.current[b] }));
-        }
-        setLayout({ ...l, items, collapsed, hidden, order });
-        persist();
-    }, [persist, setLayout, showToast]);
-
     const reset = useCallback(() => {
         clearTimeout(saveTimer.current);
         setLayout(defaults(defs.current));
@@ -571,7 +538,7 @@ export default function usePanelBoard({ view, panels, saved, swappable = false }
     }, [layout]);
 
     return {
-        layout, narrow, gesture, rows, message, toast, boardRef, flags, toggleFold, hide, show, swap, swappable, reset, showToast,
+        layout, narrow, gesture, rows, message, toast, boardRef, flags, toggleFold, hide, show, reset, showToast,
         panels,
         titles: titles.current,
         visible: shown(layout, layout.items),

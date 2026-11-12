@@ -5,7 +5,6 @@ const Line = ({ size = 16, width = 1.6, children }) => (
     </svg>
 );
 
-export const IconSwap = () => <Line size={16} width={1.6}><path d="M7 4 3 8l4 4M3 8h13M17 20l4-4-4-4M21 16H8" /></Line>;
 export const IconSun = () => <Line size={20}><circle cx="12" cy="12" r="4" /><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.400 1.400M5.6 18.400 7 17M17 7l1.400-1.400" /></Line>;
 export const IconMoon = () => <Line size={20}><path d="M20 14.500A8.500 8.500 0 0 1 9.500 4a8.500 8.500 0 1 0 10.500 10.500z" /></Line>;
 export const IconPanels = () => <Line size={22}><rect x="3" y="4.500" width="18" height="15" rx="1.500" /><path d="M3 10h18M10 10v9.500" /></Line>;

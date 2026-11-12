@@ -172,6 +172,22 @@ class TeamService
     }
 
     /**
+     * Porque é que uma pessoa da equipa (uma linha de report()['members']) precisa de atenção, ou null.
+     * A mesma regra nos Pendentes do team leader e na caixa Equipa do Início.
+     */
+    public static function attentionReason(array $member): ?string
+    {
+        $courses = collect($member['courses']);
+
+        return match (true) {
+            $member['invited'] => __('Ainda não entrou'),
+            $courses->contains(fn ($s) => $s['late']) => __('Fora do prazo'),
+            $courses->contains(fn ($s) => $s['stalled']) => __('Parado há mais de 10 dias'),
+            default => null,
+        };
+    }
+
+    /**
      * Progresso da equipa nos cursos da equipa (só esses: compras pessoais não aparecem).
      *
      * @return array{courses: array, members: array}

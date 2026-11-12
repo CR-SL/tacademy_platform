@@ -1,6 +1,6 @@
 import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { formatEuro } from '@/Components/CourseBuilder/format';
+import { formatEuro, plural } from '@/Components/CourseBuilder/format';
 import { Bar, EmptyPanel } from '@/Components/Panels/PanelBoard';
 import { IconArrow } from '@/Components/Panels/icons';
 import { COLS } from '@/Components/Panels/usePanelBoard';
@@ -9,8 +9,6 @@ import { t } from '@/i18n';
 
 // Caixas de trabalho do Início (2026-11-10): cada uma só chega do servidor (WorkArea) a quem tem a
 // permissão dela. Pendentes e Mensagens são comuns e ficam na página.
-
-const plural = (n, one, many) => (n === 1 ? one : many.replace(':n', n));
 
 // O admin tem todas as permissões: começa só com estas caixas; as outras abrem-se em Painéis visíveis
 export const ADMIN_START = ['pendentes', 'resumo', 'atencao', 'pedidos', 'pessoas', 'catalogo'];

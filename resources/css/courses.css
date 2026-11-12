@@ -1,21 +1,7 @@
 /*
  | Catálogo da plataforma (/plataforma/cursos, Catalog.jsx): cartões, pesquisa e aba de detalhe.
- | O /cursos público (Blade) saiu a 2026-11-10; as regras .landing-courses ficaram sem uso.
+ | As cores e letras vêm de .cc-app, no fim deste ficheiro.
  */
-.landing-courses {
-    --cc-paper: #F7F6F3;
-    --cc-ink: #111;
-    --cc-mut: #787774;
-    --cc-soft: #EFECE6;
-    --cc-line: #EAE7E0;
-    --cc-body: #2F3437;
-    --cc-ease: cubic-bezier(.32, .72, 0, 1);
-    background: var(--cc-paper);
-    color: var(--cc-ink);
-    font-family: var(--body);
-    line-height: 1.6;
-}
-.landing-courses .nav-bg { background: color-mix(in srgb, var(--cc-paper) 90%, transparent); }
 .cc-mono { font-family: var(--mono); letter-spacing: .1em; text-transform: uppercase; }
 
 .cc { margin: 0 auto; padding: 130px clamp(20px, 4vw, 72px) 140px; }
@@ -129,20 +115,14 @@
     .cc-sheet { animation: cc-sheet-in .6s var(--cc-ease); }
     .cc-drawer { animation: cc-drawer-in .7s var(--cc-ease); }
     .cc-scrim { animation: cc-fade-in .5s ease; }
-    .js .cc-card { opacity: 0; transform: translateY(32px); transition: opacity .9s var(--cc-ease), transform .9s var(--cc-ease); }
-    .js .cc-card.seen { opacity: 1; transform: none; }
 }
 
-@media (max-width: 1080px) { .cc-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 780px) { .cc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); --cc-pad: 14px; } }
-@media (max-width: 480px) { .cc-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) {
     .cc-d-body { padding: 22px 20px 26px; }
     .cc-d-foot { padding: 14px 16px 14px 20px; }
 }
 
 /* Compra (simulada) e pedido de proposta para empresas */
-.landing-courses button.cc-cta { border: 0; cursor: pointer; font: inherit; font-size: 15px; font-weight: 500; }
 .cc-cta.cc-wait { padding: 12px 18px; background: var(--cc-soft); color: var(--cc-mut) !important; cursor: default; }
 .cc-team { flex: none; margin: 0; padding: 10px 32px 16px; background: #fff; font-size: 13px; color: var(--cc-mut); }
 .cc-team a { color: var(--cc-ink); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }

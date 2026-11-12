@@ -7,6 +7,9 @@ export const levelLabels = {
     get avancado() { return t('Avançado'); },
 };
 
+// "1 curso" / "3 cursos": o texto do plural leva o número no :n
+export const plural = (n, one, many) => (n === 1 ? one : many.replace(':n', n));
+
 export function formatMinutes(m) {
     if (!m) return t('0 min');
     return m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, '0') : ''}` : `${m} min`;

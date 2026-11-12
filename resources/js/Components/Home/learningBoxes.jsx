@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import { formatEuro, formatMinutes, levelLabels } from '@/Components/CourseBuilder/format';
+import { formatEuro, formatMinutes, levelLabels, plural } from '@/Components/CourseBuilder/format';
 import { alexDef, Bar, EmptyPanel, moduleName } from '@/Components/Panels/PanelBoard';
 import { IconArrow, IconCheck, IconPlay, IconTri } from '@/Components/Panels/icons';
 import WorkshopGame from '@/Components/Panels/WorkshopGame';
@@ -10,15 +10,13 @@ import { t } from '@/i18n';
 // Caixas de aprender do Início (permissão "Fazer cursos"): os seus cursos, continuar, resultados, notas,
 // sugestões, pausa e o Alex. Os lugares iniciais são os do Início do aluno de sempre.
 
-const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-
 // Resumo da lista de tarefas: "1 mensagem por ler · 2 testes por fazer"
 const KIND_SUMMARY = {
-    Mensagem: ['mensagem por ler', 'mensagens por ler'],
-    'Curso atribuído': ['curso por começar', 'cursos por começar'],
-    Presença: ['curso com presenças por confirmar', 'cursos com presenças por confirmar'],
-    Prazo: ['prazo a acabar', 'prazos a acabar'],
-    Teste: ['teste por fazer', 'testes por fazer'],
+    Mensagem: ['1 mensagem por ler', ':n mensagens por ler'],
+    'Curso atribuído': ['1 curso por começar', ':n cursos por começar'],
+    Presença: ['1 curso com presenças por confirmar', ':n cursos com presenças por confirmar'],
+    Prazo: ['1 prazo a acabar', ':n prazos a acabar'],
+    Teste: ['1 teste por fazer', ':n testes por fazer'],
 };
 export function pendingSummary(pending) {
     const parts = [];
@@ -224,7 +222,7 @@ export function learningBoxes({ courses, resume, results, notes, suggestions, al
     return {
         cursos: {
             title: t('Os meus cursos'), x: 0, y: 0, w: 5, h: 22,
-            summary: [counts.curso && t(':curso em curso', { curso: counts.curso }), counts.novo && t(':novo por começar', { novo: counts.novo }), counts.feito && plural(counts.feito, t('concluído'), t('concluídos'))].filter(Boolean).join(' · '),
+            summary: [counts.curso && t(':curso em curso', { curso: counts.curso }), counts.novo && t(':novo por começar', { novo: counts.novo }), counts.feito && plural(counts.feito, t('1 concluído'), t(':n concluídos'))].filter(Boolean).join(' · '),
             body: <CoursesPanel courses={courses} resume={resume} />,
         },
         continuar: {
@@ -250,7 +248,7 @@ export function learningBoxes({ courses, resume, results, notes, suggestions, al
         sugestoes: {
             title: t('Sugestões'), x: 0, y: 33, w: 24, h: 13,
             label: t('Sugeridos para ti · Passa o rato para parar'),
-            summary: plural(suggestions.length, t('curso'), t('cursos')),
+            summary: plural(suggestions.length, t('1 curso'), t(':n cursos')),
             body: <SuggestionsPanel suggestions={suggestions} />,
         },
         pausa: {
@@ -285,7 +283,7 @@ export function Welcome({ firstName, starter }) {
                                     <b className="pn-disp text-[20px] leading-[1.15]">{c.title}</b>
                                     {c.short && <span className="line-clamp-2 text-[14px] text-text">{c.short}</span>}
                                     <span className="mt-auto flex items-center justify-between gap-3 pt-3 text-[13px] text-muted">
-                                        <span>{[c.lessons ? plural(c.lessons, t('aula'), t('aulas')) : null, c.minutes ? formatMinutes(c.minutes) : null].filter(Boolean).join(' · ')}</span>
+                                        <span>{[c.lessons ? plural(c.lessons, t('1 aula'), t(':n aulas')) : null, c.minutes ? formatMinutes(c.minutes) : null].filter(Boolean).join(' · ')}</span>
                                         <b className="font-display text-[15px] text-ink">{c.free ? t('Grátis') : formatEuro(c.price)}</b>
                                     </span>
                                 </span>

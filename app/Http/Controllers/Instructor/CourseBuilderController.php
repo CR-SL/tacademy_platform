@@ -274,7 +274,7 @@ class CourseBuilderController extends Controller
         return $request->validate([
             'title' => ['nullable', 'string', 'max:200'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
-            'level' => ['nullable', Rule::in(['iniciante', 'intermedio', 'avancado'])],
+            'level' => ['nullable', Rule::in(array_keys(Course::LEVELS))],
             // Só imagens da biblioteca ou carregadas pelo próprio editor
             'thumbnail_url' => ['nullable', 'string', 'max:255', 'regex:#^/(images/cursos|storage/'.CourseBuilder::UPLOAD_DIR.'/capas)/[\w.\-]+$#'],
             'short_description' => ['nullable', 'string', 'max:200'],

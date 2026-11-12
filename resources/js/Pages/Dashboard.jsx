@@ -92,25 +92,25 @@ export default function Dashboard(props) {
 
     const summaryLine = pendingSummary(pending)
         ?? (pending.length ? t(':n por fazer', { n: pending.length }) : (props.resume || hasWork ? t('Tudo em dia') : null));
+    const hello = (
+        <>
+            <h1 className="pn-disp">{greeting()}{firstName ? `, ${firstName}` : ''}.</h1>
+            {summaryLine && <p>{summaryLine}</p>}
+        </>
+    );
 
     return (
         <StudentLayout navTools={(
             <>
                 {/* Cumprimento e resumo na barra, ao lado de Painéis visíveis (2026-11-10) */}
-                <div className="pn-hello">
-                    <h1 className="pn-disp">{greeting()}{firstName ? `, ${firstName}` : ''}.</h1>
-                    {summaryLine && <p>{summaryLine}</p>}
-                </div>
+                <div className="pn-hello">{hello}</div>
                 <PanelsMenu board={board} />
             </>
         )}>
             <Head title={t('Início')} />
             {/* Janelas estreitas: a barra não tem espaço, o cumprimento fica por cima das caixas */}
             <div className="pn-root pn-hello-narrow">
-                <div className="pn-top">
-                    <h1 className="pn-disp">{greeting()}{firstName ? `, ${firstName}` : ''}.</h1>
-                    {summaryLine && <p>{summaryLine}</p>}
-                </div>
+                <div className="pn-top">{hello}</div>
             </div>
             <PanelBoard board={board} />
         </StudentLayout>

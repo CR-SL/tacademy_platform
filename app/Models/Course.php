@@ -13,6 +13,9 @@ class Course extends Model
 {
     use HasUlid, SoftDeletes;
 
+    /** Níveis do curso e o nome de cada um (o editor de cursos tem os mesmos em levelLabels, format.js). */
+    public const LEVELS = ['iniciante' => 'Iniciante', 'intermedio' => 'Intermédio', 'avancado' => 'Avançado'];
+
     protected $fillable = [
         'category_id',
         'instructor_id',

@@ -133,7 +133,7 @@ class Tasks
         $report = $this->teams->report($company);
 
         return collect($report['members'])
-            ->filter(fn ($m) => $m['invited'] || collect($m['courses'])->contains(fn ($s) => $s['stalled'] || $s['late']))
+            ->filter(fn ($m) => TeamService::attentionReason($m) !== null)
             ->pluck('name')->values()->all();
     }
 

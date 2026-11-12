@@ -165,13 +165,15 @@ a.al-les:hover { background: var(--al-hover); }
 @keyframes al-a-pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-live) 28%, transparent); } }
 
 /* Início da avaliação (amarelo nos dois temas) */
-.al-intro { position: absolute; inset: 0; z-index: 8; background: #FDB51F; color: #18181B; display: flex; align-items: center; padding: 32px clamp(24px, 20%, 230px); overflow: auto; animation: al-intro .5s var(--al-ease); }
+.al-intro { position: fixed; inset: 0; z-index: 100; background: #FDB51F; color: #18181B; display: flex; align-items: center; padding: 32px clamp(24px, 20%, 230px); overflow: auto; animation: al-intro .5s var(--al-ease); }
 @keyframes al-intro { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0); } }
 .al-intro h2 { margin: 0 0 14px; font-size: clamp(30px, 4.4vw, 46px); line-height: 1.05; font-weight: 700; letter-spacing: -.025em; }
 .al-intro p { margin: 0 0 16px; font-size: clamp(15px, 1.5vw, 17.5px); max-width: 620px; line-height: 1.5; }
 .al-intro .bs { font-size: 20px; font-weight: 700; margin-bottom: 22px; }
 .al-intro .al-pill { height: 50px; padding: 0 34px; font-size: 15px; background: #18181B; color: #fff; }
-.al-intro .x { position: absolute; top: 14px; right: 14px; }
+.al-intro .x { position: absolute; top: 20px; right: 20px; width: 56px; height: 56px; padding: 0; justify-content: center; background: rgba(24, 24, 27, .1); }
+.al-intro .x:hover { background: rgba(24, 24, 27, .2); }
+.al-intro .x svg { width: 28px; height: 28px; }
 .al-intro :focus-visible { outline-color: #18181B; }
 /* Testar o microfone antes da avaliação */
 .al-mic { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 4px 0 22px; padding: 14px 16px; max-width: 620px; border-radius: 12px; background: rgba(24, 24, 27, .08); }

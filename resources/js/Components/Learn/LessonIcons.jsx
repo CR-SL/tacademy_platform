@@ -13,5 +13,6 @@ export const IconDown = () => <S size={12} width={2.6}><path d="M6 9l6 6 6-6" />
 export const IconLeft = () => <S size={13} width={2.4}><path d="M15 6l-6 6 6 6" /></S>;
 export const IconRight = () => <S size={13} width={2.4}><path d="M9 6l6 6-6 6" /></S>;
 export const IconCheck = () => <S size={13} width={2.4}><path d="M5 12.5l4.5 4.5L19 7.5" /></S>;
+export const IconSwap = () => <S size={14} width={2}><path d="M7 4 3 8l4 4M3 8h13M17 20l4-4-4-4M21 16H8" /></S>;
 export const IconLock = () => <S size={12} width={2.2}><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></S>;
 export const IconSide = () => <S><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M9 5v14" /></S>;

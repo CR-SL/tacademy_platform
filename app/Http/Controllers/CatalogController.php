@@ -16,8 +16,6 @@ use Inertia\Response;
  */
 class CatalogController extends Controller
 {
-    private const LEVELS = ['iniciante' => 'Iniciante', 'intermedio' => 'Intermédio', 'avancado' => 'Avançado'];
-
     public function __invoke(Request $request): Response|RedirectResponse
     {
         // "Entrar para comprar" sem sessão: depois de entrar (ou criar conta) volta ao curso aberto
@@ -55,7 +53,7 @@ class CatalogController extends Controller
                 'title' => $c->title,
                 'area' => $c->category?->slug,
                 'areaName' => $c->category?->name,
-                'level' => self::LEVELS[$c->level] ?? $c->level,
+                'level' => Course::LEVELS[$c->level] ?? $c->level,
                 'minutes' => (int) $c->duration_minutes,
                 'price' => (float) $c->price,
                 'description' => $c->description,

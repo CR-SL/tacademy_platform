@@ -142,20 +142,10 @@ class WorkArea
     /** Equipa do team leader: quantas pessoas são e quem precisa de atenção (a regra da página da equipa). */
     private function team(Company $company): array
     {
-        // A mesma regra dos Pendentes e da página da equipa: sem entrar, fora do prazo ou parado
+        // A mesma regra dos Pendentes: sem entrar, fora do prazo ou parado
         $members = collect($this->teams->report($company)['members']);
-        $flag = function ($m) {
-            $c = collect($m['courses']);
-
-            return match (true) {
-                $m['invited'] => __('Ainda não entrou'),
-                $c->contains(fn ($s) => $s['late']) => __('Fora do prazo'),
-                $c->contains(fn ($s) => $s['stalled']) => __('Parado há mais de 10 dias'),
-                default => null,
-            };
-        };
-
-        $attention = $members->map(fn ($m) => ['name' => $m['name'], 'why' => $flag($m)])->filter(fn ($m) => $m['why'])->values();
+        $attention = $members->map(fn ($m) => ['name' => $m['name'], 'why' => TeamService::attentionReason($m)])
+            ->filter(fn ($m) => $m['why'])->values();
 
         return [
             'name' => $company->name,
