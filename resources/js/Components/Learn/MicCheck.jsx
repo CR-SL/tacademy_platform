@@ -62,11 +62,12 @@ export default function MicCheck() {
 
     return (
         <div className={`al-mic ${state}`}>
-            <button type="button" className="al-mic-b" aria-pressed={running} onClick={toggle} disabled={state === 'asking'}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            {/* Só o ícone (2026-11-12); o nome fica para o leitor de ecrã e na dica */}
+            <button type="button" className="al-mic-b" aria-pressed={running} onClick={toggle} disabled={state === 'asking'}
+                aria-label={running ? t('Parar o teste') : t('Testar o microfone')} title={running ? t('Parar o teste') : t('Testar o microfone')}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                     <rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
                 </svg>
-                {running ? t('Parar o teste') : t('Testar o microfone')}
             </button>
             {running && (
                 <span className="al-mic-m" aria-hidden="true">

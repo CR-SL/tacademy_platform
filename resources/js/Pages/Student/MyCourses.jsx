@@ -2,7 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
 import { levelLabels } from '@/Components/CourseBuilder/format';
-import PanelBoard, { alexDef, Crumb, EmptyPanel, PanelsMenu } from '@/Components/Panels/PanelBoard';
+import PanelBoard, { alexDef, EmptyPanel, PanelsMenu } from '@/Components/Panels/PanelBoard';
 import usePanelBoard from '@/Components/Panels/usePanelBoard';
 
 import { t } from '@/i18n';
@@ -80,7 +80,6 @@ export default function MyCourses({ courses, alexUrl, savedLayout }) {
     return (
         <StudentLayout navTools={<PanelsMenu board={board} />}>
             <Head title={t('Os meus cursos')} />
-            <Crumb label={t('Os meus cursos')} />
             <PanelBoard board={board} />
         </StudentLayout>
     );

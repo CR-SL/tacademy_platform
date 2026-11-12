@@ -11,6 +11,7 @@ import MicCheck from '@/Components/Learn/MicCheck';
 import { ModulesRail, ModuleSheet, ModulesStrip } from '@/Components/Learn/LessonModules';
 import { IconCheck, IconDoc, IconDown, IconHelp, IconLeft, IconPen, IconRight, IconSide, IconUser, IconVideo, IconX } from '@/Components/Learn/LessonIcons';
 import { FlashToast } from '@/Components/Teams/ui';
+import { Toast } from '@/Components/ui';
 import '../../../css/lesson.css';
 
 import { t } from '@/i18n';
@@ -45,7 +46,9 @@ const isVideoType = (tx) => tx === 'video_link' || tx === 'video_upload';
 const isPdf = (a) => /\.pdf$/i.test(a.url);
 
 // O aluno mantém os painéis e os tamanhos ao passar de aula (até recarregar a página)
-const memory = { material: true, notes: true, rail: false, splitX: null, splitR: 55, splitL: 55, splitRow: 60, splitM: 38 };
+// place: em que lugar está cada painel (L1/L2 à esquerda, R1/R2 à direita; 1 em cima, 2 em baixo)
+const PLACES = { ask: 'L1', video: 'L2', material: 'R1', notes: 'R2' };
+const memory = { material: true, notes: true, rail: false, splitX: null, splitR: 55, splitL: 55, splitRow: 60, splitM: 38, place: PLACES };
 
 function useMobile() {
     const query = '(max-width: 767px)';
@@ -139,10 +142,13 @@ export default function Lesson({ course, mode, program, lesson, position, progre
     const [splitL, setSplitL] = useState(memory.splitL);
     const [splitRow, setSplitRow] = useState(memory.splitRow);
     const [splitM, setSplitM] = useState(memory.splitM);
+    const [place, setPlace] = useState(memory.place);
+    const resumeAt = useRef(null); // o vídeo que muda de coluna volta a abrir no mesmo segundo
+    useEffect(() => { resumeAt.current = null; }, [lesson.ulid]);
 
     useEffect(() => {
-        Object.assign(memory, { material: showMaterial, notes: showNotes, rail, splitX, splitR, splitL, splitRow, splitM });
-    }, [showMaterial, showNotes, rail, splitX, splitR, splitL, splitRow, splitM]);
+        Object.assign(memory, { material: showMaterial, notes: showNotes, rail, splitX, splitR, splitL, splitRow, splitM, place });
+    }, [showMaterial, showNotes, rail, splitX, splitR, splitL, splitRow, splitM, place]);
 
     // No telemóvel só cabe um painel em baixo: material ou notas
     useEffect(() => { if (mobile && showMaterial && showNotes) setShowMaterial(false); }, [mobile]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -172,16 +178,30 @@ export default function Lesson({ course, mode, program, lesson, position, progre
         player.current?.flush();
     }, [canSave, done, hasPlayer, watched, videoReady]);
 
+    // Fica sempre pelo menos um painel aberto (2026-11-12, como no Início): fechar o último só mostra um aviso
+    const [tip, setTip] = useState(null);
+    const tipTimer = useRef(null);
+    const keepOne = () => {
+        setTip(t('Fica sempre pelo menos um painel aberto.'));
+        clearTimeout(tipTimer.current);
+        tipTimer.current = setTimeout(() => setTip(null), 2800);
+    };
+    useEffect(() => () => clearTimeout(tipTimer.current), []);
+    const isLast = (k) => openCount === 1 && (k === 'checks' ? showChecks && !showMaterial : k === 'material' ? showMaterial && !showChecks : on[k]);
+
     const pauseVideo = () => player.current?.pause();
     const toggleVideo = () => {
+        if (showVideo && isLast('video')) { keepOne(); return; }
         if (showVideo) pauseVideo();
         setShowVideo(!showVideo);
     };
     const toggleMaterial = () => {
+        if (showMaterial && isLast('material')) { keepOne(); return; }
         if (!showMaterial && mobile) setShowNotes(false);
         setShowMaterial(!showMaterial);
     };
     const toggleNotes = () => {
+        if (showNotes && isLast('notes')) { keepOne(); return; }
         if (!showNotes && mobile) { setShowMaterial(false); setShowChecks(false); }
         setShowNotes(!showNotes);
     };
@@ -226,8 +246,11 @@ export default function Lesson({ course, mode, program, lesson, position, progre
     const videoOn = hasPlayer && showVideo;
     const avatarOn = ask || running;
     const materialOn = showMaterial && !showChecks;
-    const hasLeft = videoOn || avatarOn;
-    const rightItems = (materialOn || showChecks ? 1 : 0) + (showNotes ? 1 : 0);
+    const on = { ask: avatarOn, video: videoOn, material: materialOn || showChecks, notes: showNotes };
+    const openCount = Object.values(on).filter(Boolean).length;
+    const at = Object.fromEntries(Object.entries(place).map(([k, p]) => [p, k])); // lugar → painel
+    const hasLeft = on[at.L1] || on[at.L2];
+    const rightItems = (on[at.R1] ? 1 : 0) + (on[at.R2] ? 1 : 0);
     const hasRight = rightItems > 0;
     const asRow = !hasLeft && rightItems === 2 && !mobile;
     const leftPct = splitX ?? ((rightItems === 2 || showNotes) ? 62 : 50);
@@ -253,25 +276,43 @@ export default function Lesson({ course, mode, program, lesson, position, progre
 
     // Barra de cima de cada painel: escolher o que mostrar e fechar
     const panelBar = (slot, icon, dark = false) => {
-        const shown = { video: videoOn, material: materialOn, notes: showNotes, ask: avatarOn };
+        const shown = on;
         const options = [['video', <IconVideo key="i" />, t('Vídeo')], ['material', <IconDoc key="i" />, t('Material')], ['notes', <IconPen key="i" />, t('Notas')], ['ask', <IconUser key="i" />, t('Avatar')]];
-        const pick = (k) => {
-            setMenu(null);
+        const open = (k) => {
             if (k === 'video') setShowVideo(true);
             if (k === 'material' && !showMaterial) toggleMaterial();
             if (k === 'notes' && !showNotes) toggleNotes();
             if (k === 'ask') openAsk();
         };
+        // Trocar de lugar: aberto, os dois trocam de posição; fechado, abre aqui e este fecha (no telemóvel só abre). Também na avaliação, onde o avatar nunca fecha
+        const pick = (k) => {
+            setMenu(null);
+            if (k === slot) return;
+            if (mobile) { open(k); return; }
+            const wasOpen = shown[k];
+            if (place[k][0] !== place[slot][0] && (k === 'video' || slot === 'video')) {
+                resumeAt.current = player.current?.time() ?? null;
+                player.current?.flush();
+            }
+            setPlace((p) => ({ ...p, [k]: p[slot], [slot]: p[k] }));
+            if (!wasOpen) {
+                open(k);
+                if (slot === 'video') { pauseVideo(); setShowVideo(false); }
+                if (slot === 'material') { setShowMaterial(false); setShowChecks(false); }
+                if (slot === 'notes') setShowNotes(false);
+                if (slot === 'ask' && !running) setAsk(false);
+            }
+        };
         const close = () => {
             if (slot === 'video') toggleVideo();
             if (slot === 'material') toggleMaterial();
             if (slot === 'notes') toggleNotes();
-            if (slot === 'ask') setAsk(false);
+            if (slot === 'ask') { if (isLast('ask')) keepOne(); else setAsk(false); }
         };
         return (
             <>
                 <div className={`al-tb ${dark ? 'dark' : ''} ${menu === slot ? 'pin' : ''}`}>
-                    <button type="button" className="al-tb-b" data-menu aria-label={t('Escolher o que mostrar neste painel')} aria-expanded={menu === slot} onClick={() => setMenu(menu === slot ? null : slot)}>{icon}<IconDown /></button>
+                    <button type="button" className="al-tb-b" data-menu aria-label={t('Escolher o que mostrar neste painel ou trocar de lugar')} aria-expanded={menu === slot} onClick={() => setMenu(menu === slot ? null : slot)}>{icon}<IconDown /></button>
                     <span className="sp" />
                     {!(slot === 'ask' && running) && <button type="button" className="al-tb-b" aria-label={t('Fechar painel')} onClick={close}><IconX /></button>}
                 </div>
@@ -279,7 +320,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                     <div className="al-menu">
                         {options.map(([k, ic, label]) => (
                             <button type="button" key={k} disabled={k === 'video' && !hasPlayer} onClick={() => pick(k)}>
-                                {ic}{label}{k === slot ? <small><IconCheck /></small> : shown[k] ? <small>{t('noutro painel')}</small> : null}
+                                {ic}{label}{k === slot ? <small><IconCheck /></small> : shown[k] ? <small>{mobile ? t('noutro painel') : t('trocar de lugar')}</small> : null}
                             </button>
                         ))}
                     </div>
@@ -299,6 +340,96 @@ export default function Lesson({ course, mode, program, lesson, position, progre
     );
 
     const viewer = (lesson.type === 'document' || hasPlayer) && lesson.attachments[attachment] && isPdf(lesson.attachments[attachment]) ? lesson.attachments[attachment] : null;
+
+    // Cada painel numa função, para ir para o lugar que o aluno escolher (as chaves evitam recarregar na mesma coluna)
+    const sections = {
+        ask: (grow) => (
+                                                <section key="ask" className={`al-panel al-a ${avatarOn ? '' : 'off'}`} aria-label={t('Avatar')} style={{ flexGrow: grow }}>
+                            {panelBar('ask', <IconUser />, true)}
+                            {running && <EvaluationEnd endsAt={endsAt} onEnd={endEvaluation} />}
+                            {running ? (
+                                <div className="al-a-stage">
+                                    <span className="al-orb" aria-hidden="true" />
+                                    <p>{t('O teste final com o avatar fica disponível em breve.')}</p>
+                                </div>
+                            ) : avatarUrl ? (
+                                askStarted && <iframe src={avatarUrl} title={t('Perguntar ao avatar')} allow="microphone; camera; autoplay" />
+                            ) : (
+                                <div className="al-a-stage">
+                                    <span className="al-orb" aria-hidden="true" />
+                                    <p>{t('Este curso ainda não tem avatar para tirar dúvidas.')}</p>
+                                </div>
+                            )}
+                        </section>
+        ),
+        video: (grow) => (hasPlayer && (
+                            <section key="video" className={`al-panel al-v ${videoOn ? '' : 'off'}`} aria-label={t('Vídeo')} style={{ flexGrow: grow }}>
+                                {panelBar('video', <IconVideo />, true)}
+                                <VideoPlayer ref={player} key={lesson.ulid} source={lesson.video} lessonUlid={lesson.ulid} initial={resumeAt.current != null ? { ...progress, position: resumeAt.current } : progress} canSave={canSave}
+                                    onWatched={(w, d) => { setWatched(w); if (d) setNeeded(Math.ceil(d * 0.9)); }} onSaved={onSaved} />
+                            </section>
+                        )),
+        material: (grow) => [
+            hasChecks && (
+                            <section key="checks" className={`al-panel al-c ${showChecks ? '' : 'off'}`} aria-label={t('Perguntas rápidas')} style={{ flexGrow: grow }}>
+                                <div className="al-tb pin">
+                                    <span className="sp" />
+                                    <button type="button" className="al-tb-b" aria-label={t('Fechar perguntas')} onClick={() => (isLast('checks') ? keepOne() : setShowChecks(false))}><IconX /></button>
+                                </div>
+                                <div className="al-c-scroll">
+                                    <div className="al-c-card">
+                                        <small>{t('Perguntas rápidas')}</small>
+                                        <h2>{checksDone ? t('Respondidas.') : t('Queres testar o que viste?')}</h2>
+                                        <QuickChecks lessonUlid={lesson.ulid} checks={checks} canSave={canSave} onChange={setChecks} onCompleted={refresh} />
+                                    </div>
+                                </div>
+                            </section>
+                        ),
+                        <section key="material" className={`al-panel al-m ${materialOn ? '' : 'off'}`} aria-label={t('Material')} style={{ flexGrow: grow }}>
+                            {panelBar('material', <IconDoc />)}
+                            {lesson.type === 'quiz' && lesson.quiz ? (
+                                <div className="al-m-scroll"><div className="al-card flush">
+                                    <QuizRunner key={lesson.ulid} lessonUlid={lesson.ulid} quiz={lesson.quiz} canSave={canSave} />
+                                </div></div>
+                            ) : viewer ? (
+                                <iframe className="al-pdf" src={`${viewer.url}#view=FitH`} title={viewer.name} />
+                            ) : (
+                                <div className="al-m-scroll"><div className="al-card">
+                                    <h2>{lesson.title}</h2>
+                                    {lesson.type === 'text' && (lesson.body ?? '').split(/\n{2,}/).map((p, i) => <p key={i}>{p}</p>)}
+                                    {lesson.type === 'avatar' && (
+                                        <div className="al-avatar-card">
+                                            <span className="al-orb !w-24" aria-hidden="true" />
+                                            {lesson.url
+                                                ? <a href={lesson.url} target="_blank" rel="noopener noreferrer" className="al-pill">{t('Abrir avatar ↗')}</a>
+                                                : <p>{t('O link do avatar ainda não foi configurado.')}</p>}
+                                        </div>
+                                    )}
+                                    {lesson.type !== 'text' && lesson.type !== 'avatar' && (
+                                        <p>{lesson.attachments.length ? t('Os ficheiros desta aula estão aqui em baixo.') : t('Esta aula não tem material de apoio.')}</p>
+                                    )}
+                                </div></div>
+                            )}
+                            {lesson.attachments.length > 0 && (
+                                <div className="al-m-foot">
+                                    {lesson.attachments.map((a, i) => (
+                                        <a key={a.url} className={`al-file ${viewer === a ? 'on' : ''}`} href={a.url} target="_blank" rel="noopener noreferrer" title={a.name}
+                                            onClick={(e) => { if ((lesson.type === 'document' || hasPlayer) && isPdf(a) && viewer !== a) { e.preventDefault(); setAttachment(i); } }}>
+                                            {a.name} ⭳
+                                        </a>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+        ],
+        notes: (grow) => (
+                        <section key="notes" className={`al-panel al-n ${asRow && place.notes === 'R2' ? 'side' : ''} ${place.notes.endsWith('1') ? 'first' : ''} ${showNotes ? '' : 'off'}`} aria-label={t('Notas')} style={{ flexGrow: grow }}>
+                            {panelBar('notes', <IconPen />)}
+                            <LessonNotes key={lesson.ulid} lessonUlid={lesson.ulid} title={t('Notas da aula :v1', { v1: numOf(lesson.ulid) })} initial={notes} canSave={canSave}
+                                hasVideo={hasPlayer} getTime={() => player.current?.time() ?? 0} onSeek={seekTo} />
+                        </section>
+        ),
+    };
 
     return (
         <div className="al" style={{ '--al-split': `${splitM}%` }}>
@@ -341,31 +472,9 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                 <main className="al-stage" ref={stage}>
                     <div className={`al-col left ${hasLeft ? '' : 'none'} ${hasRight ? '' : 'full'}`} style={{ flexGrow: leftGrow }}>
                         {/* Avatar: o iframe fica montado depois de aberto, para não perder a conversa */}
-                        <section className={`al-panel al-a ${avatarOn ? '' : 'off'}`} aria-label={t('Avatar')} style={{ flexGrow: splitL }}>
-                            {panelBar('ask', <IconUser />, true)}
-                            {running && <EvaluationEnd endsAt={endsAt} onEnd={endEvaluation} />}
-                            {running ? (
-                                <div className="al-a-stage">
-                                    <span className="al-orb" aria-hidden="true" />
-                                    <p>{t('O teste final com o avatar fica disponível em breve.')}</p>
-                                </div>
-                            ) : avatarUrl ? (
-                                askStarted && <iframe src={avatarUrl} title={t('Perguntar ao avatar')} allow="microphone; camera; autoplay" />
-                            ) : (
-                                <div className="al-a-stage">
-                                    <span className="al-orb" aria-hidden="true" />
-                                    <p>{t('Este curso ainda não tem avatar para tirar dúvidas.')}</p>
-                                </div>
-                            )}
-                        </section>
-                        <Split dir="h" shown={avatarOn && videoOn} value={splitL} onChange={(v) => setSplitL(clampSplit(v))} />
-                        {hasPlayer && (
-                            <section className={`al-panel al-v ${videoOn ? '' : 'off'}`} aria-label={t('Vídeo')} style={{ flexGrow: 100 - splitL }}>
-                                {panelBar('video', <IconVideo />, true)}
-                                <VideoPlayer ref={player} key={lesson.ulid} source={lesson.video} lessonUlid={lesson.ulid} initial={progress} canSave={canSave}
-                                    onWatched={(w, d) => { setWatched(w); if (d) setNeeded(Math.ceil(d * 0.9)); }} onSaved={onSaved} />
-                            </section>
-                        )}
+                        {sections[at.L1](splitL)}
+                        <Split key="split-l" dir="h" shown={on[at.L1] && on[at.L2]} value={splitL} onChange={(v) => setSplitL(clampSplit(v))} />
+                        {sections[at.L2](100 - splitL)}
                     </div>
 
                     {hasLeft && hasRight && (
@@ -381,63 +490,9 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                     <Split dir="v" shown={hasLeft && hasRight} value={leftPct} onChange={(v) => setSplitX(clampSplit(v))} boxOf={() => stage.current} />
 
                     <div className={`al-col right ${hasRight ? '' : 'none'} ${asRow ? 'row' : ''}`} style={{ flexGrow: rightGrow }}>
-                        {hasChecks && (
-                            <section className={`al-panel al-c ${showChecks ? '' : 'off'}`} aria-label={t('Perguntas rápidas')} style={{ flexGrow: topGrow }}>
-                                <div className="al-tb pin">
-                                    <span className="sp" />
-                                    <button type="button" className="al-tb-b" aria-label={t('Fechar perguntas')} onClick={() => setShowChecks(false)}><IconX /></button>
-                                </div>
-                                <div className="al-c-scroll">
-                                    <div className="al-c-card">
-                                        <small>{t('Perguntas rápidas')}</small>
-                                        <h2>{checksDone ? t('Respondidas.') : t('Queres testar o que viste?')}</h2>
-                                        <QuickChecks lessonUlid={lesson.ulid} checks={checks} canSave={canSave} onChange={setChecks} onCompleted={refresh} />
-                                    </div>
-                                </div>
-                            </section>
-                        )}
-                        <section className={`al-panel al-m ${materialOn ? '' : 'off'}`} aria-label={t('Material')} style={{ flexGrow: topGrow }}>
-                            {panelBar('material', <IconDoc />)}
-                            {lesson.type === 'quiz' && lesson.quiz ? (
-                                <div className="al-m-scroll"><div className="al-card flush">
-                                    <QuizRunner key={lesson.ulid} lessonUlid={lesson.ulid} quiz={lesson.quiz} canSave={canSave} />
-                                </div></div>
-                            ) : viewer ? (
-                                <iframe className="al-pdf" src={`${viewer.url}#view=FitH`} title={viewer.name} />
-                            ) : (
-                                <div className="al-m-scroll"><div className="al-card">
-                                    <h2>{lesson.title}</h2>
-                                    {lesson.type === 'text' && (lesson.body ?? '').split(/\n{2,}/).map((p, i) => <p key={i}>{p}</p>)}
-                                    {lesson.type === 'avatar' && (
-                                        <div className="al-avatar-card">
-                                            <span className="al-orb !w-24" aria-hidden="true" />
-                                            {lesson.url
-                                                ? <a href={lesson.url} target="_blank" rel="noopener noreferrer" className="al-pill">{t('Abrir avatar ↗')}</a>
-                                                : <p>{t('O link do avatar ainda não foi configurado.')}</p>}
-                                        </div>
-                                    )}
-                                    {lesson.type !== 'text' && lesson.type !== 'avatar' && (
-                                        <p>{lesson.attachments.length ? t('Os ficheiros desta aula estão aqui em baixo.') : t('Esta aula não tem material de apoio.')}</p>
-                                    )}
-                                </div></div>
-                            )}
-                            {lesson.attachments.length > 0 && (
-                                <div className="al-m-foot">
-                                    {lesson.attachments.map((a, i) => (
-                                        <a key={a.url} className={`al-file ${viewer === a ? 'on' : ''}`} href={a.url} target="_blank" rel="noopener noreferrer" title={a.name}
-                                            onClick={(e) => { if ((lesson.type === 'document' || hasPlayer) && isPdf(a) && viewer !== a) { e.preventDefault(); setAttachment(i); } }}>
-                                            {a.name} ⭳
-                                        </a>
-                                    ))}
-                                </div>
-                            )}
-                        </section>
-                        <Split dir={asRow ? 'v' : 'h'} shown={rightItems === 2} value={topGrow} onChange={(v) => (asRow ? setSplitRow : setSplitR)(clampSplit(v))} />
-                        <section className={`al-panel al-n ${asRow ? 'side' : ''} ${showNotes ? '' : 'off'}`} aria-label={t('Notas')} style={{ flexGrow: 100 - topGrow }}>
-                            {panelBar('notes', <IconPen />)}
-                            <LessonNotes key={lesson.ulid} lessonUlid={lesson.ulid} title={t('Notas da aula :v1', { v1: numOf(lesson.ulid) })} initial={notes} canSave={canSave}
-                                hasVideo={hasPlayer} getTime={() => player.current?.time() ?? 0} onSeek={seekTo} />
-                        </section>
+                        {sections[at.R1](topGrow)}
+                        <Split key="split-r" dir={asRow ? 'v' : 'h'} shown={rightItems === 2} value={topGrow} onChange={(v) => (asRow ? setSplitRow : setSplitR)(clampSplit(v))} />
+                        {sections[at.R2](100 - topGrow)}
                     </div>
 
                     {!hasLeft && !hasRight && !evaluation && <p className="al-empty">{t('Liga um painel na barra de baixo para continuar.')}</p>}
@@ -496,6 +551,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                 </footer>
             )}
             <FlashToast />
+            <Toast message={tip} />
         </div>
     );
 }

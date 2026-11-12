@@ -133,10 +133,10 @@
     .js .cc-card.seen { opacity: 1; transform: none; }
 }
 
-@media (max-width: 1140px) { .cc-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 860px) { .cc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1080px) { .cc-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 780px) { .cc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); --cc-pad: 14px; } }
+@media (max-width: 480px) { .cc-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) {
-    .cc-grid { grid-template-columns: 1fr; }
     .cc-d-body { padding: 22px 20px 26px; }
     .cc-d-foot { padding: 14px 16px 14px 20px; }
 }
@@ -185,3 +185,29 @@
 .cc-app .cc-guest { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .cc-app .cc-guest-new { font-size: 13px; color: var(--color-muted); text-decoration: underline; text-underline-offset: 3px; }
 .cc-app .cc-guest-new:hover { color: var(--color-ink); }
+
+/*
+ | Opção A (2026-11-12): 5 cursos por fila, inclinação 3D com reflexo a seguir o rato,
+ | traço dos separadores a deslizar e entrada em cascata.
+ | Exemplo: public/landing-concepts/catalogo-a-grelha.html
+ */
+.cc-app .cc-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); --cc-pad: 18px; }
+@media (max-width: 1380px) { .cc-app .cc-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 1080px) { .cc-app .cc-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 780px) { .cc-app .cc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); --cc-pad: 14px; } }
+@media (max-width: 480px) { .cc-app .cc-grid { grid-template-columns: 1fr; } }
+.cc-app .cc-card { perspective: 900px; }
+.cc-app .cc-lift { transform-style: preserve-3d; will-change: transform; transition: transform .6s var(--cc-ease); }
+.cc-app .cc-ttl { font-size: clamp(17px, 1.35vw, 21px); }
+.cc-app .cc-n { display: inline-block; min-width: 1.1ch; font-variant-numeric: tabular-nums; }
+.cc-glare { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .4s; background: radial-gradient(420px circle at var(--gx, 50%) var(--gy, 0%), #ffffff38, transparent 45%); }
+.cc-badges, .cc-txt { z-index: 2; }
+.cc-card:hover .cc-glare { opacity: 1; }
+.cc-card:hover img { filter: none; }
+.cc-app .cc-tabs { position: relative; }
+.cc-app .cc-tab[aria-pressed="true"] { box-shadow: none; }
+.cc-bar { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--accent); transition: transform .5s var(--cc-ease), width .5s var(--cc-ease); }
+@media (prefers-reduced-motion: no-preference) {
+    .cc-app .cc-card { animation: cc-rise .8s var(--cc-ease) both; animation-delay: calc(var(--i, 0) * 45ms); }
+}
+@keyframes cc-rise { from { opacity: 0; transform: translateY(28px) scale(.97); } }

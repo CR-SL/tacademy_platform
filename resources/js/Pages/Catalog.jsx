@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
 import '../../css/courses.css';
 
@@ -15,6 +15,41 @@ const textOf = (c) => `${c.title} ${c.areaName} ${c.level} ${c.description}`;
 // Conta a abertura do curso para as estatísticas da Administração (sem bloquear nada se falhar)
 const countView = (c, guest) => !guest && window.axios.post(`/plataforma/cursos/${encodeURIComponent(c.slug)}/visto`).catch(() => {});
 const SUGGESTIONS = ['Diagnóstico', 'OBD', 'Eletrónica', 'Bateria', 'Gestão'];
+
+// Opção A (2026-11-12): 5 por fila, inclinação 3D com reflexo a seguir o rato e botão que sobe no hover
+const moves = () => window.matchMedia('(hover: hover) and (prefers-reduced-motion: no-preference)').matches;
+const tilt = (e) => {
+    if (!moves()) return;
+    const el = e.currentTarget.querySelector('.cc-lift');
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+    el.style.transition = 'transform .15s ease-out';
+    el.style.transform = `translateY(-6px) rotateX(${(0.5 - y) * 7}deg) rotateY(${(x - 0.5) * 9}deg)`;
+    el.style.setProperty('--gx', `${x * 100}%`);
+    el.style.setProperty('--gy', `${y * 100}%`);
+};
+const untilt = (e) => { const el = e.currentTarget.querySelector('.cc-lift'); el.style.transition = ''; el.style.transform = ''; };
+
+// O número do título conta até ao novo total
+function useCount(n) {
+    const [v, setV] = useState(n);
+    const from = useRef(n);
+    useEffect(() => {
+        const a = from.current;
+        from.current = n;
+        if (a === n || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setV(n); return; }
+        let raf;
+        const t0 = performance.now();
+        const step = (now) => {
+            const k = Math.min(1, (now - t0) / 500);
+            setV(Math.round(a + (n - a) * k));
+            if (k < 1) raf = requestAnimationFrame(step);
+        };
+        raf = requestAnimationFrame(step);
+        return () => cancelAnimationFrame(raf);
+    }, [n]);
+    return v;
+}
 
 // Mantém o estado do Inertia no histórico ao mudar o ?curso= (link partilhável)
 const setUrl = (search) => window.history.replaceState(window.history.state, '', location.pathname + search);
@@ -36,13 +71,15 @@ function CloseIcon() {
     );
 }
 
-function Card({ c, onOpen }) {
+function Card({ c, i, onOpen }) {
     return (
-        <a className="cc-card" href={`?curso=${encodeURIComponent(c.slug)}`} aria-haspopup="dialog" onClick={(e) => { e.preventDefault(); onOpen(c); }}>
+        <a className="cc-card" style={{ '--i': i }} href={`?curso=${encodeURIComponent(c.slug)}`} aria-haspopup="dialog"
+            onClick={(e) => { e.preventDefault(); onOpen(c); }} onPointerMove={tilt} onPointerLeave={untilt}>
             <span className="cc-lift"><span className="cc-ph">
                 <img src={c.image} alt="" loading="lazy" width="440" height="550" />
                 {c.ai && <span className="cc-badges"><span className="cc-badge">{t('✦ Aula com IA')}</span></span>}
                 <span className="cc-grad" aria-hidden="true" />
+                <span className="cc-glare" aria-hidden="true" />
                 <span className="cc-txt">
                     <span className="cc-mono">{c.areaName} · {t(c.level)}</span>
                     <span className="cc-ttl">{c.title}</span>
@@ -208,6 +245,8 @@ export default function Catalog({ courses, areas, owned, pending }) {
     const [searching, setSearching] = useState(false);
     const [notice, setNotice] = useState(null);
     const lastFocus = useRef(null);
+    const tabsRef = useRef(null);
+    const [bar, setBar] = useState(null);
 
     // Área ou curso vindos do link (/plataforma/cursos?area=slug ou ?curso=slug)
     useEffect(() => {
@@ -256,6 +295,19 @@ export default function Catalog({ courses, areas, owned, pending }) {
     const shown = courses.filter((c) => (area === 'all' || c.area === area) && (!query || norm(textOf(c)).includes(norm(query))));
     // O detalhe aberto acompanha os dados novos depois de comprar
     const current = detail && (courses.find((c) => c.id === detail.id) ?? detail);
+    const count = useCount(shown.length);
+
+    // O traço amarelo vai para o separador escolhido
+    useLayoutEffect(() => {
+        const place = () => {
+            const on = tabsRef.current?.querySelector('[aria-pressed="true"]');
+            if (on) setBar({ x: on.offsetLeft, w: on.offsetWidth });
+        };
+        place();
+        document.fonts?.ready.then(place);
+        addEventListener('resize', place);
+        return () => removeEventListener('resize', place);
+    }, [area]);
 
     return (
         <StudentLayout>
@@ -265,15 +317,16 @@ export default function Catalog({ courses, areas, owned, pending }) {
                 <div className="cc">
                     <div className="cc-top">
                         <span className="cc-mono">{t('Catálogo')}</span>
-                        <h1>{shown.length} {shown.length === 1 ? t('curso') : t('cursos')}{' '}{t('disponíveis')}</h1>
+                        <h1><span className="cc-n">{count}</span> {shown.length === 1 ? t('curso') : t('cursos')}{' '}{t('disponíveis')}</h1>
                     </div>
 
                     <div className="cc-filters">
-                        <nav className="cc-tabs" aria-label={t('Filtrar por área')}>
+                        <nav className="cc-tabs" ref={tabsRef} aria-label={t('Filtrar por área')}>
                             <button className="cc-tab" type="button" aria-pressed={area === 'all'} onClick={() => setArea('all')}>{t('Todas')}</button>
                             {areas.map((a) => (
                                 <button key={a.slug} className="cc-tab" type="button" aria-pressed={area === a.slug} onClick={() => setArea(a.slug)}>{a.name}</button>
                             ))}
+                            {bar && <i className="cc-bar" aria-hidden="true" style={{ width: bar.w, transform: `translateX(${bar.x}px)` }} />}
                         </nav>
                         <button className="cc-sbtn" type="button" onClick={openSearch} aria-label={t('Pesquisar cursos')} aria-expanded={searching}>
                             <SearchIcon />
@@ -283,8 +336,8 @@ export default function Catalog({ courses, areas, owned, pending }) {
                         <div className="cc-qline">{t('A mostrar resultados para')}{' '}<b>«{query}»</b><button className="cc-chip" type="button" onClick={() => setQuery('')}>{t('Limpar ✕')}</button></div>
                     )}
 
-                    <div className="cc-grid">
-                        {shown.map((c) => <Card key={c.id} c={c} onOpen={open} />)}
+                    <div className="cc-grid" key={`${area}|${query}`}>
+                        {shown.map((c, i) => <Card key={c.id} c={c} i={i} onOpen={open} />)}
                     </div>
                     {!shown.length && (
                         <div className="cc-empty"><b>{t('Nenhum curso corresponde a estes filtros')}</b><span>{t('Limpe a pesquisa ou escolha «Todas» para ver o catálogo completo.')}</span></div>

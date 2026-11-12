@@ -142,7 +142,7 @@ function restore(defs, saved) {
     return layout;
 }
 
-export default function usePanelBoard({ view, panels, saved }) {
+export default function usePanelBoard({ view, panels, saved, swappable = false }) {
     const titles = useRef({});
     titles.current = Object.fromEntries(Object.entries(panels).map(([id, p]) => [id, p.title]));
     const defs = useRef(panels);
@@ -571,7 +571,7 @@ export default function usePanelBoard({ view, panels, saved }) {
     }, [layout]);
 
     return {
-        layout, narrow, gesture, rows, message, toast, boardRef, flags, toggleFold, hide, show, swap, reset, showToast,
+        layout, narrow, gesture, rows, message, toast, boardRef, flags, toggleFold, hide, show, swap, swappable, reset, showToast,
         panels,
         titles: titles.current,
         visible: shown(layout, layout.items),

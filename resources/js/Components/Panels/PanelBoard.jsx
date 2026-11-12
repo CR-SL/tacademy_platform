@@ -99,7 +99,7 @@ function Box({ board, id, panel }) {
             {panel.summary && <span className="pn-sum">{panel.summary}</span>}
             {panel.mini}
             <span className="pn-tools">
-                <SwapMenu board={board} id={id} title={title} />
+                {board.swappable && <SwapMenu board={board} id={id} title={title} />}
                 <button type="button" className="pn-tool pn-fold" aria-expanded={!f.collapsed} aria-label={`${f.collapsed ? t('Abrir') : t('Minimizar')} ${title}`} title={f.collapsed ? t('Abrir') : t('Minimizar')} onClick={() => board.toggleFold(id)}><IconFold /></button>
                 <button type="button" className="pn-tool" aria-label={t('Fechar :title', { title })} title={t('Fechar')} onClick={() => board.hide(id)}><IconX /></button>
             </span>
