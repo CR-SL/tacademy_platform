@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Dropdown from '@/Components/Dropdown';
 import Logo from '@/Components/Logo';
@@ -12,6 +12,7 @@ import { ModulesRail, ModuleSheet, ModulesStrip } from '@/Components/Learn/Lesso
 import { IconCheck, IconDoc, IconDown, IconHelp, IconLeft, IconPen, IconRight, IconSide, IconSwap, IconUser, IconVideo, IconX } from '@/Components/Learn/LessonIcons';
 import { FlashToast } from '@/Components/Teams/ui';
 import { Toast } from '@/Components/ui';
+import AlexLessonPanel from '@/Components/Alex/AlexLessonPanel';
 import '../../../css/lesson.css';
 
 import { t } from '@/i18n';
@@ -101,6 +102,7 @@ const clampSplit = (v) => Math.max(MIN_PANEL, Math.min(100 - MIN_PANEL, v));
 // A aula conclui-se sozinha: o vídeo aos 90%; documento, texto e avatar ao abrir; o teste ao passar.
 export default function Lesson({ course, mode, program, lesson, position, progress, prev, next, avatarUrl, notes }) {
     const mobile = useMobile();
+    const { alex } = usePage().props; // o Alex nesta aula (curso com o Alex), ou null
     const canSave = mode === 'enrolled';
     const done = progress.status === 'completed';
     const videoLesson = isVideoType(lesson.type);
@@ -209,6 +211,11 @@ export default function Lesson({ course, mode, program, lesson, position, progre
         setAsk(true);
         setAskStarted(true);
         pauseVideo(); // o vídeo fica em pausa enquanto o aluno fala com o avatar
+    };
+    // O Alex (cursos com o Alex): abre e fecha o painel do avatar a partir da barra de baixo
+    const toggleAsk = () => {
+        if (!ask) { openAsk(); return; }
+        if (isLast('ask')) keepOne(); else setAsk(false);
     };
     const seekTo = (s) => {
         setShowVideo(true);
@@ -334,6 +341,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
             <button type="button" className="al-sw" data-tip={t('Vídeo')} aria-label={t('Vídeo')} aria-pressed={videoOn} disabled={!hasPlayer} onClick={toggleVideo}><IconVideo /></button>
             <button type="button" className="al-sw" data-tip={t('Material')} aria-label={t('Material')} aria-pressed={showMaterial} onClick={toggleMaterial}><IconDoc /></button>
             <button type="button" className="al-sw" data-tip={t('Notas')} aria-label={t('Notas')} aria-pressed={showNotes} onClick={toggleNotes}><IconPen /></button>
+            {alex && <button type="button" className="al-sw" data-tip={t('Alex')} aria-label={t('Falar com o Alex')} aria-pressed={avatarOn} disabled={running} onClick={toggleAsk}><IconUser /></button>}
             <span className="div" />
             <button type="button" className={`al-ev ${evaluation ? 'on' : ''}`} onClick={() => { if (!running) { setEvaluation(evaluation ? null : 'intro'); setSheet(null); } }}><IconUser />{t('Avaliação')}</button>
         </div>
@@ -352,6 +360,8 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                         <span className="al-orb" aria-hidden="true" />
                         <p>{t('O teste final com o avatar fica disponível em breve.')}</p>
                     </div>
+                ) : alex ? (
+                    <AlexLessonPanel alex={alex} open={avatarOn} onStart={pauseVideo} />
                 ) : avatarUrl ? (
                     askStarted && <iframe src={avatarUrl} title={t('Perguntar ao avatar')} allow="microphone; camera; autoplay" />
                 ) : (

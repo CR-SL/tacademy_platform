@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\AlexController;
 use App\Http\Controllers\Admin\AreaController;
 use App\Http\Controllers\Admin\PeopleController as AdminPeopleController;
 use App\Http\Controllers\CatalogController;
@@ -61,7 +62,13 @@ Route::middleware(['auth', 'verified'])->prefix('plataforma')->group(function ()
     Route::delete('/paineis/{view}', [PanelLayoutController::class, 'destroy'])->middleware('throttle:120,1')->name('panels.destroy');
     Route::post('/mensagens', [CourseMessageController::class, 'store'])->middleware('throttle:30,1')->name('messages.store');
     Route::post('/mensagens/lidas', [CourseMessageController::class, 'read'])->middleware('throttle:120,1')->name('messages.read');
+    // Conversas com o Alex (Tavus): o limite diário está no AlexService; aqui só se trava o abuso de pedidos
+    Route::post('/alex/conversas', [AlexController::class, 'store'])->middleware('throttle:10,1')->name('alex.start');
+    Route::post('/alex/conversas/{conversation}/terminar', [AlexController::class, 'end'])->middleware('throttle:30,1')->name('alex.end');
 });
+
+// Avisos do Tavus sobre as conversas do Alex (assinados; sem sessão nem CSRF)
+Route::post('/webhooks/tavus', [AlexController::class, 'webhook'])->middleware('throttle:120,1')->name('alex.webhook');
 
 // Página do curso e da aula do aluno
 Route::middleware(['auth', 'verified'])->group(function () {

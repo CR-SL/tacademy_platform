@@ -5,6 +5,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { setLocale } from './i18n';
+import AlexHost from './Components/Alex/AlexCall';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -24,7 +25,13 @@ createInertiaApp({
                 {({ Component, props: pageProps, key }) => {
                     setLocale(pageProps.locale);
                     const page = <Component {...pageProps} key={key} />;
-                    return Component.layout ? Component.layout(page) : page;
+                    // O Alex fica fora da página, para a conversa continuar quando o aluno muda de página
+                    return (
+                        <>
+                            {Component.layout ? Component.layout(page) : page}
+                            <AlexHost />
+                        </>
+                    );
                 }}
             </App>,
         );

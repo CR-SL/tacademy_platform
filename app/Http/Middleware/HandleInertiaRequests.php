@@ -51,6 +51,8 @@ class HandleInertiaRequests extends Middleware
             ],
             // Números da navegação (o que pede ação): mensagens por ler, cursos atribuídos por começar, equipa, presenças
             'navCounts' => fn () => $request->user() ? app(\App\Services\Tasks::class)->navCounts($request->user()) : [],
+            // O Alex (Tavus): onde pode ser chamado nesta página e quantas conversas faltam hoje; null onde não aparece
+            'alex' => fn () => app(\App\Services\AlexService::class)->forRequest($request),
             // Sino do Gestor de Cursos/admin: pedidos novos
             'staffInbox' => fn () => $request->user()?->isCourseStaff()
                 ? [

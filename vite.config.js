@@ -10,4 +10,7 @@ export default defineConfig({
         }),
         react(),
     ],
+    // O Daily (vídeo do Alex) só carrega quando o aluno começa uma conversa; pré-preparado no servidor
+    // de desenvolvimento para o Vite não o reotimizar a meio da sessão
+    optimizeDeps: { include: ['@daily-co/daily-js'] },
 });

@@ -20,6 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // A língua escolhida antes de entrar fica num cookie simples (não precisa de ser cifrado)
         $middleware->encryptCookies(except: ['lang']);
 
+        // Os avisos do Tavus chegam sem sessão: a assinatura X-Tavus-Signature substitui o CSRF
+        $middleware->validateCsrfTokens(except: ['webhooks/tavus']);
+
         // Railway (e outros PaaS) termina o HTTPS num proxy à frente da app.
         $middleware->trustProxies(at: '*');
     })

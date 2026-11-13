@@ -1,9 +1,10 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { IconArrow, IconBack, IconCorner, IconFold, IconGrip, IconPanels, IconX } from './icons';
 import { Bar as UiBar, Toast } from '@/Components/ui';
 
 import { t } from '@/i18n';
+import { AlexStart } from '@/Components/Alex/AlexCall';
 
 export function Bar({ value }) {
     return <UiBar value={value} className="mt-[5px]" />;
@@ -155,13 +156,17 @@ export function Crumb({ label, children }) {
     );
 }
 
-// O Alex: a API do avatar ainda não está ligada, por isso o botão só abre uma aula com avatar que já exista
+// O Alex: no Início e nas Avaliações (para quem tem um curso com o Alex) o botão começa a conversa;
+// nas outras páginas abre uma aula com avatar, se existir
 export function AlexPanel({ url }) {
+    const { alex } = usePage().props;
     return (
         <>
             <img className="pn-alex-p" src="/images/alex.png" alt={t('Alex, o tutor do curso, numa oficina')} />
             <div className="pn-alex-c">
-                {url ? (
+                {alex ? (
+                    <AlexStart alex={alex} />
+                ) : url ? (
                     <Link href={url} className="ui-btn ui-btn-line">{t('Falar com o Alex')}</Link>
                 ) : (
                     <>
