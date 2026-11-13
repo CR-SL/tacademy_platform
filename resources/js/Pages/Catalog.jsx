@@ -77,7 +77,12 @@ function Card({ c, i, onOpen }) {
             onClick={(e) => { e.preventDefault(); onOpen(c); }} onPointerMove={tilt} onPointerLeave={untilt}>
             <span className="cc-lift"><span className="cc-ph">
                 <img src={c.image} alt="" loading="lazy" width="440" height="550" />
-                {c.ai && <span className="cc-badges"><span className="cc-badge">{t('✦ Aula com IA')}</span></span>}
+                {(c.ai || c.alex) && (
+                    <span className="cc-badges">
+                        {c.alex && <span className="cc-badge">{t('✦ Com formador IA')}</span>}
+                        {c.ai && <span className="cc-badge">{t('✦ Aula com IA')}</span>}
+                    </span>
+                )}
                 <span className="cc-grad" aria-hidden="true" />
                 <span className="cc-glare" aria-hidden="true" />
                 <span className="cc-txt">
@@ -140,6 +145,7 @@ function Detail({ c, owned, pending, guest, onClose }) {
                         <div className="cc-d-head">
                             <span className="cc-mono">{c.areaName} · {t(c.level)}</span>
                             <h2 id="cc-d-title">{c.title}</h2>
+                            {c.alex && <span className="cc-tag">{t('✦ Com formador IA')}</span>}
                             {c.ai && <span className="cc-tag">{t('✦ Aula com IA')}</span>}
                         </div>
                         <div className="cc-stats">

@@ -5,7 +5,7 @@ import { t } from '@/i18n';
 const DEADLINES = [[null, 'Sem prazo'], [30, '30 dias'], [60, '60 dias'], [90, '90 dias'], [180, '6 meses']];
 
 // Passo 3 · Preço e acesso.
-export default function StepPrice({ c, update }) {
+export default function StepPrice({ c, update, canAlex }) {
     const lessons = c.modules.flatMap((m, mi) => m.lessons.map((l, li) => [l.key, `${mi + 1}.${li + 1} ${l.title || t('Aula sem título')}`]));
 
     return (
@@ -77,6 +77,34 @@ export default function StepPrice({ c, update }) {
                         {lessons.map(([k, tx]) => <option key={k} value={k}>{tx}</option>)}
                     </select>
                 </Field>
+            </Panel>
+
+            <Panel title={t('Formador IA (Alex)')} sub={t('O aluno fala com o Alex, um avatar com vídeo e voz, no Início, nas Avaliações e durante as aulas deste curso.')}>
+                {canAlex ? (
+                    <>
+                        <Toggle checked={c.alex_enabled} onChange={(v) => update((d) => { d.alex_enabled = v; })} title={t('Apoio do formador IA')}>
+                            {t('Cada conversa tem custo (minutos no Tavus). Até 15 minutos por conversa e 3 conversas por dia por aluno.')}
+                        </Toggle>
+                        {c.alex_enabled && (
+                            <div className="grid gap-x-4 pl-[52px] sm:grid-cols-2">
+                                <Field label={t('Alex do curso (PAL do Tavus)')} htmlFor="f-alex-pal" className="mb-0" help={t('Opcional. Vazio = o Alex geral da T.Academy.')}>
+                                    <input id="f-alex-pal" className={inputCls} value={c.alex_pal_id} maxLength={64} placeholder="p18d6e1b675e" autoComplete="off" spellCheck={false}
+                                        onChange={(e) => update((d) => { d.alex_pal_id = e.target.value.trim(); })} />
+                                </Field>
+                                <Field label={t('Rosto (face do Tavus)')} htmlFor="f-alex-face" className="mb-0" help={t('Opcional. Só se o PAL não tiver um rosto por omissão.')}>
+                                    <input id="f-alex-face" className={inputCls} value={c.alex_face_id} maxLength={64} placeholder="rdea4449f835" autoComplete="off" spellCheck={false}
+                                        onChange={(e) => update((d) => { d.alex_face_id = e.target.value.trim(); })} />
+                                </Field>
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <p className="text-muted">
+                        {c.alex_enabled
+                            ? t('Este curso tem o formador IA (Alex), ligado pela equipa T.Academy.')
+                            : <>{t('O formador IA (Alex) é ligado pela equipa T.Academy. Se o quiseres neste curso, ')}<a className="ui-link" href="/plataforma/contactos" target="_blank" rel="noopener noreferrer">{t('fala connosco')}</a>.</>}
+                    </p>
+                )}
             </Panel>
         </div>
     );

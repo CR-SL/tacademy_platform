@@ -59,6 +59,7 @@ class CatalogController extends Controller
                 'description' => $c->description,
                 'image' => $c->thumbnail_url ?: ($images[$c->slug] ?? $fallback),
                 'ai' => $lessons->contains('content_type', 'avatar'),
+                'alex' => (bool) $c->alex_enabled,
                 'lessons' => $lessons->count(),
                 'modules' => $c->modules->map(fn ($m) => [
                     'title' => $m->title,

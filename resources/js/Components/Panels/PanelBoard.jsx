@@ -156,22 +156,27 @@ export function Crumb({ label, children }) {
     );
 }
 
-// O Alex: no Início e nas Avaliações (para quem tem um curso com o Alex) o botão começa a conversa;
-// nas outras páginas abre uma aula com avatar, se existir
-export function AlexPanel({ url }) {
+// O Alex (formador IA): só fala com quem tem um curso com o formador IA ligado.
+// - nesta página pode falar: o botão começa a conversa;
+// - tem um curso com o Alex, mas fala com ele noutras páginas: diz onde;
+// - não tem nenhum curso com o Alex: diz que está nos cursos com formador IA e leva ao catálogo.
+export function AlexPanel() {
     const { alex } = usePage().props;
     return (
         <>
             <img className="pn-alex-p" src="/images/alex.png" alt={t('Alex, o tutor do curso, numa oficina')} />
             <div className="pn-alex-c">
-                {alex ? (
+                {alex?.place ? (
                     <AlexStart alex={alex} />
-                ) : url ? (
-                    <Link href={url} className="ui-btn ui-btn-line">{t('Falar com o Alex')}</Link>
+                ) : alex ? (
+                    <>
+                        <p className="pn-alex-note">{t('Fala com o Alex no Início, nas Avaliações ou nas aulas do teu curso com formador IA.')}</p>
+                        <Link href="/dashboard" className="ui-btn ui-btn-line">{t('Ir para o Início')}</Link>
+                    </>
                 ) : (
                     <>
-                        <button type="button" className="ui-btn ui-btn-line" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>{t('Falar com o Alex')}</button>
-                        <p className="pn-alex-note">{t('O Alex vai estar disponível em breve.')}</p>
+                        <p className="pn-alex-note">{t('O Alex está disponível nos cursos com formador IA.')}</p>
+                        <Link href="/plataforma/cursos" className="ui-btn ui-btn-line">{t('Ver o catálogo')}</Link>
                     </>
                 )}
             </div>
@@ -180,7 +185,7 @@ export function AlexPanel({ url }) {
 }
 
 export const alexDef = (url, y, h) => ({
-    title: t('Alex'), x: 19, y, w: 5, h, float: 'dark', summary: t('Tutor do curso'), compact: true, body: <AlexPanel url={url} />,
+    title: t('Alex'), x: 19, y, w: 5, h, float: 'dark', summary: t('Formador IA'), compact: true, body: <AlexPanel />,
 });
 
 export function EmptyPanel({ title, text, href, cta }) {

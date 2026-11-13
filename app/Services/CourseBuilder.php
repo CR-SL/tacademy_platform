@@ -63,6 +63,9 @@ class CourseBuilder
             'access_months' => $course->access_months,
             'deadline_days' => $course->deadline_days,
             'requires_attendance' => (bool) $course->requires_attendance,
+            'alex_enabled' => (bool) $course->alex_enabled,
+            'alex_pal_id' => $course->alex_pal_id ?? '',
+            'alex_face_id' => $course->alex_face_id ?? '',
             'certificate_enabled' => $course->certificate_enabled,
             'certificate_min_progress' => $course->certificate_min_progress,
             'certificate_min_score' => $course->certificate_min_score,
@@ -126,6 +129,14 @@ class CourseBuilder
                 'certificate_min_progress' => $data['certificate_min_progress'] ?? 100,
                 'certificate_min_score' => $data['certificate_min_score'] ?? 70,
             ]);
+            // Formador IA (Alex): o controlador só deixa passar estes campos a quem tem a permissão cursos.alex
+            if (array_key_exists('alex_enabled', $data)) {
+                $course->fill([
+                    'alex_enabled' => (bool) $data['alex_enabled'],
+                    'alex_pal_id' => ($data['alex_pal_id'] ?? null) ?: null,
+                    'alex_face_id' => ($data['alex_face_id'] ?? null) ?: null,
+                ]);
+            }
 
             // O endereço só muda enquanto o curso não está publicado (links partilhados não partem)
             if ($course->status !== 'published' || ! $course->slug) {

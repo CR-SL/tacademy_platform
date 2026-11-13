@@ -15,6 +15,7 @@ class Permissions
         'cursos.criar' => 'Criar e editar os próprios cursos',
         'cursos.publicar' => 'Publicar os próprios cursos no catálogo',
         'cursos.todos' => 'Editar qualquer curso do catálogo',
+        'cursos.alex' => 'Ligar o formador IA (Alex) nos cursos',
         'equipa' => 'Acompanhar a sua equipa, enviar lembretes e atribuir cursos',
         'pedidos' => 'Tratar pedidos e autorizar compras',
         'equipas' => 'Criar e gerir equipas de empresas',
@@ -26,7 +27,7 @@ class Permissions
         'aluno' => ['aprender'],
         'formador' => ['cursos.criar', 'cursos.publicar'],
         'team_leader' => ['aprender', 'equipa'],
-        'gestor_cursos' => ['pedidos', 'equipas'],
+        'gestor_cursos' => ['pedidos', 'equipas', 'cursos.alex'],
     ];
 
     /** Perfis pela ordem em que aparecem, com o nome a mostrar e uma frase. */

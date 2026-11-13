@@ -36,11 +36,11 @@ class AlexTest extends TestCase
             'services.tavus.base_url' => 'https://tavus.test',
             'services.tavus.pal_id' => 'p-alex',
             'services.tavus.face_id' => 'r-face',
-            'services.tavus.courses' => 'diagnostico-automovel',
             'services.tavus.minutes' => 15,
             'services.tavus.per_day' => 3,
         ]);
         $this->diag = $this->course('Diagnóstico Automóvel', 'diagnostico-automovel');
+        $this->diag->update(['alex_enabled' => true]);
         $this->other = $this->course('Gestão de Oficina', 'gestao-oficina');
         Http::fake([
             'tavus.test/v2/conversations' => Http::sequence()
@@ -93,13 +93,14 @@ class AlexTest extends TestCase
         // Noutros cursos e noutras páginas não aparece
         $other = $this->lessonOf($this->other);
         $this->actingAs($u)->get("/plataforma/cursos/{$this->other->slug}/aulas/{$other->ulid}")->assertInertia(fn ($p) => $p->where('alex', null));
-        $this->actingAs($u)->get('/plataforma/meus-cursos')->assertInertia(fn ($p) => $p->where('alex', null));
+        $this->actingAs($u)->get('/plataforma/meus-cursos')->assertInertia(fn ($p) => $p->where('alex', ['place' => null]));
     }
 
     public function test_students_without_the_course_or_without_a_key_do_not_get_the_alex(): void
     {
         $outsider = $this->student($this->other);
         $this->actingAs($outsider)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex', null));
+        $this->actingAs($outsider)->get('/plataforma/meus-cursos')->assertInertia(fn ($p) => $p->where('alex', null));
         $this->actingAs($outsider)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertForbidden();
         $lesson = $this->lessonOf($this->diag);
         $this->actingAs($outsider)->postJson('/plataforma/alex/conversas', ['place' => 'aula', 'lesson' => $lesson->ulid])->assertForbidden();
@@ -208,5 +209,27 @@ class AlexTest extends TestCase
         $c = AlexConversation::first();
         $this->assertSame(['ended', 'max_call_duration reached'], [$c->status, $c->end_reason]);
         $this->assertSame('Olá', $c->transcript[0]['content']);
+    }
+
+    public function test_each_course_can_have_its_own_alex(): void
+    {
+        $this->other->update(['alex_enabled' => true, 'alex_pal_id' => 'p-oficina']);
+        $u = $this->student($this->diag, $this->other);
+        // Inscrição mais recente: Gestão de Oficina (com o seu próprio Alex)
+        Enrollment::where('user_id', $u->id)->where('course_id', $this->other->id)->update(['enrolled_at' => now()->addMinute()]);
+
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertCreated();
+        Http::assertSent(fn (HttpRequest $r) => $r->url() === 'https://tavus.test/v2/conversations'
+            && $r->data()['pal_id'] === 'p-oficina' && ! isset($r->data()['face_id']));
+
+        // Na aula do Diagnóstico fala o Alex geral, com o rosto geral
+        $lesson = $this->lessonOf($this->diag);
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'aula', 'lesson' => $lesson->ulid])->assertCreated();
+        Http::assertSent(fn (HttpRequest $r) => $r->url() === 'https://tavus.test/v2/conversations'
+            && $r->data()['pal_id'] === 'p-alex' && ($r->data()['face_id'] ?? null) === 'r-face');
+
+        // Sem o Alex ligado, o curso deixa de o ter
+        $this->diag->update(['alex_enabled' => false]);
+        $this->actingAs($u)->get("/plataforma/cursos/{$this->diag->slug}/aulas/{$lesson->ulid}")->assertInertia(fn ($p) => $p->where('alex', null));
     }
 }

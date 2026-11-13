@@ -19,7 +19,7 @@ const STEPS = [
 const SAVE_DELAY = 1200;
 
 // Editor de cursos dos formadores: assistente em 4 passos que se guarda sozinho.
-export default function CourseEditor({ course, categories, library, shortMax }) {
+export default function CourseEditor({ course, categories, library, shortMax, canAlex }) {
     const [c, setC] = useState(() => course ?? blankCourse());
     const [step, setStep] = useState(0);
     const [openKey, setOpenKey] = useState(() => (course ? null : blankFirstLesson(c)));
@@ -212,7 +212,7 @@ export default function CourseEditor({ course, categories, library, shortMax }) 
                     )}
                     {step === 0 && <StepInfo c={c} update={update} categories={categories} library={library} shortMax={shortMax} upload={upload} />}
                     {step === 1 && <StepProgram c={c} update={update} upload={upload} openKey={openKey} setOpenKey={setOpenKey} />}
-                    {step === 2 && <StepPrice c={c} update={update} />}
+                    {step === 2 && <StepPrice c={c} update={update} canAlex={canAlex} />}
                     {step === 3 && (
                         <StepReview
                             c={c}

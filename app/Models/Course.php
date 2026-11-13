@@ -39,6 +39,9 @@ class Course extends Model
         'certificate_min_progress',
         'certificate_min_score',
         'requires_attendance',
+        'alex_enabled',
+        'alex_pal_id',
+        'alex_face_id',
         'sample_lesson_id',
     ];
 
@@ -52,6 +55,7 @@ class Course extends Model
             'access_months' => 'integer',
             'deadline_days' => 'integer',
             'requires_attendance' => 'boolean',
+            'alex_enabled' => 'boolean',
             'certificate_enabled' => 'boolean',
             'certificate_min_progress' => 'integer',
             'certificate_min_score' => 'integer',

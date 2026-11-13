@@ -32,7 +32,12 @@ class AlexService
 
     // ---------------------------------------------------------------- onde aparece
 
-    /** Dados para as páginas (prop partilhada `alex`), ou null quando o Alex não aparece aqui. */
+    /**
+     * Dados para as páginas (prop partilhada `alex`):
+     * - com `place`: nesta página o aluno pode falar com o Alex;
+     * - com `place` null: o aluno tem um curso com o Alex, mas fala com ele noutras páginas;
+     * - null: sem Alex (sem curso com formador IA, ou numa aula de um curso sem o Alex).
+     */
     public function forRequest(Request $request): ?array
     {
         $user = $request->user();
@@ -47,7 +52,7 @@ class AlexService
             default => null,
         };
         if (! $place) {
-            return null;
+            return $this->hasAccess($user) ? ['place' => null] : null;
         }
 
         $lesson = null;
@@ -70,12 +75,10 @@ class AlexService
         ];
     }
 
-    /** Cursos com o Alex: os slugs em TAVUS_ALEX_COURSES e os que têm "avac" no endereço. */
+    /** Cursos com o Alex: ligado no editor do curso (formador IA). */
     public function isAlexCourse(Course $course): bool
     {
-        $slugs = array_filter(array_map('trim', explode(',', (string) config('services.tavus.courses'))));
-
-        return in_array($course->slug, $slugs, true) || Str::contains($course->slug, 'avac');
+        return (bool) $course->alex_enabled;
     }
 
     /** Inscrito (com acesso válido) num curso com o Alex; o admin pode sempre, para testar. */
@@ -90,10 +93,10 @@ class AlexService
             && in_array($this->learning->access($user, $course)['mode'], ['enrolled', 'preview'], true);
     }
 
-    /** @return Collection<int, Course> */
+    /** Cursos do aluno com o Alex, do mais recente para o mais antigo. @return Collection<int, Course> */
     private function alexCourses(User $user): Collection
     {
-        return Enrollment::with('course')->where('user_id', $user->id)->get()
+        return Enrollment::with('course')->where('user_id', $user->id)->orderByDesc('enrolled_at')->get()
             ->map(fn ($e) => $e->course)
             ->filter(fn ($c) => $c && $this->isAlexCourse($c) && $this->learning->access($user, $c)['mode'] === 'enrolled')
             ->values();
@@ -140,6 +143,9 @@ class AlexService
             }
         } elseif (! in_array($place, self::PLACES, true) || ! $this->hasAccess($user)) {
             throw new AuthorizationException;
+        } else {
+            // No Início e nas Avaliações fala o Alex do curso mais recente do aluno (ou o Alex geral)
+            $course = $this->alexCourses($user)->first();
         }
 
         if ($this->leftToday($user) <= 0) {
@@ -229,8 +235,11 @@ class AlexService
 
     private function payload(User $user, string $place, ?Course $course, ?Lesson $lesson): array
     {
+        // O Alex do curso, se o curso tiver um; senão o Alex geral (config). O rosto acompanha o PAL escolhido.
+        $ownPal = $course?->alex_pal_id;
+        $face = $course?->alex_face_id ?: ($ownPal ? null : config('services.tavus.face_id'));
         $payload = [
-            'pal_id' => config('services.tavus.pal_id'),
+            'pal_id' => $ownPal ?: config('services.tavus.pal_id'),
             'conversation_name' => Str::limit('T.Academy · '.$user->name.' · '.$place, 100, ''),
             'conversational_context' => Str::limit($this->context($user, $place, $course, $lesson), 3500),
             'custom_greeting' => $this->greeting($user, $place, $lesson),
@@ -245,7 +254,7 @@ class AlexService
                 'languages' => ['pt'],
             ],
         ];
-        if ($face = config('services.tavus.face_id')) {
+        if ($face) {
             $payload['face_id'] = $face;
         }
         // Os avisos do Tavus só chegam a um endereço público (produção)
@@ -272,6 +281,10 @@ class AlexService
     private function context(User $user, string $place, ?Course $course, ?Lesson $lesson): string
     {
         $lines = ["O aluno chama-se {$user->name}. Fala em português de Portugal e trata-o por tu. Está na plataforma de cursos T.Academy."];
+
+        if ($course && $place !== 'aula') {
+            $lines[] = "És o formador IA do curso \"{$course->title}\".";
+        }
 
         if ($place === 'aula' && $course && $lesson) {
             $lessons = $this->learning->lessons($course);

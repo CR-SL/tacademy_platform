@@ -273,4 +273,28 @@ class CourseBuilderTest extends TestCase
             'chunk' => UploadedFile::fake()->createWithContent('chunk', 'x'),
         ], ['Accept' => 'application/json'])->assertStatus(409);
     }
+
+    public function test_only_staff_with_permission_turn_on_the_ai_trainer(): void
+    {
+        $formador = $this->user('formador');
+        $alex = ['alex_enabled' => true, 'alex_pal_id' => 'p-curso', 'alex_face_id' => ''];
+
+        // O formador não liga o Alex (custa minutos no Tavus): o pedido grava o resto e ignora estes campos
+        $this->actingAs($formador)->postJson('/formador/cursos', $this->payload($alex))->assertCreated();
+        $course = Course::firstOrFail();
+        $this->assertFalse($course->alex_enabled);
+        $this->actingAs($formador)->get("/formador/cursos/{$course->ulid}/editar")->assertInertia(fn ($p) => $p->where('canAlex', false));
+
+        // O admin liga (edita qualquer curso); o gestor de cursos também tem a permissão
+        $this->actingAs($this->user('admin'))->putJson("/formador/cursos/{$course->ulid}", $this->payload($alex))->assertOk();
+        $course->refresh();
+        $this->assertTrue($course->alex_enabled);
+        $this->assertSame('p-curso', $course->alex_pal_id);
+        $this->assertTrue($this->user('gestor_cursos')->canDo('cursos.alex'));
+        $this->assertFalse($formador->canDo('cursos.alex'));
+
+        // Um formador que volta a gravar o curso não desliga o Alex
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $this->payload(['alex_enabled' => false]))->assertOk();
+        $this->assertTrue($course->fresh()->alex_enabled);
+    }
 }

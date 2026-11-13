@@ -263,6 +263,8 @@ class CourseBuilderController extends Controller
                     '/images/cursos/geometria-suspensao.jpg', '/images/cursos/pintura.jpg', '/images/cursos/travagem-abs.jpg'],
             ))),
             'shortMax' => CourseBuilder::SHORT_MAX,
+            // Só o admin e o gestor de cursos ligam o formador IA (Alex): custa minutos no Tavus
+            'canAlex' => (bool) request()->user()?->canDo('cursos.alex'),
             'videoMaxMb' => config('tacademy.video_max_mb'),
         ]);
     }
@@ -271,7 +273,7 @@ class CourseBuilderController extends Controller
     {
         $types = array_merge(CourseBuilder::LESSON_TYPES, ['video_upload', 'live']); // aulas antigas do backoffice
 
-        return $request->validate([
+        $data = $request->validate([
             'title' => ['nullable', 'string', 'max:200'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'level' => ['nullable', Rule::in(array_keys(Course::LEVELS))],
@@ -292,6 +294,9 @@ class CourseBuilderController extends Controller
                 if ($value && $months && $value > $months * 30) $fail(__('O prazo não pode ser maior do que a validade do acesso.'));
             }],
             'requires_attendance' => ['boolean'],
+            'alex_enabled' => ['boolean'],
+            'alex_pal_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'alex_face_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
             'certificate_enabled' => ['boolean'],
             'certificate_min_progress' => ['integer', 'between:0,100'],
             'certificate_min_score' => ['integer', 'between:0,100'],
@@ -324,5 +329,11 @@ class CourseBuilderController extends Controller
             'modules.*.lessons.*.checks.*.correct' => ['integer', 'min:0'],
             'modules.*.lessons.*.checks.*.explanation' => ['nullable', 'string', 'max:500'],
         ]);
+
+        if (! $request->user()->canDo('cursos.alex')) {
+            unset($data['alex_enabled'], $data['alex_pal_id'], $data['alex_face_id']);
+        }
+
+        return $data;
     }
 }
