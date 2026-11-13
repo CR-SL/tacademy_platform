@@ -43,6 +43,7 @@ class RequestController extends Controller
                 'team_size' => $r->team_size,
                 'course' => $r->course ? ['id' => $r->course->id, 'title' => $r->course->title] : null,
                 'packs' => $r->packs,
+                'credits' => $r->credits,
                 'people' => $r->people ?? [],
                 'change_type' => $r->change_type,
                 'team' => $r->team ? ['id' => $r->team->id, 'ulid' => $r->team->ulid, 'name' => $r->team->name] : null,
@@ -120,9 +121,12 @@ class RequestController extends Controller
         return to_route('staff.teams.show', $company)->with('status', __('Equipa criada. Os convites foram enviados por email.'));
     }
 
-    /** Compra a título pessoal (pagamento simulado, estado "Pago") → dá acesso ao curso. */
+    /** Compra a título pessoal (pagamento simulado, estado "Pago") → dá acesso ao curso, ou os créditos de avatar. */
     public function authorizePurchase(Request $request, ContactRequest $contactRequest): RedirectResponse
     {
+        if ($contactRequest->kind === 'creditos') {
+            return $this->authorizeCredits($request, $contactRequest);
+        }
         abort_unless($contactRequest->kind === 'compra' && $contactRequest->type === 'particular' && $contactRequest->status === 'pago'
             && $contactRequest->user_id && $contactRequest->course_id, 422, __('Este pedido não é uma compra pessoal paga.'));
 
@@ -139,5 +143,25 @@ class RequestController extends Controller
         )));
 
         return back()->with('status', __('Acesso autorizado. :name já tem o curso.', ['name' => $student->name]));
+    }
+
+    /** Compra de créditos de avatar paga → os créditos entram na conta do aluno. */
+    private function authorizeCredits(Request $request, ContactRequest $contactRequest): RedirectResponse
+    {
+        abort_unless($contactRequest->status === 'pago' && $contactRequest->user_id && $contactRequest->credits > 0, 422, __('Este pedido não é uma compra de créditos paga.'));
+
+        $student = User::findOrFail($contactRequest->user_id);
+        $student->increment('alex_credits', $contactRequest->credits);
+        $contactRequest->update(['status' => 'concluido', 'assigned_to' => $contactRequest->assigned_to ?? $request->user()->id]);
+
+        PlatformMail::inLocaleOf($student, fn () => PlatformMail::deliver($student->email, new PlatformMail(
+            subjectLine: __('Os teus créditos de avatar já estão disponíveis'),
+            heading: __('Olá :name, já podes falar com o Alex', ['name' => Str::before($student->name, ' ')]),
+            lines: [__('A tua compra de :n créditos foi autorizada. Cada crédito vale uma conversa com o Alex.', ['n' => $contactRequest->credits])],
+            actionText: __('Falar com o Alex'),
+            actionUrl: url('/dashboard'),
+        )));
+
+        return back()->with('status', __(':name recebeu :n créditos de avatar.', ['name' => $student->name, 'n' => $contactRequest->credits]));
     }
 }

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
 import StepInfo from '@/Components/CourseBuilder/StepInfo';
 import StepProgram from '@/Components/CourseBuilder/StepProgram';
+import StepAvatar from '@/Components/CourseBuilder/StepAvatar';
 import StepPrice from '@/Components/CourseBuilder/StepPrice';
 import StepReview from '@/Components/CourseBuilder/StepReview';
 import { blankCourse, checklist } from '@/Components/CourseBuilder/model';
@@ -13,13 +14,15 @@ import { t } from '@/i18n';
 const STEPS = [
     ['Informação', 'Título, área, capa'],
     ['Programa', 'Módulos e aulas'],
+    ['Avatar', 'Formador IA'],
     ['Preço e acesso', 'Preço, certificado'],
     ['Rever e publicar', 'Pré-visualizar'],
 ];
 const SAVE_DELAY = 1200;
+const LAST = STEPS.length - 1; // Rever e publicar
 
-// Editor de cursos dos formadores: assistente em 4 passos que se guarda sozinho.
-export default function CourseEditor({ course, categories, library, shortMax, canAlex }) {
+// Editor de cursos dos formadores: assistente em 5 passos que se guarda sozinho.
+export default function CourseEditor({ course, categories, library, shortMax, canAlex, canManageAlex }) {
     const [c, setC] = useState(() => course ?? blankCourse());
     const [step, setStep] = useState(0);
     const [openKey, setOpenKey] = useState(() => (course ? null : blankFirstLesson(c)));
@@ -179,7 +182,7 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                         {t('← Os meus cursos')}
                     </Link>
                     {STEPS.map(([pt, ps], i) => { const [title, sub] = [t(pt), t(ps)];
-                        const done = i !== step && i < 3 && doneStep(i);
+                        const done = i !== step && i < LAST && doneStep(i);
                         return (
                             <button
                                 key={title}
@@ -212,8 +215,9 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                     )}
                     {step === 0 && <StepInfo c={c} update={update} categories={categories} library={library} shortMax={shortMax} upload={upload} />}
                     {step === 1 && <StepProgram c={c} update={update} upload={upload} openKey={openKey} setOpenKey={setOpenKey} />}
-                    {step === 2 && <StepPrice c={c} update={update} canAlex={canAlex} />}
-                    {step === 3 && (
+                    {step === 2 && <StepAvatar c={c} update={update} canAlex={canAlex} canManageAlex={canManageAlex} />}
+                    {step === 3 && <StepPrice c={c} update={update} />}
+                    {step === LAST && (
                         <StepReview
                             c={c}
                             categories={categories}
@@ -232,7 +236,7 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                                 {t('← Anterior')}
                             </button>
                         ) : <span />}
-                        {step < 3 && (
+                        {step < LAST && (
                             <button type="button" onClick={() => goTo(step + 1)} className="ui-btn">
                                 {t('Seguinte →')}
                             </button>

@@ -5,7 +5,7 @@ import { checklist, lessonCount, totalMinutes } from './model';
 
 import { t } from '@/i18n';
 
-// Passo 4 · Rever e publicar: o cartão do catálogo e o que ainda falta.
+// Passo 5 · Rever e publicar: o cartão do catálogo e o que ainda falta.
 export default function StepReview({ c, categories, shortMax, goTo, onPublish, onUnpublish, publishing, error }) {
     // Sem permissão para publicar (Administração › Permissões), o curso fica em rascunho até alguém o publicar
     const { can } = usePage().props;

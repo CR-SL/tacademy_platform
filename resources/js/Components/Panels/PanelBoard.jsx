@@ -4,7 +4,7 @@ import { IconArrow, IconBack, IconCorner, IconFold, IconGrip, IconPanels, IconX 
 import { Bar as UiBar, Toast } from '@/Components/ui';
 
 import { t } from '@/i18n';
-import { AlexStart } from '@/Components/Alex/AlexCall';
+import { AlexBuy, AlexStart } from '@/Components/Alex/AlexCall';
 
 export function Bar({ value }) {
     return <UiBar value={value} className="mt-[5px]" />;
@@ -156,10 +156,11 @@ export function Crumb({ label, children }) {
     );
 }
 
-// O Alex (formador IA): só fala com quem tem um curso com o formador IA ligado.
+// O Alex (formador IA): fala com quem tem um curso com o avatar (conversas grátis por dia) ou créditos.
 // - nesta página pode falar: o botão começa a conversa;
-// - tem um curso com o Alex, mas fala com ele noutras páginas: diz onde;
-// - não tem nenhum curso com o Alex: diz que está nos cursos com formador IA e leva ao catálogo.
+// - pode falar, mas noutras páginas: diz onde;
+// - aluno sem curso com o avatar e sem créditos: a caixa fica, com a compra de créditos;
+// - os outros (sem Alex): leva ao catálogo.
 export function AlexPanel() {
     const { alex } = usePage().props;
     return (
@@ -168,6 +169,8 @@ export function AlexPanel() {
             <div className="pn-alex-c">
                 {alex?.place ? (
                     <AlexStart alex={alex} />
+                ) : alex?.buy ? (
+                    <AlexBuy alex={alex} lead={t('Fala com o Alex nos cursos com IA ou com créditos de avatar.')} />
                 ) : alex ? (
                     <>
                         <p className="pn-alex-note">{t('Fala com o Alex no Início, nas Avaliações ou nas aulas do teu curso com formador IA.')}</p>

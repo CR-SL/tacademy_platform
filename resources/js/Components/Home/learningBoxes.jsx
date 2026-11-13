@@ -1,4 +1,5 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
+import { AlexBuy, AlexStart } from '@/Components/Alex/AlexCall';
 import { useEffect, useRef, useState } from 'react';
 import { formatEuro, formatMinutes, levelLabels, plural } from '@/Components/CourseBuilder/format';
 import { alexDef, Bar, EmptyPanel, moduleName } from '@/Components/Panels/PanelBoard';
@@ -262,6 +263,7 @@ export function learningBoxes({ courses, resume, results, notes, suggestions, al
 
 /** Primeiro uso (opção A, 2026-11-08): boas-vindas e três cursos reais do catálogo. */
 export function Welcome({ firstName, starter }) {
+    const { alex } = usePage().props;
     return (
         <div className="pn-root mx-auto max-w-[1180px] py-4 sm:py-10">
             <h1 className="pn-disp text-[clamp(32px,4.4vw,52px)] leading-[1.02]">{t('Olá')}{firstName ? `, ${firstName}` : ''}.</h1>
@@ -297,6 +299,19 @@ export function Welcome({ firstName, starter }) {
                 <Link href="/plataforma/cursos" className="ui-btn ui-btn-accent">{t('Ver o catálogo')}</Link>
                 <p className="text-[14px] text-muted">{t('Vens de uma empresa? Os cursos que ela te atribuir aparecem aqui.')}</p>
             </div>
+
+            {/* O Alex logo no primeiro uso: o aluno fica a saber que pode falar com o avatar (cursos com IA ou créditos) */}
+            {(alex?.place || alex?.buy) && (
+                <section aria-labelledby="w-alex" className="w-alex mt-10">
+                    <img src="/images/alex.png" alt={t('Alex, o tutor do curso, numa oficina')} />
+                    <div className="w-alex-c">
+                        <span className="pn-lab">{t('Formador IA')}</span>
+                        <h2 id="w-alex" className="pn-disp text-[24px] leading-[1.1]">{t('Conhece o Alex')}</h2>
+                        <p className="max-w-[52ch] text-[14.5px] text-text">{t('Um avatar com vídeo e voz que te tira dúvidas sobre os cursos, a qualquer hora. Vem incluído nos cursos com IA e também podes falar com ele com créditos.')}</p>
+                        {alex.place ? <AlexStart alex={alex} block={false} /> : <AlexBuy alex={alex} />}
+                    </div>
+                </section>
+            )}
         </div>
     );
 }

@@ -166,7 +166,7 @@ a.al-les:hover { background: var(--al-hover); }
 
 /* Início da avaliação (amarelo nos dois temas) */
 .al-intro { position: fixed; inset: 0; z-index: 100; background: #FDB51F; color: #18181B; display: flex; align-items: center; padding: 32px clamp(24px, 20%, 230px); overflow: auto; animation: al-intro .5s var(--al-ease); }
-@keyframes al-intro { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0); } }
+@keyframes al-intro { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
 .al-intro h2 { margin: 0 0 14px; font-size: clamp(30px, 4.4vw, 46px); line-height: 1.05; font-weight: 700; letter-spacing: -.025em; }
 .al-intro p { margin: 0 0 16px; font-size: clamp(15px, 1.5vw, 17.5px); max-width: 620px; line-height: 1.5; }
 .al-intro .bs { font-size: 20px; font-weight: 700; margin-bottom: 22px; }

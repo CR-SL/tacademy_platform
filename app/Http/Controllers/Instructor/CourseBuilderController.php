@@ -263,8 +263,9 @@ class CourseBuilderController extends Controller
                     '/images/cursos/geometria-suspensao.jpg', '/images/cursos/pintura.jpg', '/images/cursos/travagem-abs.jpg'],
             ))),
             'shortMax' => CourseBuilder::SHORT_MAX,
-            // Só o admin e o gestor de cursos ligam o formador IA (Alex): custa minutos no Tavus
-            'canAlex' => (bool) request()->user()?->canDo('cursos.alex'),
+            // Avatar (Alex): o formador liga-o nos seus cursos; o admin e o gestor de cursos também o bloqueiam
+            'canAlex' => (bool) (request()->user()?->canDo('cursos.alex') || request()->user()?->canDo('cursos.alex.gerir')),
+            'canManageAlex' => (bool) request()->user()?->canDo('cursos.alex.gerir'),
             'videoMaxMb' => config('tacademy.video_max_mb'),
         ]);
     }
@@ -297,6 +298,7 @@ class CourseBuilderController extends Controller
             'alex_enabled' => ['boolean'],
             'alex_pal_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
             'alex_face_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'alex_blocked' => ['boolean'],
             'certificate_enabled' => ['boolean'],
             'certificate_min_progress' => ['integer', 'between:0,100'],
             'certificate_min_score' => ['integer', 'between:0,100'],
@@ -330,8 +332,15 @@ class CourseBuilderController extends Controller
             'modules.*.lessons.*.checks.*.explanation' => ['nullable', 'string', 'max:500'],
         ]);
 
-        if (! $request->user()->canDo('cursos.alex')) {
-            unset($data['alex_enabled'], $data['alex_pal_id'], $data['alex_face_id']);
+        // Avatar (Alex): quem gere (admin, gestor de cursos) muda tudo, bloqueio incluído; o formador liga-o
+        // e desliga-o nos seus cursos, a não ser que a equipa o tenha bloqueado nesse curso
+        $user = $request->user();
+        if (! $user->canDo('cursos.alex.gerir')) {
+            $course = $request->route('course');
+            unset($data['alex_blocked']);
+            if (! $user->canDo('cursos.alex') || ($course instanceof Course && $course->alex_blocked)) {
+                unset($data['alex_enabled'], $data['alex_pal_id'], $data['alex_face_id']);
+            }
         }
 
         return $data;

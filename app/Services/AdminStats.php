@@ -153,7 +153,7 @@ class AdminStats
                 $items[] = ['kind' => 'curso', 'title' => $c['title'], 'text' => __(':enrolled inscritos e só :done concluíram.', ['enrolled' => $c['enrolled'], 'done' => $c['done']]), 'url' => '/administracao/cursos/'.$c['ulid']];
             }
         }
-        $waiting = ContactRequest::where('kind', 'compra')->where('status', 'pago')->where('created_at', '<=', now()->subDays(2))->count();
+        $waiting = ContactRequest::whereIn('kind', ['compra', 'creditos'])->where('status', 'pago')->where('created_at', '<=', now()->subDays(2))->count();
         if ($waiting) {
             $items[] = ['kind' => 'pedidos', 'title' => trans_choice('{1} 1 compra à espera de autorização|[2,*] :count compras à espera de autorização', $waiting), 'text' => __('Há mais de 2 dias. Os alunos ainda não têm acesso.'), 'url' => '/gestao/pedidos'];
         }

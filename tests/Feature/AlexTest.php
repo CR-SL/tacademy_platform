@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AlexConversation;
 use App\Models\Category;
+use App\Models\ContactRequest;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
@@ -11,6 +12,7 @@ use App\Models\Module;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -98,9 +100,10 @@ class AlexTest extends TestCase
 
     public function test_students_without_the_course_or_without_a_key_do_not_get_the_alex(): void
     {
+        // Sem curso com o avatar e sem créditos: a caixa do Alex mostra a compra de créditos, sem conversa
         $outsider = $this->student($this->other);
-        $this->actingAs($outsider)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex', null));
-        $this->actingAs($outsider)->get('/plataforma/meus-cursos')->assertInertia(fn ($p) => $p->where('alex', null));
+        $this->actingAs($outsider)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.place', null)->where('alex.buy', true)->has('alex.packs', 3));
+        $this->actingAs($outsider)->get('/plataforma/meus-cursos')->assertInertia(fn ($p) => $p->where('alex.buy', true));
         $this->actingAs($outsider)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertForbidden();
         $lesson = $this->lessonOf($this->diag);
         $this->actingAs($outsider)->postJson('/plataforma/alex/conversas', ['place' => 'aula', 'lesson' => $lesson->ulid])->assertForbidden();
@@ -184,6 +187,56 @@ class AlexTest extends TestCase
         $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertStatus(503);
         $this->assertSame('failed', AlexConversation::value('status'));
         $this->actingAs($u)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.left', 3));
+    }
+
+    public function test_credits_are_bought_authorized_and_spent_one_per_conversation(): void
+    {
+        $outsider = $this->student($this->other);
+        $gestor = User::factory()->create(['role_id' => Role::where('name', 'gestor_cursos')->value('id')]);
+
+        // Compra: fica um pedido "Pago" (simulado) à espera do gestor; uma de cada vez; só pacotes à venda
+        $this->actingAs($outsider)->post('/plataforma/alex/creditos', ['credits' => 7])->assertSessionHasErrors('credits');
+        $this->actingAs($outsider)->post('/plataforma/alex/creditos', ['credits' => 5])->assertRedirect();
+        $this->actingAs($outsider)->post('/plataforma/alex/creditos', ['credits' => 10])->assertRedirect();
+        $request = ContactRequest::where('kind', 'creditos')->sole();
+        $this->assertSame([5, 'pago'], [$request->credits, $request->status]);
+        $this->assertSame(0, $outsider->fresh()->alex_credits);
+        $this->actingAs($outsider)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.buy', true)->where('alex.pending', 5));
+
+        // O gestor autoriza: os créditos entram e o Alex passa a falar no Início
+        $this->actingAs($gestor)->post("/gestao/pedidos/{$request->id}/autorizar")->assertRedirect();
+        $this->assertSame(5, $outsider->refresh()->alex_credits);
+        $this->assertSame('concluido', $request->fresh()->status);
+        $this->actingAs($outsider)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.place', 'inicio')->where('alex.credits', 5)->where('alex.left', 0)->where('alex.free', false));
+
+        // Cada conversa gasta 1 crédito
+        $this->actingAs($outsider)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertCreated()->assertJsonPath('credits', 4);
+        $this->assertTrue(AlexConversation::first()->paid_credit);
+    }
+
+    public function test_after_the_free_conversations_a_course_student_can_use_credits(): void
+    {
+        $u = $this->student($this->diag);
+        $u->forceFill(['alex_credits' => 1])->save();
+
+        foreach ([2, 1, 0] as $left) {
+            $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertCreated()->assertJsonPath('left', $left)->assertJsonPath('credits', 1);
+        }
+        // A 4.ª do dia gasta o crédito; sem créditos, acabou por hoje
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertCreated()->assertJsonPath('credits', 0);
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertStatus(429);
+        $this->assertSame(1, AlexConversation::where('paid_credit', true)->count());
+    }
+
+    public function test_a_tavus_failure_gives_the_credit_back(): void
+    {
+        Http::swap(new HttpFactory);
+        Http::fake(['tavus.test/*' => Http::response(['message' => 'boom'], 500)]);
+        $u = $this->student($this->other);
+        $u->forceFill(['alex_credits' => 2])->save();
+
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertStatus(503);
+        $this->assertSame(2, $u->fresh()->alex_credits);
     }
 
     public function test_tavus_callbacks_must_be_signed_and_close_the_conversation(): void

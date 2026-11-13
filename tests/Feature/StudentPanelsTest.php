@@ -210,10 +210,11 @@ class StudentPanelsTest extends TestCase
     public function test_the_enrolled_course_page_and_my_courses_open(): void
     {
         $this->actingAs($this->student)->get('/plataforma/meus-cursos')->assertInertia(fn ($page) => $page->component('Student/MyCourses')->has('courses', 1));
-        $this->actingAs($this->student)->get('/plataforma/cursos/calibracao-adas')->assertOk()->assertInertia(fn ($page) => $page
-            ->component('Learn/Course')
-            ->where('access.mode', 'enrolled')
-            ->where('savedLayout', null)
+        $this->actingAs($this->student)->get('/plataforma/cursos/calibracao-adas')->assertRedirect('/plataforma/meus-cursos?curso=calibracao-adas');
+        $this->actingAs($this->student)->get('/plataforma/meus-cursos?curso=calibracao-adas')->assertOk()->assertInertia(fn ($page) => $page
+            ->component('Student/MyCourses')
+            ->where('detail.course.slug', 'calibracao-adas')
+            ->where('detail.access.mode', 'enrolled')
         );
     }
 

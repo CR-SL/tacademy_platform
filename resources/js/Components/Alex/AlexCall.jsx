@@ -1,4 +1,4 @@
-import { usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '@/i18n';
@@ -203,22 +203,67 @@ export function AlexCallView({ onClose }) {
     );
 }
 
-/** Botão para começar (Início, Avaliações e painel da aula). */
+/**
+ * Botão para começar (Início, Avaliações e painel da aula). Primeiro as conversas grátis do dia (cursos com o
+ * avatar); depois 1 crédito por conversa; sem nenhuma das duas, a compra de créditos.
+ */
 export function AlexStart({ alex, block = true }) {
     const s = useAlexCall();
-    const left = s.left ?? alex.left;
+    const left = s.left ?? alex.left ?? 0;
+    const credits = s.credits ?? alex.credits ?? 0;
     if (isActive(s)) {
         return <button type="button" className={`ui-btn ui-btn-line ${block ? 'ui-btn-block' : ''}`} disabled>{t('Conversa a decorrer')}</button>;
     }
+    if (left <= 0 && credits <= 0) {
+        return <AlexBuy alex={alex} lead={alex.free ? t('Já usaste as :n conversas grátis de hoje. Compra créditos para continuar a falar com o Alex.', { n: alex.perDay }) : t('Não tens créditos. Compra créditos para continuar a falar com o Alex.')} />;
+    }
     return (
         <>
-            <button type="button" className={`ui-btn ui-btn-accent ${block ? 'ui-btn-block' : ''}`} disabled={left <= 0}
+            <button type="button" className={`ui-btn ui-btn-accent ${block ? 'ui-btn-block' : ''}`}
                 onClick={() => startAlex({ place: alex.place, lesson: alex.lesson })}>{t('Falar com o Alex')}</button>
             <p className="ax-hint">
                 {left > 0
-                    ? t('Até :m minutos por conversa. Hoje ainda tens :n.', { m: alex.minutes, n: left })
-                    : t('Já usaste as :n conversas de hoje. Volta amanhã.', { n: alex.perDay })}
+                    ? t('Até :m minutos por conversa. Hoje ainda tens :n grátis.', { m: alex.minutes, n: left })
+                    : alex.free
+                        ? t('Já usaste as conversas grátis de hoje. Esta gasta 1 crédito (tens :n).', { n: credits })
+                        : t('Tens :n créditos. Cada conversa gasta 1 (até :m minutos).', { n: credits, m: alex.minutes })}
+                {left > 0 && credits > 0 ? ` ${t('Tens também :n créditos.', { n: credits })}` : ''}
             </p>
+        </>
+    );
+}
+
+const euro = (v) => new Intl.NumberFormat(document.documentElement.lang || 'pt-PT', { style: 'currency', currency: 'EUR' }).format(v);
+
+/** Compra de créditos de avatar (1 crédito = 1 conversa). Fica um pedido que o gestor de cursos autoriza. */
+export function AlexBuy({ alex, lead }) {
+    const [open, setOpen] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const buy = (credits) => router.post('/plataforma/alex/creditos', { credits }, {
+        preserveScroll: true,
+        onStart: () => setBusy(true),
+        onFinish: () => { setBusy(false); setOpen(false); },
+    });
+
+    if (alex.pending) {
+        return <p className="ax-hint">{t('A tua compra de :n créditos aguarda a autorização do gestor de cursos.', { n: alex.pending })}</p>;
+    }
+    return (
+        <>
+            {lead && <p className="ax-hint">{lead}</p>}
+            {open ? (
+                <div className="ax-packs" role="group" aria-label={t('Pacotes de créditos')}>
+                    {(alex.packs || []).map((p) => (
+                        <button key={p.credits} type="button" className="ax-pack" disabled={busy} onClick={() => buy(p.credits)}>
+                            <b>{t(':n conversas', { n: p.credits })}</b><span>{euro(p.price)}</span>
+                        </button>
+                    ))}
+                    <button type="button" className="ax-pack-x" onClick={() => setOpen(false)}>{t('Cancelar')}</button>
+                </div>
+            ) : (
+                <button type="button" className="ui-btn ui-btn-accent" onClick={() => setOpen(true)}>{t('Comprar créditos')}</button>
+            )}
+            <p className="ax-hint">{t('1 crédito = 1 conversa com o Alex, até :m minutos.', { m: alex.minutes })}</p>
         </>
     );
 }

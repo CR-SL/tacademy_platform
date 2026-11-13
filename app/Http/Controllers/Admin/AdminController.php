@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AlexConversation;
 use App\Models\Course;
 use App\Models\Role;
 use App\Models\User;
@@ -19,11 +20,11 @@ use Inertia\Response;
  */
 class AdminController extends Controller
 {
-    public const SECTIONS = ['geral', 'vendas', 'cliques', 'conclusao', 'catalogo', 'pessoas', 'permissoes'];
+    public const SECTIONS = ['geral', 'vendas', 'cliques', 'conclusao', 'catalogo', 'formador-ia', 'pessoas', 'permissoes'];
 
     private const NEEDS = [
         'geral' => 'estatisticas', 'vendas' => 'estatisticas', 'cliques' => 'estatisticas', 'conclusao' => 'estatisticas',
-        'catalogo' => 'cursos.todos', 'pessoas' => 'pessoas', 'permissoes' => 'pessoas',
+        'catalogo' => 'cursos.todos', 'formador-ia' => 'cursos.alex.gerir', 'pessoas' => 'pessoas', 'permissoes' => 'pessoas',
     ];
 
     public function __construct(private AdminStats $stats) {}
@@ -61,6 +62,7 @@ class AdminController extends Controller
                     'areas' => \App\Models\Category::withCount('courses')->orderBy('name')->get(['id', 'name', 'slug']),
                 ],
                 'conclusao' => ['completion' => $this->stats->completion()->values()],
+                'formador-ia' => $this->alexCourses($request),
                 'pessoas' => $this->people($request),
                 'permissoes' => $this->permissions(),
             },
@@ -88,6 +90,45 @@ class AdminController extends Controller
             'stats' => $this->stats->course($course),
             'days' => AdminStats::DAYS,
         ]);
+    }
+
+    /** Formador IA: cursos com o avatar ligado ou bloqueado, e as conversas dos últimos 30 dias. */
+    private function alexCourses(Request $request): array
+    {
+        $since = now()->subDays(30);
+        $talks = AlexConversation::where('created_at', '>=', $since)->whereNotNull('course_id')
+            ->whereIn('status', ['active', 'ended'])->get(['course_id', 'created_at', 'ended_at'])->groupBy('course_id');
+
+        return [
+            'courses' => Course::with('instructor')
+                ->where(fn ($q) => $q->where('alex_enabled', true)->orWhere('alex_blocked', true))
+                ->orderByDesc('alex_enabled')->orderBy('title')->get()
+                ->map(fn (Course $c) => [
+                    'ulid' => $c->ulid,
+                    'title' => $c->title ?: __('Curso sem título'),
+                    'instructor' => $c->instructor?->name,
+                    'status' => $c->status,
+                    'enabled' => (bool) $c->alex_enabled,
+                    'blocked' => (bool) $c->alex_blocked,
+                    'ownPal' => (bool) $c->alex_pal_id,
+                    'talks' => $talks->get($c->id)?->count() ?? 0,
+                    'minutes' => (int) round(($talks->get($c->id) ?? collect())->sum(
+                        fn ($t) => $t->ended_at ? $t->created_at->diffInSeconds($t->ended_at) : 0,
+                    ) / 60),
+                    'canEdit' => $request->user()->can('update', $c),
+                ])->values(),
+        ];
+    }
+
+    /** Formador IA: desligar e bloquear o avatar num curso, ou desbloquear (fica desligado até o formador o ligar). */
+    public function alex(Request $request, Course $course): RedirectResponse
+    {
+        $blocked = $request->validate(['blocked' => ['required', 'boolean']])['blocked'];
+        $course->forceFill($blocked ? ['alex_enabled' => false, 'alex_blocked' => true] : ['alex_blocked' => false])->save();
+
+        return back()->with('status', $blocked
+            ? __('Avatar desligado em “:title”. O formador já não o pode ligar.', ['title' => $course->title ?: __('Curso sem título')])
+            : __('“:title” desbloqueado. O formador pode voltar a ligar o avatar.', ['title' => $course->title ?: __('Curso sem título')]));
     }
 
     private function people(Request $request): array

@@ -46,7 +46,7 @@ export default function Requests({ requests, open, statuses, kinds, changeTypes,
                                         </Td>
                                         <Td>{r.kind === 'alteracao' ? <Chip tone="dark">{kinds[r.kind]}</Chip> : kinds[r.kind]}</Td>
                                         <Td className="hidden lg:table-cell">
-                                            {r.course?.title ?? (r.change_type ? changeTypes[r.change_type] : '—')}
+                                            {r.credits ? t(':n créditos de avatar', { n: r.credits }) : r.course?.title ?? (r.change_type ? changeTypes[r.change_type] : '—')}
                                             {r.packs ? <span className="text-muted"> · {r.packs} pack{r.packs > 1 ? 's' : ''}</span> : null}
                                         </Td>
                                         <Td><Chip tone={tone[r.status]}>{statuses[r.status]}</Chip></Td>
@@ -72,7 +72,8 @@ export default function Requests({ requests, open, statuses, kinds, changeTypes,
 function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam }) {
     const reply = useForm({ body: '' });
     const isChange = r.kind === 'alteracao';
-    const personal = r.kind === 'compra' && r.type === 'particular';
+    const credits = r.kind === 'creditos';
+    const personal = (r.kind === 'compra' || credits) && r.type === 'particular';
     const stateOptions = isChange || r.kind === 'esclarecimento' ? ['novo', 'em_esclarecimento', 'concluido', 'cancelado'] : Object.keys(statuses);
     const patch = (data) => router.patch(`/gestao/pedidos/${r.id}`, data, { preserveScroll: true, preserveState: true });
 
@@ -82,7 +83,8 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
     };
     const [confirm, confirmDialog] = useConfirm();
     const authorize = async () => {
-        if (await confirm({ title: t('Autorizar o acesso de :name?', { name: r.name }), body: t('Passa a ter acesso ao curso “:v1”.', { v1: r.course?.title }), action: t('Autorizar o acesso') })) {
+        const body = credits ? t('Recebe :n créditos de avatar (:n conversas com o Alex).', { n: r.credits }) : t('Passa a ter acesso ao curso “:v1”.', { v1: r.course?.title });
+        if (await confirm({ title: t('Autorizar o acesso de :name?', { name: r.name }), body, action: t('Autorizar o acesso') })) {
             router.post(`/gestao/pedidos/${r.id}/autorizar`, {}, { preserveScroll: true, preserveState: true });
         }
     };
@@ -124,7 +126,9 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
                 </div>
             )}
             {personal && r.status === 'pago' && (
-                <p className="bg-accent/15 px-4 py-3 text-sm">{t('Compra a título pessoal com pagamento simulado (o pagamento pela plataforma ainda não está ativo). Ao autorizar, o aluno passa a ter o curso.')}</p>
+                <p className="bg-accent/15 px-4 py-3 text-sm">{credits
+                    ? t('Compra de créditos de avatar com pagamento simulado (o pagamento pela plataforma ainda não está ativo). Ao autorizar, os créditos entram na conta do aluno.')
+                    : t('Compra a título pessoal com pagamento simulado (o pagamento pela plataforma ainda não está ativo). Ao autorizar, o aluno passa a ter o curso.')}</p>
             )}
 
             <Box title={t('Contacto')}>
@@ -136,6 +140,7 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
                     {r.nif && <><dt className="text-muted">{t('NIF')}</dt><dd>{r.nif}</dd></>}
                     {r.team_size && <><dt className="text-muted">{t('Nº pessoas')}</dt><dd>{r.team_size}</dd></>}
                     {r.course && <><dt className="text-muted">{t('Curso')}</dt><dd>{r.course.title}</dd></>}
+                    {r.credits && <><dt className="text-muted">{t('Créditos')}</dt><dd>{t(':n conversas com o Alex', { n: r.credits })}</dd></>}
                     {r.packs && <><dt className="text-muted">{isChange ? t('Pedido') : t('Packs')}</dt><dd>{r.packs}{' '}{t('× 10 lugares')}</dd></>}
                     {r.change_type && <><dt className="text-muted">{t('Alteração')}</dt><dd><b>{changeTypes[r.change_type]}</b></dd></>}
                     <dt className="text-muted">{t('Recebido')}</dt><dd>{r.date}</dd>

@@ -78,13 +78,19 @@ class LearningTest extends TestCase
 
     public function test_the_course_page_shows_every_lesson_open_to_enrolled_students(): void
     {
-        $this->actingAs($this->student())->get('/plataforma/cursos/curso-de-teste')
+        $u = $this->student();
+        // A página do curso saiu: quem o tem vai para a caixa lateral de "Os meus cursos"
+        $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertRedirect('/plataforma/meus-cursos?curso=curso-de-teste');
+        $this->actingAs($u)->get('/plataforma/meus-cursos?curso=curso-de-teste')
             ->assertOk()
-            ->assertInertia(fn ($p) => $p->component('Learn/Course')
-                ->where('access.mode', 'enrolled')
-                ->where('program.0.lessons.0.status', 'open')
-                ->where('program.0.lessons.1.status', 'open')
-                ->where('program.0.lessons.2.status', 'open'));
+            ->assertInertia(fn ($p) => $p->component('Student/MyCourses')
+                ->where('detail.access.mode', 'enrolled')
+                ->where('detail.program.0.lessons.0.status', 'open')
+                ->where('detail.program.0.lessons.1.status', 'open')
+                ->where('detail.program.0.lessons.2.status', 'open'));
+        // Sem ?curso= a caixa não vem; e não abre cursos de outras pessoas
+        $this->actingAs($u)->get('/plataforma/meus-cursos')->assertInertia(fn ($p) => $p->where('detail', null));
+        $this->actingAs($this->user())->get('/plataforma/meus-cursos?curso=curso-de-teste')->assertInertia(fn ($p) => $p->where('detail', null));
     }
 
     public function test_enrolled_students_open_lessons_in_any_order(): void
@@ -102,8 +108,10 @@ class LearningTest extends TestCase
 
     public function test_students_who_are_not_enrolled_see_the_other_lessons_locked(): void
     {
-        $this->actingAs($this->user())->get('/plataforma/cursos/curso-de-teste')
-            ->assertInertia(fn ($p) => $p->where('program.0.lessons.0.status', 'locked')->where('program.0.lessons.1.status', 'open'));
+        // Quem não tem o curso vai para a caixa do catálogo, que mostra a aula de amostra
+        $u = $this->user();
+        $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertRedirect('/plataforma/cursos?curso=curso-de-teste');
+        $this->actingAs($u)->get('/plataforma/cursos')->assertInertia(fn ($p) => $p->where('courses.0.sample', $this->l[1]->ulid));
     }
 
     public function test_a_video_is_completed_at_90_percent_watched_without_answering_the_quick_questions(): void
@@ -206,7 +214,7 @@ class LearningTest extends TestCase
     public function test_non_enrolled_students_see_only_the_sample_lesson_and_cannot_save(): void
     {
         $u = $this->user();
-        $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertInertia(fn ($p) => $p->where('access.mode', 'none')->where('sample.title', 'Texto'));
+        $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertRedirect('/plataforma/cursos?curso=curso-de-teste');
         $this->actingAs($u)->get($this->lessonUrl(1))->assertOk()->assertInertia(fn ($p) => $p->where('mode', 'sample'));
         $this->actingAs($u)->get($this->lessonUrl(0))->assertRedirect();
         $this->assertSame(0, LessonProgress::where('user_id', $u->id)->count()); // abrir a amostra não guarda progresso
@@ -225,7 +233,7 @@ class LearningTest extends TestCase
         $u = $this->user();
         Enrollment::create(['user_id' => $u->id, 'course_id' => $this->course->id, 'source' => 'manual', 'enrolled_at' => now()->subMonths(2)]);
 
-        $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertInertia(fn ($p) => $p->where('access.mode', 'expired'));
+        $this->actingAs($u)->get('/plataforma/meus-cursos?curso=curso-de-teste')->assertInertia(fn ($p) => $p->where('detail.access.mode', 'expired')->where('detail.next', null));
         $this->actingAs($u)->get($this->lessonUrl(0))->assertRedirect();
     }
 
@@ -234,9 +242,9 @@ class LearningTest extends TestCase
         $u = $this->student();
         LessonProgress::create(['user_id' => $u->id, 'lesson_id' => $this->l[0]->id, 'status' => 'in_progress', 'last_position_seconds' => 462, 'video_duration_seconds' => 720]);
 
-        $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertInertia(fn ($p) => $p
-            ->where('program.0.lessons.0.position', ['at' => '7:42', 'of' => '12:00'])
-            ->where('program.0.lessons.1.position', null));
+        $this->actingAs($u)->get('/plataforma/meus-cursos?curso=curso-de-teste')->assertInertia(fn ($p) => $p
+            ->where('detail.program.0.lessons.0.position', ['at' => '7:42', 'of' => '12:00'])
+            ->where('detail.program.0.lessons.1.position', null));
     }
 
     public function test_a_course_deadline_counts_from_enrollment_and_the_company_one_wins(): void
@@ -245,14 +253,14 @@ class LearningTest extends TestCase
         $u = $this->user();
         $e = Enrollment::create(['user_id' => $u->id, 'course_id' => $this->course->id, 'source' => 'manual', 'enrolled_at' => now()->subDays(20)]);
 
-        $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertInertia(fn ($p) => $p
-            ->where('access.deadline.days', 10)->where('access.deadline.by', 'curso')->where('access.deadline.late', false));
+        $this->actingAs($u)->get('/plataforma/meus-cursos?curso=curso-de-teste')->assertInertia(fn ($p) => $p
+            ->where('detail.access.deadline.days', 10)->where('detail.access.deadline.by', 'curso')->where('detail.access.deadline.late', false));
         // Faltam 10 dias: aparece nos Pendentes do Início
         $this->actingAs($u)->get('/dashboard')->assertInertia(fn ($p) => $p->where('pending.0.kind', 'Prazo'));
 
         $e->update(['due_at' => now()->subDay()->toDateString()]);
-        $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertInertia(fn ($p) => $p
-            ->where('access.deadline.late', true)->where('access.deadline.by', 'empresa'));
+        $this->actingAs($u)->get('/plataforma/meus-cursos?curso=curso-de-teste')->assertInertia(fn ($p) => $p
+            ->where('detail.access.deadline.late', true)->where('detail.access.deadline.by', 'empresa'));
     }
 
     public function test_when_attendance_is_required_the_certificate_waits_for_the_instructor(): void

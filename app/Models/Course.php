@@ -42,6 +42,7 @@ class Course extends Model
         'alex_enabled',
         'alex_pal_id',
         'alex_face_id',
+        'alex_blocked',
         'sample_lesson_id',
     ];
 
@@ -56,6 +57,7 @@ class Course extends Model
             'deadline_days' => 'integer',
             'requires_attendance' => 'boolean',
             'alex_enabled' => 'boolean',
+            'alex_blocked' => 'boolean',
             'certificate_enabled' => 'boolean',
             'certificate_min_progress' => 'integer',
             'certificate_min_score' => 'integer',

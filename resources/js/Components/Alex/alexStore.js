@@ -4,7 +4,7 @@
 import { useSyncExternalStore } from 'react';
 import { t } from '@/i18n';
 
-const idle = { status: 'idle', error: null, conv: null, place: null, alexVideo: null, alexAudio: null, selfVideo: null, mic: true, cam: false, left: null, docked: 0 };
+const idle = { status: 'idle', error: null, conv: null, place: null, alexVideo: null, alexAudio: null, selfVideo: null, mic: true, cam: false, left: null, credits: null, docked: 0 };
 let state = { ...idle };
 const listeners = new Set();
 let call = null;
@@ -39,10 +39,10 @@ export async function startAlex({ place, lesson = null }) {
         conv = data;
     } catch (e) {
         const res = e.response;
-        set({ status: 'error', error: res?.data?.message || t('O Alex não está disponível agora. Tenta daqui a pouco.'), left: res?.data?.left ?? state.left });
+        set({ status: 'error', error: res?.data?.message || t('O Alex não está disponível agora. Tenta daqui a pouco.'), left: res?.data?.left ?? state.left, credits: res?.data?.credits ?? state.credits });
         return;
     }
-    set({ conv, left: conv.left });
+    set({ conv, left: conv.left, credits: conv.credits });
 
     try {
         const { default: Daily } = await import('@daily-co/daily-js');
@@ -129,7 +129,7 @@ export async function endAlex() {
 /** Fecha a janela depois de uma conversa terminada ou de um erro. */
 export function dismissAlex() {
     if (isActive(state)) return;
-    set({ ...idle, docked: state.docked, left: state.left });
+    set({ ...idle, docked: state.docked, left: state.left, credits: state.credits });
 }
 
 export function toggleMic() {

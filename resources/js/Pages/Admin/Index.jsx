@@ -18,6 +18,7 @@ const MENU = [
     ]],
     ['Gestão', [
         ['catalogo', 'Catálogo', 'M4 5h16v14H4zM4 9h16'],
+        ['formador-ia', 'Formador IA', 'M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM4 21a8 8 0 0 1 16 0M19 3l.7 1.6L21.3 5.3l-1.6.7L19 7.6l-.7-1.6-1.6-.7 1.6-.7z'],
         ['pessoas', 'Pessoas', 'M9 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6'],
         ['permissoes', 'Permissões', 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4'],
     ]],
@@ -25,7 +26,7 @@ const MENU = [
 const courseUrl = (ulid) => `/administracao/cursos/${ulid}`;
 
 export default function Index({ section, sections, days, data }) {
-    const Section = { geral: Overview, vendas: Sales, cliques: Clicks, conclusao: CompletionSection, catalogo: Catalog, pessoas: People, permissoes: Permissions }[section];
+    const Section = { geral: Overview, vendas: Sales, cliques: Clicks, conclusao: CompletionSection, catalogo: Catalog, 'formador-ia': AlexSection, pessoas: People, permissoes: Permissions }[section];
 
     return (
         <StudentLayout>
@@ -201,6 +202,58 @@ function Catalog({ data }) {
                 </div>
             </Box>
             {data.areas && <Areas areas={data.areas} />}
+        </>
+    );
+}
+
+/* ---------- Formador IA (avatar Alex) ---------- */
+function AlexSection({ data }) {
+    const [busy, setBusy] = useState(null);
+    const [confirm, confirmDialog] = useConfirm();
+    const on = data.courses.filter((c) => c.enabled);
+
+    const set = async (c, blocked) => {
+        if (blocked && !(await confirm({
+            title: t('Desligar o avatar em “:title”?', { title: c.title }),
+            body: t('Os alunos deixam de falar com o Alex neste curso e o formador já não o pode voltar a ligar, até o desbloqueares.'),
+            action: t('Desligar e bloquear'),
+            danger: true,
+        }))) return;
+        setBusy(c.ulid);
+        router.put(`/administracao/formador-ia/${c.ulid}`, { blocked }, { preserveScroll: true, onFinish: () => setBusy(null) });
+    };
+
+    return (
+        <>
+            <Head2 title={t('Formador IA')} sub={t('Os cursos com o avatar (Alex). O formador liga-o no editor; aqui podes desligá-lo e bloqueá-lo, por exemplo por causa do gasto no Tavus.')} />
+            <Box title={t(':n cursos com o avatar ligado', { n: on.length })} pad={false}>
+                {data.courses.length ? (
+                    <div className="overflow-x-auto px-3 py-1">
+                        <table className="bo-table">
+                            <thead><tr><th>{t('Curso')}</th><th>{t('Avatar')}</th><th className="num">{t('Conversas (30 dias)')}</th><th className="num">{t('Minutos')}</th><th /></tr></thead>
+                            <tbody>{data.courses.map((c) => (
+                                <tr key={c.ulid}>
+                                    <td>
+                                        <b className="font-semibold">{c.title}</b><br />
+                                        <small className="text-muted">{[c.instructor, c.status === 'published' ? t('Publicado') : t('Rascunho'), c.ownPal ? t('Alex próprio') : t('Alex geral')].filter(Boolean).join(' · ')}</small>
+                                    </td>
+                                    <td>{c.blocked ? <Chip tone="bad">{t('Bloqueado')}</Chip> : <Chip tone="ok">{t('Ativo')}</Chip>}</td>
+                                    <td className="num">{fmtInt(c.talks)}</td>
+                                    <td className="num">{fmtInt(c.minutes)}</td>
+                                    <td className="num" style={{ whiteSpace: 'nowrap' }}>
+                                        {c.canEdit && <><Button variant="soft" size="sm" href={`/formador/cursos/${c.ulid}/editar`}>{t('Editar')}</Button> </>}
+                                        {c.blocked
+                                            ? <Button variant="line" size="sm" disabled={busy === c.ulid} onClick={() => set(c, false)}>{t('Desbloquear')}</Button>
+                                            : <Button variant="line" size="sm" disabled={busy === c.ulid} onClick={() => set(c, true)}>{t('Desligar')}</Button>}
+                                    </td>
+                                </tr>
+                            ))}</tbody>
+                        </table>
+                    </div>
+                ) : <p className="bo-box-b text-muted">{t('Nenhum curso tem o avatar ligado.')}</p>}
+            </Box>
+            <p className="bo-note">{t('Desbloquear não volta a ligar o avatar: o curso fica sem ele até o formador o ligar no editor.')}</p>
+            {confirmDialog}
         </>
     );
 }

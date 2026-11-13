@@ -15,7 +15,8 @@ class Permissions
         'cursos.criar' => 'Criar e editar os próprios cursos',
         'cursos.publicar' => 'Publicar os próprios cursos no catálogo',
         'cursos.todos' => 'Editar qualquer curso do catálogo',
-        'cursos.alex' => 'Ligar o formador IA (Alex) nos cursos',
+        'cursos.alex' => 'Ligar o avatar (Alex) nos próprios cursos',
+        'cursos.alex.gerir' => 'Desligar e bloquear o avatar (Alex) em qualquer curso',
         'equipa' => 'Acompanhar a sua equipa, enviar lembretes e atribuir cursos',
         'pedidos' => 'Tratar pedidos e autorizar compras',
         'equipas' => 'Criar e gerir equipas de empresas',
@@ -25,9 +26,9 @@ class Permissions
 
     public const DEFAULTS = [
         'aluno' => ['aprender'],
-        'formador' => ['cursos.criar', 'cursos.publicar'],
+        'formador' => ['cursos.criar', 'cursos.publicar', 'cursos.alex'],
         'team_leader' => ['aprender', 'equipa'],
-        'gestor_cursos' => ['pedidos', 'equipas', 'cursos.alex'],
+        'gestor_cursos' => ['pedidos', 'equipas', 'cursos.alex.gerir'],
     ];
 
     /** Perfis pela ordem em que aparecem, com o nome a mostrar e uma frase. */

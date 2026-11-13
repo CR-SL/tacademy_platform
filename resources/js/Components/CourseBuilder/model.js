@@ -29,6 +29,7 @@ export function blankCourse() {
         alex_enabled: false,
         alex_pal_id: '',
         alex_face_id: '',
+        alex_blocked: false,
         certificate_enabled: true,
         certificate_min_progress: 100,
         certificate_min_score: 70,
@@ -73,6 +74,6 @@ export function checklist(c, shortMax) {
         [t('Pelo menos 1 módulo com 1 aula'), 1, lessons.length > 0],
         [t('Todos os módulos têm título'), 1, c.modules.every((m) => m.title.trim())],
         [t('Todas as aulas completas (título + link/conteúdo)'), 1, lessons.every(lessonComplete)],
-        [t('Preço definido'), 2, c.is_free || Number(c.price) > 0],
+        [t('Preço definido'), 3, c.is_free || Number(c.price) > 0],
     ];
 }

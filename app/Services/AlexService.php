@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AlexConversation;
+use App\Models\ContactRequest;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
@@ -52,7 +53,7 @@ class AlexService
             default => null,
         };
         if (! $place) {
-            return $this->hasAccess($user) ? ['place' => null] : null;
+            return $this->hasAccess($user) ? ['place' => null] : $this->buyOffer($user);
         }
 
         $lesson = null;
@@ -63,15 +64,33 @@ class AlexService
                 return null;
             }
         } elseif (! $this->hasAccess($user)) {
-            return null;
+            return $this->buyOffer($user);
         }
 
         return [
             'place' => $place,
             'lesson' => $lesson?->ulid,
             'left' => $this->leftToday($user),
+            'credits' => (int) $user->alex_credits,
+            'free' => $this->hasFreeTalks($user),
             'perDay' => $this->perDay(),
             'minutes' => $this->minutes(),
+            ...$this->shop($user),
+        ];
+    }
+
+    /** Aluno sem curso com o avatar e sem créditos: a caixa do Alex mostra a compra de créditos. */
+    private function buyOffer(User $user): ?array
+    {
+        return $user->learns() ? ['place' => null, 'buy' => true, 'minutes' => $this->minutes(), ...$this->shop($user)] : null;
+    }
+
+    /** Pacotes de créditos à venda e se já há uma compra à espera do gestor. */
+    private function shop(User $user): array
+    {
+        return [
+            'packs' => collect(config('services.tavus.packs', []))->map(fn ($price, $credits) => ['credits' => (int) $credits, 'price' => (float) $price])->values(),
+            'pending' => ContactRequest::where('user_id', $user->id)->where('kind', 'creditos')->whereIn('status', ContactRequest::OPEN)->value('credits'),
         ];
     }
 
@@ -81,8 +100,17 @@ class AlexService
         return (bool) $course->alex_enabled;
     }
 
-    /** Inscrito (com acesso válido) num curso com o Alex; o admin pode sempre, para testar. */
+    /**
+     * Pode falar com o Alex no Início e nas Avaliações: tem um curso com o avatar (conversas grátis por dia)
+     * ou créditos por gastar. O admin pode sempre, para testar.
+     */
     public function hasAccess(User $user): bool
+    {
+        return $this->hasFreeTalks($user) || $user->alex_credits > 0;
+    }
+
+    /** Conversas grátis por dia: quem tem um curso com o avatar (e o admin). */
+    public function hasFreeTalks(User $user): bool
     {
         return $user->isAdmin() || $this->alexCourses($user)->isNotEmpty();
     }
@@ -112,11 +140,16 @@ class AlexService
         return max(1, (int) config('services.tavus.minutes', 15));
     }
 
+    /** Conversas grátis que ainda há hoje (0 para quem não tem um curso com o avatar). */
     public function leftToday(User $user): int
     {
+        if (! $this->hasFreeTalks($user)) {
+            return 0;
+        }
         $used = AlexConversation::where('user_id', $user->id)
             ->where('created_at', '>=', now()->startOfDay())
             ->where('status', '!=', 'failed')
+            ->where('paid_credit', false)
             ->count();
 
         return max(0, $this->perDay() - $used);
@@ -128,7 +161,7 @@ class AlexService
      * Começa uma conversa. Devolve o que a página precisa para entrar na sala.
      *
      * @throws AuthorizationException quando o aluno não pode falar com o Alex aqui
-     * @throws AlexLimitReached quando já usou as conversas de hoje
+     * @throws AlexLimitReached quando já usou as conversas grátis de hoje e não tem créditos
      * @throws RuntimeException quando o Tavus falha
      */
     public function start(User $user, string $place, ?string $lessonUlid): array
@@ -148,19 +181,22 @@ class AlexService
             $course = $this->alexCourses($user)->first();
         }
 
-        if ($this->leftToday($user) <= 0) {
-            throw new AlexLimitReached($this->perDay());
-        }
-
         // Uma conversa de cada vez: a que estiver aberta termina antes de começar outra
         AlexConversation::where('user_id', $user->id)->whereIn('status', ['starting', 'active'])->get()
             ->each(fn ($c) => $this->end($c, 'nova conversa'));
+
+        // Primeiro as conversas grátis do dia; depois 1 crédito por conversa
+        $paid = $this->leftToday($user) <= 0;
+        if ($paid && User::whereKey($user->id)->where('alex_credits', '>', 0)->decrement('alex_credits') === 0) {
+            throw new AlexLimitReached($this->perDay());
+        }
 
         $conversation = AlexConversation::create([
             'user_id' => $user->id,
             'course_id' => $course?->id,
             'lesson_id' => $lesson?->id,
             'place' => $place,
+            'paid_credit' => $paid,
             'status' => 'starting',
         ]);
 
@@ -168,6 +204,9 @@ class AlexService
             $room = $this->tavus->createConversation($this->payload($user, $place, $course, $lesson));
         } catch (RuntimeException $e) {
             $conversation->update(['status' => 'failed', 'end_reason' => Str::limit($e->getMessage(), 110)]);
+            if ($paid) {
+                User::whereKey($user->id)->increment('alex_credits'); // as falhas do Tavus não gastam créditos
+            }
             throw $e;
         }
 
@@ -179,6 +218,7 @@ class AlexService
             'token' => $room['meeting_token'],
             'endsAt' => $conversation->created_at->copy()->addMinutes($this->minutes())->toIso8601String(),
             'left' => $this->leftToday($user),
+            'credits' => (int) $user->fresh()->alex_credits,
         ];
     }
 

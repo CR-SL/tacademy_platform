@@ -28,6 +28,8 @@ return [
         'face_id' => env('TAVUS_FACE_ID', 'rdea4449f835'),
         'minutes' => (int) env('TAVUS_ALEX_MINUTES', 15),
         'per_day' => (int) env('TAVUS_ALEX_PER_DAY', 3),
+        // Créditos de avatar: 1 crédito = 1 conversa. Pacotes à venda: créditos => preço em euros (IVA incluído)
+        'packs' => [5 => 20, 10 => 35, 20 => 60],
     ],
 
     'resend' => [

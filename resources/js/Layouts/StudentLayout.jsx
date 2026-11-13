@@ -33,7 +33,7 @@ const builderCount = [t('presença por confirmar'), t('presenças por confirmar'
 // Formador, gestor de cursos e admin: só o seu trabalho, sem a parte do aluno (opção D, 2026-11-09)
 function workNav(can = {}) {
     const items = [];
-    if (can.estatisticas || can.pessoas) items.push({ key: 'admin', label: t('Administração'), short: t('Admin'), href: '/administracao', Icon: IconAdmin });
+    if (can.estatisticas || can.pessoas || can['cursos.alex.gerir']) items.push({ key: 'admin', label: t('Administração'), short: t('Admin'), href: '/administracao', Icon: IconAdmin });
     if (can['cursos.criar'] && !can['cursos.todos']) {
         items.push(
             { key: 'builder', label: t('Os meus cursos'), short: t('Cursos'), href: '/formador/cursos', Icon: IconBook, count: 'builder', countLabel: builderCount },
@@ -61,7 +61,7 @@ function navFor(can = {}, role, worksOnly = false, guest = false) {
     if (can.equipas) items.push(teamsItem());
     if (can['cursos.todos']) items.push({ key: 'builder', label: t('Gerir cursos'), short: t('Gerir'), href: '/formador/cursos', Icon: IconCreate, tag: role === 'admin' ? t('Admin') : undefined, count: 'builder', countLabel: [t('presença por confirmar'), t('presenças por confirmar')] });
     else if (can['cursos.criar']) items.push({ key: 'builder', label: t('Criar cursos'), short: t('Criar'), href: '/formador/cursos', Icon: IconCreate, tag: t('Formador'), count: 'builder', countLabel: [t('presença por confirmar'), t('presenças por confirmar')] });
-    if (can.estatisticas || can.pessoas) items.push({ key: 'admin', label: t('Administração'), short: t('Admin'), href: '/administracao', Icon: IconAdmin });
+    if (can.estatisticas || can.pessoas || can['cursos.alex.gerir']) items.push({ key: 'admin', label: t('Administração'), short: t('Admin'), href: '/administracao', Icon: IconAdmin });
     return items;
 }
 

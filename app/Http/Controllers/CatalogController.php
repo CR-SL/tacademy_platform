@@ -61,6 +61,8 @@ class CatalogController extends Controller
                 'ai' => $lessons->contains('content_type', 'avatar'),
                 'alex' => (bool) $c->alex_enabled,
                 'lessons' => $lessons->count(),
+                // Aula de amostra grátis (antes estava na página do curso, que saiu)
+                'sample' => $lessons->firstWhere('id', $c->sample_lesson_id)?->ulid,
                 'modules' => $c->modules->map(fn ($m) => [
                     'title' => $m->title,
                     'lessons' => $m->lessons->map(fn ($l) => [

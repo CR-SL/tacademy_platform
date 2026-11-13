@@ -84,7 +84,7 @@ class StudentArea
                 'image' => $this->image($e->course),
                 'area' => $e->course->category?->name,
                 'level' => $e->course->level,
-                'url' => '/plataforma/cursos/'.$e->course->slug,
+                'url' => '/plataforma/meus-cursos?curso='.$e->course->slug,
                 'company' => $e->company_id !== null,
                 'pct' => $pct,
                 'done' => $finished,
@@ -155,7 +155,7 @@ class StudentArea
 
         return [
             'course' => $course->title,
-            'courseUrl' => '/plataforma/cursos/'.$course->slug,
+            'courseUrl' => '/plataforma/meus-cursos?curso='.$course->slug,
             'image' => $this->image($course),
             'lesson' => $lesson->title,
             'url' => $this->lessonUrl($course, $lesson),
@@ -373,7 +373,7 @@ class StudentArea
                 'free' => (bool) $c->is_free,
                 'image' => $this->image($c),
                 'short' => $c->short_description,
-                'url' => '/plataforma/cursos/'.$c->slug,
+                'url' => '/plataforma/cursos?curso='.$c->slug,
             ])->values()->all();
     }
 
@@ -400,7 +400,7 @@ class StudentArea
                 'free' => (bool) $c->is_free,
                 'image' => $this->image($c),
                 'why' => $areas->contains($c->category_id) ? __('Na área de :area, que já estudas', ['area' => $c->category?->name]) : null,
-                'url' => '/plataforma/cursos/'.$c->slug,
+                'url' => '/plataforma/cursos?curso='.$c->slug,
             ])->values()->all();
     }
 
@@ -481,7 +481,7 @@ class StudentArea
                 return [
                     'title' => $e->course->title,
                     'image' => $this->image($e->course),
-                    'url' => '/plataforma/cursos/'.$e->course->slug,
+                    'url' => '/plataforma/meus-cursos?curso='.$e->course->slug,
                     'progress' => $s['progress'],
                     'missing' => $missing,
                 ];
@@ -493,7 +493,7 @@ class StudentArea
                 'date' => $c->issued_at?->format('d/m/Y'),
                 'title' => $c->course->title,
                 'image' => $this->image($c->course),
-                'url' => '/plataforma/cursos/'.$c->course->slug,
+                'url' => '/plataforma/meus-cursos?curso='.$c->course->slug,
             ])->values()->all(),
             'coming' => $coming->all(),
         ];

@@ -7,22 +7,33 @@ use App\Models\ContactRequest;
 use App\Models\Course;
 use App\Services\LearningService;
 use App\Services\StudentArea;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/** Página do curso vista pelo aluno: apresentação, progresso, programa e certificado. */
+/** Pré-visualização do curso pela equipa; os alunos são levados para "Os meus cursos" ou para o catálogo. */
 class CourseController extends Controller
 {
     use BuildsProgram;
 
     public function __construct(private LearningService $learning) {}
 
-    public function __invoke(Request $request, Course $course, StudentArea $area): Response
+    public function __invoke(Request $request, Course $course, StudentArea $area): Response|RedirectResponse
     {
         $user = $request->user();
         $access = $this->learning->access($user, $course);
         abort_unless($course->status === 'published' || $access['mode'] === 'preview', 404);
+
+        // A página do curso saiu (2026-11-13): quem tem o curso vê-o na caixa lateral de "Os meus cursos";
+        // quem não o tem, na caixa do catálogo. Fica só a pré-visualização da equipa (formador e gestão).
+        if ($access['mode'] !== 'preview') {
+            $request->session()->reflash();
+
+            return redirect($access['enrollment']
+                ? '/plataforma/meus-cursos?curso='.urlencode($course->slug)
+                : '/plataforma/cursos?curso='.urlencode($course->slug));
+        }
 
         $lessons = $this->learning->lessons($course);
         $done = $access['mode'] === 'enrolled' ? $this->learning->completedIds($user, $lessons) : collect();

@@ -446,7 +446,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
             <Head title={`${lesson.title} · ${course.title}`} />
 
             <header className="al-head">
-                <Link className="al-logo" href={`/plataforma/cursos/${course.slug}`} aria-label={t('Voltar ao curso :title', { title: course.title })}>
+                <Link className="al-logo" href={mode === 'enrolled' ? `/plataforma/meus-cursos?curso=${course.slug}` : mode === 'sample' ? `/plataforma/cursos?curso=${course.slug}` : `/plataforma/cursos/${course.slug}`} aria-label={t('Voltar ao curso :title', { title: course.title })}>
                     <span className="al-logo-full"><Logo /></span>
                     <img className="al-logo-bird" src="/images/brand/passarinho.png" alt="" />
                 </Link>

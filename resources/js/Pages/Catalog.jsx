@@ -77,10 +77,11 @@ function Card({ c, i, onOpen }) {
             onClick={(e) => { e.preventDefault(); onOpen(c); }} onPointerMove={tilt} onPointerLeave={untilt}>
             <span className="cc-lift"><span className="cc-ph">
                 <img src={c.image} alt="" loading="lazy" width="440" height="550" />
+                {/* Curso com IA (formador IA ou aula com IA): só um "IA" discreto no canto; o pormenor está no detalhe */}
                 {(c.ai || c.alex) && (
-                    <span className="cc-badges">
-                        {c.alex && <span className="cc-badge">{t('✦ Com formador IA')}</span>}
-                        {c.ai && <span className="cc-badge">{t('✦ Aula com IA')}</span>}
+                    <span className="cc-ia" title={c.alex ? t('Com formador IA') : t('Aula com IA')}>
+                        <span aria-hidden="true">IA</span>
+                        <span className="sr-only">{c.alex ? t('Com formador IA') : t('Aula com IA')}</span>
                     </span>
                 )}
                 <span className="cc-grad" aria-hidden="true" />
@@ -109,7 +110,7 @@ function FootAction({ c, owned, pending, guest }) {
         );
     }
     if (owned.includes(c.id)) {
-        return <Link className="cc-cta" href={`/plataforma/cursos/${encodeURIComponent(c.slug)}`}>{t('Ir para o curso')}<span aria-hidden="true">→</span></Link>;
+        return <Link className="cc-cta" href={`/plataforma/meus-cursos?curso=${encodeURIComponent(c.slug)}`}>{t('Ir para o curso')}<span aria-hidden="true">→</span></Link>;
     }
     if (pending.includes(c.id)) return <span className="cc-cta cc-wait">{t('A aguardar autorização')}</span>;
     const buy = () => router.post(`/cursos/${encodeURIComponent(c.slug)}/comprar`, {}, {
@@ -155,6 +156,9 @@ function Detail({ c, owned, pending, guest, onClose }) {
                             <span><small>{t('Formador')}</small><b>{c.instructor || t('A definir')}</b></span>
                         </div>
                         {c.description && <p className="cc-short">{c.description}</p>}
+                        {c.sample && !guest && !owned.includes(c.id) && (
+                            <Link className="cc-sample" href={`/plataforma/cursos/${encodeURIComponent(c.slug)}/aulas/${c.sample}`}>{t('Ver aula de amostra grátis')} →</Link>
+                        )}
                         <div className="cc-prog">
                             <b>{t('Programa')}</b>
                             <div className="cc-prog-box">

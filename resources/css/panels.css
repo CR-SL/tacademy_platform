@@ -161,7 +161,13 @@
 /* Alex */
 .pn-alex-p { width: 100%; aspect-ratio: 300 / 210; object-fit: cover; object-position: center top; background: var(--color-surface2); }
 .pn-alex-c { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px 18px; }
-.pn-alex-c .ui-btn { width: 100%; height: 48px; font-size: 15px; }
+.pn-alex-c .ui-btn, .w-alex .ui-btn { align-self: center; width: auto; height: 30px; padding: 0 14px; font-size: 13.5px; }
+/* O Alex no primeiro uso (boas-vindas do aluno sem cursos) */
+.w-alex { display: grid; grid-template-columns: 1fr; background: var(--color-surface); }
+.w-alex img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: center 20%; }
+.w-alex-c { display: flex; flex-direction: column; gap: 10px; padding: 18px; }
+.w-alex-c .ax-packs { max-width: 320px; }
+@media (min-width: 768px) { .w-alex { grid-template-columns: 240px 1fr; } .w-alex img { height: 100%; aspect-ratio: auto; } .w-alex-c { padding: 22px 26px; } }
 .pn-bub { font-size: 14px; color: var(--color-text); }
 .pn-bub.pn-me-b { align-self: flex-end; max-width: 90%; padding: 8px 12px; background: var(--color-surface2); color: var(--color-ink); font-weight: 500; }
 .pn-alex-c .pn-end { align-self: flex-start; width: auto; height: 36px; font-size: 14px; }

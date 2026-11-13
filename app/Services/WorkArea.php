@@ -99,7 +99,7 @@ class WorkArea
         $list = [];
 
         if ($user->canDo('pedidos')) {
-            $paid = ContactRequest::where('kind', 'compra')->where('type', 'particular')->where('status', 'pago')->count();
+            $paid = ContactRequest::whereIn('kind', ['compra', 'creditos'])->where('type', 'particular')->where('status', 'pago')->count();
             if ($paid) {
                 $list[] = [
                     'kind' => 'Compra',

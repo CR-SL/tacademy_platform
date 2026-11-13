@@ -1,16 +1,16 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
-import EnrolledCourse from '@/Components/Learn/EnrolledCourse';
 import Program from '@/Components/Learn/Program';
 import { FlashToast } from '@/Components/Teams/ui';
 import { formatEuro, formatMinutes, levelLabels } from '@/Components/CourseBuilder/format';
 
 import { t } from '@/i18n';
 
-// Página do curso vista pelo aluno: apresentação, progresso, programa e certificado.
+// Pré-visualização do curso pela equipa ("ver como aluno"). Os alunos veem o curso na caixa lateral
+// de "Os meus cursos" (quem o tem) ou do catálogo (quem não o tem): o controlador leva-os para lá.
 export default function Course(props) {
-    return props.access.mode === 'enrolled' ? <EnrolledCourse {...props} /> : <CoursePresentation {...props} />;
+    return <CoursePresentation {...props} />;
 }
 
 function CoursePresentation({ course, access, progress, program, next, sample, certificate }) {

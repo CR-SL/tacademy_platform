@@ -20,6 +20,7 @@ class ContactRequest extends Model
     public const KINDS = [
         'esclarecimento' => 'Esclarecimento',
         'compra' => 'Compra de curso',
+        'creditos' => 'Compra de créditos de avatar',
         'alteracao' => 'Alteração de equipa',
     ];
 
@@ -59,6 +60,7 @@ class ContactRequest extends Model
 
     protected $fillable = [
         'kind',
+        'credits',
         'type',
         'name',
         'email',

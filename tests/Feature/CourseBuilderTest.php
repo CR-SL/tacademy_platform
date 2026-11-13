@@ -274,27 +274,47 @@ class CourseBuilderTest extends TestCase
         ], ['Accept' => 'application/json'])->assertStatus(409);
     }
 
-    public function test_only_staff_with_permission_turn_on_the_ai_trainer(): void
+    public function test_trainer_turns_on_the_avatar_and_staff_can_block_it(): void
     {
         $formador = $this->user('formador');
-        $alex = ['alex_enabled' => true, 'alex_pal_id' => 'p-curso', 'alex_face_id' => ''];
+        $gestor = $this->user('gestor_cursos');
+        $alex = ['alex_enabled' => true, 'alex_pal_id' => 'p-curso', 'alex_face_id' => 'f-curso'];
 
-        // O formador não liga o Alex (custa minutos no Tavus): o pedido grava o resto e ignora estes campos
+        // O formador liga o avatar no seu curso, com o PAL e o rosto do curso
         $this->actingAs($formador)->postJson('/formador/cursos', $this->payload($alex))->assertCreated();
         $course = Course::firstOrFail();
-        $this->assertFalse($course->alex_enabled);
-        $this->actingAs($formador)->get("/formador/cursos/{$course->ulid}/editar")->assertInertia(fn ($p) => $p->where('canAlex', false));
-
-        // O admin liga (edita qualquer curso); o gestor de cursos também tem a permissão
-        $this->actingAs($this->user('admin'))->putJson("/formador/cursos/{$course->ulid}", $this->payload($alex))->assertOk();
-        $course->refresh();
         $this->assertTrue($course->alex_enabled);
         $this->assertSame('p-curso', $course->alex_pal_id);
-        $this->assertTrue($this->user('gestor_cursos')->canDo('cursos.alex'));
-        $this->assertFalse($formador->canDo('cursos.alex'));
+        $this->assertSame('f-curso', $course->alex_face_id);
+        $this->actingAs($formador)->get("/formador/cursos/{$course->ulid}/editar")
+            ->assertInertia(fn ($p) => $p->where('canAlex', true)->where('canManageAlex', false));
 
-        // Um formador que volta a gravar o curso não desliga o Alex
-        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $this->payload(['alex_enabled' => false]))->assertOk();
+        // O formador não se desbloqueia a si próprio
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $this->payload([...$alex, 'alex_blocked' => true]))->assertOk();
+        $this->assertFalse($course->fresh()->alex_blocked);
+
+        // O gestor de cursos (sem editar cursos) desliga e bloqueia na Administração › Formador IA
+        $this->actingAs($gestor)->get('/administracao/formador-ia')->assertOk()
+            ->assertInertia(fn ($p) => $p->where('data.courses.0.ulid', $course->ulid)->where('data.courses.0.enabled', true));
+        $this->actingAs($gestor)->put("/administracao/formador-ia/{$course->ulid}", ['blocked' => true])->assertRedirect();
+        $course->refresh();
+        $this->assertFalse($course->alex_enabled);
+        $this->assertTrue($course->alex_blocked);
+
+        // Bloqueado: o formador já não o liga
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $this->payload($alex))->assertOk();
+        $this->assertFalse($course->fresh()->alex_enabled);
+        $this->actingAs($formador)->put("/administracao/formador-ia/{$course->ulid}", ['blocked' => false])->assertForbidden();
+
+        // O admin desbloqueia no editor; o avatar fica desligado até o formador o ligar
+        $this->actingAs($this->user('admin'))->putJson("/formador/cursos/{$course->ulid}", $this->payload(['alex_enabled' => false, 'alex_blocked' => false]))->assertOk();
+        $this->assertFalse($course->fresh()->alex_blocked);
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $this->payload($alex))->assertOk();
         $this->assertTrue($course->fresh()->alex_enabled);
+
+        // As permissões por omissão: o formador liga, o gestor de cursos desliga e bloqueia
+        $this->assertTrue($formador->canDo('cursos.alex'));
+        $this->assertTrue($gestor->canDo('cursos.alex.gerir'));
+        $this->assertFalse($formador->canDo('cursos.alex.gerir'));
     }
 }

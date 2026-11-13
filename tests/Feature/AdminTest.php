@@ -43,7 +43,10 @@ class AdminTest extends TestCase
     public function test_only_people_with_permission_open_the_administration(): void
     {
         $this->actingAs($this->user('aluno'))->get('/administracao')->assertForbidden();
-        $this->actingAs($this->user('gestor_cursos'))->get('/administracao')->assertForbidden();
+        // O gestor de cursos só vê a secção Formador IA (desligar e bloquear o avatar)
+        $gestor = $this->user('gestor_cursos');
+        $this->actingAs($gestor)->get('/administracao')->assertOk()->assertInertia(fn ($p) => $p->where('section', 'formador-ia')->where('sections', ['formador-ia']));
+        $this->actingAs($gestor)->get('/administracao/pessoas')->assertRedirect('/administracao/formador-ia');
 
         $admin = $this->user('admin');
         foreach (['geral', 'vendas', 'cliques', 'conclusao', 'catalogo', 'pessoas', 'permissoes'] as $s) {

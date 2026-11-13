@@ -11,12 +11,13 @@ class AlexConversation extends Model
 {
     use HasUlid;
 
-    protected $fillable = ['user_id', 'course_id', 'lesson_id', 'place', 'tavus_id', 'status', 'end_reason', 'ended_at', 'transcript'];
+    protected $fillable = ['user_id', 'course_id', 'lesson_id', 'place', 'paid_credit', 'tavus_id', 'status', 'end_reason', 'ended_at', 'transcript'];
 
     protected function casts(): array
     {
         return [
             'ended_at' => 'datetime',
+            'paid_credit' => 'boolean',
             'transcript' => 'array',
         ];
     }

@@ -65,6 +65,7 @@ Route::middleware(['auth', 'verified'])->prefix('plataforma')->group(function ()
     // Conversas com o Alex (Tavus): o limite diário está no AlexService; aqui só se trava o abuso de pedidos
     Route::post('/alex/conversas', [AlexController::class, 'store'])->middleware('throttle:10,1')->name('alex.start');
     Route::post('/alex/conversas/{conversation}/terminar', [AlexController::class, 'end'])->middleware('throttle:30,1')->name('alex.end');
+    Route::post('/alex/creditos', [AlexController::class, 'buy'])->middleware('throttle:10,1')->name('alex.buy');
 });
 
 // Avisos do Tavus sobre as conversas do Alex (assinados; sem sessão nem CSRF)
@@ -148,6 +149,7 @@ Route::middleware(['auth', 'verified'])->prefix('administracao')->name('admin.')
     Route::delete('/pessoas/{user}', [AdminPeopleController::class, 'destroy'])->middleware('can:pessoas')->name('people.destroy');
     Route::post('/pessoas/{id}/reativar', [AdminPeopleController::class, 'restore'])->middleware('can:pessoas')->name('people.restore');
     Route::put('/permissoes', [AdminPeopleController::class, 'permissions'])->middleware('can:pessoas')->name('permissions');
+    Route::put('/formador-ia/{course}', [AdminController::class, 'alex'])->middleware('can:cursos.alex.gerir')->name('alex');
     Route::middleware('can:cursos.todos')->group(function () {
         Route::post('/areas', [AreaController::class, 'store'])->name('areas.store');
         Route::put('/areas/{category}', [AreaController::class, 'update'])->name('areas.update');
