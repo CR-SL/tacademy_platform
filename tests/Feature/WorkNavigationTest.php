@@ -36,7 +36,7 @@ class WorkNavigationTest extends TestCase
     {
         $this->actingAs($this->user('aluno'))->get('/dashboard')->assertOk()
             ->assertInertia(fn ($p) => $p->component('Dashboard')->where('auth.worksOnly', false)->where('auth.home', '/dashboard')
-                ->where('learns', true)->has('courses')->has('suggestions')->missing('team')->missing('teaching')->missing('requests'));
+                ->where('learns', true)->has('courses')->has('suggestions')->has('documents')->missing('team')->missing('teaching')->missing('requests'));
         $leader = $this->user('team_leader', ['company_id' => Company::create(['name' => 'Oficina X', 'packs' => 1])->id]);
         // Team leader: as caixas de aprender e a da sua equipa
         $this->actingAs($leader)->get('/dashboard')->assertOk()->assertInertia(fn ($p) => $p->component('Dashboard')
@@ -55,7 +55,7 @@ class WorkNavigationTest extends TestCase
         $this->actingAs($this->user('gestor_cursos'))->get('/dashboard')->assertOk()->assertInertia(fn ($p) => $p
             ->component('Dashboard')->has('requests')->has('purchases')->has('teams')->missing('courses')->missing('teaching')->where('messages', null)->missing('overview')->missing('people'));
         $this->actingAs($this->user('admin'))->get('/dashboard')->assertOk()->assertInertia(fn ($p) => $p
-            ->component('Dashboard')->has('overview')->has('attention')->has('people')->has('requests')->has('catalog')->has('teaching')->where('learns', true));
+            ->component('Dashboard')->has('overview')->has('attention')->has('people')->has('requests')->has('catalog')->has('teaching')->where('learns', false)->missing('courses')); // o admin não é aluno: sem caixas de aprender
 
         // A disposição das caixas do Início de trabalho fica guardada (até 16 caixas: o admin tem 13)
         $admin = $this->user('admin');

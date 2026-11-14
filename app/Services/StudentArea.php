@@ -343,6 +343,17 @@ class StudentArea
         })->all();
     }
 
+    /** Ficheiros mais recentes dos cursos do aluno, para a caixa "Os meus documentos" do Início. */
+    public function recentDocuments(User $user, int $limit = 6): array
+    {
+        return collect($this->documents($user))
+            ->flatMap(fn ($c) => collect($c['sections'])->flatMap(fn ($s) => collect($s['files'])->map(fn ($f) => [...$f, 'course' => $c['title']])))
+            ->sortByDesc('id')
+            ->take($limit)
+            ->values()
+            ->all();
+    }
+
     private function fileType(string $name): string
     {
         return match (true) {

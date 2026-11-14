@@ -52,6 +52,11 @@ class PanelLayoutController extends Controller
         $user = $request->user();
         $layouts = $user->panel_layouts ?? [];
         unset($layouts[$view]);
+        // Repor o Início apaga também as disposições de antes de haver um só Início (home, trabalho, formador):
+        // senão o DashboardController voltava a usá-las ao atualizar a página e a reposição não ficava.
+        if ($view === 'inicio') {
+            unset($layouts['home'], $layouts['trabalho'], $layouts['formador']);
+        }
         $user->forceFill(['panel_layouts' => $layouts ?: null])->save();
 
         return response()->noContent();

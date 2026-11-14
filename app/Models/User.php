@@ -124,11 +124,12 @@ class User extends Authenticatable implements HasLocalePreference
 
     /**
      * Caixas de aprender no Início: quem tem "Fazer cursos" ou, sem nenhuma permissão de trabalho,
-     * quem ficaria sem caixas (o mesmo que a barra faz).
+     * quem ficaria sem caixas (o mesmo que a barra faz). O admin tem todas as permissões, mas não é
+     * aluno: o Início dele (e o menu "Painéis visíveis") fica só com o trabalho (2026-11-13).
      */
     public function learns(): bool
     {
-        return $this->canDo('aprender') || ! $this->hasWork();
+        return ($this->canDo('aprender') && ! $this->isAdmin()) || ! $this->hasWork();
     }
 
     /** Primeira página depois de entrar (e do logótipo): o Início, igual para todos (cada um vê as suas caixas). */

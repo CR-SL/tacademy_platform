@@ -38,6 +38,8 @@ class DashboardController extends Controller
             'notes' => $area->notes($user),
             'suggestions' => $area->suggestions($user),
             'alexUrl' => $area->alexUrl($user),
+            // Caixa "Os meus documentos": os ficheiros mais recentes dos seus cursos
+            'documents' => $area->recentDocuments($user),
         ] : [];
 
         return Inertia::render('Dashboard', [

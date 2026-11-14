@@ -2,8 +2,8 @@ import { Link, usePage } from '@inertiajs/react';
 import { AlexBuy, AlexStart } from '@/Components/Alex/AlexCall';
 import { useEffect, useRef, useState } from 'react';
 import { formatEuro, formatMinutes, levelLabels, plural } from '@/Components/CourseBuilder/format';
-import { alexDef, Bar, EmptyPanel, moduleName } from '@/Components/Panels/PanelBoard';
-import { IconArrow, IconCheck, IconPlay, IconTri } from '@/Components/Panels/icons';
+import { alexDef, Bar, EmptyPanel } from '@/Components/Panels/PanelBoard';
+import { IconArrow, IconPlay } from '@/Components/Panels/icons';
 import WorkshopGame from '@/Components/Panels/WorkshopGame';
 
 import { t } from '@/i18n';
@@ -30,9 +30,8 @@ export function pendingSummary(pending) {
     return parts.join(' · ') || null;
 }
 
-function CoursesPanel({ courses, resume }) {
-    const [open, setOpen] = useState(() => resume?.modules.find((m) => m.current)?.id ?? null);
-
+// Só os cursos, com a percentagem (2026-11-14): os módulos e as aulas estão na caixa lateral de "Os meus cursos"
+function CoursesPanel({ courses }) {
     if (!courses.length) {
         return <EmptyPanel title={t('Ainda não tens cursos')} text={t('Quando te inscreveres num curso, aparece aqui.')} href="/plataforma/cursos" cta={t('Ver o catálogo')} />;
     }
@@ -49,33 +48,23 @@ function CoursesPanel({ courses, resume }) {
                     </span>
                 </Link>
             ))}
-            {resume && (
-                <>
-                    <div className="pn-sub-h pn-lab">{resume.course}{' '}{t('· Módulos')}</div>
-                    {resume.modules.map((m, i) => {
-                        const isOpen = open === m.id;
-                        return (
-                            <div key={m.id}>
-                                <button type="button" className="pn-mod" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : m.id)}>
-                                    <IconTri />
-                                    <span>{moduleName(m.title, i)}</span>
-                                    <span className="pn-st">{m.done === m.total && m.total > 0 ? <IconCheck /> : `${m.done} / ${m.total}`}</span>
-                                </button>
-                                {isOpen && (
-                                    <div className="pn-lessons">
-                                        {m.lessons.map((l, j) => (
-                                            <Link key={l.url} href={l.url} className={`pn-lesson ${l.current ? 'pn-cur' : ''}`}>
-                                                {i + 1}.{j + 1} · {l.title}
-                                                {l.done ? <IconCheck /> : l.current ? <IconPlay /> : null}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </>
-            )}
+        </>
+    );
+}
+
+// Os documentos mais recentes dos cursos do aluno (abrem num separador novo); a lista toda está em Documentos
+function DocumentsPanel({ documents }) {
+    if (!documents.length) return <p className="pn-empty">{t('Os documentos dos teus cursos (fichas, PDF, apresentações) aparecem aqui.')}</p>;
+
+    return (
+        <>
+            {documents.map((d) => (
+                <a key={d.id} href={d.url} target="_blank" rel="noreferrer" className="pn-res pn-doc">
+                    <span><span className="pn-doc-n">{d.name}</span><small>{d.course}</small></span>
+                    <b>{t(d.type)}</b>
+                </a>
+            ))}
+            <div className="pn-foot"><Link href="/plataforma/documentos" className="ui-link">{t('Ver todos os documentos')}</Link></div>
         </>
     );
 }
@@ -211,23 +200,23 @@ function lessonNumber(resume) {
 
 // Lugares das caixas comuns no Início do aluno (Pendentes e Mensagens)
 export const LEARN_SPOTS = {
-    pendentes: { x: 5, y: 9, w: 7, h: 13 },
-    mensagens: { x: 12, y: 22, w: 12, h: 11 },
+    pendentes: { x: 0, y: 11, w: 9, h: 12 },
+    mensagens: { x: 9, y: 11, w: 9, h: 12 },
 };
 
 /** Definições das caixas de aprender (Pendentes e Mensagens são comuns e ficam na página). */
-export function learningBoxes({ courses, resume, results, notes, suggestions, alexUrl }, { best, setBest }) {
+export function learningBoxes({ courses, resume, results, notes, suggestions, documents = [], alexUrl }, { best, setBest }) {
     const counts = { curso: 0, novo: 0, feito: 0 };
     courses.forEach((c) => { counts[c.state] += 1; });
 
     return {
         cursos: {
-            title: t('Os meus cursos'), x: 0, y: 0, w: 5, h: 22,
+            title: t('Os meus cursos'), x: 18, y: 0, w: 6, h: 15,
             summary: [counts.curso && t(':curso em curso', { curso: counts.curso }), counts.novo && t(':novo por começar', { novo: counts.novo }), counts.feito && plural(counts.feito, t('1 concluído'), t(':n concluídos'))].filter(Boolean).join(' · '),
-            body: <CoursesPanel courses={courses} resume={resume} />,
+            body: <CoursesPanel courses={courses} />,
         },
         continuar: {
-            title: t('Continuar'), x: 5, y: 0, w: 14, h: 9,
+            title: t('Continuar'), x: 0, y: 0, w: 12, h: 11,
             label: resume ? [t('Continuar'), resume.course, lessonNumber(resume) && t('Aula :v1', { v1: lessonNumber(resume) })].filter(Boolean).join(' · ') : t('Continuar'),
             summary: resume?.lesson,
             hero: { image: resume?.image ?? '/images/cursos/cta-oficina.jpg', stamp: resume?.stamp },
@@ -235,13 +224,18 @@ export function learningBoxes({ courses, resume, results, notes, suggestions, al
             body: <ContinueBody resume={resume} hasCourses={courses.length > 0} />,
         },
         resultados: {
-            title: t('Resultados'), x: 12, y: 9, w: 7, h: 13,
+            title: t('Resultados'), x: 0, y: 23, w: 6, h: 10,
             summary: results[0] ? t('Último: :score%', { score: results[0].score }) : t('Sem testes feitos'),
             body: <ResultsPanel results={results} />,
         },
-        alex: { ...alexDef(alexUrl, 0, 22), compact: false },
+        alex: { ...alexDef(alexUrl, 0, 11), x: 12, w: 6, compact: false },
+        documentos: {
+            title: t('Os meus documentos'), x: 18, y: 15, w: 6, h: 14,
+            summary: plural(documents.length, t('1 documento'), t(':n documentos')),
+            body: <DocumentsPanel documents={documents} />,
+        },
         notas: {
-            title: t('As minhas notas'), x: 0, y: 22, w: 12, h: 11,
+            title: t('As minhas notas'), x: 6, y: 23, w: 12, h: 10,
             label: t('As minhas notas · :length', { length: notes.length }),
             summary: notes[0] ? t('Última em :lesson', { lesson: notes[0].lesson }) : t('Sem notas'),
             body: <NotesPanel notes={notes} />,

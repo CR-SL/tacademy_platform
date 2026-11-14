@@ -1450,5 +1450,9 @@
     "Nota média de :min% nos testes (tens :now%)": "Average score of :min% in tests (you have :now%)",
     "Pré-requisitos:": "Prerequisites:",
     "A quem se destina:": "Who it is for:",
-    "Acesso terminado": "Access ended"
+    "Acesso terminado": "Access ended",
+    "1 documento": "1 document",
+    ":n documentos": ":n documents",
+    "Ver todos os documentos": "See all documents",
+    "Os documentos dos teus cursos (fichas, PDF, apresentações) aparecem aqui.": "Documents from your courses (worksheets, PDFs, slides) show up here."
 }

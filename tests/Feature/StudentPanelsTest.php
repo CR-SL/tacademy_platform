@@ -165,6 +165,12 @@ class StudentPanelsTest extends TestCase
 
         $this->actingAs($this->student)->deleteJson('/plataforma/paineis/home')->assertNoContent();
         $this->assertNull($this->student->fresh()->panel_layouts);
+
+        // Repor o Início com uma disposição antiga (home) guardada: ao voltar à página fica a disposição inicial
+        $this->actingAs($this->student)->putJson('/plataforma/paineis/home', $layout)->assertNoContent();
+        $this->actingAs($this->student)->putJson('/plataforma/paineis/inicio', $layout)->assertNoContent();
+        $this->actingAs($this->student)->deleteJson('/plataforma/paineis/inicio')->assertNoContent();
+        $this->actingAs($this->student)->get('/dashboard')->assertInertia(fn ($page) => $page->where('savedLayout', null));
     }
 
     public function test_invalid_layouts_are_refused(): void
