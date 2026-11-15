@@ -98,8 +98,9 @@ class TeamService
 
             // Saem da equipa
             $company->users()->whereNotIn('email', $people->pluck('email'))->get()->each(function (User $u) use ($company, $roles) {
-                $lost = Enrollment::where('user_id', $u->id)->where('company_id', $company->id)->pluck('course_id');
-                Enrollment::where('user_id', $u->id)->where('company_id', $company->id)->delete();
+                // A conta fica. Mantém os cursos que comprou e os que já concluiu (com o certificado);
+                // perde só o acesso aos cursos da equipa por concluir (o progresso fica guardado)
+                $lost = Enrollment::releaseFromCompany(Enrollment::where('user_id', $u->id)->where('company_id', $company->id));
                 if ($lost->isNotEmpty()) {
                     Activity::log('acesso.retirado', $company, ['cursos' => Course::whereIn('id', $lost)->pluck('title')->all(), 'motivo' => 'saiu da equipa'], related: $u);
                 }
@@ -138,12 +139,18 @@ class TeamService
         });
     }
 
-    /** Dá acesso ao curso; se o aluno já o tinha comprado, passa a contar também para a equipa. */
+    /**
+     * Dá acesso ao curso. companyId = pela equipa; null = acesso pessoal (compra).
+     * Se o aluno já o tinha comprado, passa a contar também para a equipa e continua pessoal
+     * (não o perde se sair da equipa).
+     */
     public function enroll(User $user, int $courseId, ?int $companyId): Enrollment
     {
         $e = Enrollment::firstOrNew(['user_id' => $user->id, 'course_id' => $courseId]);
         if (! $e->exists) {
-            $e->fill(['source' => 'manual', 'status' => 'active', 'enrolled_at' => now()]);
+            $e->fill(['source' => 'manual', 'status' => 'active', 'enrolled_at' => now(), 'personal' => $companyId === null]);
+        } elseif ($companyId === null || $e->company_id === null) {
+            $e->personal = true;
         }
         if ($companyId) $e->company_id = $companyId;
         $e->save();

@@ -19,7 +19,8 @@ const LEGACY = { video_upload: { label: 'Vídeo (upload)', short: '▶', cls: 'b
 const typeOf = (tx) => LESSON_TYPES[tx] ?? LEGACY[tx] ?? LESSON_TYPES.video_link;
 
 export const blankLesson = () => ({ key: newKey(), id: null, title: '', type: 'video_link', url: '', minutes: '', body: '', attachments: [], quiz: [], checks: [] });
-const blankQuestion = () => ({ question: '', options: ['', ''], correct: 0 });
+// key/id/option_ids: o servidor atualiza pelo id, para não estragar as tentativas dos alunos
+const blankQuestion = () => ({ key: newKey(), id: null, question: '', options: ['', ''], option_ids: [null, null], correct: 0 });
 
 // Passo 2 · Programa: módulos e aulas, por ordem.
 export default function StepProgram({ c, update, upload, openKey, setOpenKey }) {
@@ -248,7 +249,7 @@ function LessonEditor({ l, set, upload }) {
     );
 }
 
-const blankCheck = () => ({ question: '', options: ['', '', ''], correct: 0, explanation: '' });
+const blankCheck = () => ({ key: newKey(), id: null, question: '', options: ['', '', ''], correct: 0, explanation: '' });
 
 // Perguntas rápidas no fim do vídeo: são opcionais para o aluno e não contam para a nota
 function ChecksEditor({ l, set }) {
@@ -320,13 +321,14 @@ function QuizEditor({ l, set }) {
                                 <IconButton label={t('Remover opção')} danger onClick={() => set((x) => {
                                     const qq = x.quiz[qi];
                                     qq.options.splice(oi, 1);
+                                    qq.option_ids?.splice(oi, 1);
                                     if (qq.correct >= qq.options.length || qq.correct === oi) qq.correct = 0;
                                     else if (qq.correct > oi) qq.correct -= 1;
                                 })}>✕</IconButton>
                             )}
                         </div>
                     ))}
-                    {q.options.length < 8 && <AddLink onClick={() => set((x) => { x.quiz[qi].options.push(''); })}>{t('+ Opção')}</AddLink>}
+                    {q.options.length < 8 && <AddLink onClick={() => set((x) => { x.quiz[qi].options.push(''); x.quiz[qi].option_ids?.push(null); })}>{t('+ Opção')}</AddLink>}
                 </div>
             ))}
             <AddLink onClick={() => set((x) => { x.quiz.push(blankQuestion()); })}>{t('+ Adicionar pergunta')}</AddLink>

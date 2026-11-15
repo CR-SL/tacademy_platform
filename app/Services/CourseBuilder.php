@@ -6,9 +6,11 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\LessonAttachment;
 use App\Models\Module;
+use App\Models\QuizAttempt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Editor de cursos dos formadores ("Os meus cursos").
@@ -89,12 +91,16 @@ class CourseBuilder
                     ])->values()->all(),
                     'quiz' => $l->quiz
                         ? $l->quiz->questions->map(fn ($q) => [
+                            'key' => 'q'.$q->id,
+                            'id' => $q->id,
                             'question' => $q->question,
+                            'option_ids' => $q->options->pluck('id')->all(),
                             'options' => $q->options->pluck('option_text')->all(),
                             'correct' => max(0, $q->options->search(fn ($o) => $o->is_correct)),
                         ])->values()->all()
                         : [],
                     'checks' => $l->checks->map(fn ($c) => [
+                        'key' => 'c'.$c->id, 'id' => $c->id,
                         'question' => $c->question, 'options' => $c->options, 'correct' => $c->correct, 'explanation' => $c->explanation ?? '',
                     ])->values()->all(),
                 ])->values()->all(),
@@ -103,7 +109,8 @@ class CourseBuilder
     }
 
     /**
-     * Guarda o estado do editor. Devolve ['modules' => [key => id], 'lessons' => [key => id]].
+     * Guarda o estado do editor. Devolve ['modules' => [key => id], 'lessons' => [key => id],
+     * 'questions' => [key => ['id', 'option_ids']], 'checks' => [key => id]].
      */
     public function save(Course $course, array $data): array
     {
@@ -151,7 +158,7 @@ class CourseBuilder
             }
             $course->save();
 
-            $maps = ['modules' => [], 'lessons' => []];
+            $maps = ['modules' => [], 'lessons' => [], 'questions' => [], 'checks' => []];
             $existingModules = $course->modules()->get()->keyBy('id');
             $existingLessons = Lesson::whereIn('module_id', $existingModules->keys())->get()->keyBy('id');
             $oldVideos = $existingLessons->toBase()->map(fn (Lesson $l) => self::uploadedVideo($l->content_url))->filter();
@@ -189,8 +196,8 @@ class CourseBuilder
                     $minutes += (int) ($l['minutes'] ?? 0);
 
                     $this->syncAttachments($lesson, $l['attachments'] ?? []);
-                    $this->syncQuiz($lesson, $type === 'quiz' ? ($l['quiz'] ?? []) : null);
-                    $this->syncChecks($lesson, in_array($type, ['video_link', 'video_upload'], true) ? ($l['checks'] ?? []) : []);
+                    $maps['questions'] += $this->syncQuiz($lesson, $type === 'quiz' ? ($l['quiz'] ?? []) : null);
+                    $maps['checks'] += $this->syncChecks($lesson, in_array($type, ['video_link', 'video_upload'], true) ? ($l['checks'] ?? []) : []);
                 }
             }
 
@@ -312,39 +319,81 @@ class CourseBuilder
         });
     }
 
-    /** Substitui as perguntas rápidas do fim da aula (só aulas de vídeo; perguntas vazias são ignoradas). */
-    private function syncChecks(Lesson $lesson, array $checks): void
+    /**
+     * Guarda as perguntas rápidas do fim da aula (só aulas de vídeo; perguntas vazias são ignoradas).
+     * As que já existem são atualizadas pelo id, para não perder as respostas dos alunos
+     * (lesson_progress.check_answers guarda o id da pergunta). Devolve [key => id].
+     */
+    private function syncChecks(Lesson $lesson, array $checks): array
     {
-        $lesson->checks()->delete();
+        $existing = $lesson->checks()->get()->keyBy('id');
+        $kept = [];
+        $map = [];
         foreach (array_values(array_filter($checks, fn ($c) => trim($c['question'] ?? '') !== '')) as $i => $c) {
             $options = array_values(array_filter(array_map(fn ($o) => trim((string) $o), $c['options'] ?? []), fn ($o) => $o !== ''));
             if (count($options) < 2) continue;
-            $lesson->checks()->create([
+            $check = isset($c['id']) && $existing->has($c['id']) ? $existing[$c['id']] : $lesson->checks()->make();
+            $check->fill([
                 'question' => trim($c['question']),
                 'options' => $options,
                 'correct' => min((int) ($c['correct'] ?? 0), count($options) - 1),
                 'explanation' => trim($c['explanation'] ?? '') ?: null,
                 'order_index' => $i,
-            ]);
+            ])->save();
+            $kept[] = $check->id;
+            if (! empty($c['key'])) $map[$c['key']] = $check->id;
         }
+        $lesson->checks()->whereNotIn('id', $kept)->delete();
+
+        return $map;
     }
 
-    /** Substitui as perguntas do quiz da aula (null = a aula já não é quiz). */
-    private function syncQuiz(Lesson $lesson, ?array $questions): void
+    /**
+     * Guarda as perguntas do quiz da aula (null = a aula já não é quiz).
+     * Perguntas e opções que já existem são atualizadas pelo id, porque as tentativas dos alunos
+     * (quiz_attempts.answers = {question_id: option_id}) apontam para esses ids.
+     * Devolve [key => ['id' => id da pergunta, 'option_ids' => [...]]].
+     */
+    private function syncQuiz(Lesson $lesson, ?array $questions): array
     {
+        $quiz = $lesson->quiz()->first();
         if ($questions === null) {
-            $lesson->quiz()->delete();
-
-            return;
-        }
-        $quiz = $lesson->quiz()->firstOrCreate([], ['title' => $lesson->title ?: 'Teste']);
-        $quiz->update(['title' => $lesson->title ?: 'Teste']);
-        $quiz->questions()->delete(); // as opções vão em cascata
-        foreach (array_values($questions) as $qi => $q) {
-            $question = $quiz->questions()->create(['question' => trim($q['question'] ?? ''), 'order_index' => $qi]);
-            foreach (array_values($q['options'] ?? []) as $oi => $text) {
-                $question->options()->create(['option_text' => trim((string) $text), 'is_correct' => $oi === (int) ($q['correct'] ?? 0)]);
+            if (! $quiz) return [];
+            // Apagar o quiz apagava também as tentativas, e com elas as notas do certificado
+            if (QuizAttempt::where('quiz_id', $quiz->id)->exists()) {
+                throw ValidationException::withMessages(['modules' => __('A aula ":title" é um teste que já tem tentativas de alunos. Não podes mudar o tipo desta aula.', ['title' => $lesson->title ?: __('Teste')])]);
             }
+            $quiz->delete();
+
+            return [];
         }
+        $quiz ??= $lesson->quiz()->create(['title' => $lesson->title ?: 'Teste']);
+        $quiz->update(['title' => $lesson->title ?: 'Teste']);
+
+        $existing = $quiz->questions()->with('options')->get()->keyBy('id');
+        $kept = [];
+        $map = [];
+        foreach (array_values($questions) as $qi => $q) {
+            $question = isset($q['id']) && $existing->has($q['id']) ? $existing[$q['id']] : $quiz->questions()->make();
+            $question->fill(['question' => trim($q['question'] ?? ''), 'order_index' => $qi])->save();
+            $kept[] = $question->id;
+
+            // Opções: pelo id que o editor envia; sem ids (editor aberto antes desta versão), pela posição
+            $old = $question->relationLoaded('options') ? $question->options->values() : collect();
+            $byId = $old->keyBy('id');
+            $sentIds = $q['option_ids'] ?? null;
+            $optionIds = [];
+            foreach (array_values($q['options'] ?? []) as $oi => $text) {
+                $id = is_array($sentIds) ? ($sentIds[$oi] ?? null) : $old->get($oi)?->id;
+                $option = $id && $byId->has($id) && ! in_array($id, $optionIds, true) ? $byId[$id] : $question->options()->make();
+                $option->fill(['option_text' => trim((string) $text), 'is_correct' => $oi === (int) ($q['correct'] ?? 0)])->save();
+                $optionIds[] = $option->id;
+            }
+            $question->options()->whereNotIn('id', $optionIds)->delete();
+            if (! empty($q['key'])) $map[$q['key']] = ['id' => $question->id, 'option_ids' => $optionIds];
+        }
+        $quiz->questions()->whereNotIn('id', $kept)->delete(); // as opções vão em cascata
+
+        return $map;
     }
 }

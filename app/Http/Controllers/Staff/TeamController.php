@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\TeamService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -102,23 +103,28 @@ class TeamController extends Controller
             'resolve.*' => ['integer'],
         ], ['people.*.name.required' => __('Falta o nome.'), 'people.*.email.*' => __('Email inválido.')]);
 
-        $company->update(['packs' => $data['packs']]);
-        $company->courses()->sync($data['course_ids']);
-        // Cursos retirados da equipa: os membros deixam de ter acesso por via da equipa
-        $removed = Enrollment::where('company_id', $company->id)->whereNotIn('course_id', $data['course_ids'])->get(['course_id', 'user_id']);
-        Enrollment::where('company_id', $company->id)->whereNotIn('course_id', $data['course_ids'])->delete();
-        if ($removed->isNotEmpty()) {
-            Activity::log('equipa.cursos_retirados', $company, [
-                'cursos' => Course::whereIn('id', $removed->pluck('course_id')->unique())->pluck('title')->all(),
-                'pessoas' => $removed->pluck('user_id')->unique()->count(),
-            ]);
-        }
-        $this->teams->syncMembers($company->fresh(), $data['people'], $data['leader'], $request->user());
+        // Tudo ou nada: se os membros forem recusados (lugares a mais, team leader fora da lista, email de
+        // outra equipa), os packs, os cursos e as inscrições ficam como estavam.
+        DB::transaction(function () use ($company, $data, $request) {
+            $company->update(['packs' => $data['packs']]);
+            $company->courses()->sync($data['course_ids']);
+            // Cursos retirados da equipa: os membros deixam de ter acesso por via da equipa
+            // (os cursos comprados ou já concluídos ficam: só deixam de contar para a empresa)
+            $removed = Enrollment::where('company_id', $company->id)->whereNotIn('course_id', $data['course_ids'])->get(['course_id', 'user_id']);
+            Enrollment::releaseFromCompany(Enrollment::where('company_id', $company->id)->whereNotIn('course_id', $data['course_ids']));
+            if ($removed->isNotEmpty()) {
+                Activity::log('equipa.cursos_retirados', $company, [
+                    'cursos' => Course::whereIn('id', $removed->pluck('course_id')->unique())->pluck('title')->all(),
+                    'pessoas' => $removed->pluck('user_id')->unique()->count(),
+                ]);
+            }
+            $this->teams->syncMembers($company->fresh(), $data['people'], $data['leader'], $request->user());
 
-        if (! empty($data['resolve'])) {
-            ContactRequest::whereIn('id', $data['resolve'])->where('company_id', $company->id)
-                ->update(['status' => 'concluido', 'assigned_to' => $request->user()->id]);
-        }
+            if (! empty($data['resolve'])) {
+                ContactRequest::whereIn('id', $data['resolve'])->where('company_id', $company->id)
+                    ->update(['status' => 'concluido', 'assigned_to' => $request->user()->id]);
+            }
+        });
 
         return back()->with('status', __('Equipa atualizada.'));
     }

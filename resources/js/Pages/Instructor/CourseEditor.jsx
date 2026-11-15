@@ -21,6 +21,19 @@ const STEPS = [
 const SAVE_DELAY = 1200;
 const LAST = STEPS.length - 1; // Rever e publicar
 
+// Junta à pergunta os ids que o servidor deu. Os ids das opções só se juntam se o número de opções não mudou
+// entretanto; se mudou, a próxima gravação cria as opções novas (nunca dá o id de uma opção a outra).
+function withQuestionIds(q, saved) {
+    if (!saved) return q;
+    const ids = q.option_ids ?? q.options.map(() => null);
+    const sameShape = saved.option_ids.length === q.options.length;
+    return {
+        ...q,
+        id: q.id ?? saved.id,
+        option_ids: sameShape ? ids.map((id, i) => id ?? saved.option_ids[i]) : ids,
+    };
+}
+
 // Editor de cursos dos formadores: assistente em 5 passos que se guarda sozinho.
 export default function CourseEditor({ course, categories, library, shortMax, canAlex, canManageAlex }) {
     const [c, setC] = useState(() => course ?? blankCourse());
@@ -60,13 +73,13 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                 const res = ulid.current
                     ? await window.axios.put(`/formador/cursos/${ulid.current}`, data)
                     : await window.axios.post('/formador/cursos', data);
-                const { modules, lessons, slug } = res.data;
+                const { modules, lessons, slug, questions = {}, checks = {} } = res.data;
                 if (!ulid.current) {
                     ulid.current = res.data.ulid;
                     // o endereço passa a ser o do curso, para um refresh não criar outro
                     window.history.replaceState(window.history.state, '', `/formador/cursos/${ulid.current}/editar`);
                 }
-                // ids dos módulos/aulas novos (sem marcar como alteração)
+                // ids dos módulos, aulas e perguntas novos (sem marcar como alteração)
                 setC((prev) => ({
                     ...prev,
                     ulid: ulid.current,
@@ -74,7 +87,12 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                     modules: prev.modules.map((m) => ({
                         ...m,
                         id: m.id ?? modules[m.key] ?? null,
-                        lessons: m.lessons.map((l) => ({ ...l, id: l.id ?? lessons[l.key] ?? null })),
+                        lessons: m.lessons.map((l) => ({
+                            ...l,
+                            id: l.id ?? lessons[l.key] ?? null,
+                            quiz: (l.quiz ?? []).map((q) => withQuestionIds(q, questions[q.key])),
+                            checks: (l.checks ?? []).map((c) => ({ ...c, id: c.id ?? checks[c.key] ?? null })),
+                        })),
                     })),
                 }));
                 setSaveError('');

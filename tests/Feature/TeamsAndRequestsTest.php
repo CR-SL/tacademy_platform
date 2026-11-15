@@ -170,9 +170,90 @@ class TeamsAndRequestsTest extends TestCase
             'people' => [['name' => 'Paulo Moura', 'email' => 'paulo@moura.pt'], ['name' => 'Hugo Barros', 'email' => 'hugo@moura.pt']],
         ])->assertSessionHasNoErrors();
 
+        $this->assertNotNull($sergio->fresh()); // a conta nunca é apagada
         $this->assertNull($sergio->fresh()->company_id);
-        $this->assertFalse(Enrollment::where('user_id', $sergio->id)->exists());
+        $this->assertFalse(Enrollment::where('user_id', $sergio->id)->exists()); // curso da equipa por concluir: perde o acesso
         $this->assertSame($company->id, User::where('email', 'hugo@moura.pt')->value('company_id'));
+    }
+
+    public function test_leaving_the_team_keeps_a_course_bought_personally(): void
+    {
+        $gestor = $this->user('gestor_cursos');
+        $course = $this->course('Diagnóstico OBD-II');
+        $other = $this->course('Baterias de Alta Tensão');
+        // O Sérgio já tinha comprado o OBD-II antes de a empresa o incluir na equipa
+        $sergio = $this->user('aluno', ['email' => 'sergio@moura.pt', 'name' => 'Sérgio Moura']);
+        app(\App\Services\TeamService::class)->enroll($sergio, $course->id, null);
+        $company = $this->createTeam($gestor, $this->paidCompanyRequest($course), $course);
+        $this->assertSame($company->id, Enrollment::where('user_id', $sergio->id)->value('company_id'));
+
+        // A equipa troca de curso: o Paulo perde o OBD-II, o Sérgio não (é dele)
+        $paulo = User::where('email', 'paulo@moura.pt')->first();
+        $this->actingAs($gestor)->put("/gestao/equipas/{$company->ulid}", [
+            'packs' => 1, 'course_ids' => [$other->id], 'leader' => 'paulo@moura.pt', 'people' => $this->paidCompanyRequest($course)->people,
+        ])->assertSessionHasNoErrors();
+        $this->assertFalse(Enrollment::where('user_id', $paulo->id)->where('course_id', $course->id)->exists());
+        $mine = Enrollment::where('user_id', $sergio->id)->where('course_id', $course->id)->first();
+        $this->assertNotNull($mine);
+        $this->assertNull($mine->company_id);
+
+        // O Sérgio sai da equipa: perde o curso da equipa, mantém o que comprou
+        $this->actingAs($gestor)->put("/gestao/equipas/{$company->ulid}", [
+            'packs' => 1, 'course_ids' => [$other->id], 'leader' => 'paulo@moura.pt', 'people' => [['name' => 'Paulo Moura', 'email' => 'paulo@moura.pt']],
+        ])->assertSessionHasNoErrors();
+        $this->assertSame([$course->id], Enrollment::where('user_id', $sergio->id)->pluck('course_id')->all());
+    }
+
+    public function test_leaving_the_team_keeps_the_account_and_finished_courses_with_their_certificate(): void
+    {
+        $gestor = $this->user('gestor_cursos');
+        $course = $this->course('Diagnóstico OBD-II');
+        $other = $this->course('Baterias de Alta Tensão');
+        $third = $this->course('Gestão de Oficina');
+        $company = $this->createTeam($gestor, $this->paidCompanyRequest($course), $course);
+        $people = $this->paidCompanyRequest($course)->people;
+        $this->actingAs($gestor)->put("/gestao/equipas/{$company->ulid}", [
+            'packs' => 1, 'course_ids' => [$course->id, $other->id, $third->id], 'leader' => 'paulo@moura.pt', 'people' => $people,
+        ])->assertSessionHasNoErrors();
+
+        // O Sérgio concluiu o OBD-II, tem o certificado das Baterias e ainda não acabou a Gestão
+        $sergio = User::where('email', 'sergio@moura.pt')->first();
+        Enrollment::where('user_id', $sergio->id)->where('course_id', $course->id)->update(['status' => 'completed', 'completed_at' => now()]);
+        \App\Models\Certificate::create(['user_id' => $sergio->id, 'course_id' => $other->id, 'certificate_number' => 'TA-2026-SER001', 'status' => 'valid', 'issued_at' => now()]);
+
+        $this->actingAs($gestor)->put("/gestao/equipas/{$company->ulid}", [
+            'packs' => 1, 'course_ids' => [$course->id, $other->id, $third->id], 'leader' => 'paulo@moura.pt',
+            'people' => [['name' => 'Paulo Moura', 'email' => 'paulo@moura.pt']],
+        ])->assertSessionHasNoErrors();
+
+        // A conta fica; mantém os dois cursos acabados (já não contam para a empresa) e o certificado
+        $this->assertNotNull($sergio->fresh());
+        $this->assertNull($sergio->fresh()->company_id);
+        $kept = Enrollment::where('user_id', $sergio->id)->orderBy('course_id')->get();
+        $this->assertSame([$course->id, $other->id], $kept->pluck('course_id')->all());
+        $this->assertSame([null, null], $kept->pluck('company_id')->all());
+        $this->assertTrue(\App\Models\Certificate::where('user_id', $sergio->id)->where('course_id', $other->id)->exists());
+    }
+
+    public function test_a_refused_team_update_changes_nothing(): void
+    {
+        $gestor = $this->user('gestor_cursos');
+        $course = $this->course('Diagnóstico OBD-II');
+        $other = $this->course('Baterias de Alta Tensão');
+        $company = $this->createTeam($gestor, $this->paidCompanyRequest($course), $course);
+        $before = Enrollment::where('company_id', $company->id)->count();
+
+        // Troca o curso e põe 11 pessoas em 10 lugares: é recusado e nada muda
+        $people = collect(range(1, 11))->map(fn ($i) => ['name' => "Pessoa $i", 'email' => "p$i@moura.pt"])->all();
+        $people[0] = ['name' => 'Paulo Moura', 'email' => 'paulo@moura.pt'];
+        $this->actingAs($gestor)->put("/gestao/equipas/{$company->ulid}", [
+            'packs' => 1, 'course_ids' => [$other->id], 'leader' => 'paulo@moura.pt', 'people' => $people,
+        ])->assertSessionHasErrors('people');
+
+        $company->refresh();
+        $this->assertSame([$course->id], $company->courses()->pluck('courses.id')->all());
+        $this->assertSame($before, Enrollment::where('company_id', $company->id)->where('course_id', $course->id)->count());
+        $this->assertFalse(User::where('email', 'p2@moura.pt')->exists());
     }
 
     public function test_a_personal_purchase_waits_for_authorization(): void

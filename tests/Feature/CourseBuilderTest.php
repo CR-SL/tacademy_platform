@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Course;
+use App\Models\LessonProgress;
+use App\Models\QuizAttempt;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CourseBuilder;
@@ -128,6 +130,78 @@ class CourseBuilderTest extends TestCase
         $this->assertSame('common-rail-na-pratica', $course->slug);
         $this->assertSame(['Introdução ao sistema'], $course->lessons()->pluck('lessons.title')->all());
         $this->assertSame($res['lessons']['nB'], $course->lessons()->value('lessons.id'));
+    }
+
+    /** Estado que o editor envia: o que o servidor lhe deu (com ids), como o React o guarda. */
+    private function editorState(Course $course): array
+    {
+        $state = app(CourseBuilder::class)->toEditor($course->fresh());
+        unset($state['ulid'], $state['slug']);
+
+        return json_decode(json_encode($state), true);
+    }
+
+    public function test_saving_the_editor_keeps_quiz_attempts_and_quick_check_answers(): void
+    {
+        $formador = $this->user('formador');
+        $aluno = $this->user('aluno');
+        $this->actingAs($formador)->postJson('/formador/cursos', $this->payload())->assertCreated();
+        $course = Course::firstOrFail();
+
+        $quizLesson = $course->lessons()->where('content_type', 'quiz')->first();
+        $question = $quizLesson->quiz->questions->first();
+        $right = $question->options->firstWhere('is_correct', true);
+        $attempt = QuizAttempt::create(['user_id' => $aluno->id, 'quiz_id' => $quizLesson->quiz->id, 'score' => 100, 'passed' => true,
+            'answers' => [$question->id => $right->id], 'attempted_at' => now()]);
+        $videoLesson = $course->lessons()->where('content_type', 'video_link')->first();
+        $check = $videoLesson->checks->first();
+        LessonProgress::create(['user_id' => $aluno->id, 'lesson_id' => $videoLesson->id, 'status' => 'in_progress', 'check_answers' => [(string) $check->id => 0]]);
+
+        // O formador corrige o texto da pergunta e de uma opção, e acrescenta uma opção e uma pergunta
+        $data = $this->editorState($course);
+        $quiz = &$data['modules'][0]['lessons'][2]['quiz'];
+        $quiz[0]['question'] = 'Pressão em ralenti (aprox.)?';
+        $quiz[0]['options'][0] = '50 bar (baixa)';
+        $quiz[0]['options'][] = '1000 bar';
+        $quiz[0]['option_ids'][] = null;
+        $quiz[] = ['key' => 'nQ', 'id' => null, 'question' => 'Nova?', 'options' => ['Sim', 'Não'], 'option_ids' => [null, null], 'correct' => 0];
+        unset($quiz);
+        $data['modules'][0]['lessons'][0]['checks'][0]['explanation'] = 'Alimenta os injetores.';
+
+        $res = $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
+
+        // As ids ficam: a tentativa continua a apontar para a pergunta e a opção certas
+        $question->refresh()->load('options');
+        $this->assertSame('Pressão em ralenti (aprox.)?', $question->question);
+        $this->assertSame(['50 bar (baixa)', '300 bar', '1000 bar'], $question->options->pluck('option_text')->all());
+        $this->assertTrue($question->options->firstWhere('id', $right->id)->is_correct);
+        $this->assertNotNull($attempt->fresh());
+        $this->assertSame('Alimenta os injetores.', $check->fresh()->explanation);
+        $this->assertCount(2, $quizLesson->quiz->questions()->get());
+        $this->assertNotNull($res->json('questions.nQ.id'));
+        $this->assertCount(2, $res->json('questions.nQ.option_ids'));
+
+        // Uma segunda gravação com as ids devolvidas não cria cópias
+        $data = $this->editorState($course);
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
+        $this->assertCount(2, $quizLesson->quiz->questions()->get());
+        $this->assertSame($right->id, $question->options()->where('is_correct', true)->value('id'));
+    }
+
+    public function test_a_quiz_with_attempts_cannot_change_type(): void
+    {
+        $formador = $this->user('formador');
+        $this->actingAs($formador)->postJson('/formador/cursos', $this->payload())->assertCreated();
+        $course = Course::firstOrFail();
+        $quizLesson = $course->lessons()->where('content_type', 'quiz')->first();
+        QuizAttempt::create(['user_id' => $this->user('aluno')->id, 'quiz_id' => $quizLesson->quiz->id, 'score' => 0, 'passed' => false, 'answers' => [], 'attempted_at' => now()]);
+
+        $data = $this->editorState($course);
+        $data['modules'][0]['lessons'][2]['type'] = 'text';
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertStatus(422);
+
+        $this->assertSame('quiz', $quizLesson->fresh()->content_type);
+        $this->assertSame(1, QuizAttempt::count());
     }
 
     public function test_an_instructor_cannot_edit_someone_elses_course_but_an_admin_can(): void
