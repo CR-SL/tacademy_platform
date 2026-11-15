@@ -3,6 +3,7 @@ import { useState } from 'react';
 import StudentLayout, { initials } from '@/Layouts/StudentLayout';
 import { Button, Chip, Drawer, Field, FlashToast, inputCls, Pills, useConfirm } from '@/Components/ui';
 import { Columns, Completion, fmtEuro, fmtInt, HBars } from '@/Components/Admin/Charts';
+import ActivityLog from '@/Components/Admin/ActivityLog';
 import { t } from '@/i18n';
 
 // Administração: menu lateral com estatísticas, catálogo, pessoas e permissões.
@@ -22,11 +23,12 @@ const MENU = [
         ['pessoas', 'Pessoas', 'M9 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6'],
         ['permissoes', 'Permissões', 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4'],
     ]],
+    ['Segurança', [['registo', 'Registo de atividade', 'M5 4h14v16H5zM9 9h6M9 13h6M9 17h3']]],
 ];
 const courseUrl = (ulid) => `/administracao/cursos/${ulid}`;
 
 export default function Index({ section, sections, days, data }) {
-    const Section = { geral: Overview, vendas: Sales, cliques: Clicks, conclusao: CompletionSection, catalogo: Catalog, 'formador-ia': AlexSection, pessoas: People, permissoes: Permissions }[section];
+    const Section = { geral: Overview, vendas: Sales, cliques: Clicks, conclusao: CompletionSection, catalogo: Catalog, 'formador-ia': AlexSection, pessoas: People, permissoes: Permissions, registo: ActivityLog }[section];
 
     return (
         <StudentLayout>

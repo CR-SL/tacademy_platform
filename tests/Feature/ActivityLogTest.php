@@ -120,4 +120,59 @@ class ActivityLogTest extends TestCase
         $this->assertSame('Conta apagada', $row->subject_label);
         $this->assertNull($row->ip);
     }
+
+    public function test_only_the_admin_sees_the_activity_log(): void
+    {
+        $gestor = $this->user('gestor_cursos');
+        Role::where('name', 'gestor_cursos')->first()->forceFill(['permissions' => ['pessoas', 'estatisticas']])->save();
+        // Não é uma permissão: quem não é admin é mandado para outra secção
+        $to = $this->actingAs($gestor)->get('/administracao/registo')->assertRedirect()->headers->get('Location');
+        $this->assertStringNotContainsString('registo', $to);
+        $this->actingAs($gestor)->get('/administracao/registo/exportar')->assertForbidden();
+
+        $admin = $this->user('admin');
+        $this->actingAs($admin)->get('/administracao/registo')->assertOk()
+            ->assertInertia(fn ($p) => $p->component('Admin/Index')->where('section', 'registo')->has('data.rows.data'));
+    }
+
+    public function test_the_log_page_filters_by_group_ip_and_person_and_warns_about_failed_logins(): void
+    {
+        $admin = $this->user('admin');
+        $student = $this->user();
+        foreach (range(1, 3) as $i) {
+            $this->withServerVariables(['REMOTE_ADDR' => '45.155.205.9'])->post('/login', ['email' => "x{$i}@exemplo.test", 'password' => 'errada']);
+        }
+        $this->actingAs($admin);
+        Enrollment::create(['user_id' => $student->id, 'course_id' => $this->course()->id, 'source' => 'manual', 'enrolled_at' => now()]);
+
+        $this->get('/administracao/registo?grupo=contas')->assertInertia(fn ($p) => $p
+            ->where('data.watch.ip', '45.155.205.9')->where('data.watch.n', 3)
+            ->where('data.rows.data.0.action', 'conta.entrada_falhou')
+            ->where('data.rows.data.0.verb', 'falhou a entrada'));
+        $this->get('/administracao/registo?ip=45.155&grupo=contas')->assertInertia(fn ($p) => $p->where('data.rows.total', 3));
+        $this->get('/administracao/registo?pessoa='.$student->id)->assertInertia(fn ($p) => $p
+            ->where('data.person.id', $student->id)
+            ->where('data.rows.data.0.action', 'acesso.dado')
+            ->where('data.rows.data.0.related.id', $student->id));
+
+        $csv = $this->get('/administracao/registo/exportar?grupo=contas')->assertOk()->streamedContent();
+        $this->assertStringContainsString('45.155.205.9', $csv);
+        $this->assertDatabaseHas('activity_log', ['action' => 'registo.exportado', 'user_id' => $admin->id]);
+    }
+
+    public function test_every_action_the_code_records_has_a_sentence_and_a_group(): void
+    {
+        $files = ['app/Support/ActivityRecorder.php', 'app/Services/LearningService.php', 'app/Services/TeamService.php',
+            'app/Http/Controllers/Staff/TeamController.php', 'app/Http/Controllers/Admin/AdminController.php'];
+        $code = collect($files)->map(fn ($f) => file_get_contents(base_path($f)))->implode("\n");
+        preg_match_all("/'((?:conta|compra|pedido|acesso|curso|equipa|pessoa|permissoes|area|teste|certificado|registo)\.[a-z_]+)'/", $code, $m);
+        $missing = collect($m[1])->unique()->reject(fn ($a) => isset(Activity::ACTIONS[$a]))->values()->all();
+        $this->assertSame([], $missing);
+
+        // As compras ganham o estado no fim ('compra.'.$r->status): os estados possíveis também têm frase
+        foreach (['pago', 'concluido', 'equipa_criada'] as $status) {
+            $this->assertArrayHasKey('compra.'.$status, Activity::ACTIONS);
+        }
+    }
+
 }

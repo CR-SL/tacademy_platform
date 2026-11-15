@@ -155,6 +155,7 @@ Route::middleware(['auth', 'verified'])->prefix('administracao')->name('admin.')
         Route::put('/areas/{category}', [AreaController::class, 'update'])->name('areas.update');
         Route::delete('/areas/{category}', [AreaController::class, 'destroy'])->name('areas.destroy');
     });
+    Route::get('/registo/exportar', [AdminController::class, 'exportActivity'])->middleware('throttle:10,1')->name('activity.export');
     Route::get('/{section?}', [AdminController::class, 'index'])->whereIn('section', AdminController::SECTIONS)->name('index');
 });
 

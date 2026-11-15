@@ -31,6 +31,78 @@ class Activity
     /** Ações que ficam depois dos 12 meses, sem IP nem browser (prova de compras e certificados). */
     public const KEEP_LONGER = ['compra.', 'certificado.'];
 
+    /** Grupos do registo (filtros da página), pela ordem em que aparecem. */
+    public const GROUPS = [
+        'contas' => 'Contas',
+        'compras' => 'Compras e acessos',
+        'cursos' => 'Cursos',
+        'equipas' => 'Equipas',
+        'administracao' => 'Administração',
+        'aprendizagem' => 'Aprendizagem',
+    ];
+
+    /**
+     * Cada ação: [grupo, frase (o que a pessoa fez), a vigiar?]. A frase completa-se na página
+     * com o nome de quem é afetado e/ou com aquilo sobre que foi a ação.
+     */
+    public const ACTIONS = [
+        'conta.entrou' => ['contas', 'entrou na plataforma'],
+        'conta.saiu' => ['contas', 'saiu'],
+        'conta.entrada_falhou' => ['contas', 'falhou a entrada', true],
+        'conta.bloqueada_tentativas' => ['contas', 'ficou bloqueado por tentativas a mais', true],
+        'conta.criada' => ['contas', 'criou conta'],
+        'conta.email_mudado' => ['contas', 'mudou o email'],
+        'conta.palavra_passe_mudada' => ['contas', 'mudou a palavra-passe'],
+        'conta.palavra_passe_reposta' => ['contas', 'repôs a palavra-passe'],
+        'conta.apagada' => ['contas', 'apagou a conta', true],
+        'compra.pedida' => ['compras', 'pediu para comprar'],
+        'compra.pago' => ['compras', 'marcou como pago'],
+        'compra.concluido' => ['compras', 'autorizou a compra'],
+        'compra.equipa_criada' => ['compras', 'criou a equipa a partir de'],
+        'pedido.criado' => ['compras', 'fez o pedido'],
+        'pedido.estado_mudado' => ['compras', 'mudou o estado de'],
+        'acesso.dado' => ['compras', 'deu acesso a'],
+        'acesso.retirado' => ['compras', 'retirou o acesso a', true],
+        'acesso.passou_para_equipa' => ['compras', 'passou para a equipa o acesso de'],
+        'curso.criado' => ['cursos', 'criou o curso'],
+        'curso.publicado' => ['cursos', 'publicou o curso'],
+        'curso.despublicado' => ['cursos', 'passou a rascunho o curso'],
+        'curso.preco_mudado' => ['cursos', 'mudou o preço de'],
+        'curso.formador_ia_bloqueado' => ['cursos', 'bloqueou o formador IA de', true],
+        'curso.formador_ia_desbloqueado' => ['cursos', 'desbloqueou o formador IA de'],
+        'curso.apagado' => ['cursos', 'apagou o curso', true],
+        'equipa.criada' => ['equipas', 'criou a equipa'],
+        'equipa.lugares_mudados' => ['equipas', 'mudou os lugares de'],
+        'equipa.membro_entrou' => ['equipas', 'juntou à equipa'],
+        'equipa.membro_saiu' => ['equipas', 'tirou da equipa'],
+        'equipa.cursos_retirados' => ['equipas', 'retirou cursos da equipa', true],
+        'equipa.curso_atribuido' => ['equipas', 'atribuiu o curso'],
+        'equipa.prazo_mudado' => ['equipas', 'mudou o prazo de'],
+        'equipa.lembrete_enviado' => ['equipas', 'enviou um lembrete a'],
+        'pessoa.criada' => ['administracao', 'criou a conta de'],
+        'pessoa.perfil_mudado' => ['administracao', 'mudou o perfil de', true],
+        'pessoa.palavra_passe_mudada' => ['administracao', 'mudou a palavra-passe de', true],
+        'pessoa.desativada' => ['administracao', 'desativou a conta de', true],
+        'pessoa.reativada' => ['administracao', 'reativou a conta de'],
+        'pessoa.apagada_de_vez' => ['administracao', 'apagou de vez uma conta', true],
+        'permissoes.mudadas' => ['administracao', 'mudou as permissões de', true],
+        'area.criada' => ['administracao', 'criou a área'],
+        'area.mudada' => ['administracao', 'mudou o nome da área'],
+        'area.apagada' => ['administracao', 'apagou a área'],
+        'teste.feito' => ['aprendizagem', 'fez um teste de'],
+        'curso.concluido' => ['aprendizagem', 'concluiu o curso'],
+        'curso.presenca_confirmada' => ['aprendizagem', 'confirmou a presença de'],
+        'curso.presenca_retirada' => ['aprendizagem', 'retirou a presença de'],
+        'certificado.emitido' => ['aprendizagem', 'recebeu o certificado'],
+        'registo.exportado' => ['administracao', 'exportou o registo de atividade'],
+    ];
+
+    /** Ações de um grupo (ou as que merecem atenção, com 'vigiar'), para filtrar na base de dados. */
+    public static function actionsIn(string $group): array
+    {
+        return array_keys(array_filter(self::ACTIONS, fn ($a) => $group === 'vigiar' ? ($a[2] ?? false) : $a[0] === $group));
+    }
+
     /** Desligado para seeders e comandos; os testes ligam-no. */
     public static function enabled(): bool
     {
