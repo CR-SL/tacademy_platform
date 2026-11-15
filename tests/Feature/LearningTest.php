@@ -119,13 +119,68 @@ class LearningTest extends TestCase
         $u = $this->student();
         $url = "/plataforma/aulas/{$this->l[0]->ulid}";
 
+        $this->actingAs($u)->postJson("$url/progresso", ['position' => 20, 'map' => $this->map(20), 'duration' => 100])->assertJson(['watched' => 20, 'ready' => false, 'completed' => false]);
+        $this->travel(15)->seconds();
         $this->actingAs($u)->postJson("$url/progresso", ['position' => 50, 'map' => $this->map(50), 'duration' => 100])->assertJson(['watched' => 50, 'ready' => false, 'completed' => false]);
         // Rever o mesmo trecho não conta duas vezes
+        $this->travel(15)->seconds();
         $this->actingAs($u)->postJson("$url/progresso", ['position' => 50, 'map' => $this->map(50), 'duration' => 100])->assertJson(['watched' => 50, 'completed' => false]);
         $this->assertSame('in_progress', LessonProgress::where('user_id', $u->id)->where('lesson_id', $this->l[0]->id)->value('status'));
 
+        $this->travel(20)->seconds();
         $this->actingAs($u)->postJson("$url/progresso", ['position' => 90, 'map' => $this->map(90), 'duration' => 100])->assertJson(['watched' => 90, 'ready' => true, 'completed' => true]);
         $this->assertSame('completed', LessonProgress::where('user_id', $u->id)->where('lesson_id', $this->l[0]->id)->value('status'));
+    }
+
+    public function test_a_forged_progress_does_not_complete_the_video(): void
+    {
+        $u = $this->student();
+        $url = "/plataforma/aulas/{$this->l[0]->ulid}";
+
+        // "Vi tudo" e "o vídeo tem 1 segundo", logo ao abrir: só contam 30 s e a duração do formador (100 s)
+        $this->actingAs($u)->postJson("$url/progresso", ['position' => 100, 'map' => $this->map(100), 'duration' => 1])
+            ->assertJson(['watched' => 30, 'ready' => false, 'completed' => false]);
+        // Enviar outra vez logo a seguir quase não acrescenta nada
+        $this->actingAs($u)->postJson("$url/progresso", ['position' => 100, 'map' => $this->map(100), 'duration' => 1])
+            ->assertJson(['completed' => false]);
+        $p = LessonProgress::where('user_id', $u->id)->where('lesson_id', $this->l[0]->id)->first();
+        $this->assertLessThanOrEqual(35, $p->watched_seconds);
+        $this->assertNull($p->video_duration_seconds);
+    }
+
+    public function test_the_certificate_closes_the_enrollment_even_below_100_percent(): void
+    {
+        $this->course->update(['certificate_min_progress' => 30, 'certificate_min_score' => 0]);
+        $u = $this->student();
+
+        $this->actingAs($u)->get($this->lessonUrl(1))->assertOk(); // a aula de texto conclui ao abrir: 1 de 3 aulas
+
+        $this->assertTrue(Certificate::where('user_id', $u->id)->where('course_id', $this->course->id)->exists());
+        $this->assertSame('completed', Enrollment::where('user_id', $u->id)->value('status'));
+    }
+
+    public function test_a_draft_course_stays_open_to_enrolled_students_only(): void
+    {
+        $u = $this->student();
+        $this->course->update(['status' => 'draft']);
+
+        $this->actingAs($u)->get($this->lessonUrl(1))->assertOk();
+        $this->actingAs($this->user())->get($this->lessonUrl(1))->assertNotFound();
+    }
+
+    public function test_an_expired_access_can_be_bought_again_and_is_renewed(): void
+    {
+        $this->course->update(['access_months' => 12]);
+        $u = $this->student();
+        Enrollment::where('user_id', $u->id)->update(['enrolled_at' => now()->subMonths(13)]);
+        $this->assertSame('expired', app(\App\Services\LearningService::class)->access($u, $this->course)['mode']);
+
+        $this->actingAs($u)->post('/cursos/curso-de-teste/comprar')->assertRedirect();
+        $r = \App\Models\ContactRequest::where('user_id', $u->id)->firstOrFail();
+        $this->actingAs($this->user('gestor_cursos'))->post("/gestao/pedidos/{$r->id}/autorizar")->assertRedirect();
+
+        $this->assertTrue(Enrollment::where('user_id', $u->id)->value('enrolled_at') > now()->subDay());
+        $this->assertSame(1, Enrollment::where('user_id', $u->id)->count());
     }
 
     public function test_quick_questions_are_optional_and_answered_only_once(): void

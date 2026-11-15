@@ -10,6 +10,24 @@ Os problemas de segurança vêm marcados com **[Segurança]**. A auditoria de se
 
 **Corrigidos (2026-11-15, ainda sem commit):** A1, A2 e A3, com 5 testes novos (CourseBuilderTest e TeamsAndRequestsTest). Depois das correções: **134 testes passaram** (3463 verificações). O A2 traz uma migração nova (`2026_11_15_000002_add_personal_to_enrollments`).
 
+**Corrigidos (grupo 2, deploy e contas, ainda sem commit):** A10, A12 e A14, com 7 testes novos. Depois: **140 testes passaram**.
+- A12: o `db:seed` do deploy cria sempre os perfis e as áreas (`CategorySeeder`). Os dados de demonstração só se criam em local ou com `SEED_DEMO=true`, e fora de local exigem `SEED_DEMO_PASSWORD`. Os dados de demonstração que já estão em produção não foram apagados.
+- A14: `User` implementa `MustVerifyEmail`. Definir a palavra-passe pelo link do convite confirma o email. A migração `2026_11_15_000003` dá como confirmadas as contas que já existem.
+- A10: o middleware `TouchLastActive` atualiza `last_active_at`, no máximo uma vez a cada 5 minutos.
+
+**Corrigidos (grupo 3, progresso e certificado, ainda sem commit):** A4, A5, A6, A7, A8, A15 e A16, com 6 testes novos. Depois: **146 testes passaram**. Inclui a migração `2026_11_15_000004_add_video_pinged_at_to_lesson_progress`.
+- A4: os segundos novos aceites em cada envio não passam do tempo real que passou, à velocidade máxima de 2×, e a duração enviada pelo browser só conta se for pelo menos metade da indicada pelo formador.
+- A5 e A15: o progresso, as tentativas e o certificado de cada pessoa gravam-se um pedido de cada vez (bloqueio da linha da pessoa).
+- A6: um acesso expirado pode ser comprado outra vez e a validade conta a partir de hoje; no catálogo o curso volta a aparecer com "Comprar".
+- A7 (decisão): em rascunho, os inscritos continuam a ter acesso; um curso com inscritos não se pode apagar.
+- A8 (decisão): gravar um curso publicado incompleto é recusado. Os ficheiros retirados só se apagam do disco depois de a gravação ser aceite.
+- A16: a inscrição passa a concluída quando sai o certificado.
+
+**Pendente para a mudança para o OVH (domínio tacademy.pt):**
+1. Verificar o domínio (ou um subdomínio, como `envio.tacademy.pt`) no serviço de email e mudar `MAIL_FROM_ADDRESS`.
+2. Retirar `MAIL_ALWAYS_TO`.
+3. Tornar seguros os emails de confirmação de conta e de reposição da palavra-passe, que usam o envio padrão do Laravel: se o envio falhar, deve ficar só registado no log, como nos outros emails da plataforma. Hoje uma falha nesses dois mostra um erro a quem está a usar a plataforma. Não acontece enquanto `MAIL_ALWAYS_TO` estiver definido.
+
 Regra decidida para o A2: quem sai da equipa (ou perde um curso da equipa) nunca tem a conta apagada. Mantém os cursos que comprou e os que já concluiu ou de que tem certificado, com o certificado. Perde só o acesso aos cursos da equipa por concluir; o progresso fica guardado.
 
 Gravidades:

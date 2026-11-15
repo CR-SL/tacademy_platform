@@ -21,7 +21,9 @@ class PurchaseController extends Controller
         // Volta à página de onde veio (catálogo ou página do curso), com o aviso nos dois formatos
         $back = fn (string $msg) => redirect()->back(fallback: route('catalog', ['curso' => $course->slug]))->with('purchase', $msg)->with('status', $msg);
 
-        if ($user->enrollments()->where('course_id', $course->id)->exists()) {
+        // Quem tem o acesso expirado pode comprar outra vez (ao autorizar, a validade conta de novo)
+        $enrollment = $user->enrollments()->where('course_id', $course->id)->first();
+        if ($enrollment && ! $enrollment->isExpired()) {
             return $back(__('Já tens acesso a este curso.'));
         }
         $pending = ContactRequest::where('user_id', $user->id)->where('course_id', $course->id)

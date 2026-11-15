@@ -209,14 +209,23 @@ class CourseBuilder
             $existingModules->except($keptModules)->each->delete();
 
             // Vídeos carregados que deixaram de ser usados (aula apagada ou vídeo trocado) saem do disco
-            $oldVideos->diff(Lesson::whereNotNull('content_url')->pluck('content_url')->map(fn ($u) => self::uploadedVideo($u))->filter())
-                ->each(fn ($path) => Storage::disk('public')->delete($path));
+            // (só depois de a gravação ser confirmada)
+            $unused = $oldVideos->diff(Lesson::whereNotNull('content_url')->pluck('content_url')->map(fn ($u) => self::uploadedVideo($u))->filter());
+            DB::afterCommit(fn () => $unused->each(fn ($path) => Storage::disk('public')->delete($path)));
 
             $sample = $data['sample_lesson_key'] ?? '';
             $course->forceFill([
                 'duration_minutes' => $minutes,
                 'sample_lesson_id' => $sample ? ($maps['lessons'][$sample] ?? null) : null,
             ])->save();
+
+            // Um curso publicado nunca fica incompleto no catálogo: se faltar alguma coisa, a gravação é recusada
+            // (o editor mostra o aviso e guarda quando estiver completo). Para mexer a fundo, passa-se a rascunho.
+            if ($course->status === 'published' && ($problems = $this->publishProblems($course))) {
+                throw ValidationException::withMessages(['course' => __('Este curso está publicado e não pode ficar incompleto. Falta: :items. Completa-o ou passa-o a rascunho para gravar.', [
+                    'items' => collect($problems)->pluck(0)->implode(', '),
+                ])]);
+            }
 
             return $maps;
         });
@@ -314,7 +323,8 @@ class CourseBuilder
             }
         }
         $current->except($keep)->each(function (LessonAttachment $a) {
-            if (! str_starts_with($a->path, '/')) Storage::disk('public')->delete($a->path); // ficheiros do projeto não se apagam
+            // Ficheiros do projeto não se apagam; os outros só depois de a gravação ser confirmada (pode ser recusada)
+            if (! str_starts_with($a->path, '/')) DB::afterCommit(fn () => Storage::disk('public')->delete($a->path));
             $a->delete();
         });
     }

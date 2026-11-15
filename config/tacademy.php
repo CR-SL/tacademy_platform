@@ -9,6 +9,14 @@ return [
     // Desenvolvimento/testes: todos os emails da plataforma são entregues só a este endereço.
     'mail_always_to' => env('MAIL_ALWAYS_TO'),
 
+    /*
+     | Dados de demonstração (contas, cursos, equipas e progresso fictícios). O `db:seed` do deploy só os cria
+     | em local, ou com SEED_DEMO=true; nesse caso a palavra-passe das contas demo tem de vir de SEED_DEMO_PASSWORD
+     | (em local, "password"). Os perfis e as áreas dos cursos criam-se sempre.
+     */
+    'seed_demo' => (bool) env('SEED_DEMO', false),
+    'seed_demo_password' => env('SEED_DEMO_PASSWORD'),
+
     'contact' => [
         'email' => env('TACADEMY_CONTACT_EMAIL'),
         'phone' => env('TACADEMY_CONTACT_PHONE'),

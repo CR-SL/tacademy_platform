@@ -43,7 +43,7 @@ class DemoTeamsSeeder extends Seeder
         }
 
         $this->roles = Role::pluck('id', 'name')->all();
-        $this->password = Hash::make(env('SEED_DEMO_PASSWORD', 'password'));
+        $this->password = Hash::make(DatabaseSeeder::demoPassword());
         $gestor = User::where('email', 'gestorcursos@tacademy.pt')->first();
 
         DB::transaction(function () use ($obd, $can, $gestao, $baterias, $gestor) {

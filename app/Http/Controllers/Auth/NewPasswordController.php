@@ -49,7 +49,12 @@ class NewPasswordController extends Controller
                 $user->forceFill([
                     'password' => Hash::make($request->password),
                     'remember_token' => Str::random(60),
-                ])->save();
+                ]);
+                // O link de reposição (ou do convite) só chega a quem tem acesso ao email: fica confirmado
+                if (! $user->hasVerifiedEmail()) {
+                    $user->email_verified_at = now();
+                }
+                $user->save();
 
                 event(new PasswordReset($user));
             }

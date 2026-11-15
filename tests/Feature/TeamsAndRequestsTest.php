@@ -58,8 +58,11 @@ class TeamsAndRequestsTest extends TestCase
             'company' => 'Oficina Moura', 'nif' => '516444777', 'packs' => 1, 'course_ids' => [$course->id],
             'people' => $r->people, 'leader' => 'paulo@moura.pt',
         ])->assertRedirect();
+        $company = Company::where('name', 'Oficina Moura')->firstOrFail();
+        // Os membros aceitam o convite (definir a palavra-passe confirma o email)
+        User::where('company_id', $company->id)->whereNull('email_verified_at')->update(['email_verified_at' => now()]);
 
-        return Company::where('name', 'Oficina Moura')->firstOrFail();
+        return $company;
     }
 
     public function test_each_area_is_only_open_to_its_roles(): void

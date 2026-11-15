@@ -188,6 +188,36 @@ class CourseBuilderTest extends TestCase
         $this->assertSame($right->id, $question->options()->where('is_correct', true)->value('id'));
     }
 
+    public function test_a_published_course_cannot_be_saved_incomplete(): void
+    {
+        $formador = $this->user('formador');
+        $this->actingAs($formador)->postJson('/formador/cursos', $this->payload())->assertCreated();
+        $course = Course::firstOrFail();
+        $course->update(['status' => 'published']);
+
+        // Apagar todas as aulas de um curso publicado é recusado e nada muda
+        $data = $this->editorState($course);
+        $data['modules'][0]['lessons'] = [];
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertStatus(422)->assertJsonValidationErrors('course');
+        $this->assertCount(3, $course->lessons()->get());
+
+        // Em rascunho já se pode gravar incompleto
+        $course->update(['status' => 'draft']);
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
+        $this->assertCount(0, $course->lessons()->get());
+    }
+
+    public function test_a_course_with_students_cannot_be_deleted(): void
+    {
+        $formador = $this->user('formador');
+        $this->actingAs($formador)->postJson('/formador/cursos', $this->payload())->assertCreated();
+        $course = Course::firstOrFail();
+        \App\Models\Enrollment::create(['user_id' => $this->user('aluno')->id, 'course_id' => $course->id, 'source' => 'manual', 'enrolled_at' => now()]);
+
+        $this->actingAs($formador)->delete("/formador/cursos/{$course->ulid}")->assertRedirect()->assertSessionHas('status');
+        $this->assertNotNull($course->fresh());
+    }
+
     public function test_a_quiz_with_attempts_cannot_change_type(): void
     {
         $formador = $this->user('formador');

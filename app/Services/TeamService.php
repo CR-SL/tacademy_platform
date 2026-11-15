@@ -149,8 +149,14 @@ class TeamService
         $e = Enrollment::firstOrNew(['user_id' => $user->id, 'course_id' => $courseId]);
         if (! $e->exists) {
             $e->fill(['source' => 'manual', 'status' => 'active', 'enrolled_at' => now(), 'personal' => $companyId === null]);
-        } elseif ($companyId === null || $e->company_id === null) {
-            $e->personal = true;
+        } else {
+            if ($companyId === null || $e->company_id === null) {
+                $e->personal = true;
+            }
+            // Acesso expirado: dar o curso outra vez (compra ou equipa) renova a validade a partir de hoje
+            if ($e->isExpired()) {
+                $e->enrolled_at = now();
+            }
         }
         if ($companyId) $e->company_id = $companyId;
         $e->save();

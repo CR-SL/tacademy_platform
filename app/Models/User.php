@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasUlid;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements HasLocalePreference
+/**
+ * MustVerifyEmail: quem cria conta tem de confirmar o email antes de usar a plataforma (o middleware `verified`
+ * das rotas passa a funcionar). Sem isto, qualquer pessoa podia criar a conta com o email de outra e receber os
+ * cursos quando esse email fosse incluído numa equipa. As contas criadas pela gestão ficam confirmadas quando a
+ * pessoa define a palavra-passe pelo link do convite (NewPasswordController), porque esse link chegou ao email dela.
+ */
+class User extends Authenticatable implements HasLocalePreference, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasUlid, Notifiable, SoftDeletes;

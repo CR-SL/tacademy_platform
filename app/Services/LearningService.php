@@ -32,6 +32,20 @@ class LearningService
 
     public const MAX_VIDEO_SECONDS = 6 * 3600; // tamanho máximo do mapa de segundos vistos
 
+    /**
+     * Segundos de vídeo novos que o servidor aceita: no máximo o tempo real que passou desde o último envio,
+     * à velocidade máxima do leitor (2×), mais uma pequena folga. O leitor envia o mapa inteiro, por isso o que
+     * ficar de fora entra no envio seguinte. Assim, marcar a aula como vista sem a ver leva tanto tempo como vê-la a 2×.
+     */
+    public const MAX_PLAYBACK_RATE = 2;
+
+    public const PING_SLACK_SECONDS = 5;
+
+    public const FIRST_PING_SECONDS = 30;
+
+    /** A duração enviada pelo leitor só conta se for pelo menos metade da indicada pelo formador (arredondada aos minutos). */
+    public const MIN_REPORTED_DURATION_RATIO = 0.5;
+
     /** @return array{mode: string, enrollment: ?Enrollment, expires_at: ?\Illuminate\Support\Carbon} */
     public function access(User $user, Course $course): array
     {
@@ -87,44 +101,94 @@ class LearningService
         return $duration <= 0 || ($p && $p->watched_seconds >= (int) ceil($duration * self::VIDEO_THRESHOLD));
     }
 
-    /** Junta os segundos vistos agora (mapa de bits em base64) aos já guardados. */
+    /**
+     * Junta os segundos vistos agora (mapa de bits em base64) aos já guardados.
+     * O browser pode mentir, por isso: a duração enviada não pode ser muito menor do que a do formador, e os segundos
+     * novos aceites em cada envio não passam do tempo real que passou (ver MAX_PLAYBACK_RATE).
+     */
     public function recordProgress(User $user, Lesson $lesson, int $position, ?string $map, ?int $duration): LessonProgress
     {
-        $p = LessonProgress::firstOrNew(['user_id' => $user->id, 'lesson_id' => $lesson->id]);
-        if ($p->status !== 'completed') $p->status = 'in_progress';
+        return DB::transaction(function () use ($user, $lesson, $position, $map, $duration) {
+            $this->lockLearner($user);
+            $p = LessonProgress::firstOrNew(['user_id' => $user->id, 'lesson_id' => $lesson->id]);
+            if ($p->status !== 'completed') $p->status = 'in_progress';
 
-        if ($map !== null) {
-            $new = substr((string) base64_decode($map, true), 0, intdiv(self::MAX_VIDEO_SECONDS, 8));
-            $merged = (string) base64_decode((string) $p->watched_map) | $new;
-            $p->watched_map = base64_encode($merged);
-            $p->watched_seconds = $this->countBits($merged);
-        }
-        if ($duration && $duration > 0) {
-            $p->video_duration_seconds = min($duration, self::MAX_VIDEO_SECONDS);
-        }
-        $p->last_position_seconds = max(0, $position);
-        $total = $this->videoDuration($lesson, $p);
-        if ($p->status !== 'completed') {
-            $p->progress_percent = $total ? min(99, (int) floor($p->watched_seconds / $total * 100)) : 0;
-        }
-        $p->save();
+            if ($map !== null) {
+                $old = (string) base64_decode((string) $p->watched_map);
+                $sent = substr((string) base64_decode($map, true), 0, intdiv(self::MAX_VIDEO_SECONDS, 8));
+                $budget = $p->video_pinged_at
+                    ? (int) $p->video_pinged_at->diffInSeconds(now(), true) * self::MAX_PLAYBACK_RATE + self::PING_SLACK_SECONDS
+                    : self::FIRST_PING_SECONDS;
+                $merged = $this->mergeWithin($old, $sent, $budget);
+                $p->watched_map = base64_encode($merged);
+                $p->watched_seconds = $this->countBits($merged);
+                $p->video_pinged_at = now();
+            }
+            if ($duration && $duration > 0) {
+                $floor = (int) floor(((int) $lesson->duration_seconds) * self::MIN_REPORTED_DURATION_RATIO);
+                if ($duration >= $floor) {
+                    $p->video_duration_seconds = min($duration, self::MAX_VIDEO_SECONDS);
+                }
+            }
+            $p->last_position_seconds = max(0, $position);
+            $total = $this->videoDuration($lesson, $p);
+            if ($p->status !== 'completed') {
+                $p->progress_percent = $total ? min(99, (int) floor($p->watched_seconds / $total * 100)) : 0;
+            }
+            $p->save();
 
-        return $p;
+            return $p;
+        });
+    }
+
+    /** Junta ao mapa guardado os segundos novos do mapa enviado, no máximo $budget segundos (os primeiros do vídeo). */
+    private function mergeWithin(string $old, string $sent, int $budget): string
+    {
+        $len = max(strlen($old), strlen($sent));
+        $old = str_pad($old, $len, "\0");
+        $sent = str_pad($sent, $len, "\0");
+        $out = '';
+        for ($i = 0; $i < $len; $i++) {
+            $o = ord($old[$i]);
+            $fresh = ord($sent[$i]) & ~$o;
+            for ($b = 0; $fresh && $b < 8; $b++) {
+                $bit = 1 << $b;
+                if (! ($fresh & $bit)) continue;
+                if ($budget <= 0) break;
+                $o |= $bit;
+                $budget--;
+            }
+            $out .= chr($o);
+        }
+
+        return rtrim($out, "\0");
+    }
+
+    /**
+     * Bloqueia a linha da pessoa até ao fim da transação: os pedidos da mesma pessoa que mexem no progresso, nas
+     * tentativas e no certificado passam um de cada vez (um duplo clique não dá 4 tentativas nem 2 certificados).
+     */
+    private function lockLearner(User $user): void
+    {
+        User::withTrashed()->whereKey($user->id)->lockForUpdate()->value('id');
     }
 
     /** Responde a uma pergunta rápida (uma só vez) e devolve a correção. */
     public function answerCheck(User $user, Lesson $lesson, LessonCheck $check, int $answer): array
     {
-        $p = LessonProgress::firstOrNew(['user_id' => $user->id, 'lesson_id' => $lesson->id]);
-        $answers = $p->check_answers ?? [];
-        if (! array_key_exists((string) $check->id, $answers)) {
-            $answers[(string) $check->id] = max(0, min($answer, count($check->options) - 1));
-            $p->check_answers = $answers;
-            if (! $p->exists) $p->status = 'in_progress';
-            $p->save();
-        }
+        return DB::transaction(function () use ($user, $lesson, $check, $answer) {
+            $this->lockLearner($user);
+            $p = LessonProgress::firstOrNew(['user_id' => $user->id, 'lesson_id' => $lesson->id]);
+            $answers = $p->check_answers ?? [];
+            if (! array_key_exists((string) $check->id, $answers)) {
+                $answers[(string) $check->id] = max(0, min($answer, count($check->options) - 1));
+                $p->check_answers = $answers;
+                if (! $p->exists) $p->status = 'in_progress';
+                $p->save();
+            }
 
-        return ['chosen' => $answers[(string) $check->id], 'correct' => $check->correct, 'explanation' => $check->explanation];
+            return ['chosen' => $answers[(string) $check->id], 'correct' => $check->correct, 'explanation' => $check->explanation];
+        });
     }
 
     /** Vídeo: fica concluída quando o aluno viu 90%. Devolve true se concluiu agora. */
@@ -154,8 +218,20 @@ class LearningService
         return true;
     }
 
-    /** Entrega uma tentativa do quiz. answers = [question_id => option_id]. */
+    /**
+     * Entrega uma tentativa do quiz. answers = [question_id => option_id].
+     * As tentativas contam-se com a pessoa bloqueada: dois envios ao mesmo tempo não passam das 3 tentativas.
+     */
     public function submitQuiz(User $user, Lesson $lesson, array $answers): QuizAttempt
+    {
+        return DB::transaction(function () use ($user, $lesson, $answers) {
+            $this->lockLearner($user);
+
+            return $this->recordAttempt($user, $lesson, $answers);
+        });
+    }
+
+    private function recordAttempt(User $user, Lesson $lesson, array $answers): QuizAttempt
     {
         $quiz = $lesson->quiz()->with('questions.options')->firstOrFail();
         $attempts = QuizAttempt::where('user_id', $user->id)->where('quiz_id', $quiz->id)->get();
@@ -200,6 +276,7 @@ class LearningService
     private function markCompleted(User $user, Lesson $lesson): void
     {
         DB::transaction(function () use ($user, $lesson) {
+            $this->lockLearner($user);
             $p = LessonProgress::firstOrNew(['user_id' => $user->id, 'lesson_id' => $lesson->id]);
             $p->status = 'completed';
             $p->progress_percent = 100;
@@ -209,28 +286,43 @@ class LearningService
         });
     }
 
-    /** Depois de cada aula concluída: fecha a inscrição quando acaba e emite o certificado. */
+    /**
+     * Depois de cada aula concluída (ou presença confirmada): fecha a inscrição quando acaba e emite o certificado.
+     * A inscrição fica concluída com todas as aulas feitas ou quando sai o certificado (que pode pedir menos de 100%).
+     * Corre com a pessoa bloqueada, para dois pedidos ao mesmo tempo não emitirem dois certificados.
+     */
     public function afterProgress(User $user, Course $course): ?Certificate
     {
-        $lessons = $this->lessons($course);
-        $done = $this->completedIds($user, $lessons);
-        if ($lessons->isNotEmpty() && $done->count() >= $lessons->count()) {
-            $closed = Enrollment::where('user_id', $user->id)->where('course_id', $course->id)->where('status', '!=', 'completed')
-                ->update(['status' => 'completed', 'completed_at' => now()]);
-            if ($closed) Activity::log('curso.concluido', $course, related: $user);
-        }
-        $status = $this->certificateStatus($user, $course, $lessons, $done);
-        if (! $course->certificate_enabled || $status['certificate'] || ! ($status['progress_ok'] && $status['score_ok'] && $status['attendance_ok'])) {
-            return null;
-        }
+        return DB::transaction(function () use ($user, $course) {
+            $this->lockLearner($user);
+            $lessons = $this->lessons($course);
+            $done = $this->completedIds($user, $lessons);
+            if ($lessons->isNotEmpty() && $done->count() >= $lessons->count()) {
+                $this->closeEnrollment($user, $course);
+            }
+            $status = $this->certificateStatus($user, $course, $lessons, $done);
+            if (! $course->certificate_enabled || $status['certificate'] || ! ($status['progress_ok'] && $status['score_ok'] && $status['attendance_ok'])) {
+                return null;
+            }
 
-        return Certificate::create([
-            'user_id' => $user->id,
-            'course_id' => $course->id,
-            'certificate_number' => $this->newNumber(),
-            'status' => 'valid',
-            'issued_at' => now(),
-        ]);
+            $certificate = Certificate::create([
+                'user_id' => $user->id,
+                'course_id' => $course->id,
+                'certificate_number' => $this->newNumber(),
+                'status' => 'valid',
+                'issued_at' => now(),
+            ]);
+            $this->closeEnrollment($user, $course);
+
+            return $certificate;
+        });
+    }
+
+    private function closeEnrollment(User $user, Course $course): void
+    {
+        $closed = Enrollment::where('user_id', $user->id)->where('course_id', $course->id)->where('status', '!=', 'completed')
+            ->update(['status' => 'completed', 'completed_at' => now()]);
+        if ($closed) Activity::log('curso.concluido', $course, related: $user);
     }
 
     /** Critérios do certificado e onde o aluno está. A nota é a média da melhor tentativa de cada teste. */

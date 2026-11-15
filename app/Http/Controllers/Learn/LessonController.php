@@ -31,7 +31,8 @@ class LessonController extends Controller
         abort_unless($lesson->module?->course_id === $course->id, 404);
         $user = $request->user();
         $access = $this->learning->access($user, $course);
-        abort_unless($course->status === 'published' || $access['mode'] === 'preview', 404);
+        // Rascunho: sai do catálogo, mas quem já está inscrito continua a estudar (e a gestão pré-visualiza)
+        abort_unless($course->status === 'published' || in_array($access['mode'], ['preview', 'enrolled', 'expired'], true), 404);
 
         $lessons = $this->learning->lessons($course);
         $done = $access['mode'] === 'enrolled' ? $this->learning->completedIds($user, $lessons) : collect();

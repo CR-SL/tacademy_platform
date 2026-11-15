@@ -81,7 +81,8 @@ class CatalogController extends Controller
 
         // Quem tem sessão: que cursos já tem e que compras aguardam autorização
         $user = request()->user();
-        $owned = $user ? $user->enrollments()->pluck('course_id') : collect();
+        // (um curso com o acesso expirado volta a aparecer com "Comprar")
+        $owned = $user ? $user->enrollments()->with('course:id,access_months')->get()->reject->isExpired()->pluck('course_id') : collect();
         $pending = $user
             ? ContactRequest::where('user_id', $user->id)->where('kind', 'compra')->whereIn('status', ContactRequest::OPEN)->pluck('course_id')
             : collect();

@@ -21,7 +21,7 @@ class DemoContentSeeder extends Seeder
         $roles = Role::pluck('id', 'name');
 
         // --- Utilizadores demo (password local: "password"; em produção vem de SEED_DEMO_PASSWORD) ---
-        $password = Hash::make(env('SEED_DEMO_PASSWORD', 'password'));
+        $password = Hash::make(DatabaseSeeder::demoPassword());
 
         $admin = User::firstOrCreate(
             ['email' => 'admin@tacademy.pt'],
@@ -77,24 +77,11 @@ class DemoContentSeeder extends Seeder
             ]
         );
 
-        // --- Categorias (cor + ícone para as "prateleiras") ---
-        $diagnostico = Category::firstOrCreate(['slug' => 'diagnostico-automovel'], [
-            'name' => 'Diagnóstico Automóvel',
-            'color_hex' => '#2F6FED',
-            'icon' => 'wrench-screwdriver',
-        ]);
-
-        $eletronica = Category::firstOrCreate(['slug' => 'eletronica-automovel'], [
-            'name' => 'Eletrónica Automóvel',
-            'color_hex' => '#22D3EE',
-            'icon' => 'cpu-chip',
-        ]);
-
-        $gestao = Category::firstOrCreate(['slug' => 'gestao-de-oficina'], [
-            'name' => 'Gestão de Oficina',
-            'color_hex' => '#E8940F',
-            'icon' => 'briefcase',
-        ]);
+        // --- Categorias: criadas pelo CategorySeeder (corre sempre, também em produção) ---
+        $this->call(CategorySeeder::class);
+        $diagnostico = Category::where('slug', 'diagnostico-automovel')->firstOrFail();
+        $eletronica = Category::where('slug', 'eletronica-automovel')->firstOrFail();
+        $gestao = Category::where('slug', 'gestao-de-oficina')->firstOrFail();
 
         // --- Curso 1: completo com módulos e lições ---
         $this->createCourse(

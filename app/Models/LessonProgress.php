@@ -21,6 +21,7 @@ class LessonProgress extends Model
         'watched_map',
         'watched_seconds',
         'video_duration_seconds',
+        'video_pinged_at',
         'check_answers',
         'completed_at',
     ];
@@ -29,6 +30,7 @@ class LessonProgress extends Model
     {
         return [
             'completed_at' => 'datetime',
+            'video_pinged_at' => 'datetime',
             'progress_percent' => 'integer',
             'last_position_seconds' => 'integer',
             'watched_seconds' => 'integer',

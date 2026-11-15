@@ -107,13 +107,17 @@ class CourseBuilderController extends Controller
         Gate::authorize('update', $course);
         $course->update(['status' => 'draft']);
 
-        return back()->with('status', __('O curso voltou a rascunho e saiu do catálogo.'));
+        return back()->with('status', __('O curso voltou a rascunho e saiu do catálogo. Quem já está inscrito continua a ter acesso.'));
     }
 
     public function destroy(Course $course): RedirectResponse
     {
         Gate::authorize('delete', $course);
         abort_if($course->status === 'published', 422, __('Passe o curso a rascunho antes de o apagar.'));
+        // Quem está inscrito perdia o curso e o acesso às aulas
+        if ($course->enrollments()->exists()) {
+            return back()->with('status', __('Este curso tem alunos inscritos e não pode ser apagado. Podes deixá-lo em rascunho: sai do catálogo e os alunos continuam a ter acesso.'));
+        }
         $course->delete();
 
         return to_route('instructor.courses.index')->with('status', __('Rascunho apagado.'));

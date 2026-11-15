@@ -85,6 +85,14 @@ class Enrollment extends Model
         return $lost->pluck('course_id')->values();
     }
 
+    /** A validade do acesso (access_months do curso, contada desde a inscrição) já passou. */
+    public function isExpired(): bool
+    {
+        $months = $this->course?->access_months;
+
+        return $months && $this->enrolled_at && $this->enrolled_at->copy()->addMonths($months)->isPast();
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

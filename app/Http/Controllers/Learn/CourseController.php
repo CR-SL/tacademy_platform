@@ -23,7 +23,8 @@ class CourseController extends Controller
     {
         $user = $request->user();
         $access = $this->learning->access($user, $course);
-        abort_unless($course->status === 'published' || $access['mode'] === 'preview', 404);
+        // Rascunho: sai do catálogo, mas quem já está inscrito continua a estudar (e a gestão pré-visualiza)
+        abort_unless($course->status === 'published' || in_array($access['mode'], ['preview', 'enrolled', 'expired'], true), 404);
 
         // A página do curso saiu (2026-11-13): quem tem o curso vê-o na caixa lateral de "Os meus cursos";
         // quem não o tem, na caixa do catálogo. Fica só a pré-visualização da equipa (formador e gestão).
