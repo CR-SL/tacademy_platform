@@ -10,6 +10,7 @@ use App\Models\Enrollment;
 use App\Models\LessonProgress;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\Activity;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -97,7 +98,11 @@ class TeamService
 
             // Saem da equipa
             $company->users()->whereNotIn('email', $people->pluck('email'))->get()->each(function (User $u) use ($company, $roles) {
+                $lost = Enrollment::where('user_id', $u->id)->where('company_id', $company->id)->pluck('course_id');
                 Enrollment::where('user_id', $u->id)->where('company_id', $company->id)->delete();
+                if ($lost->isNotEmpty()) {
+                    Activity::log('acesso.retirado', $company, ['cursos' => Course::whereIn('id', $lost)->pluck('title')->all(), 'motivo' => 'saiu da equipa'], related: $u);
+                }
                 $u->forceFill([
                     'company_id' => null,
                     'role_id' => $u->hasRole('team_leader') ? $roles['aluno'] : $u->role_id,

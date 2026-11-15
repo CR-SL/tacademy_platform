@@ -5,6 +5,7 @@ import StudentLayout from '@/Layouts/StudentLayout';
 import { levelLabels } from '@/Components/CourseBuilder/format';
 import PanelBoard, { alexDef, EmptyPanel, PanelsMenu } from '@/Components/Panels/PanelBoard';
 import usePanelBoard from '@/Components/Panels/usePanelBoard';
+import { tilt, untilt } from '@/Components/ui/tilt';
 
 import { t } from '@/i18n';
 
@@ -16,10 +17,13 @@ function Group({ title, courses, onOpen }) {
         <>
             <span className="pn-lab">{title}</span>
             <div className="pn-covers">
-                {courses.map((c) => (
-                    <a key={c.id} href={`?curso=${encodeURIComponent(c.slug)}`} className="pn-cover" aria-haspopup="dialog"
-                        onClick={(e) => { e.preventDefault(); onOpen(c.slug); }}>
+                {courses.map((c, i) => (
+                    // Mesmo movimento dos cartões do catálogo: inclinação 3D com reflexo, subida e entrada em cascata
+                    <a key={c.id} href={`?curso=${encodeURIComponent(c.slug)}`} className="pn-cover" style={{ '--i': i }} aria-haspopup="dialog"
+                        onClick={(e) => { e.preventDefault(); onOpen(c.slug); }} onPointerMove={tilt} onPointerLeave={untilt}>
+                        <span className="pn-lift">
                         <img src={c.image} alt="" loading="lazy" />
+                        <span className="pn-glare" aria-hidden="true" />
                         <span className="pn-top-bar"><i style={{ width: `${c.pct}%` }} /></span>
                         <span className="pn-card-t">
                             {(c.area || c.level) && <span className="pn-lab">{[c.area, levelLabels[c.level] ?? c.level].filter(Boolean).join(' · ')}</span>}
@@ -34,6 +38,7 @@ function Group({ title, courses, onOpen }) {
                                 </span>
                                 <span className="pn-price">{c.pct}%</span>
                             </span>
+                        </span>
                         </span>
                     </a>
                 ))}

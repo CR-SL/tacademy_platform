@@ -1454,5 +1454,16 @@
     "1 documento": "1 document",
     ":n documentos": ":n documents",
     "Ver todos os documentos": "See all documents",
-    "Os documentos dos teus cursos (fichas, PDF, apresentações) aparecem aqui.": "Documents from your courses (worksheets, PDFs, slides) show up here."
+    "Os documentos dos teus cursos (fichas, PDF, apresentações) aparecem aqui.": "Documents from your courses (worksheets, PDFs, slides) show up here.",
+    "Página não encontrada": "Page not found",
+    "T.Academy, ir para o início": "T.Academy, go to the start",
+    "Pôr a peça que falta no lugar": "Put the missing piece in place",
+    "Pôr a peça no lugar": "Put the piece in place",
+    "Assim está melhor.": "That's better.",
+    "Esta página não existe.": "This page doesn't exist.",
+    "O pássaro já está inteiro. A página que procuravas é que continua sem aparecer: volta ao início ou procura no catálogo.": "The bird is whole again. The page you were looking for still isn't here, though: go back to the start or look in the catalogue.",
+    "Pode haver um erro no endereço, ou a página mudou de sítio. Volta ao início ou procura o curso no catálogo.": "There may be a typo in the address, or the page has moved. Go back to the start or find the course in the catalogue.",
+    "Ir para o início": "Go to the start",
+    "Erro :status.": "Error :status.",
+    "Falar connosco": "Contact us"
 }

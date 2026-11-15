@@ -4,6 +4,7 @@ import StudentLayout from '@/Layouts/StudentLayout';
 import '../../css/courses.css';
 
 import { t } from '@/i18n';
+import { tilt, untilt } from '@/Components/ui/tilt';
 
 // Catálogo da plataforma, aberto a quem ainda não tem conta: separadores por área, pesquisa
 // e aba lateral com o detalhe. Comprar pede sessão.
@@ -16,19 +17,7 @@ const textOf = (c) => `${c.title} ${c.areaName} ${c.level} ${c.description}`;
 const countView = (c, guest) => !guest && window.axios.post(`/plataforma/cursos/${encodeURIComponent(c.slug)}/visto`).catch(() => {});
 const SUGGESTIONS = ['Diagnóstico', 'OBD', 'Eletrónica', 'Bateria', 'Gestão'];
 
-// Opção A (2026-11-12): 5 por fila, inclinação 3D com reflexo a seguir o rato e botão que sobe no hover
-const moves = () => window.matchMedia('(hover: hover) and (prefers-reduced-motion: no-preference)').matches;
-const tilt = (e) => {
-    if (!moves()) return;
-    const el = e.currentTarget.querySelector('.cc-lift');
-    const r = el.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
-    el.style.transition = 'transform .15s ease-out';
-    el.style.transform = `translateY(-6px) rotateX(${(0.5 - y) * 7}deg) rotateY(${(x - 0.5) * 9}deg)`;
-    el.style.setProperty('--gx', `${x * 100}%`);
-    el.style.setProperty('--gy', `${y * 100}%`);
-};
-const untilt = (e) => { const el = e.currentTarget.querySelector('.cc-lift'); el.style.transition = ''; el.style.transform = ''; };
+// Opção A (2026-11-12): 5 por fila, inclinação 3D com reflexo a seguir o rato (Components/ui/tilt) e botão que sobe no hover
 
 // O número do título conta até ao novo total
 function useCount(n) {

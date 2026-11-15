@@ -11,6 +11,7 @@ use App\Models\LessonProgress;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Models\User;
+use App\Support\Activity;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -214,8 +215,9 @@ class LearningService
         $lessons = $this->lessons($course);
         $done = $this->completedIds($user, $lessons);
         if ($lessons->isNotEmpty() && $done->count() >= $lessons->count()) {
-            Enrollment::where('user_id', $user->id)->where('course_id', $course->id)->where('status', '!=', 'completed')
+            $closed = Enrollment::where('user_id', $user->id)->where('course_id', $course->id)->where('status', '!=', 'completed')
                 ->update(['status' => 'completed', 'completed_at' => now()]);
+            if ($closed) Activity::log('curso.concluido', $course, related: $user);
         }
         $status = $this->certificateStatus($user, $course, $lessons, $done);
         if (! $course->certificate_enabled || $status['certificate'] || ! ($status['progress_ok'] && $status['score_ok'] && $status['attendance_ok'])) {

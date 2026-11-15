@@ -1,0 +1,44 @@
+/* Página de erro 404 (Pages/Error.jsx): falta uma peça ao pássaro do logótipo.
+ | As imagens são as camadas da entrada (public/images/logo3d, 2884 × 1600). O quadro .er-frame
+ | mostra só a zona do pássaro (x 1140–1750, y 150–830): 610 × 680 px do quadro original. */
+.er-page { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; overflow: clip; /* as camadas das peças são maiores do que o pássaro */ background: var(--color-bg); color: var(--color-ink); }
+.er-top { display: flex; align-items: center; height: 64px; padding: 0 clamp(16px, 3vw, 32px); }
+.er-logo { height: 28px; width: auto; }
+.er-main { flex: 1; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr); align-items: center; gap: clamp(32px, 6vw, 96px); width: 100%; max-width: 1080px; margin: 0 auto; padding: 24px clamp(20px, 4vw, 40px) 64px; }
+
+/* O pássaro */
+.er-bird { position: relative; width: min(100%, 340px); aspect-ratio: 610 / 680; justify-self: center; }
+.er-frame { position: absolute; inset: 0; }
+.er-frame img { position: absolute; left: -186.89%; top: -22.06%; width: 472.79%; height: 235.29%; max-width: none; pointer-events: none; user-select: none; }
+
+.er-frame .er-whole { opacity: 0; transition: opacity .5s ease .85s; }
+.er-bird.is-placed .er-whole { opacity: 1; }
+/* A peça que falta: uma caixa à volta da cabeça (x 1575–1675, y 325–435), fora do sítio até ao clique */
+.er-loose { all: unset; position: absolute; left: 71.31%; top: 25.74%; width: 16.39%; height: 16.18%; cursor: pointer; border-radius: 999px;
+    transform: translate(120%, 250%) rotate(34deg); transition: transform .9s cubic-bezier(.34, 1.4, .64, 1); }
+.er-loose img { position: absolute; left: -1575%; top: -295.45%; width: 2884%; height: 1454.55%; max-width: none; pointer-events: none; user-select: none; }
+.er-loose:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 6px; }
+.er-loose[disabled] { cursor: default; transform: none; }
+.er-bird.is-placed .er-loose img { opacity: 0; transition: opacity .2s ease 1.35s; }
+@media (hover: hover) {
+    .er-loose:not([disabled]):hover { transform: translate(120%, 250%) rotate(18deg) scale(1.12); }
+}
+@media (prefers-reduced-motion: no-preference) {
+    .er-loose:not([disabled]) img { animation: er-bob 2.4s ease-in-out 1.8s infinite; }
+    .er-bird.is-placed .er-frame, .er-bird.is-placed .er-loose img { animation: er-pop .7s cubic-bezier(.16, 1, .3, 1) .75s both; }
+}
+@keyframes er-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -12%; } }
+@keyframes er-pop { 40% { scale: 1.045; } }
+
+/* Texto */
+.er-txt h1 { margin: 0; font-size: clamp(34px, 4.2vw, 52px); font-weight: 800; line-height: 1.05; letter-spacing: -.015em; text-wrap: balance; }
+.er-txt > p { margin: 16px 0 0; max-width: 44ch; font-size: 16px; line-height: 1.5; color: var(--color-text); }
+.er-acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.er-txt .er-small { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--color-line); font-size: 13px; color: var(--color-muted); }
+.er-small a { color: var(--color-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+@media (max-width: 760px) {
+    .er-main { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 8px; text-align: left; }
+    .er-bird { width: min(64vw, 240px); }
+    .er-acts > * { flex: 1 1 auto; }
+}

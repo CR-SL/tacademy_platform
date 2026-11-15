@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Support\ActivityRecorder;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -26,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
 
         // O admin passa por cima de todas as Policies (super-utilizador).
         Gate::before(fn (User $user) => $user->isAdmin() ? true : null);
+
+        // Registo de atividade: o que se faz na plataforma, com o IP (só o admin consulta)
+        ActivityRecorder::register();
 
         // Uma Gate por permissão (ex.: middleware can:pedidos), lida do perfil da pessoa
         foreach (\App\Support\Permissions::keys() as $permission) {

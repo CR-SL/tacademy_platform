@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\ContactRequest;
 use App\Models\Course;
+use App\Support\Activity;
 use App\Models\Enrollment;
 use App\Models\User;
 use App\Services\TeamService;
@@ -104,7 +105,14 @@ class TeamController extends Controller
         $company->update(['packs' => $data['packs']]);
         $company->courses()->sync($data['course_ids']);
         // Cursos retirados da equipa: os membros deixam de ter acesso por via da equipa
+        $removed = Enrollment::where('company_id', $company->id)->whereNotIn('course_id', $data['course_ids'])->get(['course_id', 'user_id']);
         Enrollment::where('company_id', $company->id)->whereNotIn('course_id', $data['course_ids'])->delete();
+        if ($removed->isNotEmpty()) {
+            Activity::log('equipa.cursos_retirados', $company, [
+                'cursos' => Course::whereIn('id', $removed->pluck('course_id')->unique())->pluck('title')->all(),
+                'pessoas' => $removed->pluck('user_id')->unique()->count(),
+            ]);
+        }
         $this->teams->syncMembers($company->fresh(), $data['people'], $data['leader'], $request->user());
 
         if (! empty($data['resolve'])) {

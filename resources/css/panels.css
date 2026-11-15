@@ -185,7 +185,7 @@
 .pn-card { flex: none; display: flex; flex-direction: column; width: 270px; }
 .pn-card-p { position: relative; flex: 1; min-height: 240px; overflow: hidden; background: #111; color: #fff; }
 .pn-card-p img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.pn-card-p::after, .pn-cover::after, .pn-band::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(8, 10, 22, .94) 12%, rgba(8, 10, 22, .55) 48%, rgba(8, 10, 22, 0) 72%); }
+.pn-card-p::after, .pn-lift::after, .pn-band::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(8, 10, 22, .94) 12%, rgba(8, 10, 22, .55) 48%, rgba(8, 10, 22, 0) 72%); }
 .pn-card-t { position: absolute; left: 20px; right: 20px; bottom: 20px; z-index: 1; }
 .pn-card-t .pn-lab { color: #EDEDED; }
 .pn-card-t h3 { margin-top: 2px; font-size: 21px; line-height: 1.12; color: #fff; text-wrap: balance; }
@@ -221,9 +221,24 @@
 .pn-page-t h3 { font-size: 42px; line-height: 1.1; }
 .pn-page-c > .pn-lab { display: block; margin: 20px 0 14px; }
 .pn-covers { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 328px)); gap: 24px; }
-.pn-cover { display: block; position: relative; width: 100%; height: 440px; overflow: hidden; background: #111; color: #fff; }
-.pn-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.pn-cover .pn-top-bar { position: absolute; left: 0; right: 0; top: 0; z-index: 2; height: 6px; background: #ffffff40; }
+/* Cartões de "Os meus cursos": o mesmo movimento dos cartões do catálogo (courses.css, opção A).
+   O cartão dá a perspetiva; a .pn-lift inclina-se com o rato (Components/ui/tilt.js), sobe e leva o reflexo. */
+.pn-cover { display: block; position: relative; width: 100%; height: 440px; color: #fff; perspective: 900px; }
+.pn-lift { position: relative; display: block; height: 100%; overflow: hidden; background: #111; transform-style: preserve-3d; will-change: transform; transition: transform .6s cubic-bezier(.32, .72, 0, 1), box-shadow .8s cubic-bezier(.32, .72, 0, 1); }
+.pn-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s cubic-bezier(.32, .72, 0, 1); }
+.pn-glare { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .4s; background: radial-gradient(420px circle at var(--gx, 50%) var(--gy, 0%), #ffffff38, transparent 45%); }
+.pn-cover h3 { transition: color .3s; }
+.pn-cover .pn-card-t { z-index: 2; }
+.pn-cover:hover .pn-lift { transform: translateY(-4px); box-shadow: 0 26px 48px -28px rgba(60, 40, 10, .45); }
+.pn-cover:hover img { transform: scale(1.05); }
+.pn-cover:hover .pn-glare { opacity: 1; }
+.pn-cover:hover h3 { color: #FFD27A; }
+.pn-cover:active .pn-lift { transform: scale(.985); }
+@media (prefers-reduced-motion: no-preference) {
+    .pn-cover { animation: pn-rise .8s cubic-bezier(.32, .72, 0, 1) both; animation-delay: calc(var(--i, 0) * 45ms); }
+}
+@keyframes pn-rise { from { opacity: 0; transform: translateY(28px) scale(.97); } }
+.pn-cover .pn-top-bar { position: absolute; left: 0; right: 0; top: 0; z-index: 3; height: 6px; background: #ffffff40; }
 .pn-cover .pn-top-bar i { display: block; height: 100%; background: var(--color-accent); }
 .pn-cover h3 { font-size: 23px; }
 
