@@ -21,7 +21,9 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\File\File as SymfonyFile;
+use Throwable;
 
 /**
  * "Os meus cursos": formadores criam e publicam os seus cursos; o admin gere todos.
@@ -190,6 +192,9 @@ class CourseBuilderController extends Controller
         // Anexos numa pasta de quem os carrega: ao gravar o curso só se aceitam anexos novos da própria pessoa
         $dir = $kind === 'cover' ? 'capas' : CourseBuilder::attachmentDir($request->user()->id);
         $path = $file->store(CourseBuilder::UPLOAD_DIR.'/'.$dir, 'public');
+        if (! $path) {
+            return $this->notStored();
+        }
 
         return response()->json([
             'path' => $path,
@@ -245,9 +250,11 @@ class CourseBuilderController extends Controller
         }
         $ext = $mime === 'video/webm' ? 'webm' : 'mp4';
         $final = CourseBuilder::VIDEO_DIR.'/'.Str::lower((string) Str::ulid()).'.'.$ext;
-        $in = fopen($path, 'rb');
-        Storage::disk('public')->writeStream($final, $in); // o volume pode ser outro disco: copiar em vez de mover
-        fclose($in);
+        if (! $this->storePublic($path, $final)) {
+            $tmp->delete($part);
+
+            return $this->notStored();
+        }
         $tmp->delete($part);
 
         return response()->json([
@@ -305,9 +312,11 @@ class CourseBuilderController extends Controller
         }
         $ext = Str::lower(pathinfo($data['name'], PATHINFO_EXTENSION));
         $final = CourseBuilder::UPLOAD_DIR.'/'.CourseBuilder::attachmentDir($request->user()->id).'/'.Str::random(40).'.'.$ext;
-        $in = fopen($path, 'rb');
-        Storage::disk('public')->writeStream($final, $in);
-        fclose($in);
+        if (! $this->storePublic($path, $final)) {
+            $tmp->delete($part);
+
+            return $this->notStored();
+        }
         $tmp->delete($part);
 
         return response()->json([
@@ -317,6 +326,37 @@ class CourseBuilderController extends Controller
             'name' => $data['name'],
             'size' => $size,
         ]);
+    }
+
+    /**
+     * Copia o ficheiro juntado para o disco public (o volume pode ser outro disco: copiar em vez de mover) e
+     * confirma que ficou lá inteiro. Com o disco cheio a cópia falha ou fica cortada: apaga-se e devolve false,
+     * para o editor avisar em vez de guardar um endereço para um ficheiro que não existe.
+     */
+    private function storePublic(string $from, string $to): bool
+    {
+        $disk = Storage::disk('public');
+        $in = fopen($from, 'rb');
+        try {
+            $ok = $disk->writeStream($to, $in);
+        } catch (Throwable $e) {
+            $ok = false;
+        } finally {
+            if (is_resource($in)) fclose($in);
+        }
+        clearstatcache();
+        if ($ok && $disk->exists($to) && $disk->size($to) === filesize($from)) {
+            return true;
+        }
+        report(new RuntimeException("Ficheiro não gravado no disco public: {$to} (disco cheio?)"));
+        $disk->delete($to);
+
+        return false;
+    }
+
+    private function notStored(): JsonResponse
+    {
+        return response()->json(['message' => __('O ficheiro não ficou guardado no servidor (pode estar sem espaço). Avisa a equipa T.Academy.')], 507);
     }
 
     /**

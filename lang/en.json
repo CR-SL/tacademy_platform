@@ -1617,5 +1617,6 @@
     "O ficheiro não pode ter mais de :mb MB.": "The file cannot be larger than :mb MB.",
     "Não foi possível carregar o ficheiro. Tenta outra vez.": "The file could not be uploaded. Try again.",
     "O envio foi interrompido. Tenta carregar o ficheiro outra vez.": "The upload was interrupted. Try uploading the file again.",
-    "O ficheiro não corresponde ao tipo indicado (PDF, imagens, Office ou zip).": "The file does not match its type (PDF, images, Office or zip)."
+    "O ficheiro não corresponde ao tipo indicado (PDF, imagens, Office ou zip).": "The file does not match its type (PDF, images, Office or zip).",
+    "O ficheiro não ficou guardado no servidor (pode estar sem espaço). Avisa a equipa T.Academy.": "The file was not saved on the server (it may be out of space). Let the T.Academy team know."
 }
