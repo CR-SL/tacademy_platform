@@ -27,7 +27,8 @@ class AdminController extends Controller
 
     private const NEEDS = [
         'geral' => 'estatisticas', 'vendas' => 'estatisticas', 'cliques' => 'estatisticas', 'conclusao' => 'estatisticas',
-        'catalogo' => 'cursos.todos', 'formador-ia' => 'cursos.alex.gerir', 'pessoas' => 'pessoas', 'permissoes' => 'pessoas',
+        'catalogo' => 'cursos.todos', 'formador-ia' => 'cursos.alex.gerir', 'pessoas' => 'pessoas',
+        'permissoes' => null, // só o admin: quem muda permissões podia dar a si próprio todas as outras
         'registo' => null, // só o admin (decisão do utilizador): não é uma permissão que se dê a outros perfis
     ];
 

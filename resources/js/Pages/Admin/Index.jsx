@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import StudentLayout, { initials } from '@/Layouts/StudentLayout';
 import { Button, Chip, Drawer, Field, FlashToast, inputCls, Pills, useConfirm } from '@/Components/ui';
 import { Columns, Completion, fmtEuro, fmtInt, HBars } from '@/Components/Admin/Charts';
@@ -427,12 +427,22 @@ function PersonDrawer({ user, roles, onClose }) {
 /* ---------- Permissões ---------- */
 function Permissions({ data }) {
     const { roles, permissions, granted } = data;
-    const [busy, setBusy] = useState(null);
+    // Cópia local: a lista nova parte do que já se escolheu, mesmo antes de o servidor responder;
+    // e o perfil fica bloqueado enquanto grava (dois cliques seguidos já não perdem o primeiro)
+    const [mine, setMine] = useState(granted);
+    useEffect(() => setMine(granted), [granted]);
+    const [busy, setBusy] = useState(null); // perfil a gravar (um pedido de cada vez: o Inertia cancelava o anterior)
     const toggle = (role, key) => {
-        const now = granted[role] ?? [];
+        if (busy) return;
+        const now = mine[role] ?? [];
         const next = now.includes(key) ? now.filter((k) => k !== key) : [...now, key];
-        setBusy(`${role}-${key}`);
-        router.put('/administracao/permissoes', { role, permissions: next }, { preserveScroll: true, onFinish: () => setBusy(null) });
+        setMine((m) => ({ ...m, [role]: next }));
+        setBusy(role);
+        router.put('/administracao/permissoes', { role, permissions: next }, {
+            preserveScroll: true,
+            onError: () => setMine(granted),
+            onFinish: () => setBusy(null),
+        });
     };
 
     return (
@@ -446,10 +456,10 @@ function Permissions({ data }) {
                             <tr key={p.key}>
                                 <td>{p.label}</td>
                                 {roles.map((r) => {
-                                    const on = (granted[r.key] ?? []).includes(p.key);
+                                    const on = (mine[r.key] ?? []).includes(p.key);
                                     return (
                                         <td key={r.key}>
-                                            <button type="button" className="bo-tick" aria-pressed={on} disabled={r.key === 'admin' || busy === `${r.key}-${p.key}`}
+                                            <button type="button" className="bo-tick" aria-pressed={on} disabled={r.key === 'admin' || busy !== null}
                                                 aria-label={`${r.name}: ${p.label}`} onClick={() => toggle(r.key, p.key)}>
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
                                             </button>

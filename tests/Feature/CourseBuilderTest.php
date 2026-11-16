@@ -331,6 +331,32 @@ class CourseBuilderTest extends TestCase
     }
 
 
+    public function test_an_instructor_cannot_attach_or_delete_someone_elses_file(): void
+    {
+        Storage::fake('public');
+        $a = $this->user('formador');
+        $b = $this->user('formador');
+        $doc = $this->actingAs($a)->post('/formador/uploads', [
+            'kind' => 'attachment', 'file' => UploadedFile::fake()->create('esquema.pdf', 200, 'application/pdf'),
+        ])->assertOk()->json();
+        $this->assertStringStartsWith('cursos/anexos/u'.$a->id.'/', $doc['path']);
+
+        // O formador B tenta pôr no seu curso o anexo do A (e um caminho com "..") e retirá-los depois
+        $this->actingAs($b)->postJson('/formador/cursos', $this->payload())->assertCreated();
+        $course = Course::where('instructor_id', $b->id)->firstOrFail();
+        $data = $this->editorState($course);
+        $data['modules'][0]['lessons'][0]['attachments'] = [
+            ['name' => 'alheio.pdf', 'path' => $doc['path']],
+            ['name' => 'truque.pdf', 'path' => 'cursos/anexos/u'.$b->id.'/../u'.$a->id.'/'.basename($doc['path'])],
+        ];
+        $this->actingAs($b)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
+        $this->assertSame(0, $course->lessons()->first()->attachments()->count());
+
+        $data['modules'][0]['lessons'][0]['attachments'] = [];
+        $this->actingAs($b)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
+        Storage::disk('public')->assertExists($doc['path']);
+    }
+
     public function test_videos_are_uploaded_in_chunks_and_play_in_the_own_player(): void
     {
         Storage::fake('public');

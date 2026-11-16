@@ -79,6 +79,7 @@ class TeamController extends Controller
                 ->latest()->get()->map(fn ($r) => [
                     'id' => $r->id,
                     'change' => __(ContactRequest::CHANGE_TYPES[$r->change_type] ?? $r->change_type),
+                    'change_type' => $r->change_type, // a página compara esta chave (o texto acima vem traduzido)
                     'people' => $r->people ?? [],
                     'packs' => $r->packs,
                     'course_id' => $r->course_id,
@@ -94,7 +95,9 @@ class TeamController extends Controller
         $data = $request->validate([
             'packs' => ['required', 'integer', 'between:1,50'],
             'course_ids' => ['required', 'array', 'min:1'],
-            'course_ids.*' => [Rule::exists('courses', 'id')],
+            // Só cursos publicados (como ao criar a equipa); os que a equipa já tem continuam a ser aceites
+            'course_ids.*' => [Rule::exists('courses', 'id')->where(fn ($q) => $q->where('status', 'published')
+                ->orWhereIn('id', $company->courses()->pluck('courses.id')))],
             'people' => ['required', 'array', 'min:1'],
             'people.*.name' => ['required', 'string', 'max:150'],
             'people.*.email' => ['required', 'email', 'max:150'],

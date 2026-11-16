@@ -31,6 +31,7 @@ class PeopleController extends Controller
             'email.unique' => __('Já existe uma conta com este email.'),
         ]);
         $this->guardRole($data['role'], null);
+        $this->guardAdmin($request, $data['role'], null);
 
         $user = User::create([
             'name' => $data['name'],
@@ -70,6 +71,7 @@ class PeopleController extends Controller
             $this->keepOneAdmin($user);
         }
         $this->guardRole($data['role'], $user);
+        $this->guardAdmin($request, $data['role'], $user);
 
         $user->forceFill([
             'name' => $data['name'],
@@ -84,6 +86,7 @@ class PeopleController extends Controller
     public function destroy(Request $request, User $user): RedirectResponse
     {
         abort_if($user->id === $request->user()->id, 422, __('Não podes desativar a tua própria conta.'));
+        abort_if($user->isAdmin() && ! $request->user()->isAdmin(), 403, __('Só um admin pode desativar a conta de outro admin.'));
         if ($user->isAdmin()) {
             $this->keepOneAdmin($user);
         }
@@ -93,9 +96,10 @@ class PeopleController extends Controller
         return back()->with('status', __(':name já não consegue entrar. Podes reativar a conta quando quiseres.', ['name' => $user->name]));
     }
 
-    public function restore(int $id): RedirectResponse
+    public function restore(Request $request, int $id): RedirectResponse
     {
         $user = User::onlyTrashed()->findOrFail($id);
+        abort_if($user->isAdmin() && ! $request->user()->isAdmin(), 403, __('Só um admin pode reativar a conta de um admin.'));
         $user->restore();
 
         return back()->with('status', __('Conta de :name reativada.', ['name' => $user->name]));
@@ -104,6 +108,8 @@ class PeopleController extends Controller
     /** Permissões por perfil (o admin tem sempre todas). */
     public function permissions(Request $request): RedirectResponse
     {
+        // Só o admin: quem tem "pessoas" podia dar ao seu perfil todas as permissões
+        abort_unless($request->user()->isAdmin(), 403);
         $data = $request->validate([
             'role' => ['required', Rule::in(array_diff(array_keys(Permissions::ROLES), ['admin']))],
             'permissions' => ['present', 'array'],
@@ -120,6 +126,18 @@ class PeopleController extends Controller
     {
         if ($role === 'team_leader' && ! $user?->company_id) {
             throw ValidationException::withMessages(['role' => __('Um team leader tem de pertencer a uma equipa. Trata disso em Equipas.')]);
+        }
+    }
+
+    /**
+     * Quem tem a permissão "pessoas" mas não é admin gere as outras contas, mas não cria admins, não promove
+     * ninguém a admin e não mexe em contas de admin (senão podia tornar-se admin a si próprio).
+     */
+    private function guardAdmin(Request $request, string $role, ?User $user): void
+    {
+        if ($request->user()->isAdmin()) return;
+        if ($role === 'admin' || $user?->isAdmin()) {
+            throw ValidationException::withMessages(['role' => __('Só um admin pode dar o perfil de admin ou alterar a conta de um admin.')]);
         }
     }
 

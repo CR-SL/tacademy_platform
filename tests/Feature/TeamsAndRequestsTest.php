@@ -238,6 +238,68 @@ class TeamsAndRequestsTest extends TestCase
         $this->assertTrue(\App\Models\Certificate::where('user_id', $sergio->id)->where('course_id', $other->id)->exists());
     }
 
+    public function test_a_disabled_account_in_the_list_is_refused_and_nobody_is_invited(): void
+    {
+        $gestor = $this->user('gestor_cursos');
+        $course = $this->course('Diagnóstico OBD-II');
+        $this->user('aluno', ['email' => 'sergio@moura.pt'])->delete(); // conta desativada pela Administração
+        $r = $this->paidCompanyRequest($course);
+
+        $this->actingAs($gestor)->post("/gestao/pedidos/{$r->id}/equipa", [
+            'company' => 'Oficina Moura', 'nif' => '516444777', 'packs' => 1, 'course_ids' => [$course->id],
+            'people' => $r->people, 'leader' => 'paulo@moura.pt',
+        ])->assertSessionHasErrors('people');
+
+        $this->assertFalse(Company::where('name', 'Oficina Moura')->exists());
+        $this->assertFalse(User::where('email', 'paulo@moura.pt')->exists());
+        Mail::assertNothingSent();
+    }
+
+    public function test_a_draft_course_cannot_be_added_to_a_team(): void
+    {
+        $gestor = $this->user('gestor_cursos');
+        $course = $this->course('Diagnóstico OBD-II');
+        $draft = $this->course('Em preparação');
+        $draft->update(['status' => 'draft']);
+        $company = $this->createTeam($gestor, $this->paidCompanyRequest($course), $course);
+
+        $this->actingAs($gestor)->put("/gestao/equipas/{$company->ulid}", [
+            'packs' => 1, 'course_ids' => [$course->id, $draft->id], 'leader' => 'paulo@moura.pt', 'people' => $this->paidCompanyRequest($course)->people,
+        ])->assertSessionHasErrors('course_ids.1');
+
+        // Um curso que a equipa já tem continua aceite, mesmo que tenha passado a rascunho
+        $course->update(['status' => 'draft']);
+        $this->actingAs($gestor)->put("/gestao/equipas/{$company->ulid}", [
+            'packs' => 1, 'course_ids' => [$course->id], 'leader' => 'paulo@moura.pt', 'people' => $this->paidCompanyRequest($course)->people,
+        ])->assertSessionHasNoErrors();
+    }
+
+    public function test_authorizing_twice_gives_access_or_credits_only_once(): void
+    {
+        $gestor = $this->user('gestor_cursos');
+        $aluno = $this->user('aluno', ['alex_credits' => 0]);
+        $r = ContactRequest::create(['kind' => 'creditos', 'type' => 'particular', 'status' => 'pago', 'name' => $aluno->name, 'email' => $aluno->email, 'user_id' => $aluno->id, 'credits' => 10, 'message' => 'Créditos']);
+
+        $this->actingAs($gestor)->post("/gestao/pedidos/{$r->id}/autorizar")->assertRedirect();
+        // O segundo clique não dá os créditos outra vez
+        $this->assertSame(10, $aluno->fresh()->alex_credits);
+        $this->actingAs($gestor)->post("/gestao/pedidos/{$r->id}/autorizar");
+        $this->assertSame(10, $aluno->fresh()->alex_credits);
+        $this->assertSame('concluido', $r->fresh()->status);
+    }
+
+    public function test_pending_changes_carry_their_type_for_any_language(): void
+    {
+        $gestor = $this->user('gestor_cursos');
+        $course = $this->course('Diagnóstico OBD-II');
+        $company = $this->createTeam($gestor, $this->paidCompanyRequest($course), $course);
+        ContactRequest::create(['kind' => 'alteracao', 'type' => 'empresa', 'status' => 'novo', 'name' => 'Paulo', 'email' => 'paulo@moura.pt',
+            'company_id' => $company->id, 'change_type' => 'adicionar', 'people' => [['name' => 'Hugo', 'email' => 'hugo@moura.pt']], 'message' => 'Novo']);
+
+        $this->actingAs($gestor)->get("/gestao/equipas/{$company->ulid}")
+            ->assertInertia(fn ($p) => $p->where('pending.0.change_type', 'adicionar'));
+    }
+
     public function test_a_refused_team_update_changes_nothing(): void
     {
         $gestor = $this->user('gestor_cursos');

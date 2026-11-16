@@ -94,6 +94,28 @@ class AdminTest extends TestCase
         $this->actingAs($this->user('admin'))->post('/administracao/pessoas', ['name' => 'Outra', 'email' => 'rita@oficina.pt', 'role' => 'aluno'])->assertSessionHasErrors('email');
     }
 
+    public function test_someone_with_the_people_permission_cannot_become_admin(): void
+    {
+        Mail::fake();
+        $this->actingAs($this->user('admin'))->put('/administracao/permissoes', ['role' => 'gestor_cursos', 'permissions' => ['pessoas']])->assertSessionHasNoErrors();
+        $gestor = $this->user('gestor_cursos');
+        $admin = $this->user('admin');
+
+        // Gere as outras contas...
+        $this->actingAs($gestor)->post('/administracao/pessoas', ['name' => 'Rui', 'email' => 'rui@oficina.pt', 'role' => 'formador'])->assertSessionHasNoErrors();
+        // ...mas não cria admins, não se promove, não mexe em admins nem nas permissões
+        $this->actingAs($gestor)->post('/administracao/pessoas', ['name' => 'Eu', 'email' => 'eu@oficina.pt', 'role' => 'admin'])->assertSessionHasErrors('role');
+        $rui = User::where('email', 'rui@oficina.pt')->first();
+        $this->actingAs($gestor)->put("/administracao/pessoas/{$rui->ulid}", ['name' => 'Rui', 'email' => 'rui@oficina.pt', 'role' => 'admin'])->assertSessionHasErrors('role');
+        $this->actingAs($gestor)->put("/administracao/pessoas/{$admin->ulid}", ['name' => 'X', 'email' => $admin->email, 'role' => 'aluno'])->assertSessionHasErrors('role');
+        $this->actingAs($gestor)->delete("/administracao/pessoas/{$admin->ulid}")->assertForbidden();
+        $this->actingAs($gestor)->put('/administracao/permissoes', ['role' => 'gestor_cursos', 'permissions' => ['pessoas', 'estatisticas']])->assertForbidden();
+        $this->actingAs($gestor)->get('/administracao/permissoes')->assertRedirect();
+
+        $this->assertFalse($rui->fresh()->isAdmin());
+        $this->assertTrue($admin->fresh()->isAdmin());
+    }
+
     public function test_profiles_have_guards(): void
     {
         $admin = $this->user('admin');

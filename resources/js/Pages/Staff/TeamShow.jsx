@@ -44,8 +44,8 @@ export default function TeamShow({ team, report, courses, pending }) {
 
 function EditTeam({ team, report, courses, pending, onClose }) {
     // Já traz as pessoas pedidas para adicionar e assinala as pedidas para retirar
-    const toAdd = pending.flatMap((p) => (p.change.startsWith('Adicionar') ? p.people : []));
-    const toRemove = new Set(pending.flatMap((p) => (p.change.startsWith('Retirar') ? p.people.map((x) => x.email) : [])));
+    const toAdd = pending.flatMap((p) => (p.change_type === 'adicionar' ? p.people : []));
+    const toRemove = new Set(pending.flatMap((p) => (p.change_type === 'retirar' ? p.people.map((x) => x.email) : [])));
     const extraPacks = pending.reduce((a, p) => a + (p.packs || 0), 0);
     const extraCourses = pending.map((p) => p.course_id).filter(Boolean);
 

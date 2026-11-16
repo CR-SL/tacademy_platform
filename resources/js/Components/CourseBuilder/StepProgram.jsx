@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useConfirm } from '@/Components/ui';
 import { AddLink, Field, IconButton, inputCls, Panel } from './ui';
 import { formatBytes, formatMinutes, isHttpUrl, isUploadedVideo, linkInfo } from './format';
@@ -88,7 +88,12 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey }) 
                                 count={m.lessons.length}
                                 open={openKey === l.key}
                                 onToggle={() => setOpenKey(openKey === l.key ? null : l.key)}
-                                set={(fn) => update((d) => fn(d.modules[mi].lessons[li]))}
+                                // Pela chave da aula, não pela posição: um vídeo que acaba de carregar minutos depois
+                                // vai para a aula certa mesmo que entretanto se tenham apagado ou movido aulas
+                                set={(fn) => update((d) => {
+                                    const target = d.modules.flatMap((x) => x.lessons).find((x) => x.key === l.key);
+                                    if (target) fn(target);
+                                })}
                                 onMove={(dir) => update((d) => move(d.modules[mi].lessons, li, dir))}
                                 onDelete={async () => {
                                     if (!(await confirm({ title: t('Apagar a aula “:v1”?', { v1: l.title || t('sem título') }), action: t('Apagar a aula'), danger: true }))) return;
@@ -350,12 +355,16 @@ const videoMinutes = (file) => new Promise((resolve) => {
 });
 
 // Upload do vídeo da aula aos pedaços (com barra de progresso); o endereço fica no link da aula
+// Vídeos a carregar neste momento: o editor avisa antes de sair da página (sair perde o envio)
+export const activeUploads = { count: 0 };
+
 function VideoUpload({ l, set }) {
     const { videoMaxMb = 1024 } = usePage().props;
     const [progress, setProgress] = useState(null);
     const [err, setErr] = useState('');
     const [name, setName] = useState('');
     const cancel = useRef(false);
+    useEffect(() => () => { cancel.current = true; }, []); // saiu do editor: pára de enviar pedaços
     const uploaded = isUploadedVideo(l.url);
 
     const send = async (file) => {
@@ -369,6 +378,7 @@ function VideoUpload({ l, set }) {
         cancel.current = false;
         setName(file.name);
         setProgress(0);
+        activeUploads.count++;
         try {
             let res;
             for (let i = 0; i < total; i++) {
@@ -391,6 +401,7 @@ function VideoUpload({ l, set }) {
             const d = e.response?.data;
             setErr(d?.message && e.response.status !== 500 ? (Object.values(d.errors ?? {})[0]?.[0] ?? d.message) : t('Não foi possível carregar o vídeo. Tenta outra vez.'));
         } finally {
+            activeUploads.count--;
             setProgress(null);
         }
     };

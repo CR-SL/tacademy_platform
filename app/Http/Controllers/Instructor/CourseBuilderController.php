@@ -71,7 +71,7 @@ class CourseBuilderController extends Controller
     {
         Gate::authorize('create', Course::class);
         $course = new Course(['instructor_id' => $request->user()->id, 'status' => 'draft', 'currency' => 'EUR']);
-        $maps = $this->builder->save($course, $this->validated($request));
+        $maps = $this->builder->save($course, $this->validated($request), $request->user()->id);
 
         return response()->json(['ulid' => $course->ulid, 'slug' => $course->slug, ...$maps], 201);
     }
@@ -86,7 +86,7 @@ class CourseBuilderController extends Controller
     public function update(Request $request, Course $course): JsonResponse
     {
         Gate::authorize('update', $course);
-        $maps = $this->builder->save($course, $this->validated($request));
+        $maps = $this->builder->save($course, $this->validated($request), $request->user()->id);
 
         return response()->json(['ulid' => $course->ulid, 'slug' => $course->slug, ...$maps]);
     }
@@ -178,7 +178,9 @@ class CourseBuilderController extends Controller
         ], [], ['file' => $kind === 'cover' ? 'imagem' : 'ficheiro']);
 
         $file = $request->file('file');
-        $path = $file->store(CourseBuilder::UPLOAD_DIR.'/'.($kind === 'cover' ? 'capas' : 'anexos'), 'public');
+        // Anexos numa pasta de quem os carrega: ao gravar o curso só se aceitam anexos novos da própria pessoa
+        $dir = $kind === 'cover' ? 'capas' : CourseBuilder::attachmentDir($request->user()->id);
+        $path = $file->store(CourseBuilder::UPLOAD_DIR.'/'.$dir, 'public');
 
         return response()->json([
             'path' => $path,

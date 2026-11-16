@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\TeamService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -131,8 +132,13 @@ class RequestController extends Controller
             && $contactRequest->user_id && $contactRequest->course_id, 422, __('Este pedido não é uma compra pessoal paga.'));
 
         $student = User::findOrFail($contactRequest->user_id);
-        $this->teams->enroll($student, $contactRequest->course_id, null);
-        $contactRequest->update(['status' => 'concluido', 'assigned_to' => $contactRequest->assigned_to ?? $request->user()->id]);
+        $done = DB::transaction(function () use ($request, $contactRequest, $student) {
+            if (! $this->claim($request, $contactRequest)) return false;
+            $this->teams->enroll($student, $contactRequest->course_id, null);
+
+            return true;
+        });
+        if (! $done) return back()->with('status', __('Este pedido já tinha sido tratado.'));
 
         PlatformMail::inLocaleOf($student, fn () => PlatformMail::deliver($student->email, new PlatformMail(
             subjectLine: __('Já tens acesso ao curso :course', ['course' => $contactRequest->course->title]),
@@ -151,8 +157,13 @@ class RequestController extends Controller
         abort_unless($contactRequest->status === 'pago' && $contactRequest->user_id && $contactRequest->credits > 0, 422, __('Este pedido não é uma compra de créditos paga.'));
 
         $student = User::findOrFail($contactRequest->user_id);
-        $student->increment('alex_credits', $contactRequest->credits);
-        $contactRequest->update(['status' => 'concluido', 'assigned_to' => $contactRequest->assigned_to ?? $request->user()->id]);
+        $done = DB::transaction(function () use ($request, $contactRequest, $student) {
+            if (! $this->claim($request, $contactRequest)) return false;
+            $student->increment('alex_credits', $contactRequest->credits);
+
+            return true;
+        });
+        if (! $done) return back()->with('status', __('Este pedido já tinha sido tratado.'));
 
         PlatformMail::inLocaleOf($student, fn () => PlatformMail::deliver($student->email, new PlatformMail(
             subjectLine: __('Os teus créditos de avatar já estão disponíveis'),
@@ -163,5 +174,19 @@ class RequestController extends Controller
         )));
 
         return back()->with('status', __(':name recebeu :n créditos de avatar.', ['name' => $student->name, 'n' => $contactRequest->credits]));
+    }
+
+    /**
+     * Passa o pedido de "pago" a "concluido" só se ainda estiver "pago", com a linha bloqueada (chamar dentro de uma
+     * transação). Dois cliques ao mesmo tempo: só o primeiro muda o estado, por isso o acesso ou os créditos só se
+     * dão uma vez. Pelo modelo, para o registo de atividade continuar a ver a mudança de estado.
+     */
+    private function claim(Request $request, ContactRequest $contactRequest): bool
+    {
+        $locked = ContactRequest::whereKey($contactRequest->id)->lockForUpdate()->first();
+        if (! $locked || $locked->status !== 'pago') return false;
+        $locked->update(['status' => 'concluido', 'assigned_to' => $locked->assigned_to ?? $request->user()->id]);
+
+        return true;
     }
 }

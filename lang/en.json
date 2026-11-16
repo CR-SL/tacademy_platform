@@ -1577,5 +1577,13 @@
     "Ver as perguntas rápidas": "See the quick questions",
     "A tua escolha": "Your choice",
     "Não foi possível guardar a resposta. Verifica a ligação e tenta outra vez.": "Your answer could not be saved. Check your connection and try again.",
-    "Não foi possível carregar o vídeo. Verifica a ligação à internet e tenta outra vez.": "The video could not be loaded. Check your internet connection and try again."
+    "Não foi possível carregar o vídeo. Verifica a ligação à internet e tenta outra vez.": "The video could not be loaded. Check your internet connection and try again.",
+    "Há um vídeo a carregar": "A video is uploading",
+    "Se saíres agora, o envio perde-se e terás de carregar o vídeo outra vez.": "If you leave now, the upload is lost and you will have to upload the video again.",
+    "Sair na mesma": "Leave anyway",
+    "Estas contas estão desativadas: :emails. Reativa-as na Administração › Pessoas ou retira-as da lista.": "These accounts are deactivated: :emails. Reactivate them in Administration › People or remove them from the list.",
+    "Este pedido já tinha sido tratado.": "This request had already been handled.",
+    "Só um admin pode desativar a conta de outro admin.": "Only an admin can deactivate another admin account.",
+    "Só um admin pode reativar a conta de um admin.": "Only an admin can reactivate an admin account.",
+    "Só um admin pode dar o perfil de admin ou alterar a conta de um admin.": "Only an admin can give the admin profile or change an admin account."
 }

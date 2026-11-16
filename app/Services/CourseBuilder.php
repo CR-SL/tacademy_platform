@@ -32,6 +32,15 @@ class CourseBuilder
 
     public const SHORT_MAX = 160;
 
+    /** Quem está a gravar: só os anexos novos que esta pessoa carregou são aceites (ver syncAttachments). */
+    private ?int $uploaderId = null;
+
+    /** Pasta dos anexos carregados por uma pessoa (dentro de UPLOAD_DIR). */
+    public static function attachmentDir(int $userId): string
+    {
+        return 'anexos/u'.$userId;
+    }
+
     /** Pasta (disco public) onde ficam capas e anexos carregados no editor. */
     public const UPLOAD_DIR = 'cursos';
 
@@ -112,8 +121,10 @@ class CourseBuilder
      * Guarda o estado do editor. Devolve ['modules' => [key => id], 'lessons' => [key => id],
      * 'questions' => [key => ['id', 'option_ids']], 'checks' => [key => id]].
      */
-    public function save(Course $course, array $data): array
+    public function save(Course $course, array $data, ?int $uploaderId = null): array
     {
+        $this->uploaderId = $uploaderId;
+
         return DB::transaction(function () use ($course, $data) {
             $isFree = (bool) ($data['is_free'] ?? false);
             $title = trim($data['title'] ?? '');
@@ -309,11 +320,19 @@ class CourseBuilder
                 $current[$path]->update(['order_index' => $i]);
                 continue;
             }
-            if (! str_starts_with($path, self::UPLOAD_DIR.'/anexos/')) continue; // só ficheiros carregados pelo editor
-            $keep[] = $path;
             if ($current->has($path)) {
+                $keep[] = $path;
                 $current[$path]->update(['order_index' => $i]);
-            } elseif (Storage::disk('public')->exists($path)) {
+                continue;
+            }
+            // Anexo novo: só um ficheiro que esta pessoa carregou agora (a sua pasta, sem "..").
+            // Sem isto, indicar o caminho de um anexo de outro curso e retirá-lo depois apagava o ficheiro desse curso.
+            $mine = $this->uploaderId
+                && preg_match('#^'.preg_quote(self::UPLOAD_DIR.'/'.self::attachmentDir($this->uploaderId), '#').'/[\w.\-]+$#', $path)
+                && ! str_contains($path, '..');
+            if (! $mine) continue;
+            $keep[] = $path;
+            if (Storage::disk('public')->exists($path)) {
                 $lesson->attachments()->create([
                     'name' => Str::limit($a['name'] ?? basename($path), 195, ''),
                     'path' => $path,
@@ -323,9 +342,15 @@ class CourseBuilder
             }
         }
         $current->except($keep)->each(function (LessonAttachment $a) {
-            // Ficheiros do projeto não se apagam; os outros só depois de a gravação ser confirmada (pode ser recusada)
-            if (! str_starts_with($a->path, '/')) DB::afterCommit(fn () => Storage::disk('public')->delete($a->path));
             $a->delete();
+            // Ficheiros do projeto não se apagam; os outros só depois de a gravação ser confirmada (pode ser recusada)
+            // e só se nenhuma outra aula usar o mesmo ficheiro
+            if (! str_starts_with($a->path, '/')) {
+                $path = $a->path;
+                DB::afterCommit(function () use ($path) {
+                    if (! LessonAttachment::where('path', $path)->exists()) Storage::disk('public')->delete($path);
+                });
+            }
         });
     }
 

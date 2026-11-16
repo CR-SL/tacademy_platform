@@ -2,7 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
 import StepInfo from '@/Components/CourseBuilder/StepInfo';
-import StepProgram from '@/Components/CourseBuilder/StepProgram';
+import StepProgram, { activeUploads } from '@/Components/CourseBuilder/StepProgram';
 import StepAvatar from '@/Components/CourseBuilder/StepAvatar';
 import StepPrice from '@/Components/CourseBuilder/StepPrice';
 import StepReview from '@/Components/CourseBuilder/StepReview';
@@ -127,16 +127,34 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
         return () => clearTimeout(tx);
     }, [save, flush]);
 
-    // Avisar antes de sair com alterações por gravar
+    // Avisar antes de sair com alterações por gravar ou com um vídeo a carregar (sair perde o envio)
+    const confirmRef = useRef(null);
+    const leaving = useRef(false);
     useEffect(() => {
         const warn = (e) => {
-            if (dirty.current || inFlight.current) { e.preventDefault(); e.returnValue = ''; }
+            if (dirty.current || inFlight.current || activeUploads.count > 0) { e.preventDefault(); e.returnValue = ''; }
         };
         window.addEventListener('beforeunload', warn);
         const off = router.on('before', (e) => {
-            if (e.detail.visit.method !== 'get' || !(dirty.current || inFlight.current)) return;
+            const visit = e.detail.visit;
+            if (visit.method !== 'get' || leaving.current) return;
+            if (activeUploads.count > 0) {
+                e.preventDefault();
+                confirmRef.current?.({
+                    title: t('Há um vídeo a carregar'),
+                    body: t('Se saíres agora, o envio perde-se e terás de carregar o vídeo outra vez.'),
+                    action: t('Sair na mesma'),
+                    danger: true,
+                }).then((yes) => {
+                    if (!yes) return;
+                    leaving.current = true;
+                    flush().then(() => router.visit(visit.url));
+                });
+                return;
+            }
+            if (!(dirty.current || inFlight.current)) return;
             e.preventDefault();
-            flush().then((ok) => ok && router.visit(e.detail.visit.url));
+            flush().then((ok) => ok && router.visit(visit.url));
         });
         return () => { window.removeEventListener('beforeunload', warn); off(); };
     }, [flush]);
@@ -172,6 +190,7 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
     };
 
     const [confirm, confirmDialog] = useConfirm();
+    confirmRef.current = confirm;
     const unpublish = async () => {
         if (!(await confirm({ title: t('Passar o curso a rascunho?'), body: t('Sai do catálogo até voltar a publicar.'), action: t('Passar a rascunho') }))) return;
         await flush();

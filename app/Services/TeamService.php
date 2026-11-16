@@ -91,6 +91,11 @@ class TeamService
         if ($taken->isNotEmpty()) {
             throw ValidationException::withMessages(['people' => __('Já pertence a outra equipa: :emails', ['emails' => $taken->implode(', ')])]);
         }
+        // Contas desativadas: a procura normal não as vê e a plataforma tentava criar outra com o mesmo email (erro)
+        $disabled = User::onlyTrashed()->whereIn('email', $people->pluck('email'))->pluck('email');
+        if ($disabled->isNotEmpty()) {
+            throw ValidationException::withMessages(['people' => __('Estas contas estão desativadas: :emails. Reativa-as na Administração › Pessoas ou retira-as da lista.', ['emails' => $disabled->implode(', ')])]);
+        }
 
         DB::transaction(function () use ($company, $people, $leaderEmail) {
             $roles = Role::pluck('id', 'name');
@@ -134,7 +139,8 @@ class TeamService
                     $this->enroll($user, $courseId, $company->id);
                 }
 
-                if ($joined) $this->invite($user, $company, $isNew);
+                // Os convites só saem quando a equipa ficar gravada (se algo falhar, ninguém recebe convite para nada)
+                if ($joined) DB::afterCommit(fn () => $this->invite($user, $company, $isNew));
             }
         });
     }

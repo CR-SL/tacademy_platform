@@ -32,6 +32,17 @@ Os problemas de segurança vêm marcados com **[Segurança]**. A auditoria de se
 - B11: sem a resposta certa (aula de amostra), mostra só "A tua escolha", sem certo nem errado.
 - B12: mensagem com "Tentar outra vez" quando o vídeo próprio não carrega, e aviso quando a resposta rápida não é guardada.
 
+**Corrigidos (grupo 5, editor e gestão, ainda sem commit):** B3, B4, B5, B6, A9, A11, A17, A18 e A19, com 6 testes novos. Depois: **152 testes passaram**.
+- B3: o vídeo carregado vai para a aula pela chave da aula, não pela posição.
+- B4: sair do editor com um vídeo a carregar pede confirmação, e o envio pára se a pessoa sair.
+- B5: "Gerir membros" compara o tipo do pedido (`change_type`), não o texto traduzido.
+- B6: as permissões usam uma cópia local e gravam um pedido de cada vez.
+- A9: os anexos novos ficam numa pasta de quem os carrega (`cursos/anexos/u{id}`); ao gravar só se aceitam os da própria pessoa, sem "..", e um ficheiro só se apaga se nenhuma outra aula o usar.
+- A11: as contas desativadas são recusadas com uma mensagem clara, e os convites só saem depois de a equipa ficar gravada.
+- A17: autorizar uma compra ou créditos bloqueia o pedido; um segundo clique já não dá nada outra vez.
+- A18: ao atualizar a equipa só se aceitam cursos publicados (ou que a equipa já tinha).
+- A19: só o admin cria admins, promove a admin, mexe em contas de admin e muda permissões.
+
 **Pendente para a mudança para o OVH (domínio tacademy.pt):**
 1. Verificar o domínio (ou um subdomínio, como `envio.tacademy.pt`) no serviço de email e mudar `MAIL_FROM_ADDRESS`.
 2. Retirar `MAIL_ALWAYS_TO`.
