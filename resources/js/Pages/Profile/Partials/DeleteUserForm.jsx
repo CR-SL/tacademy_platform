@@ -59,9 +59,9 @@ export default function DeleteUserForm({ className = '' }) {
                         {t('Perdes os cursos, o progresso, as notas e os certificados. Isto não se pode desfazer.')}
                     </p>
 
-                    <Field id="password" label="Palavra-passe" hint={t('Escreve a tua palavra-passe para confirmar.')} error={errors.password} className="mt-6">
+                    <Field id="delete-password" label={t('Palavra-passe')} hint={t('Escreve a tua palavra-passe para confirmar.')} error={errors.password} className="mt-6">
                         <input
-                            id="password"
+                            id="delete-password"
                             type="password"
                             name="password"
                             autoComplete="current-password"

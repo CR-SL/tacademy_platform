@@ -53,7 +53,7 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
                     return (
                         <div key={q.id} className="border-t border-line py-4 first:border-t-0">
                             <p className="mb-2 flex gap-2 font-display font-semibold">
-                                <span className={ok ? 'text-success-ink' : 'text-live-ink'} aria-label={ok ? t('Certa') : t('Errada')}>{ok ? '✓' : '✗'}</span>
+                                <span className={ok ? 'text-success-ink' : 'text-live-ink'}><span aria-hidden="true">{ok ? '✓' : '✗'}</span><span className="sr-only">{ok ? t('Certa') : t('Errada')}</span></span>
                                 {qi + 1}. {q.question}
                             </p>
                             {q.options.map((o) => {
@@ -95,7 +95,7 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
                         <label key={o.id} className={`mb-1.5 flex cursor-pointer items-center gap-2.5 border-[1.5px] px-3 py-2.5 text-[15px] ${
                             answers[q.id] === o.id ? 'border-accent bg-accent/10' : 'border-transparent bg-page hover:border-line'
                         }`}>
-                            <input type="radio" name={`q${q.id}`} className="text-accent focus:ring-accent" checked={answers[q.id] === o.id}
+                            <input type="radio" name={`q${q.id}`} className="text-accent focus:ring-ink" checked={answers[q.id] === o.id}
                                 onChange={() => setAnswers({ ...answers, [q.id]: o.id })} />
                             {o.text}
                         </label>

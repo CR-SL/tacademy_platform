@@ -40,7 +40,7 @@ export default function UpdateProfileInformation({
 
             <form onSubmit={submit} className="mt-6 space-y-6">
                 <div>
-                    <InputLabel htmlFor="name" value="Nome" />
+                    <InputLabel htmlFor="name" value={t('Nome')} />
 
                     <TextInput
                         id="name"
@@ -79,7 +79,7 @@ export default function UpdateProfileInformation({
                                 href={route('verification.send')}
                                 method="post"
                                 as="button"
-                                className="text-sm text-muted underline hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                                className="text-sm text-muted underline hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ink"
                             >
                                 {t('Enviar outro link de confirmação')}
                             </Link>

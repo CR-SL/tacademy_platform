@@ -60,7 +60,7 @@ export function Toggle({ checked, onChange, title, children }) {
     return (
         <label className="flex cursor-pointer items-start gap-3 border-t border-line py-3.5 first:border-t-0">
             <input type="checkbox" className="peer sr-only" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-            <span className="relative mt-0.5 h-[22px] w-10 flex-none rounded-full bg-track transition-colors after:absolute after:left-[3px] after:top-[3px] after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-accent peer-checked:after:translate-x-[18px] peer-focus-visible:ring-2 peer-focus-visible:ring-accent" />
+            <span className="relative mt-0.5 h-[22px] w-10 flex-none rounded-full bg-track transition-colors after:absolute after:left-[3px] after:top-[3px] after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-accent peer-checked:after:translate-x-[18px] peer-focus-visible:ring-2 peer-focus-visible:ring-ink" />
             <span>
                 <b className="block font-display text-[15px] font-semibold">{title}</b>
                 <small className="text-muted">{children}</small>

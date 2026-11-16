@@ -5,6 +5,7 @@ import '../../css/courses.css';
 
 import { t } from '@/i18n';
 import { tilt, untilt } from '@/Components/ui/tilt';
+import { useFocusTrap } from '@/Components/ui';
 
 // Catálogo da plataforma, aberto a quem ainda não tem conta: separadores por área, pesquisa
 // e aba lateral com o detalhe. Comprar pede sessão.
@@ -117,6 +118,8 @@ function FootAction({ c, owned, pending, guest }) {
 
 function Detail({ c, owned, pending, guest, onClose }) {
     const closeRef = useRef(null);
+    const box = useRef(null);
+    useFocusTrap(box); // o Tab fica dentro do detalhe (Esc fecha-o: ver Catalog)
     useEffect(() => {
         const tx = setTimeout(() => closeRef.current?.focus({ preventScroll: true }), 60);
         return () => clearTimeout(tx);
@@ -125,7 +128,7 @@ function Detail({ c, owned, pending, guest, onClose }) {
     return (
         <>
             <div className="cc-scrim" onClick={onClose} />
-            <aside className="cc-drawer" role="dialog" aria-modal="true" aria-labelledby="cc-d-title">
+            <aside ref={box} className="cc-drawer" role="dialog" aria-modal="true" aria-labelledby="cc-d-title">
                 <div className="cc-d-scroll">
                     <div className="cc-d-hero">
                         <img src={c.image} alt="" />
@@ -177,6 +180,8 @@ function Detail({ c, owned, pending, guest, onClose }) {
 function Search({ initial, courses, onApply, onPick, onClose }) {
     const [v, setV] = useState(initial);
     const inputRef = useRef(null);
+    const box = useRef(null);
+    useFocusTrap(box);
     useEffect(() => {
         const tx = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 60);
         return () => clearTimeout(tx);
@@ -187,7 +192,7 @@ function Search({ initial, courses, onApply, onPick, onClose }) {
     return (
         <>
             <div className="cc-scrim" onClick={onClose} />
-            <div className="cc-sheet" role="dialog" aria-modal="true" aria-label={t('Pesquisar cursos')}>
+            <div ref={box} className="cc-sheet" role="dialog" aria-modal="true" aria-label={t('Pesquisar cursos')}>
                 <div className="cc-sheet-in">
                     <div className="cc-field">
                         <SearchIcon size={26} />
@@ -197,7 +202,7 @@ function Search({ initial, courses, onApply, onPick, onClose }) {
                             value={v}
                             onChange={(e) => setV(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && onApply(q)}
-                            placeholder={t('O que quer aprender?')}
+                            placeholder={t('O que queres aprender?')}
                             aria-label={t('Pesquisar cursos')}
                             autoComplete="off"
                         />
@@ -225,7 +230,7 @@ function Search({ initial, courses, onApply, onPick, onClose }) {
                                 ))}
                                 {all.length
                                     ? <button className="cc-pill" type="button" onClick={() => onApply(q)}>{t('Ver todos os :n resultados', { n: all.length })}</button>
-                                    : <span className="cc-nores">{t('Nenhum curso encontrado. Experimente «diagnóstico», «bateria» ou «gestão».')}</span>}
+                                    : <span className="cc-nores">{t('Nenhum curso encontrado. Experimenta «diagnóstico», «bateria» ou «gestão».')}</span>}
                             </div>
                         </div>
                     )}
@@ -339,7 +344,7 @@ export default function Catalog({ courses, areas, owned, pending }) {
                         {shown.map((c, i) => <Card key={c.id} c={c} i={i} onOpen={open} />)}
                     </div>
                     {!shown.length && (
-                        <div className="cc-empty"><b>{t('Nenhum curso corresponde a estes filtros')}</b><span>{t('Limpe a pesquisa ou escolha «Todas» para ver o catálogo completo.')}</span></div>
+                        <div className="cc-empty"><b>{t('Nenhum curso corresponde a estes filtros')}</b><span>{t('Limpa a pesquisa ou escolhe «Todas» para ver o catálogo completo.')}</span></div>
                     )}
                 </div>
 

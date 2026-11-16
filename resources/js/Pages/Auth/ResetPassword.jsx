@@ -52,7 +52,7 @@ export default function ResetPassword({ token, email }) {
                 </div>
 
                 <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Palavra-passe" />
+                    <InputLabel htmlFor="password" value={t('Palavra-passe')} />
 
                     <TextInput
                         id="password"

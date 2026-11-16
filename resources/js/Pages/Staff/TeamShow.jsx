@@ -91,7 +91,7 @@ function EditTeam({ team, report, courses, pending, onClose }) {
                 <div className="flex flex-col gap-1">
                     {courses.map((c) => (
                         <label key={c.id} className="flex items-center gap-2 text-sm">
-                            <input type="checkbox" className="text-accent focus:ring-accent" checked={courseIds.includes(c.id)}
+                            <input type="checkbox" className="text-accent focus:ring-ink" checked={courseIds.includes(c.id)}
                                 onChange={(e) => setCourseIds(e.target.checked ? [...courseIds, c.id] : courseIds.filter((x) => x !== c.id))} />
                             {c.title}
                         </label>
@@ -104,7 +104,7 @@ function EditTeam({ team, report, courses, pending, onClose }) {
                 <Box title={t('Pedidos de alteração')}>
                     {pending.map((p) => (
                         <label key={p.id} className="flex items-center gap-2 py-1 text-sm">
-                            <input type="checkbox" className="text-accent focus:ring-accent" checked={resolve.includes(p.id)}
+                            <input type="checkbox" className="text-accent focus:ring-ink" checked={resolve.includes(p.id)}
                                 onChange={(e) => setResolve(e.target.checked ? [...resolve, p.id] : resolve.filter((x) => x !== p.id))} />
                             {t('Marcar o pedido #')}{p.id} ({p.change}{t(') como concluído')}
                         </label>

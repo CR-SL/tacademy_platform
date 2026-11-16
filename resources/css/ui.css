@@ -27,7 +27,7 @@
     transition: transform .15s, background-color .15s, color .15s, box-shadow .15s;
 }
 .ui-btn:active:not(:disabled) { transform: scale(.98); }
-.ui-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.ui-btn:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
 .ui-btn:disabled, .ui-btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
 .ui-btn svg { width: 18px; height: 18px; flex: none; }
 
@@ -72,7 +72,7 @@
 textarea.ui-input { min-height: 96px; resize: vertical; }
 select.ui-input { padding-right: 36px; }
 .ui-input::placeholder { color: var(--color-muted); opacity: .85; }
-.ui-input:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent); }
+.ui-input:focus { outline: none; border-color: var(--color-accent-ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent); }
 .ui-input[aria-invalid="true"] { border-color: var(--color-live); }
 .ui-input:disabled { opacity: .55; cursor: not-allowed; }
 .ui-hint { font-size: 12.5px; color: var(--color-muted); }
@@ -100,7 +100,7 @@ select.ui-input { padding-right: 36px; }
 .ui-pills button { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--color-surface2); color: var(--color-ink); font-size: 14px; font-weight: 600; white-space: nowrap; transition: background-color .15s, color .15s; }
 .ui-pills button:hover { background: var(--color-pill); }
 .ui-pills button[aria-pressed="true"] { background: var(--color-ink); color: var(--color-on-ink); }
-.ui-pills button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.ui-pills button:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
 .ui-pills em { font-size: 12px; font-style: normal; font-weight: 600; opacity: .7; }
 
 /* ---------- Camadas ---------- */

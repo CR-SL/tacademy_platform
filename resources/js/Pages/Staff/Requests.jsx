@@ -47,7 +47,7 @@ export default function Requests({ requests, open, statuses, kinds, changeTypes,
                                         <Td>{r.kind === 'alteracao' ? <Chip tone="dark">{kinds[r.kind]}</Chip> : kinds[r.kind]}</Td>
                                         <Td className="hidden lg:table-cell">
                                             {r.credits ? t(':n créditos de avatar', { n: r.credits }) : r.course?.title ?? (r.change_type ? changeTypes[r.change_type] : '—')}
-                                            {r.packs ? <span className="text-muted"> · {r.packs} pack{r.packs > 1 ? 's' : ''}</span> : null}
+                                            {r.packs ? <span className="text-muted"> · {r.packs === 1 ? t('1 pack') : t(':n packs', { n: r.packs })}</span> : null}
                                         </Td>
                                         <Td><Chip tone={tone[r.status]}>{statuses[r.status]}</Chip></Td>
                                         <Td className="hidden md:table-cell">{r.assignee ?? <span className="text-muted">{t('Por atribuir')}</span>}</Td>
@@ -236,7 +236,7 @@ function CreateTeam({ r, courses, onClose }) {
                 <div className="flex flex-col gap-1">
                     {courses.map((c) => (
                         <label key={c.id} className="flex items-center gap-2 text-sm">
-                            <input type="checkbox" className="text-accent focus:ring-accent" checked={courseIds.includes(c.id)}
+                            <input type="checkbox" className="text-accent focus:ring-ink" checked={courseIds.includes(c.id)}
                                 onChange={(e) => setCourseIds(e.target.checked ? [...courseIds, c.id] : courseIds.filter((x) => x !== c.id))} />
                             {c.title}
                         </label>

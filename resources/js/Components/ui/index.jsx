@@ -131,36 +131,47 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([t
  * Gaveta à direita para formulários curtos e detalhes. Leva o foco para dentro, prende o Tab
  * e devolve o foco ao botão que a abriu. `sub` é uma linha de contexto por baixo do título.
  */
-export function Drawer({ title, sub, onClose, footer, width = 'w-[min(640px,100%)]', children }) {
-    const panel = useRef(null);
-    const closeRef = useRef(onClose);
-    closeRef.current = onClose;
+/**
+ * Janela por cima da página (aria-modal): leva o foco para dentro, prende o Tab, fecha com Esc (se houver onEscape)
+ * e devolve o foco a quem a abriu. `first` escolhe onde começa o foco (seletor dentro da janela).
+ * Usado pela Drawer, pelo detalhe do curso no catálogo, pela caixa do curso e pelo início da avaliação.
+ */
+export function useFocusTrap(ref, { onEscape, first, lockScroll = false, active = true } = {}) {
+    const escRef = useRef(onEscape);
+    escRef.current = onEscape;
 
     useEffect(() => {
+        if (!active) return undefined;
         const opener = document.activeElement;
-        const el = panel.current;
-        const first = el?.querySelector('.ui-drawer-b')?.querySelector(FOCUSABLE) ?? el?.querySelector(FOCUSABLE);
-        (first ?? el)?.focus();
+        const el = ref.current;
+        const start = (first && el?.querySelector(first)?.querySelector(FOCUSABLE)) ?? el?.querySelector(FOCUSABLE);
+        (start ?? el)?.focus();
 
         const onKey = (e) => {
             // Com uma janela de confirmação aberta por cima, o teclado é dela
             if (document.getElementById('modal')) return;
-            if (e.key === 'Escape') { closeRef.current(); return; }
+            if (e.key === 'Escape' && escRef.current) { escRef.current(); return; }
             if (e.key !== 'Tab' || !el) return;
             const list = [...el.querySelectorAll(FOCUSABLE)].filter((n) => n.offsetParent !== null);
-            if (!list.length) return;
+            if (!list.length) { e.preventDefault(); return; }
             const [a, z] = [list[0], list[list.length - 1]];
-            if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
+            if (!el.contains(document.activeElement)) { e.preventDefault(); a.focus(); }
+            else if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
             else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
         };
         document.addEventListener('keydown', onKey);
-        document.body.style.overflow = 'hidden';
+        if (lockScroll) document.body.style.overflow = 'hidden';
         return () => {
             document.removeEventListener('keydown', onKey);
-            document.body.style.overflow = '';
+            if (lockScroll) document.body.style.overflow = '';
             if (opener && document.contains(opener)) opener.focus();
         };
-    }, []);
+    }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+export function Drawer({ title, sub, onClose, footer, width = 'w-[min(640px,100%)]', children }) {
+    const panel = useRef(null);
+    useFocusTrap(panel, { onEscape: onClose, first: '.ui-drawer-b', lockScroll: true });
 
     return (
         <>

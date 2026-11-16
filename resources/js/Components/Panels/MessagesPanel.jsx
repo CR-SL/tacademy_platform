@@ -110,7 +110,7 @@ export default function MessagesPanel({ messages, startWith, empty }) {
                         <small>{tx.context}</small>
                         <p>{tx.last}</p>
                     </span>
-                    <span className="pn-w">{tx.when}{tx.unread > 0 && <span className="pn-dot" aria-label={t('Por ler')} />}</span>
+                    <span className="pn-w">{tx.when}{tx.unread > 0 && <><span className="pn-dot" aria-hidden="true" /><span className="sr-only">{t('Por ler')}</span></>}</span>
                 </button>
             ))}
             {threads.length === 0 && canStart.length === 0 && <p className="pn-empty">{empty ?? t('Ainda não tens mensagens. Podes falar com o formador quando estiveres inscrito num curso.')}</p>}

@@ -28,7 +28,8 @@ const guestNav = () => [
 const requestsItem = () => ({ key: 'requests', label: t('Pedidos'), href: '/gestao/pedidos', Icon: IconInbox, badge: true });
 const teamsItem = () => ({ key: 'teams', label: t('Equipas'), href: '/gestao/equipas', Icon: IconTeam });
 
-const builderCount = [t('presença por confirmar'), t('presenças por confirmar')];
+// Função: traduz quando a navegação é montada (ao nível do ficheiro ficava sempre em português)
+const builderCount = () => [t('presença por confirmar'), t('presenças por confirmar')];
 
 // Formador, gestor de cursos e admin: só o seu trabalho, sem a parte do aluno (opção D, 2026-11-09)
 function workNav(can = {}) {
@@ -36,13 +37,13 @@ function workNav(can = {}) {
     if (can.estatisticas || can.pessoas || can['cursos.alex.gerir']) items.push({ key: 'admin', label: t('Administração'), short: t('Admin'), href: '/administracao', Icon: IconAdmin });
     if (can['cursos.criar'] && !can['cursos.todos']) {
         items.push(
-            { key: 'builder', label: t('Os meus cursos'), short: t('Cursos'), href: '/formador/cursos', Icon: IconBook, count: 'builder', countLabel: builderCount },
+            { key: 'builder', label: t('Os meus cursos'), short: t('Cursos'), href: '/formador/cursos', Icon: IconBook, count: 'builder', countLabel: builderCount() },
             { key: 'f-tests', label: t('Avaliações'), href: '/formador/avaliacoes', Icon: IconTest, count: 'ftests', countLabel: [t('aluno ainda não passou'), t('alunos ainda não passaram')] },
         );
     }
     if (can.pedidos) items.push(requestsItem());
     if (can.equipas) items.push(teamsItem());
-    if (can['cursos.todos']) items.push({ key: 'builder', label: t('Gerir cursos'), short: t('Cursos'), href: '/formador/cursos', Icon: IconCreate, count: 'builder', countLabel: builderCount });
+    if (can['cursos.todos']) items.push({ key: 'builder', label: t('Gerir cursos'), short: t('Cursos'), href: '/formador/cursos', Icon: IconCreate, count: 'builder', countLabel: builderCount() });
     // Início (o mesmo de todos, com as caixas das suas permissões) e, ao lado, o Catálogo
     if (items.length) items.unshift({ key: 'home', label: t('Início'), href: '/dashboard', exact: true, Icon: IconHome, count: 'home', countLabel: [t('mensagem por ler'), t('mensagens por ler')] }, catalogItem());
     return items;
@@ -211,11 +212,14 @@ export default function StudentLayout({ children, navTools }) {
                 {navItems.map((item) => {
                     const { key, label, short, href, Icon, badge, count, countLabel } = item;
                     return (
-                        <Link key={key} href={href} aria-label={label} className={active(item) ? 'pn-on' : undefined} aria-current={active(item) ? 'page' : undefined}>
+                        // Sem aria-label: o nome do link é o texto, e assim inclui o contador escondido ("3 mensagens por ler")
+                        <Link key={key} href={href} className={active(item) ? 'pn-on' : undefined} aria-current={active(item) ? 'page' : undefined}>
                             <Icon />
+                            {short && short !== label
+                                ? <><span aria-hidden="true">{short}</span><span className="sr-only">{label}</span></>
+                                : label}
                             {badge && <Count n={staffInbox?.count} label={[t('pedido novo'), t('pedidos novos')]} />}
                             {count && <Count n={navCounts?.[count]} label={countLabel} />}
-                            {short ?? label}
                         </Link>
                     );
                 })}

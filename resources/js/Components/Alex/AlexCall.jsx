@@ -152,7 +152,7 @@ function TimeLeft({ endsAt }) {
         }, 1000);
         return () => clearInterval(id);
     }, [endsAt]); // eslint-disable-line react-hooks/exhaustive-deps
-    return <span className={`ax-time ${secs <= 120 ? 'low' : ''}`} aria-label={t('Faltam :time', { time: clock(secs) })}>{clock(secs)}</span>;
+    return <span className={`ax-time ${secs <= 120 ? 'low' : ''}`} ><span aria-hidden="true">{clock(secs)}</span><span className="sr-only">{t('Faltam :time', { time: clock(secs) })}</span></span>;
 }
 
 /** A conversa: vídeo do Alex, a tua câmara, microfone, câmara e Terminar. Igual na janela e no painel da aula. */

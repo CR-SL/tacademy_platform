@@ -13,6 +13,6 @@
         <p style="margin:22px 0 6px;">
             <a href="{{ $actionUrl }}" style="display:inline-block;background:#F8B101;color:#18181B;text-decoration:none;font-weight:bold;padding:12px 20px;text-transform:uppercase;letter-spacing:.04em;font-size:14px;">{{ $actionText }}</a>
         </p>
-        <p style="margin:8px 0 0;font-size:12px;color:#66666D;">Se o botão não funcionar, copia este endereço: {{ $actionUrl }}</p>
+        <p style="margin:8px 0 0;font-size:12px;color:#66666D;">{{ __('Se o botão não funcionar, copia este endereço:') }} {{ $actionUrl }}</p>
     @endif
 @endsection

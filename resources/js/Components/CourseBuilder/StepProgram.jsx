@@ -279,7 +279,7 @@ function ChecksEditor({ l, set }) {
                             <input className={inputCls} value={o} maxLength={300} placeholder={t('Opção :v1', { v1: oi + 1 })} aria-label={t('Pergunta rápida :v1, opção :v2', { v1: qi + 1, v2: oi + 1 })}
                                 onChange={(e) => set((x) => { x.checks[qi].options[oi] = e.target.value; })} />
                             <label className="flex items-center gap-1 whitespace-nowrap text-xs text-muted">
-                                <input type="radio" name={`chk-${l.key}-${qi}`} checked={q.correct === oi} className="text-accent focus:ring-accent"
+                                <input type="radio" name={`chk-${l.key}-${qi}`} checked={q.correct === oi} className="text-accent focus:ring-ink"
                                     onChange={() => set((x) => { x.checks[qi].correct = oi; })} />
                                 {t('certa')}
                             </label>
@@ -318,7 +318,7 @@ function QuizEditor({ l, set }) {
                             <input className={inputCls} value={o} maxLength={300} placeholder={t('Opção :v1', { v1: oi + 1 })} aria-label={t('Pergunta :v1, opção :v2', { v1: qi + 1, v2: oi + 1 })}
                                 onChange={(e) => set((x) => { x.quiz[qi].options[oi] = e.target.value; })} />
                             <label className="flex items-center gap-1 whitespace-nowrap text-xs text-muted">
-                                <input type="radio" name={`c-${l.key}-${qi}`} checked={q.correct === oi} className="text-accent focus:ring-accent"
+                                <input type="radio" name={`c-${l.key}-${qi}`} checked={q.correct === oi} className="text-accent focus:ring-ink"
                                     onChange={() => set((x) => { x.quiz[qi].correct = oi; })} />
                                 {t('certa')}
                             </label>

@@ -11,7 +11,7 @@ import MicCheck from '@/Components/Learn/MicCheck';
 import { ModulesRail, ModuleSheet, ModulesStrip } from '@/Components/Learn/LessonModules';
 import { IconCheck, IconDoc, IconDown, IconHelp, IconLeft, IconPen, IconRight, IconSide, IconSwap, IconUser, IconVideo, IconX } from '@/Components/Learn/LessonIcons';
 import { FlashToast } from '@/Components/Teams/ui';
-import { Toast } from '@/Components/ui';
+import { Toast, useFocusTrap } from '@/Components/ui';
 import AlexLessonPanel from '@/Components/Alex/AlexLessonPanel';
 import '../../../css/lesson.css';
 
@@ -131,6 +131,9 @@ export default function Lesson({ course, mode, program, lesson, position, progre
     const [askStarted, setAskStarted] = useState(false);
     const [evaluation, setEvaluation] = useState(null); // null | 'intro' | 'run'
     const beforeEvaluation = useRef(null);
+    const introBox = useRef(null);
+    // O aviso antes da avaliação é uma janela: o foco vai para dentro e o Tab não sai (Esc fecha-o, mais abaixo)
+    useFocusTrap(introBox, { active: evaluation === 'intro' });
     const [endsAt, setEndsAt] = useState(0);
     const [menu, setMenu] = useState(null);
     const [rail, setRail] = useState(memory.rail);
@@ -327,7 +330,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                     <div className="al-menu">
                         {options.map(([k, ic, label]) => (
                             <button type="button" key={k} disabled={k === 'video' && !hasPlayer} onClick={() => pick(k)}>
-                                {ic}{label}{k === slot ? <small><IconCheck /></small> : shown[k] ? <small>{mobile ? t('noutro painel') : <span title={t('trocar de lugar')} aria-label={t('trocar de lugar')}><IconSwap /></span>}</small> : null}
+                                {ic}{label}{k === slot ? <small><IconCheck /></small> : shown[k] ? <small>{mobile ? t('noutro painel') : <span title={t('trocar de lugar')}><IconSwap /><span className="sr-only">{t('trocar de lugar')}</span></span>}</small> : null}
                             </button>
                         ))}
                     </div>
@@ -514,7 +517,7 @@ export default function Lesson({ course, mode, program, lesson, position, progre
                     {!hasLeft && !hasRight && !evaluation && <p className="al-empty">{t('Liga um painel na barra de baixo para continuar.')}</p>}
 
                     {evaluation === 'intro' && (
-                        <div className="al-intro" role="dialog" aria-modal="true" aria-label={t('Vai começar a avaliação')}>
+                        <div ref={introBox} className="al-intro" role="dialog" aria-modal="true" aria-label={t('Vai começar a avaliação')}>
                             <button type="button" className="al-tb-b x" aria-label={t('Fechar')} onClick={() => setEvaluation(null)}><IconX /></button>
                             <div>
                                 <h2>{t('Vai começar a avaliação.')}</h2>

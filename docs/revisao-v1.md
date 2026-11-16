@@ -63,6 +63,22 @@ Consultas à base de dados por página, numa equipa de 30 pessoas com 4 cursos (
 - As inscrições do aluno, as vendas, os cliques e a conclusão da Administração carregam-se uma vez por pedido. Os anexos do aluno e a lista de alunos do formador vêm de uma só vez.
 - `TeamService`, `StudentArea`, `AdminStats` e `Tasks` têm uma só instância por pedido (`AppServiceProvider`), que é esquecida no fim de cada pedido.
 
+**Corrigidos (grupo 8, acessibilidade, telemóvel e traduções, ainda sem commit):** B13 a B27. Os testes continuam a passar (154) e a interface compila. O menu da conta e a pausa do carrossel foram experimentados no browser.
+- B13: no leitor de vídeo, Espaço e Enter num botão carregam nesse botão, e Esc fecha os menus da velocidade e da qualidade.
+- B14: novo `useFocusTrap` em `Components/ui` (o mesmo da `Drawer`), usado no detalhe e na pesquisa do catálogo, na caixa do curso e no aviso da avaliação.
+- B15: o menu da conta diz se está aberto, leva o foco ao primeiro item, anda com as setas e fecha com Esc.
+- B16: a barra de baixo do telemóvel deixa de esconder os contadores aos leitores de ecrã.
+- B17: o contorno de foco passa a tinta (amarelo-tinta nos campos). Regra registada no `DESIGN.md`.
+- B18: o texto para leitores de ecrã está em `sr-only`, e não em `aria-label` de um `span`.
+- B19: deixa de haver um `<main>` dentro de outro. B20: o campo da janela "Apagar a conta" tem o seu próprio `id`.
+- B21: a animação da entrada respeita "reduzir movimento".
+- B22: em ecrãs táteis, a pega das caixas está sempre visível e os botões das caixas têm 40px.
+- B23: a disposição das caixas é enviada mesmo que se saia logo a seguir.
+- B24: "Os meus cursos" mostra "A carregar…" e o erro com "Tentar outra vez".
+- B25: as contas novas têm a sua própria caixa no Início do admin.
+- B26: o carrossel de sugestões tem um botão Pausar/Continuar.
+- B27: os textos passam por `t()`/`__()`, o catálogo trata por "tu" e há traduções em inglês para tudo.
+
 **Pendente para a mudança para o OVH (domínio tacademy.pt):**
 1. Verificar o domínio (ou um subdomínio, como `envio.tacademy.pt`) no serviço de email e mudar `MAIL_FROM_ADDRESS`.
 2. Retirar `MAIL_ALWAYS_TO`.

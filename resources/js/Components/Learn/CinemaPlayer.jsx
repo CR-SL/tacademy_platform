@@ -191,6 +191,10 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
         if (e.target.matches?.('input')) return;
         const k = e.key.toLowerCase();
         const v = video.current;
+        // Esc fecha o menu da velocidade ou da qualidade
+        if (k === 'escape' && menu) { setMenu(null); e.preventDefault(); return; }
+        // Com o foco num botão do leitor, Espaço e Enter carregam nesse botão (não pausam o vídeo)
+        if ((k === ' ' || k === 'enter') && e.target.closest?.('button')) return;
         if (k === ' ' || k === 'k') toggle();
         else if (k === 'arrowleft' || k === 'j') skip(-10);
         else if (k === 'arrowright' || k === 'l') skip(10);

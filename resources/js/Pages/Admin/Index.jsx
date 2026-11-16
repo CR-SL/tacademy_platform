@@ -50,7 +50,7 @@ export default function Index({ section, sections, days, data }) {
                         );
                     })}
                 </nav>
-                <main className="bo-main"><Section data={data} days={days} /></main>
+                <section className="bo-main"><Section data={data} days={days} /></section>
             </div>
             <FlashToast />
         </StudentLayout>

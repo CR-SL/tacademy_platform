@@ -21,7 +21,7 @@ export default function MembersEditor({ people, setPeople, leader, setLeader, se
                                 set(i, 'email', e.target.value);
                             }} />
                         <label className="flex items-center gap-1 whitespace-nowrap text-xs text-muted">
-                            <input type="radio" name="leader" className="text-accent focus:ring-accent" checked={!!p.email && leader === p.email} onChange={() => setLeader(p.email)} />
+                            <input type="radio" name="leader" className="text-accent focus:ring-ink" checked={!!p.email && leader === p.email} onChange={() => setLeader(p.email)} />
                             {t('Team leader')}
                         </label>
                         <button type="button" aria-label={t('Retirar :v1', { v1: p.name || t('pessoa') })} onClick={() => setPeople(people.filter((_, j) => j !== i))}

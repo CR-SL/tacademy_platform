@@ -88,14 +88,15 @@ function OverviewPanel({ o }) {
     const kpis = [
         [t('Vendas'), formatEuro(o.revenue), plural(o.sales, t('1 compra pessoal'), t(':n compras pessoais'))],
         [t('Compras de empresa'), o.companySales, t('pagas ou concluídas')],
-        [t('Cliques no catálogo'), o.views, plural(o.newUsers, t('1 conta nova'), t(':n contas novas'))],
+        [t('Cliques no catálogo'), o.views, t('cursos abertos no catálogo')],
+        [t('Contas novas'), o.newUsers, t('criadas nos últimos 30 dias')],
         [t('Conclusão'), `${pct}%`, t(':done de :enrolled inscrições', { done: o.done, enrolled: o.enrolled })],
     ];
     return (
         <>
             <div className="grid grid-cols-2">
                 {kpis.map(([label, value, note], i) => (
-                    <div key={label} className={`border-b border-line px-[18px] py-4 ${i % 2 === 0 ? 'border-r' : ''}`}>
+                    <div key={label} className={`border-b border-line px-[18px] py-4 ${i === kpis.length - 1 && kpis.length % 2 ? 'col-span-2' : i % 2 === 0 ? 'border-r' : ''}`}>
                         <span className="pn-lab">{label}</span>
                         <b className="pn-disp mt-1 block text-[26px] leading-[1.05]">{value}</b>
                         <small className="mt-1 block text-[12.5px] text-muted">{note}</small>

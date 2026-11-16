@@ -138,12 +138,14 @@ function NotesPanel({ notes }) {
     );
 }
 
-// Carrossel: anda devagar e para quando se passa o rato ou se foca
+// Carrossel: anda devagar e para quando se passa o rato, se foca ou se carrega em Pausar
+// (no telemóvel não há "passar o rato": o botão é a forma de o parar)
 function SuggestionsPanel({ suggestions, paused }) {
     const ref = useRef(null);
+    const [stopped, setStopped] = useState(false);
     useEffect(() => {
         const car = ref.current;
-        if (!car || paused || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+        if (!car || paused || stopped || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
         let raf = 0;
         let last = performance.now();
         let acc = car.scrollLeft;
@@ -162,13 +164,19 @@ function SuggestionsPanel({ suggestions, paused }) {
         };
         raf = requestAnimationFrame(step);
         return () => cancelAnimationFrame(raf);
-    }, [paused]);
+    }, [paused, stopped]);
 
     if (!suggestions.length) return <p className="pn-empty">{t('Já estás inscrito em todos os cursos do catálogo.')}</p>;
 
     const items = [...suggestions, ...suggestions];
     return (
-        <div className="pn-car" ref={ref} tabIndex={0} aria-label={t('Cursos sugeridos')}>
+        <div className="flex h-full flex-col">
+        <div className="flex justify-end px-[18px] pt-2">
+            <button type="button" className="ui-btn ui-btn-sm ui-btn-soft" aria-pressed={stopped} onClick={() => setStopped((v) => !v)}>
+                {stopped ? t('Continuar') : t('Pausar')}
+            </button>
+        </div>
+        <div className="pn-car min-h-0 flex-1 !h-auto !pt-2" ref={ref} tabIndex={0} aria-label={t('Cursos sugeridos')}>
             {items.map((c, i) => {
                 const copy = i >= suggestions.length;
                 return (
@@ -188,6 +196,7 @@ function SuggestionsPanel({ suggestions, paused }) {
                     </article>
                 );
             })}
+        </div>
         </div>
     );
 }
@@ -242,7 +251,7 @@ export function learningBoxes({ courses, resume, results, notes, suggestions, do
         },
         sugestoes: {
             title: t('Sugestões'), x: 0, y: 33, w: 24, h: 13,
-            label: t('Sugeridos para ti · Passa o rato para parar'),
+            label: t('Sugeridos para ti'),
             summary: plural(suggestions.length, t('1 curso'), t(':n cursos')),
             body: <SuggestionsPanel suggestions={suggestions} />,
         },

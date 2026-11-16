@@ -76,6 +76,12 @@
 /* Controlos: discretos em repouso */
 .pn-grip { position: absolute; left: 2px; top: 50%; width: 14px; height: 28px; margin-top: -14px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--color-muted); opacity: 0; cursor: grab; touch-action: none; transition: opacity .15s; }
 .pn-box:hover .pn-grip, .pn-grip:focus-visible { opacity: 1; }
+/* Ecrãs táteis (telemóvel, tablet): não há "passar o rato", por isso a pega fica sempre visível,
+   e a pega e os botões das caixas têm pelo menos 40px para o dedo */
+@media (hover: none) {
+    .pn-grip { opacity: 1; width: 28px; height: 40px; margin-top: -20px; }
+    .pn-tool { width: 40px; height: 40px; }
+}
 .pn-tools { margin-left: auto; display: flex; gap: 2px; flex: none; }
 .pn-tool { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--color-ink); transition: background .15s; }
 .pn-tool:hover { background: var(--color-surface2); }

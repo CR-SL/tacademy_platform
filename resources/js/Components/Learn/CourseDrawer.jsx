@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { formatMinutes, levelLabels } from '@/Components/CourseBuilder/format';
 import { IconCheck } from '@/Components/Panels/icons';
+import { useFocusTrap } from '@/Components/ui';
 import '../../../css/courses.css';
 
 import { t } from '@/i18n';
@@ -38,6 +39,8 @@ function Tri() {
 export default function CourseDrawer({ detail, onClose }) {
     const { course, access, progress, program, next, certificate } = detail;
     const closeRef = useRef(null);
+    const box = useRef(null);
+    useFocusTrap(box); // o Tab fica dentro da caixa (Esc fecha-a em Os meus cursos)
     const lessonUrl = (l) => `/plataforma/cursos/${course.slug}/aulas/${l.ulid}`;
     const nextModule = program.findIndex((m) => m.lessons.some((l) => l.ulid === next?.ulid));
     const [open, setOpen] = useState(() => new Set([nextModule >= 0 ? nextModule : 0]));
@@ -61,7 +64,7 @@ export default function CourseDrawer({ detail, onClose }) {
     return (
         <div className="cc-app">
             <div className="cc-scrim" onClick={onClose} />
-            <aside className="cc-drawer" role="dialog" aria-modal="true" aria-labelledby="cc-d-title">
+            <aside ref={box} className="cc-drawer" role="dialog" aria-modal="true" aria-labelledby="cc-d-title">
                 <div className="cc-d-scroll">
                     <div className="cc-d-hero">
                         <img src={course.image} alt="" />

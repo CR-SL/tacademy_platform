@@ -130,7 +130,7 @@ function CoursePresentation({ course, access, progress, program, next, sample, c
 function Crit({ ok, children }) {
     return (
         <li className="flex gap-2">
-            <span className={`w-4 font-bold ${ok ? 'text-success-ink' : 'text-muted'}`} aria-label={ok ? t('Cumprido') : t('Por cumprir')}>{ok ? '✓' : '○'}</span>
+            <span className={`w-4 font-bold ${ok ? 'text-success-ink' : 'text-muted'}`} ><span aria-hidden="true">{ok ? '✓' : '○'}</span><span className="sr-only">{ok ? t('Cumprido') : t('Por cumprir')}</span></span>
             <span>{children}</span>
         </li>
     );

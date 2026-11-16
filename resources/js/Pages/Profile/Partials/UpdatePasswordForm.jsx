@@ -62,7 +62,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 <div>
                     <InputLabel
                         htmlFor="current_password"
-                        value="Palavra-passe atual"
+                        value={t('Palavra-passe atual')}
                     />
 
                     <TextInput
@@ -84,7 +84,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="password" value="Palavra-passe nova" />
+                    <InputLabel htmlFor="password" value={t('Palavra-passe nova')} />
 
                     <TextInput
                         id="password"

@@ -75,12 +75,23 @@ function CoursesList({ courses, onOpen }) {
 export default function MyCourses({ courses, detail, alexUrl, savedLayout }) {
     const [slug, setSlug] = useState(() => new URLSearchParams(location.search).get('curso'));
     const lastFocus = useRef(null);
+    // A caixa abre logo, com "A carregar…" até os dados chegarem (antes não se via nada, e cliques repetidos
+    // faziam vários pedidos); se o pedido falhar, mostra o erro com "Tentar outra vez"
+    const [status, setStatus] = useState(null); // null | 'loading' | 'error'
     const open = (s) => {
+        if (status === 'loading' && slug === s) return;
         lastFocus.current = document.activeElement;
         setSlug(s);
-        router.get('/plataforma/meus-cursos', { curso: s }, { only: ['detail'], preserveState: true, preserveScroll: true, replace: true });
+        setStatus('loading');
+        let ok = false;
+        router.get('/plataforma/meus-cursos', { curso: s }, {
+            only: ['detail'], preserveState: true, preserveScroll: true, replace: true,
+            onSuccess: (page) => { ok = page.props.detail?.course?.slug === s; },
+            onFinish: (visit) => { if (!visit.cancelled && !visit.interrupted) setStatus(ok ? null : 'error'); },
+        });
     };
     const close = () => {
+        setStatus(null);
         setSlug(null);
         window.history.replaceState(window.history.state, '', location.pathname);
         lastFocus.current?.focus?.({ preventScroll: true });
@@ -88,13 +99,14 @@ export default function MyCourses({ courses, detail, alexUrl, savedLayout }) {
     const shown = slug && detail?.course.slug === slug ? detail : null;
 
     // Esc fecha; com a caixa aberta a página não faz scroll por trás
+    const waiting = slug && !shown && status;
     useEffect(() => {
-        if (!shown) return undefined;
+        if (!shown && !waiting) return undefined;
         const esc = (e) => e.key === 'Escape' && close();
         addEventListener('keydown', esc);
         document.body.style.overflow = 'hidden';
         return () => { removeEventListener('keydown', esc); document.body.style.overflow = ''; };
-    }, [shown]);
+    }, [shown, waiting]);
 
     const panels = {
         lista: {
@@ -113,6 +125,24 @@ export default function MyCourses({ courses, detail, alexUrl, savedLayout }) {
             <Head title={t('Os meus cursos')} />
             <PanelBoard board={board} />
             {shown && <CourseDrawer key={shown.course.slug} detail={shown} onClose={close} />}
+            {waiting && (
+                <div className="cc-app">
+                    <div className="cc-scrim" onClick={close} />
+                    <aside className="cc-drawer items-center justify-center gap-4 p-8 text-center" role="dialog" aria-modal="true" aria-label={t('Curso')}>
+                        {status === 'loading'
+                            ? <p role="status" className="text-muted">{t('A carregar…')}</p>
+                            : (
+                                <>
+                                    <p role="alert">{t('Não foi possível abrir o curso. Verifica a ligação e tenta outra vez.')}</p>
+                                    <div className="flex gap-2">
+                                        <button type="button" className="ui-btn ui-btn-sm" onClick={() => open(slug)}>{t('Tentar outra vez')}</button>
+                                        <button type="button" className="ui-btn ui-btn-sm ui-btn-soft" onClick={close}>{t('Fechar')}</button>
+                                    </div>
+                                </>
+                            )}
+                    </aside>
+                </div>
+            )}
         </StudentLayout>
     );
 }

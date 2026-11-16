@@ -177,7 +177,7 @@ function PeopleAction({ mode, team, report, course, initial, onClose }) {
             title={remind ? t('Enviar lembrete') : t('Atribuir curso')}
             onClose={onClose}
             width="w-[min(520px,100%)]"
-            footer={<><span className="flex-1 text-[13px] text-muted">{chosen} {chosen === 1 ? t('pessoa escolhida') : t('pessoas escolhidas')}</span><button type="submit" form="people-form" disabled={processing || chosen === 0} className={btn.accent}>{processing ? t('A enviar…') : `${remind ? t('Enviar lembrete') : t('Atribuir')}${chosen ? ` a ${chosen} ${chosen === 1 ? 'pessoa' : 'pessoas'}` : ''}`}</button></>}
+            footer={<><span className="flex-1 text-[13px] text-muted">{chosen} {chosen === 1 ? t('pessoa escolhida') : t('pessoas escolhidas')}</span><button type="submit" form="people-form" disabled={processing || chosen === 0} className={btn.accent}>{processing ? t('A enviar…') : `${remind ? t('Enviar lembrete') : t('Atribuir')}${chosen ? ` ${chosen === 1 ? t('a 1 pessoa') : t('a :n pessoas', { n: chosen })}` : ''}`}</button></>}
         >
             <form id="people-form" onSubmit={submit} className="flex flex-col gap-4">
                 <p className="text-muted">
@@ -214,7 +214,7 @@ function PeopleAction({ mode, team, report, course, initial, onClose }) {
                                         <small className="text-[12.5px] text-muted">
                                             {remind && !ok
                                                 ? (s.progress === 100 ? t('Já concluiu') : s.reminded ? t('Lembrete enviado :reminded', { reminded: s.reminded }) : t('Sem acesso ao curso'))
-                                                : [statusOf(m, s), `${s.progress ?? 0}%`, s.due && `prazo ${s.due}`].filter(Boolean).join(' · ')}
+                                                : [statusOf(m, s), `${s.progress ?? 0}%`, s.due && t('prazo :date', { date: s.due })].filter(Boolean).join(' · ')}
                                         </small>
                                     </span>
                                 </label>

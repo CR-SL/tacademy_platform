@@ -169,14 +169,37 @@ export default function usePanelBoard({ view, panels, saved }) {
     }, []);
     const setItems = useCallback((items) => setLayout({ ...L.current, items }), [setLayout]);
 
+    const pending = useRef(false);
     const persist = useCallback(() => {
         clearTimeout(saveTimer.current);
+        pending.current = true;
         saveTimer.current = setTimeout(() => {
+            pending.current = false;
             axios.put(`/plataforma/paineis/${view}`, L.current).catch(() => {
                 // Sem ligação: a disposição fica nesta visita e volta a ser enviada na próxima alteração
             });
         }, 400);
     }, [view]);
+
+    // Sair da página (ou fechar o separador) antes dos 400 ms: a mudança é enviada já, e chega mesmo com a página
+    // a fechar (keepalive). Antes perdia-se: mover uma caixa e carregar logo em "Continuar a aula".
+    const flushSave = useCallback(() => {
+        if (!pending.current) return;
+        pending.current = false;
+        clearTimeout(saveTimer.current);
+        const xsrf = decodeURIComponent((document.cookie.match(/XSRF-TOKEN=([^;]+)/) || [])[1] || '');
+        fetch(`/plataforma/paineis/${view}`, {
+            method: 'PUT',
+            keepalive: true,
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf },
+            body: JSON.stringify(L.current),
+        }).catch(() => {});
+    }, [view]);
+    useEffect(() => {
+        window.addEventListener('pagehide', flushSave);
+        return () => window.removeEventListener('pagehide', flushSave);
+    }, [flushSave]);
 
     const showToast = useCallback((text) => {
         setToast(text);
@@ -184,9 +207,11 @@ export default function usePanelBoard({ view, panels, saved }) {
         toastTimer.current = setTimeout(() => setToast(null), 2600);
     }, []);
 
+    const flushRef = useRef(flushSave);
+    flushRef.current = flushSave;
     useEffect(() => () => {
         clearTimeout(toastTimer.current);
-        clearTimeout(saveTimer.current);
+        flushRef.current(); // envia a gravação pendente em vez de a perder
     }, []);
 
     useEffect(() => {
@@ -286,7 +311,7 @@ export default function usePanelBoard({ view, panels, saved }) {
             setGesture({ lifted: null, resizing: null });
             if (!cancel) {
                 persist();
-                setMessage(`${titles.current[d.id]} movida.`);
+                setMessage(t(':box movida.', { box: titles.current[d.id] }));
             }
             if (!calm && d.box.isConnected) {
                 requestAnimationFrame(() => {
@@ -479,7 +504,7 @@ export default function usePanelBoard({ view, panels, saved }) {
         next.items = arrange(next, next.items, id, {});
         setLayout(next);
         persist();
-        setMessage(`${titles.current[id]} ${closing ? 'minimizada' : 'aberta'}.`);
+        setMessage(closing ? t(':box minimizada.', { box: titles.current[id] }) : t(':box aberta.', { box: titles.current[id] }));
     }, [persist, setLayout]);
 
     const hide = useCallback((id) => {
