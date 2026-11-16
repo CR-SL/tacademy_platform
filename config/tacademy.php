@@ -85,5 +85,7 @@ return [
     // Vídeos carregados pelo formador (leitor próprio). Por agora ficam no volume do Railway (disco public);
     // no fim do projeto passam para o servidor da empresa (OVH).
     'video_max_mb' => (int) env('VIDEO_MAX_MB', 1024),
+    // Anexos das aulas (enviados aos pedaços, como os vídeos)
+    'attachment_max_mb' => (int) env('ATTACHMENT_MAX_MB', 100),
 
 ];

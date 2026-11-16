@@ -528,7 +528,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                                 <h2>{t('Vai começar a avaliação.')}</h2>
                                 <p>{t('O teste final é feito com o avatar. Podes usar o microfone para responder às perguntas ou escrever a tua resposta.')}</p>
                                 {alexEvaluation?.done ? (
-                                    <p>{t('Já fizeste a avaliação final deste curso com o Alex. Só há uma.')}</p>
+                                    <p>{alexEvaluation.module ? t('Já fizeste a avaliação deste módulo com o Alex. Só há uma.') : t('Já fizeste a avaliação final deste curso com o Alex. Só há uma.')}</p>
                                 ) : (
                                     <>
                                         <p>{t('Tens :min minutos. O tempo que falta aparece no botão Terminar.', { min: evaluationMin })}</p>

@@ -50,6 +50,9 @@ class CourseBuilder
     /** Tamanho de cada pedaço do upload de vídeo (abaixo do upload_max_filesize de 2 MB por defeito do PHP). */
     public const VIDEO_CHUNK_BYTES = 1536 * 1024;
 
+    /** Tipos de anexo das aulas (extensões; o tipo real do ficheiro é confirmado ao carregar). */
+    public const ATTACHMENT_TYPES = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip'];
+
     /** Curso no formato do editor (React). */
     public function toEditor(Course $course): array
     {
@@ -87,6 +90,8 @@ class CourseBuilder
                 'id' => $m->id,
                 'title' => $m->title,
                 'description' => $m->description ?? '',
+                'alex_pal_id' => $m->alex_pal_id ?? '',
+                'alex_face_id' => $m->alex_face_id ?? '',
                 'lessons' => $m->lessons->map(fn (Lesson $l) => [
                     'key' => 'l'.$l->id,
                     'id' => $l->id,
@@ -182,6 +187,10 @@ class CourseBuilder
                     ? $existingModules[$m['id']]
                     : new Module(['course_id' => $course->id]);
                 $module->fill(['title' => trim($m['title'] ?? ''), 'description' => $m['description'] ?? null, 'order_index' => $mi]);
+                // O Alex do módulo: só quem pode mudar o Alex do curso (o controlador tira os campos aos outros)
+                if (array_key_exists('alex_enabled', $data)) {
+                    $module->fill(['alex_pal_id' => ($m['alex_pal_id'] ?? null) ?: null, 'alex_face_id' => ($m['alex_face_id'] ?? null) ?: null]);
+                }
                 $module->course_id = $course->id;
                 $module->save();
                 $keptModules[] = $module->id;

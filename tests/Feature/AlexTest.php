@@ -184,6 +184,40 @@ class AlexTest extends TestCase
         $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'avaliacao', 'lesson' => $this->lessonOf($this->other)->ulid])->assertForbidden();
     }
 
+    public function test_a_module_with_its_own_pal_uses_it_for_questions_and_its_own_assessment(): void
+    {
+        $u = $this->student($this->diag);
+        $m1 = $this->diag->modules()->first();
+        $m1->update(['alex_pal_id' => 'p-mod1', 'alex_face_id' => null]);
+        $m2 = Module::create(['course_id' => $this->diag->id, 'title' => 'Módulo 2', 'order_index' => 1]);
+        $l2 = Lesson::create(['module_id' => $m2->id, 'title' => 'Compressores', 'content_type' => 'text', 'body' => 'Olá', 'duration_seconds' => 60, 'order_index' => 0]);
+        $l1 = $this->lessonOf($this->diag);
+        $sent = fn () => collect(Http::recorded())->map(fn ($p) => $p[0])->filter(fn ($r) => $r->url() === 'https://tavus.test/v2/conversations')->last()->data();
+
+        // Dúvidas na aula do módulo 1: PAL do módulo, sem o rosto geral, e o aviso de que não é a avaliação
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'aula', 'lesson' => $l1->ulid])->assertCreated();
+        $d = $sent();
+        $this->assertSame('p-mod1', $d['pal_id']);
+        $this->assertArrayNotHasKey('face_id', $d);
+        $this->assertStringContainsString('só para tirar dúvidas', $d['conversational_context']);
+
+        // Avaliação do módulo 1: PAL do módulo, sem saudação (é a do PAL)
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'avaliacao', 'lesson' => $l1->ulid])->assertCreated();
+        $d = $sent();
+        $this->assertSame('p-mod1', $d['pal_id']);
+        $this->assertArrayNotHasKey('custom_greeting', $d);
+        $this->assertStringContainsString('AVALIAÇÃO do módulo "Módulo 4 · AVAC"', $d['conversational_context']);
+
+        // Feita: o módulo 1 fica fechado, mas o módulo 2 (sem PAL próprio: avaliação do curso) continua aberto
+        AlexConversation::where('place', 'avaliacao')->latest('id')->first()->forceFill(['status' => 'ended', 'ended_at' => now()->addMinutes(5)])->save();
+        $this->actingAs($u)->get("/plataforma/cursos/{$this->diag->slug}/aulas/{$l1->ulid}")
+            ->assertInertia(fn ($p) => $p->where('alex.evaluation.done', true)->where('alex.evaluation.module', true));
+        $this->actingAs($u)->get("/plataforma/cursos/{$this->diag->slug}/aulas/{$l2->ulid}")
+            ->assertInertia(fn ($p) => $p->where('alex.evaluation.done', false)->where('alex.evaluation.module', false));
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'avaliacao', 'lesson' => $l2->ulid])->assertCreated();
+        $this->assertSame('p-alex', $sent()['pal_id']);
+    }
+
     public function test_only_one_conversation_at_a_time_and_three_per_day(): void
     {
         $u = $this->student($this->diag);

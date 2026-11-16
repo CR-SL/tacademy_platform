@@ -447,23 +447,53 @@ function VideoUpload({ l, set }) {
     );
 }
 
-function Attachments({ l, set, upload, main }) {
-    const [busy, setBusy] = useState(false);
+const ATTACH_TYPES = /.(pdf|jpe?g|png|webp|docx?|xlsx?|pptx?|zip)$/i;
+
+// Anexos das aulas: enviados aos pedaços, como os vídeos (sem limite do servidor por pedido, com progresso)
+function Attachments({ l, set, main }) {
+    const { attachmentMaxMb = 100 } = usePage().props;
+    const [progress, setProgress] = useState(null); // null = parado; 0..1 = a enviar
+    const [name, setName] = useState('');
     const [err, setErr] = useState('');
+    const cancel = useRef(false);
+    useEffect(() => () => { cancel.current = true; }, []); // saiu do editor: pára de enviar pedaços
 
     const send = async (file) => {
         if (!file) return;
         setErr('');
-        setBusy(true);
+        if (!ATTACH_TYPES.test(file.name)) { setErr(t('Este tipo de ficheiro não é aceite. Usa PDF, imagens, Office ou zip.')); return; }
+        if (file.size > attachmentMaxMb * 1024 * 1024) { setErr(t('O ficheiro não pode ter mais de :mb MB.', { mb: attachmentMaxMb })); return; }
+        const id = crypto.randomUUID();
+        const total = Math.max(1, Math.ceil(file.size / VIDEO_CHUNK));
+        cancel.current = false;
+        setName(file.name);
+        setProgress(0);
+        activeUploads.count++;
         try {
-            const r = await upload(file, 'attachment');
+            let res;
+            for (let i = 0; i < total; i++) {
+                if (cancel.current) return;
+                const form = new FormData();
+                form.append('id', id);
+                form.append('index', i);
+                form.append('total', total);
+                form.append('size', file.size);
+                form.append('name', file.name);
+                form.append('chunk', file.slice(i * VIDEO_CHUNK, (i + 1) * VIDEO_CHUNK), 'chunk');
+                res = await window.axios.post('/formador/anexos', form);
+                setProgress((i + 1) / total);
+            }
+            const r = res.data;
             set((x) => { x.attachments.push({ name: r.name, path: r.path, size: r.size, url: r.url }); });
         } catch (e) {
-            setErr(e.message);
+            const d = e.response?.data;
+            setErr(d?.message && e.response.status !== 500 ? (Object.values(d.errors ?? {})[0]?.[0] ?? d.message) : t('Não foi possível carregar o ficheiro. Tenta outra vez.'));
         } finally {
-            setBusy(false);
+            activeUploads.count--;
+            setProgress(null);
         }
     };
+    const busy = progress !== null;
 
     return (
         <div className="flex flex-col gap-1.5">
@@ -479,13 +509,23 @@ function Attachments({ l, set, upload, main }) {
                     <IconButton label={t('Remover ficheiro')} danger className="ml-auto" onClick={() => set((x) => { x.attachments.splice(i, 1); })}>✕</IconButton>
                 </div>
             ))}
-            {l.attachments.length < 20 && (
+            {busy && (
+                <div className="flex flex-col gap-2 bg-page p-3">
+                    <div className="flex items-center gap-3 text-sm">
+                        <span className="min-w-0 flex-1 truncate">{t('A carregar')}{' '}<b>{name}</b>…</span>
+                        <span className="font-mono text-xs font-semibold">{Math.round(progress * 100)}%</span>
+                        <button type="button" onClick={() => { cancel.current = true; }} className="font-display text-[13px] font-semibold text-muted hover:text-live-ink">{t('Cancelar')}</button>
+                    </div>
+                    <div className="h-1.5 bg-track"><div className="h-full bg-accent transition-[width]" style={{ width: `${progress * 100}%` }} /></div>
+                </div>
+            )}
+            {l.attachments.length < 20 && !busy && (
                 <label className={main
                     ? 'block cursor-pointer border-[1.5px] border-dashed border-line bg-page p-4 text-center text-sm text-muted hover:border-accent hover:text-ink'
                     : 'cursor-pointer self-start py-1 font-display text-[13.5px] font-semibold text-accent-ink hover:text-ink'}>
                     <input type="file" className="sr-only" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"
                         onChange={(e) => { send(e.target.files[0]); e.target.value = ''; }} />
-                    {busy ? t('A carregar…') : main ? <><b className="text-ink">{t('Carregar ficheiro')}</b>{' '}{t('· PDF, imagens, Office · até 20 MB')}</> : t('+ Anexar ficheiro')}
+                    {main ? <><b className="text-ink">{t('Carregar ficheiro')}</b>{' '}{t('· PDF, imagens, Office · até :mb MB', { mb: attachmentMaxMb })}</> : t('+ Anexar ficheiro')}
                 </label>
             )}
             {err && <p className="text-[13px] text-live-ink">{err}</p>}

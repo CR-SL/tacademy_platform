@@ -16,10 +16,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\File\File as SymfonyFile;
 
 /**
  * "Os meus cursos": formadores criam e publicam os seus cursos; o admin gere todos.
@@ -181,7 +183,7 @@ class CourseBuilderController extends Controller
             'kind' => ['required', Rule::in(['cover', 'attachment'])],
             'file' => $kind === 'cover'
                 ? ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120']
-                : ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,ppt,pptx,zip', 'max:20480'],
+                : ['required', 'file', 'mimes:'.implode(',', CourseBuilder::ATTACHMENT_TYPES), 'max:'.config('tacademy.attachment_max_mb') * 1024],
         ], [], ['file' => $kind === 'cover' ? 'imagem' : 'ficheiro']);
 
         $file = $request->file('file');
@@ -221,17 +223,11 @@ class CourseBuilderController extends Controller
         [$index, $total, $size] = [(int) $data['index'], (int) $data['total'], (int) $data['size']];
         abort_unless($index < $total, 422);
 
-        // Ficheiro temporário por formador e envio; cada pedaço tem de chegar pela ordem certa
         $tmp = Storage::disk('local');
         $part = 'video-uploads/'.$request->user()->id.'-'.$data['id'].'.part';
-        if ($index === 0) $tmp->delete($part);
-        $have = $tmp->exists($part) ? $tmp->size($part) : 0;
-        if ($have !== $index * CourseBuilder::VIDEO_CHUNK_BYTES) {
-            return response()->json(['message' => __('O envio foi interrompido. Tenta carregar o vídeo outra vez.')], 409);
+        if ($stop = $this->appendChunk($request, $part, $index, __('O envio foi interrompido. Tenta carregar o vídeo outra vez.'))) {
+            return $stop;
         }
-        $tmp->makeDirectory('video-uploads');
-        file_put_contents($tmp->path($part), $request->file('chunk')->get(), FILE_APPEND | LOCK_EX);
-
         if ($index < $total - 1) {
             return response()->json(['done' => false]);
         }
@@ -262,6 +258,85 @@ class CourseBuilderController extends Controller
         ]);
     }
 
+    /**
+     * Anexo de uma aula (PDF, imagens, Office, zip), enviado aos pedaços como os vídeos: cada pedido leva só
+     * CourseBuilder::VIDEO_CHUNK_BYTES, por isso os limites do PHP e os tempos limite do servidor não contam.
+     * No último pedaço confirma o tamanho e o tipo real do ficheiro (as mesmas regras do envio de uma vez) e
+     * guarda-o na pasta de anexos de quem o carrega.
+     */
+    public function uploadAttachment(Request $request): JsonResponse
+    {
+        Gate::authorize('create', Course::class);
+        $maxBytes = config('tacademy.attachment_max_mb') * 1024 * 1024;
+        $data = $request->validate([
+            'id' => ['required', 'uuid'],
+            'index' => ['required', 'integer', 'min:0'],
+            'total' => ['required', 'integer', 'min:1', 'max:'.(int) ceil($maxBytes / CourseBuilder::VIDEO_CHUNK_BYTES)],
+            'size' => ['required', 'integer', 'min:1', 'max:'.$maxBytes],
+            'name' => ['required', 'string', 'max:255', 'regex:/\.('.implode('|', CourseBuilder::ATTACHMENT_TYPES).')$/i'],
+            'chunk' => ['required', 'file', 'max:'.(int) ceil(CourseBuilder::VIDEO_CHUNK_BYTES / 1024)],
+        ], [
+            'name.regex' => __('Este tipo de ficheiro não é aceite. Usa PDF, imagens, Office ou zip.'),
+            'size.max' => __('O ficheiro não pode ter mais de :mb MB.', ['mb' => config('tacademy.attachment_max_mb')]),
+        ]);
+        [$index, $total, $size] = [(int) $data['index'], (int) $data['total'], (int) $data['size']];
+        abort_unless($index < $total, 422);
+
+        $tmp = Storage::disk('local');
+        $part = 'attachment-uploads/'.$request->user()->id.'-'.$data['id'].'.part';
+        if ($stop = $this->appendChunk($request, $part, $index, __('O envio foi interrompido. Tenta carregar o ficheiro outra vez.'))) {
+            return $stop;
+        }
+        if ($index < $total - 1) {
+            return response()->json(['done' => false]);
+        }
+
+        // Último pedaço: o tamanho certo e o tipo real do ficheiro (o mesmo que o envio de uma vez aceita)
+        $path = $tmp->path($part);
+        clearstatcache(true, $path);
+        $ok = filesize($path) === $size && Validator::make(
+            ['file' => new SymfonyFile($path)],
+            ['file' => ['mimes:'.implode(',', CourseBuilder::ATTACHMENT_TYPES)]],
+        )->passes();
+        if (! $ok) {
+            $tmp->delete($part);
+
+            return response()->json(['message' => __('O ficheiro não corresponde ao tipo indicado (PDF, imagens, Office ou zip).')], 422);
+        }
+        $ext = Str::lower(pathinfo($data['name'], PATHINFO_EXTENSION));
+        $final = CourseBuilder::UPLOAD_DIR.'/'.CourseBuilder::attachmentDir($request->user()->id).'/'.Str::random(40).'.'.$ext;
+        $in = fopen($path, 'rb');
+        Storage::disk('public')->writeStream($final, $in);
+        fclose($in);
+        $tmp->delete($part);
+
+        return response()->json([
+            'done' => true,
+            'path' => $final,
+            'url' => '/storage/'.$final,
+            'name' => $data['name'],
+            'size' => $size,
+        ]);
+    }
+
+    /**
+     * Junta um pedaço ao ficheiro temporário do envio. Cada pedaço tem de chegar pela ordem certa; se não,
+     * devolve a resposta de erro (409) para o editor pedir para carregar outra vez.
+     */
+    private function appendChunk(Request $request, string $part, int $index, string $interrupted): ?JsonResponse
+    {
+        $tmp = Storage::disk('local');
+        if ($index === 0) $tmp->delete($part);
+        $have = $tmp->exists($part) ? $tmp->size($part) : 0;
+        if ($have !== $index * CourseBuilder::VIDEO_CHUNK_BYTES) {
+            return response()->json(['message' => $interrupted], 409);
+        }
+        $tmp->makeDirectory(dirname($part));
+        file_put_contents($tmp->path($part), $request->file('chunk')->get(), FILE_APPEND | LOCK_EX);
+
+        return null;
+    }
+
     private function editor(?Course $course): Response
     {
         return Inertia::render('Instructor/CourseEditor', [
@@ -280,6 +355,7 @@ class CourseBuilderController extends Controller
             'canAlex' => (bool) (request()->user()?->canDo('cursos.alex') || request()->user()?->canDo('cursos.alex.gerir')),
             'canManageAlex' => (bool) request()->user()?->canDo('cursos.alex.gerir'),
             'videoMaxMb' => config('tacademy.video_max_mb'),
+            'attachmentMaxMb' => config('tacademy.attachment_max_mb'),
         ]);
     }
 
@@ -321,6 +397,8 @@ class CourseBuilderController extends Controller
             'modules.*.id' => ['nullable', 'integer'],
             'modules.*.title' => ['nullable', 'string', 'max:200'],
             'modules.*.description' => ['nullable', 'string', 'max:1000'],
+            'modules.*.alex_pal_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'modules.*.alex_face_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
             'modules.*.lessons' => ['array', 'max:100'],
             'modules.*.lessons.*.key' => ['required', 'string', 'max:40'],
             'modules.*.lessons.*.id' => ['nullable', 'integer'],

@@ -331,6 +331,43 @@ class CourseBuilderTest extends TestCase
     }
 
 
+    public function test_attachments_are_sent_in_pieces_and_checked_at_the_end(): void
+    {
+        Storage::fake('public');
+        $u = $this->user('formador');
+        $send = function (User $who, string $bytes, string $name) {
+            $id = (string) Str::uuid();
+            $chunks = str_split($bytes, CourseBuilder::VIDEO_CHUNK_BYTES);
+            foreach ($chunks as $i => $chunk) {
+                $res = $this->actingAs($who)->post('/formador/anexos', [
+                    'id' => $id, 'index' => (string) $i, 'total' => (string) count($chunks), 'size' => (string) strlen($bytes), 'name' => $name,
+                    'chunk' => UploadedFile::fake()->createWithContent('chunk', $chunk),
+                ], ['Accept' => 'application/json']);
+            }
+
+            return $res;
+        };
+
+        // Um PDF maior do que um pedaço (3 pedaços) fica na pasta de anexos de quem o carrega
+        $pdf = "%PDF-1.4\n".str_repeat("1 0 obj\n", 500000);
+        $r = $send($u, $pdf, 'Caderno técnico.pdf')->assertOk()->assertJsonPath('done', true)->assertJsonPath('name', 'Caderno técnico.pdf')->json();
+        $this->assertStringStartsWith('cursos/anexos/u'.$u->id.'/', $r['path']);
+        $this->assertStringEndsWith('.pdf', $r['path']);
+        $this->assertSame(strlen($pdf), Storage::disk('public')->size($r['path']));
+
+        // Tipo errado no nome ou no conteúdo, ou quem não cria cursos: recusado e nada fica guardado
+        $send($u, $pdf, 'script.php')->assertStatus(422);
+        $send($u, '<?php echo 1; ?>', 'falso.pdf')->assertStatus(422);
+        $send($this->user('aluno'), $pdf, 'c.pdf')->assertForbidden();
+        $this->assertCount(1, Storage::disk('public')->allFiles());
+
+        // Acima do limite: recusado logo no primeiro pedaço
+        $this->actingAs($u)->post('/formador/anexos', [
+            'id' => (string) Str::uuid(), 'index' => 0, 'total' => 1, 'size' => (config('tacademy.attachment_max_mb') + 1) * 1024 * 1024, 'name' => 'grande.pdf',
+            'chunk' => UploadedFile::fake()->createWithContent('chunk', 'x'),
+        ], ['Accept' => 'application/json'])->assertStatus(422);
+    }
+
     public function test_an_instructor_cannot_attach_or_delete_someone_elses_file(): void
     {
         Storage::fake('public');

@@ -19,6 +19,8 @@ class Module extends Model
         'title',
         'description',
         'order_index',
+        'alex_pal_id',
+        'alex_face_id',
     ];
 
     public function course(): BelongsTo

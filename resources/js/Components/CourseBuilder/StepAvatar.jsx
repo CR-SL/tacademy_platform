@@ -44,6 +44,26 @@ export default function StepAvatar({ c, update, canAlex, canManageAlex }) {
                 )}
             </Panel>
 
+            {canAlex && !locked && c.alex_enabled && c.modules.length > 0 && (
+                <Panel title={t('Alex por módulo')} sub={t('Cada módulo pode ter o seu Alex no Tavus, com a avaliação desse módulo. Nas aulas do módulo, as dúvidas e a avaliação usam o PAL do módulo. Vazio = o PAL do curso.')}>
+                    <div className="divide-y divide-line">
+                        {c.modules.map((m, i) => (
+                            <div key={m.key} className="grid gap-x-4 py-3 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] sm:items-end">
+                                <p className="pb-2 text-sm"><span className="font-mono text-muted">{String(i + 1).padStart(2, '0')}</span> {m.title || t('Módulo sem título')}</p>
+                                <Field label={t('PAL ID')} id={`f-mpal-${m.key}`}>
+                                    <input id={`f-mpal-${m.key}`} className={`${inputCls} font-mono`} value={m.alex_pal_id ?? ''} maxLength={64} placeholder={c.alex_pal_id || t('PAL do curso')} autoComplete="off" spellCheck={false}
+                                        onChange={(e) => update((d) => { d.modules[i].alex_pal_id = e.target.value.trim(); })} />
+                                </Field>
+                                <Field label={t('FACE ID')} id={`f-mface-${m.key}`}>
+                                    <input id={`f-mface-${m.key}`} className={`${inputCls} font-mono`} value={m.alex_face_id ?? ''} maxLength={64} placeholder={t('Rosto do PAL')} autoComplete="off" spellCheck={false}
+                                        onChange={(e) => update((d) => { d.modules[i].alex_face_id = e.target.value.trim(); })} />
+                                </Field>
+                            </div>
+                        ))}
+                    </div>
+                </Panel>
+            )}
+
             {canManageAlex && (
                 <Panel title={t('Controlo da equipa')} sub={t('Só o admin e o gestor de cursos veem esta parte.')}>
                     <Toggle

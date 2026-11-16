@@ -7,6 +7,7 @@ use App\Models\ContactRequest;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
+use App\Models\Module;
 use App\Models\Quiz;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -82,7 +83,8 @@ class AlexService
             'minutes' => $this->minutes(),
             'evaluation' => $place === 'aula' ? [
                 'minutes' => $this->evaluationMinutes(),
-                'done' => $this->evaluationDone($user, $request->route('course')),
+                'done' => $this->evaluationDone($user, $request->route('course'), $lesson),
+                'module' => (bool) $lesson?->module?->alex_pal_id, // a avaliação é a do módulo (PAL próprio)
             ] : null,
             ...$this->shop($user),
         ];
@@ -160,13 +162,18 @@ class AlexService
      * Só há uma avaliação final por curso. Conta a que durou pelo menos 2 minutos (uma ligação que cai logo
      * no início não conta). O admin e a pré-visualização da equipa podem repetir, para testar.
      */
-    public function evaluationDone(User $user, Course $course): bool
+    public function evaluationDone(User $user, Course $course, ?Lesson $lesson = null): bool
     {
         if ($user->isAdmin() || $this->learning->access($user, $course)['mode'] === 'preview') {
             return false;
         }
+        // Módulo com PAL próprio: uma avaliação por módulo; senão, uma por curso
+        $module = $lesson?->module?->alex_pal_id ? $lesson->module : null;
 
         return AlexConversation::where('user_id', $user->id)->where('course_id', $course->id)->where('place', 'avaliacao')
+            ->when($module, fn ($q) => $q->whereIn('lesson_id', $module->lessons()->pluck('id')))
+            // A do curso não conta as avaliações dos módulos com PAL próprio
+            ->when(! $module, fn ($q) => $q->whereNotIn('lesson_id', Lesson::whereIn('module_id', $course->modules()->whereNotNull('alex_pal_id')->select('id'))->select('id')))
             ->where('status', '!=', 'failed')->get()
             ->contains(fn ($c) => ! in_array($c->status, ['starting', 'active'], true) && $c->seconds() >= self::EVALUATION_COUNTS_AFTER);
     }
@@ -207,7 +214,7 @@ class AlexService
             if (! $course || ! $this->canUseInCourse($user, $course)) {
                 throw new AuthorizationException;
             }
-            if ($place === 'avaliacao' && $this->evaluationDone($user, $course)) {
+            if ($place === 'avaliacao' && $this->evaluationDone($user, $course, $lesson)) {
                 throw new AlexEvaluationDone;
             }
         } elseif (! in_array($place, self::PLACES, true) || ! $this->hasAccess($user)) {
@@ -311,15 +318,21 @@ class AlexService
 
     private function payload(User $user, string $place, ?Course $course, ?Lesson $lesson): array
     {
-        // O Alex do curso, se o curso tiver um; senão o Alex geral (config). O rosto acompanha o PAL escolhido.
-        $ownPal = $course?->alex_pal_id;
-        $face = $course?->alex_face_id ?: ($ownPal ? null : config('services.tavus.face_id'));
+        // O Alex do módulo da aula, se tiver um (dúvidas e avaliação desse módulo); senão o do curso; senão o Alex
+        // geral (config). O rosto acompanha o PAL escolhido.
+        $module = $lesson?->module?->alex_pal_id ? $lesson->module : null;
+        $ownPal = $module?->alex_pal_id ?: $course?->alex_pal_id;
+        $face = $module
+            ? $module->alex_face_id // vazio = o rosto do PAL do módulo
+            : ($course?->alex_face_id ?: ($ownPal ? null : config('services.tavus.face_id')));
         $payload = [
             'pal_id' => $ownPal ?: config('services.tavus.pal_id'),
             'conversation_name' => Str::limit('T.Academy · '.$user->name.' · '.$place, 100, ''),
-            'conversational_context' => $place === 'avaliacao'
-                ? Str::limit($this->evaluationContext($user, $course), 9000)
-                : Str::limit($this->context($user, $place, $course, $lesson), 3500),
+            'conversational_context' => match (true) {
+                $place === 'avaliacao' && $module => Str::limit($this->moduleEvaluationContext($user, $course, $module), 3500),
+                $place === 'avaliacao' => Str::limit($this->evaluationContext($user, $course), 9000),
+                default => Str::limit($this->context($user, $place, $course, $lesson), 3500),
+            },
             'custom_greeting' => $this->greeting($user, $place, $lesson),
             // A memória do Alex segue o aluno de conversa em conversa (uma etiqueta por aluno, no Tavus)
             'participant_tags' => ['tacademy-'.$user->ulid],
@@ -334,6 +347,10 @@ class AlexService
         ];
         if ($face) {
             $payload['face_id'] = $face;
+        }
+        // Avaliação de um módulo com PAL próprio: o PAL já tem a abertura e as perguntas; a saudação dele fica
+        if ($place === 'avaliacao' && $module) {
+            unset($payload['custom_greeting']);
         }
         // Os avisos do Tavus só chegam a um endereço público (produção)
         $callback = url('/webhooks/tavus');
@@ -355,6 +372,16 @@ class AlexService
             'aula' => "Olá {$first}! Estás na aula {$lesson?->title}. Tens alguma dúvida?",
             default => "Olá {$first}! Sou o Alex. Em que te posso ajudar hoje?",
         };
+    }
+
+    /** Avaliação de um módulo com PAL próprio: as perguntas e as regras estão no PAL; aqui só quem é e que módulo. */
+    private function moduleEvaluationContext(User $user, Course $course, Module $module): string
+    {
+        return implode("\n", [
+            "O aluno chama-se {$user->name}. Fala em português de Portugal e trata-o por tu.",
+            "Esta conversa é a AVALIAÇÃO do módulo \"{$module->title}\" do curso \"{$course->title}\", na plataforma T.Academy. Faz a avaliação deste módulo tal como está definida.",
+            'Esta avaliação só se faz uma vez.',
+        ]);
     }
 
     /**
@@ -410,6 +437,9 @@ class AlexService
             $done = $this->learning->completedIds($user, $lessons)->count();
             $pct = $lessons->count() ? (int) floor($done / $lessons->count() * 100) : 0;
             $lines[] = "Está a estudar o curso \"{$course->title}\", na aula \"{$lesson->title}\" do módulo \"{$lesson->module?->title}\". Já concluiu {$done} de {$lessons->count()} aulas ({$pct}%).";
+            if ($lesson->module?->alex_pal_id) {
+                $lines[] = 'Esta conversa é só para tirar dúvidas sobre a matéria do módulo. Não faças a avaliação do módulo nesta conversa: o aluno começa-a no botão Avaliação.';
+            }
 
             return implode("\n", $lines);
         }

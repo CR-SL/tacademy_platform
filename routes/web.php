@@ -101,6 +101,7 @@ Route::middleware(['auth', 'verified', 'can:viewAny,App\Models\Course'])
         Route::post('/uploads', 'upload')->middleware('throttle:60,1')->name('uploads');
         // Vídeo da aula, enviado aos pedaços (cada pedido fica abaixo dos limites do PHP e do proxy)
         Route::post('/videos', 'uploadVideo')->middleware('throttle:1200,1')->name('videos');
+        Route::post('/anexos', 'uploadAttachment')->middleware('throttle:1200,1')->name('attachments');
     });
 
 // Avaliações do formador (navegação "só o seu trabalho")

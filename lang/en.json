@@ -52,7 +52,6 @@
     "· alterado": "· changed",
     "· Módulos": "· Modules",
     "· ou cola um link abaixo": "· or paste a link below",
-    "· PDF, imagens, Office · até 20 MB": "· PDF, images, Office · up to 20 MB",
     "“:title” publicado. Já está no catálogo.": "“:title” published. It's now in the catalogue.",
     "(2 a 3, no fim do vídeo; o aluno responde se quiser e não conta para a nota)": "(2 to 3, at the end of the video; the student answers if they want and it doesn't count towards the grade)",
     "(em breve)": "(coming soon)",
@@ -1606,5 +1605,17 @@
     "Sugeridos para ti": "Suggested for you",
     "Não foi possível abrir o curso. Verifica a ligação e tenta outra vez.": "The course could not be opened. Check your connection and try again.",
     "Já fizeste a avaliação final deste curso com o Alex. Só há uma.": "You have already taken this course's final assessment with Alex. There is only one.",
-    "Já fizeste a avaliação final deste curso. Só há uma.": "You have already taken this course's final assessment. There is only one."
+    "Já fizeste a avaliação final deste curso. Só há uma.": "You have already taken this course's final assessment. There is only one.",
+    "Alex por módulo": "Alex per module",
+    "Cada módulo pode ter o seu Alex no Tavus, com a avaliação desse módulo. Nas aulas do módulo, as dúvidas e a avaliação usam o PAL do módulo. Vazio = o PAL do curso.": "Each module can have its own Alex in Tavus, with that module's assessment. In the module's lessons, questions and the assessment use the module's PAL. Empty = the course PAL.",
+    "Módulo sem título": "Untitled module",
+    "PAL do curso": "Course PAL",
+    "Rosto do PAL": "PAL face",
+    "Já fizeste a avaliação deste módulo com o Alex. Só há uma.": "You have already taken this module's assessment with Alex. There is only one.",
+    "· PDF, imagens, Office · até :mb MB": "· PDF, images, Office · up to :mb MB",
+    "Este tipo de ficheiro não é aceite. Usa PDF, imagens, Office ou zip.": "This file type is not accepted. Use PDF, images, Office or zip.",
+    "O ficheiro não pode ter mais de :mb MB.": "The file cannot be larger than :mb MB.",
+    "Não foi possível carregar o ficheiro. Tenta outra vez.": "The file could not be uploaded. Try again.",
+    "O envio foi interrompido. Tenta carregar o ficheiro outra vez.": "The upload was interrupted. Try uploading the file again.",
+    "O ficheiro não corresponde ao tipo indicado (PDF, imagens, Office ou zip).": "The file does not match its type (PDF, images, Office or zip)."
 }
