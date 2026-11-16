@@ -9,6 +9,9 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\Module;
+use App\Models\Quiz;
+use App\Models\QuizOption;
+use App\Models\QuizQuestion;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -144,6 +147,41 @@ class AlexTest extends TestCase
 
         $c = AlexConversation::first();
         $this->assertSame(['active', 'c1', 'aula', $this->diag->id], [$c->status, $c->tavus_id, $c->place, $c->course_id]);
+    }
+
+    public function test_the_final_assessment_is_done_by_the_alex_once_per_course(): void
+    {
+        $u = $this->student($this->diag);
+        $lesson = $this->lessonOf($this->diag);
+        $quiz = Quiz::create(['lesson_id' => $lesson->id, 'title' => 'Teste', 'passing_score' => 70, 'max_attempts' => 3]);
+        $q = QuizQuestion::create(['quiz_id' => $quiz->id, 'question' => 'Que gás usa o AVAC?', 'order_index' => 0]);
+        QuizOption::create(['question_id' => $q->id, 'option_text' => 'R134a', 'is_correct' => true]);
+        QuizOption::create(['question_id' => $q->id, 'option_text' => 'Hélio', 'is_correct' => false]);
+        $url = "/plataforma/cursos/{$this->diag->slug}/aulas/{$lesson->ulid}";
+
+        $this->actingAs($u)->get($url)->assertInertia(fn ($p) => $p->where('alex.evaluation.minutes', 10)->where('alex.evaluation.done', false));
+
+        // À parte das conversas do dia: não gasta nenhuma; 10 minutos; o Alex leva as perguntas dos testes
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'avaliacao', 'lesson' => $lesson->ulid])
+            ->assertCreated()->assertJsonPath('left', 3);
+        Http::assertSent(fn (HttpRequest $r) => $r->url() === 'https://tavus.test/v2/conversations'
+            && $r->data()['properties']['max_call_duration'] === 600
+            && str_contains($r->data()['conversational_context'], 'AVALIAÇÃO FINAL')
+            && str_contains($r->data()['conversational_context'], 'R134a (CERTA)')
+            && str_contains($r->data()['custom_greeting'], 'avaliação final'));
+
+        // Uma ligação que cai logo no início não conta
+        $c = AlexConversation::first();
+        $this->actingAs($u)->postJson("/plataforma/alex/conversas/{$c->ulid}/terminar")->assertOk();
+        $this->actingAs($u)->get($url)->assertInertia(fn ($p) => $p->where('alex.evaluation.done', false));
+
+        // Feita (mais de 2 minutos): não se repete
+        $c->refresh()->update(['ended_at' => $c->created_at->copy()->addMinutes(8)]);
+        $this->actingAs($u)->get($url)->assertInertia(fn ($p) => $p->where('alex.evaluation.done', true));
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'avaliacao', 'lesson' => $lesson->ulid])->assertStatus(409);
+
+        // Num curso sem o Alex não há avaliação com ele
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'avaliacao', 'lesson' => $this->lessonOf($this->other)->ulid])->assertForbidden();
     }
 
     public function test_only_one_conversation_at_a_time_and_three_per_day(): void

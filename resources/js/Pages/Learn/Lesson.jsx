@@ -11,7 +11,7 @@ import MicCheck from '@/Components/Learn/MicCheck';
 import { ModulesRail, ModuleSheet, ModulesStrip } from '@/Components/Learn/LessonModules';
 import { IconCheck, IconDoc, IconDown, IconHelp, IconLeft, IconPen, IconRight, IconSide, IconSwap, IconUser, IconVideo, IconX } from '@/Components/Learn/LessonIcons';
 import { FlashToast, Toast, useFocusTrap } from '@/Components/ui';
-import AlexLessonPanel from '@/Components/Alex/AlexLessonPanel';
+import AlexLessonPanel, { AlexEvaluationPanel, endEvaluationCall, startEvaluationCall } from '@/Components/Alex/AlexLessonPanel';
 import '../../../css/lesson.css';
 
 import { t } from '@/i18n';
@@ -228,10 +228,12 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
         beforeEvaluation.current = { video: showVideo, material: showMaterial, notes: showNotes, checks: showChecks };
         pauseVideo();
         setShowVideo(false); setShowMaterial(false); setShowNotes(false); setShowChecks(false); setAsk(false); setRail(false); setSheet(null);
-        setEndsAt(Date.now() + EVALUATION_MIN * 60 * 1000);
+        setEndsAt(Date.now() + evaluationMin * 60 * 1000);
         setEvaluation('run');
+        if (alexEvaluation) startEvaluationCall(alex.lesson); // o Alex faz a avaliação final
     };
     const endEvaluation = () => {
+        if (alexEvaluation) endEvaluationCall();
         const p = beforeEvaluation.current;
         if (p) { setShowVideo(p.video); setShowMaterial(p.material); setShowNotes(p.notes); setShowChecks(p.checks); }
         setEvaluation(null);
@@ -252,6 +254,8 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     }, []);
 
     const running = evaluation === 'run';
+    const alexEvaluation = alex?.evaluation ?? null; // curso com o Alex: é ele que faz a avaliação final
+    const evaluationMin = alexEvaluation?.minutes ?? EVALUATION_MIN;
     const videoOn = hasPlayer && showVideo;
     const avatarOn = ask || running;
     const materialOn = showMaterial && !showChecks;
@@ -357,7 +361,9 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
             <section key="ask" className={`al-panel al-a ${avatarOn ? '' : 'off'}`} aria-label={t('Avatar')} style={{ flexGrow: grow }}>
                 {panelBar('ask', <IconUser />, true)}
                 {running && <EvaluationEnd endsAt={endsAt} onEnd={endEvaluation} />}
-                {running ? (
+                {running && alexEvaluation ? (
+                    <AlexEvaluationPanel onClose={endEvaluation} />
+                ) : running ? (
                     <div className="al-a-stage">
                         <span className="al-orb" aria-hidden="true" />
                         <p>{t('O teste final com o avatar fica disponível em breve.')}</p>
@@ -521,10 +527,16 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                             <div>
                                 <h2>{t('Vai começar a avaliação.')}</h2>
                                 <p>{t('O teste final é feito com o avatar. Podes usar o microfone para responder às perguntas ou escrever a tua resposta.')}</p>
-                                <p>{t('Tens :min minutos. O tempo que falta aparece no botão Terminar.', { min: EVALUATION_MIN })}</p>
-                                <MicCheck />
-                                <div className="bs">{t('Boa sorte!')}</div>
-                                <button type="button" className="al-pill" onClick={startEvaluation}>{t('Continuar')}</button>
+                                {alexEvaluation?.done ? (
+                                    <p>{t('Já fizeste a avaliação final deste curso com o Alex. Só há uma.')}</p>
+                                ) : (
+                                    <>
+                                        <p>{t('Tens :min minutos. O tempo que falta aparece no botão Terminar.', { min: evaluationMin })}</p>
+                                        <MicCheck />
+                                        <div className="bs">{t('Boa sorte!')}</div>
+                                        <button type="button" className="al-pill" onClick={startEvaluation}>{t('Continuar')}</button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     )}

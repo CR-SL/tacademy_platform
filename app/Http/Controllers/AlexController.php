@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AlexConversation;
 use App\Models\ContactRequest;
+use App\Services\AlexEvaluationDone;
 use App\Services\AlexLimitReached;
 use App\Services\AlexService;
 use App\Services\TeamService;
@@ -31,6 +32,8 @@ class AlexController extends Controller
             return response()->json($this->alex->start($request->user(), $data['place'], $data['lesson'] ?? null), 201);
         } catch (AuthorizationException) {
             return response()->json(['message' => __('O Alex não está disponível aqui.')], 403);
+        } catch (AlexEvaluationDone) {
+            return response()->json(['message' => __('Já fizeste a avaliação final deste curso. Só há uma.')], 409);
         } catch (AlexLimitReached $e) {
             return response()->json(['message' => __('Não tens conversas disponíveis. Compra créditos para continuar a falar com o Alex.'), 'left' => 0, 'credits' => 0], 429);
         } catch (RuntimeException) {

@@ -1,7 +1,33 @@
 import { useEffect } from 'react';
 import { t } from '@/i18n';
 import { AlexCallView, AlexStart } from './AlexCall';
-import { dismissAlex, dock, isActive, useAlexCall } from './alexStore';
+import { dismissAlex, dock, endAlex, isActive, startAlex, useAlexCall } from './alexStore';
+
+/** Começa a avaliação final com o Alex (termina antes a conversa que estiver aberta). */
+export async function startEvaluationCall(lesson) {
+    await endAlex();
+    dismissAlex();
+    startAlex({ place: 'avaliacao', lesson });
+}
+
+/** Termina a avaliação final e limpa a conversa. */
+export async function endEvaluationCall() {
+    await endAlex();
+    dismissAlex();
+}
+
+// A avaliação final no painel do avatar: a conversa fica sempre aqui (nunca na janela flutuante)
+export function AlexEvaluationPanel({ onClose }) {
+    useEffect(() => {
+        dock(true);
+        return () => dock(false);
+    }, []);
+    return (
+        <div className="ax-docked">
+            <AlexCallView onClose={onClose} />
+        </div>
+    );
+}
 
 // O Alex dentro do painel do avatar da aula. Com o painel aberto, a conversa fica aqui;
 // ao fechar o painel ou mudar de página, passa para a janela flutuante e não cai.

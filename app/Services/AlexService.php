@@ -7,6 +7,7 @@ use App\Models\ContactRequest;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
+use App\Models\Quiz;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
@@ -23,7 +24,11 @@ use RuntimeException;
  */
 class AlexService
 {
-    public const PLACES = ['inicio', 'avaliacoes', 'aula'];
+    // avaliacao: a avaliação final do curso, no botão Avaliação da aula (à parte das conversas do dia, sem créditos)
+    public const PLACES = ['inicio', 'avaliacoes', 'aula', 'avaliacao'];
+
+    /** Uma avaliação conta como feita a partir deste tempo de conversa (abaixo disto foi uma falha de ligação). */
+    public const EVALUATION_COUNTS_AFTER = 120;
 
     public function __construct(
         private TavusClient $tavus,
@@ -75,6 +80,10 @@ class AlexService
             'free' => $this->hasFreeTalks($user),
             'perDay' => $this->perDay(),
             'minutes' => $this->minutes(),
+            'evaluation' => $place === 'aula' ? [
+                'minutes' => $this->evaluationMinutes(),
+                'done' => $this->evaluationDone($user, $request->route('course')),
+            ] : null,
             ...$this->shop($user),
         ];
     }
@@ -142,6 +151,26 @@ class AlexService
         return max(1, (int) config('services.tavus.minutes', 15));
     }
 
+    public function evaluationMinutes(): int
+    {
+        return max(1, (int) config('services.tavus.evaluation_minutes', 10));
+    }
+
+    /**
+     * Só há uma avaliação final por curso. Conta a que durou pelo menos 2 minutos (uma ligação que cai logo
+     * no início não conta). O admin e a pré-visualização da equipa podem repetir, para testar.
+     */
+    public function evaluationDone(User $user, Course $course): bool
+    {
+        if ($user->isAdmin() || $this->learning->access($user, $course)['mode'] === 'preview') {
+            return false;
+        }
+
+        return AlexConversation::where('user_id', $user->id)->where('course_id', $course->id)->where('place', 'avaliacao')
+            ->where('status', '!=', 'failed')->get()
+            ->contains(fn ($c) => ! in_array($c->status, ['starting', 'active'], true) && $c->seconds() >= self::EVALUATION_COUNTS_AFTER);
+    }
+
     /** Conversas grátis que ainda há hoje (0 para quem não tem um curso com o avatar). */
     public function leftToday(User $user): int
     {
@@ -152,6 +181,7 @@ class AlexService
             ->where('created_at', '>=', now()->startOfDay())
             ->where('status', '!=', 'failed')
             ->where('paid_credit', false)
+            ->where('place', '!=', 'avaliacao') // a avaliação final não gasta as conversas do dia
             ->count();
 
         return max(0, $this->perDay() - $used);
@@ -164,17 +194,21 @@ class AlexService
      *
      * @throws AuthorizationException quando o aluno não pode falar com o Alex aqui
      * @throws AlexLimitReached quando já usou as conversas grátis de hoje e não tem créditos
+     * @throws AlexEvaluationDone quando já fez a avaliação final deste curso
      * @throws RuntimeException quando o Tavus falha
      */
     public function start(User $user, string $place, ?string $lessonUlid): array
     {
         $lesson = null;
         $course = null;
-        if ($place === 'aula') {
+        if ($place === 'aula' || $place === 'avaliacao') {
             $lesson = Lesson::with('module.course')->where('ulid', $lessonUlid)->first();
             $course = $lesson?->module?->course;
             if (! $course || ! $this->canUseInCourse($user, $course)) {
                 throw new AuthorizationException;
+            }
+            if ($place === 'avaliacao' && $this->evaluationDone($user, $course)) {
+                throw new AlexEvaluationDone;
             }
         } elseif (! in_array($place, self::PLACES, true) || ! $this->hasAccess($user)) {
             throw new AuthorizationException;
@@ -188,7 +222,7 @@ class AlexService
             ->each(fn ($c) => $this->end($c, 'nova conversa'));
 
         // Primeiro as conversas grátis do dia; depois 1 crédito por conversa
-        $paid = $this->leftToday($user) <= 0;
+        $paid = $place !== 'avaliacao' && $this->leftToday($user) <= 0;
         if ($paid && User::whereKey($user->id)->where('alex_credits', '>', 0)->decrement('alex_credits') === 0) {
             throw new AlexLimitReached($this->perDay());
         }
@@ -218,7 +252,7 @@ class AlexService
             'id' => $conversation->ulid,
             'url' => $room['conversation_url'],
             'token' => $room['meeting_token'],
-            'endsAt' => $conversation->created_at->copy()->addMinutes($this->minutes())->toIso8601String(),
+            'endsAt' => $conversation->created_at->copy()->addMinutes($place === 'avaliacao' ? $this->evaluationMinutes() : $this->minutes())->toIso8601String(),
             'left' => $this->leftToday($user),
             'credits' => (int) $user->fresh()->alex_credits,
         ];
@@ -283,14 +317,16 @@ class AlexService
         $payload = [
             'pal_id' => $ownPal ?: config('services.tavus.pal_id'),
             'conversation_name' => Str::limit('T.Academy · '.$user->name.' · '.$place, 100, ''),
-            'conversational_context' => Str::limit($this->context($user, $place, $course, $lesson), 3500),
+            'conversational_context' => $place === 'avaliacao'
+                ? Str::limit($this->evaluationContext($user, $course), 9000)
+                : Str::limit($this->context($user, $place, $course, $lesson), 3500),
             'custom_greeting' => $this->greeting($user, $place, $lesson),
             // A memória do Alex segue o aluno de conversa em conversa (uma etiqueta por aluno, no Tavus)
             'participant_tags' => ['tacademy-'.$user->ulid],
             // Sala privada: só entra quem recebe o token desta conversa
             'require_auth' => true,
             'properties' => [
-                'max_call_duration' => $this->minutes() * 60,
+                'max_call_duration' => ($place === 'avaliacao' ? $this->evaluationMinutes() : $this->minutes()) * 60,
                 'participant_left_timeout' => 30,
                 'participant_absent_timeout' => 120,
                 'languages' => ['pt'],
@@ -314,10 +350,51 @@ class AlexService
         $first = Str::before(trim($user->name), ' ') ?: $user->name;
 
         return match ($place) {
+            'avaliacao' => "Olá {$first}! Sou o Alex e vou fazer a tua avaliação final do curso. Vou fazer-te algumas perguntas, uma de cada vez. Estás pronto para começar?",
             'avaliacoes' => "Olá {$first}! Sou o Alex. Queres rever algum teste comigo?",
             'aula' => "Olá {$first}! Estás na aula {$lesson?->title}. Tens alguma dúvida?",
             default => "Olá {$first}! Sou o Alex. Em que te posso ajudar hoje?",
         };
+    }
+
+    /**
+     * A avaliação final: o Alex faz perguntas sobre o curso, uma de cada vez, com base no programa e nas
+     * perguntas dos testes que o formador criou (as respostas certas só vão para o Tavus, nunca para a página).
+     * A nota ainda não fica guardada: a forma de a contar está por decidir (ver a memória do projeto).
+     */
+    private function evaluationContext(User $user, Course $course): string
+    {
+        $pass = (int) config('services.tavus.evaluation_pass', 70);
+        $lines = [
+            "O aluno chama-se {$user->name}. Fala em português de Portugal e trata-o por tu.",
+            "Estás a fazer a AVALIAÇÃO FINAL do curso \"{$course->title}\" na plataforma T.Academy. Tens {$this->evaluationMinutes()} minutos.",
+            'Regras da avaliação:',
+            '- Faz entre 6 e 10 perguntas sobre a matéria do curso, uma de cada vez, e espera pela resposta antes de passar à seguinte.',
+            '- Usa como base as perguntas dos testes do curso (abaixo). Podes reformular, mas não digas as opções certas antes de o aluno responder.',
+            '- Depois de cada resposta, diz se está certa ou errada e explica a resposta certa numa frase curta.',
+            "- No fim, diz quantas respostas acertou, de quantas, e a percentagem. Passa com {$pass}% ou mais: diz-lhe se passou.",
+            '- Não ajudes a responder, não dês pistas e não fales de outros assuntos. Se o aluno pedir ajuda, lembra-o com simpatia que é uma avaliação.',
+            '- Esta avaliação só se faz uma vez.',
+        ];
+
+        $program = $course->modules()->with('lessons:id,module_id,title')->orderBy('order_index')->get()
+            ->map(fn ($m) => "- {$m->title}: ".$m->lessons->pluck('title')->implode('; '))->implode("\n");
+        if ($program) {
+            $lines[] = "Programa do curso:\n{$program}";
+        }
+
+        $questions = Quiz::with('questions.options')->whereIn('lesson_id', $this->learning->lessons($course)->pluck('id'))->get()
+            ->flatMap(fn ($q) => $q->questions)
+            ->map(function ($q) {
+                $options = $q->options->map(fn ($o) => $o->option_text.($o->is_correct ? ' (CERTA)' : ''))->implode(' | ');
+
+                return "- {$q->question} Opções: {$options}";
+            })->take(40)->implode("\n");
+        $lines[] = $questions
+            ? "Perguntas dos testes do curso:\n{$questions}"
+            : 'O curso ainda não tem testes: faz perguntas sobre a matéria do programa acima.';
+
+        return implode("\n", $lines);
     }
 
     private function context(User $user, string $place, ?Course $course, ?Lesson $lesson): string

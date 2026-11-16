@@ -1604,5 +1604,7 @@
     "Contas novas": "New accounts",
     "criadas nos últimos 30 dias": "created in the last 30 days",
     "Sugeridos para ti": "Suggested for you",
-    "Não foi possível abrir o curso. Verifica a ligação e tenta outra vez.": "The course could not be opened. Check your connection and try again."
+    "Não foi possível abrir o curso. Verifica a ligação e tenta outra vez.": "The course could not be opened. Check your connection and try again.",
+    "Já fizeste a avaliação final deste curso com o Alex. Só há uma.": "You have already taken this course's final assessment with Alex. There is only one.",
+    "Já fizeste a avaliação final deste curso. Só há uma.": "You have already taken this course's final assessment. There is only one."
 }
