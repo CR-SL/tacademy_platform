@@ -15,7 +15,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Uma só instância por pedido: guardam contas já feitas nesse pedido (ex.: o relatório da equipa,
+        // pedido pelos números da navegação, pelos Pendentes e pela caixa Equipa)
+        $this->app->scoped(\App\Services\TeamService::class);
+        $this->app->scoped(\App\Services\StudentArea::class);
+        $this->app->scoped(\App\Services\AdminStats::class);
+        $this->app->scoped(\App\Services\Tasks::class);
+        // No fim de cada pedido esquecem-se (nos testes e em servidores que tratam vários pedidos no mesmo processo)
+        $this->app['events']->listen(\Illuminate\Foundation\Http\Events\RequestHandled::class, fn () => $this->app->forgetScopedInstances());
     }
 
     /**

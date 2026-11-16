@@ -75,6 +75,7 @@ class TeamService
      */
     public function syncMembers(Company $company, array $people, string $leaderEmail, User $actor): void
     {
+        $this->forgetReports();
         $people = collect($people)
             ->map(fn ($p) => ['name' => trim($p['name']), 'email' => Str::lower(trim($p['email']))])
             ->unique('email')->values();
@@ -152,6 +153,7 @@ class TeamService
      */
     public function enroll(User $user, int $courseId, ?int $companyId): Enrollment
     {
+        $this->forgetReports();
         $e = Enrollment::firstOrNew(['user_id' => $user->id, 'course_id' => $courseId]);
         if (! $e->exists) {
             $e->fill(['source' => 'manual', 'status' => 'active', 'enrolled_at' => now(), 'personal' => $companyId === null]);
@@ -218,15 +220,60 @@ class TeamService
      */
     public function report(Company $company): array
     {
+        // O mesmo relatório é pedido várias vezes no mesmo pedido (números da navegação, Pendentes, caixa Equipa)
+        return $this->reports[$company->id] ??= $this->buildReport($company);
+    }
+
+    /** Relatórios já calculados neste pedido (a classe é única por pedido: AppServiceProvider). */
+    private array $reports = [];
+
+    /** Depois de mudar membros, inscrições, prazos ou lembretes, o relatório volta a ser calculado. */
+    private function forgetReports(): void
+    {
+        $this->reports = [];
+    }
+
+    /**
+     * Calcula o relatório com poucas consultas, sempre as mesmas seja qual for o tamanho da equipa
+     * (antes eram várias por pessoa e por curso: ~700 numa equipa de 30 com 4 cursos).
+     */
+    private function buildReport(Company $company): array
+    {
         $courses = $company->courses()->orderBy('title')->get(['courses.id', 'courses.title']);
         $members = $company->users()->with('role')->orderBy('name')->get();
-        $lessonIds = $courses->mapWithKeys(fn (Course $c) => [$c->id => $c->lessons()->pluck('lessons.id')]);
+        $userIds = $members->modelKeys();
+        $courseIds = $courses->modelKeys();
+
+        // Aulas de cada curso (as mesmas que Course::lessons: sem aulas nem módulos apagados)
+        $lessonRows = \App\Models\Lesson::query()
+            ->join('modules', 'modules.id', '=', 'lessons.module_id')
+            ->whereNull('modules.deleted_at')
+            ->whereIn('modules.course_id', $courseIds)
+            ->get(['lessons.id', 'modules.course_id']);
+        $lessonIds = $courses->mapWithKeys(fn (Course $c) => [$c->id => $lessonRows->where('course_id', $c->id)->pluck('id')->values()]);
+        $allLessons = $lessonRows->pluck('id');
+
+        $progressByUser = LessonProgress::whereIn('user_id', $userIds)->whereIn('lesson_id', $allLessons)
+            ->get(['user_id', 'lesson_id', 'status', 'updated_at'])->groupBy('user_id');
+        $enrolledByUser = Enrollment::with('course')->whereIn('user_id', $userIds)->where('company_id', $company->id)
+            ->get()->groupBy('user_id');
+        // Melhor nota de cada teste, por pessoa e por aula
+        $bestScores = DB::table('quiz_attempts')
+            ->join('quizzes', 'quizzes.id', '=', 'quiz_attempts.quiz_id')
+            ->whereIn('quizzes.lesson_id', $allLessons)
+            ->whereIn('quiz_attempts.user_id', $userIds)
+            ->groupBy('quiz_attempts.user_id', 'quiz_attempts.quiz_id', 'quizzes.lesson_id')
+            ->selectRaw('quiz_attempts.user_id as user_id, quizzes.lesson_id as lesson_id, MAX(quiz_attempts.score) as best')
+            ->get()->groupBy('user_id');
+        $certified = DB::table('certificates')->whereIn('user_id', $userIds)->whereIn('course_id', $courseIds)->where('status', 'valid')
+            ->get(['user_id', 'course_id'])->map(fn ($c) => $c->user_id.'-'.$c->course_id)->flip();
 
         return [
             'courses' => $courses->map(fn ($c) => ['id' => $c->id, 'title' => $c->title])->values()->all(),
-            'members' => $members->map(function (User $u) use ($courses, $lessonIds, $company) {
-                $progress = LessonProgress::where('user_id', $u->id)->whereIn('lesson_id', $lessonIds->flatten())->get();
-                $enrolled = Enrollment::with('course')->where('user_id', $u->id)->where('company_id', $company->id)->get()->keyBy('course_id');
+            'members' => $members->map(function (User $u) use ($courses, $lessonIds, $progressByUser, $enrolledByUser, $bestScores, $certified) {
+                $progress = $progressByUser->get($u->id, collect());
+                $enrolled = $enrolledByUser->get($u->id, collect())->keyBy('course_id');
+                $scores = $bestScores->get($u->id, collect());
 
                 return [
                     'id' => $u->id,
@@ -235,7 +282,7 @@ class TeamService
                     'leader' => $u->hasRole('team_leader'),
                     'invited' => $u->last_active_at === null && $progress->isEmpty(),
                     'remindersOff' => ! $u->email_reminders,
-                    'courses' => $courses->mapWithKeys(function ($c) use ($u, $progress, $lessonIds, $enrolled) {
+                    'courses' => $courses->mapWithKeys(function ($c) use ($u, $progress, $lessonIds, $enrolled, $scores, $certified) {
                         $ids = $lessonIds[$c->id];
                         $mine = $progress->whereIn('lesson_id', $ids);
                         $done = $mine->where('status', 'completed')->count();
@@ -252,10 +299,10 @@ class TeamService
                             'reminded' => $e?->reminded_at?->diffForHumans(),
                             'remindable' => $e && $u->email_reminders && ! $this->remindedRecently($e) && ($ids->isEmpty() || $done < $ids->count()),
                             'progress' => $ids->count() ? (int) round($done / $ids->count() * 100) : 0,
-                            'score' => $this->quizScore($u->id, $ids),
+                            'score' => ($best = $scores->whereIn('lesson_id', $ids)->pluck('best'))->isEmpty() ? null : (int) round($best->avg()),
                             'last' => $last ? \Illuminate\Support\Carbon::parse($last)->diffForHumans() : null,
                             'stalled' => $last && \Illuminate\Support\Carbon::parse($last)->lt(now()->subDays(10)) && $done < $ids->count(),
-                            'certificate' => DB::table('certificates')->where('user_id', $u->id)->where('course_id', $c->id)->where('status', 'valid')->exists(),
+                            'certificate' => $certified->has($u->id.'-'.$c->id),
                         ]];
                     })->all(),
                 ];
@@ -279,6 +326,7 @@ class TeamService
      */
     public function remind(Company $company, User $leader, Course $course, array $memberIds, ?string $message): array
     {
+        $this->forgetReports();
         $lessonIds = $course->lessons()->pluck('lessons.id');
         $sent = 0;
         $members = $company->users()->whereIn('users.id', $memberIds)->get();
@@ -323,6 +371,7 @@ class TeamService
      */
     public function assign(Company $company, User $leader, Course $course, array $memberIds, ?string $due, ?string $message): int
     {
+        $this->forgetReports();
         $members = $company->users()->whereIn('users.id', $memberIds)->get();
         $dueDate = $due ? \Illuminate\Support\Carbon::parse($due) : null;
 
@@ -367,19 +416,5 @@ class TeamService
         }
 
         return ['actionText' => $text, 'actionUrl' => url('/plataforma/cursos/'.$course->slug)];
-    }
-
-    /** Média da melhor nota em cada quiz do curso (null se ainda não fez nenhum). */
-    private function quizScore(int $userId, Collection $lessonIds): ?int
-    {
-        $best = DB::table('quiz_attempts')
-            ->join('quizzes', 'quizzes.id', '=', 'quiz_attempts.quiz_id')
-            ->whereIn('quizzes.lesson_id', $lessonIds)
-            ->where('quiz_attempts.user_id', $userId)
-            ->groupBy('quiz_attempts.quiz_id')
-            ->selectRaw('MAX(quiz_attempts.score) as best')
-            ->pluck('best');
-
-        return $best->isEmpty() ? null : (int) round($best->avg());
     }
 }

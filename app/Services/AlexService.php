@@ -124,9 +124,11 @@ class AlexService
     /** Cursos do aluno com o Alex, do mais recente para o mais antigo. @return Collection<int, Course> */
     private function alexCourses(User $user): Collection
     {
+        // Corre em todos os pedidos: a validade vê-se na própria inscrição (Enrollment::isExpired, a mesma regra de
+        // LearningService::access), sem voltar a pedir a inscrição de cada curso
         return Enrollment::with('course')->where('user_id', $user->id)->orderByDesc('enrolled_at')->get()
+            ->filter(fn ($e) => $e->course && $this->isAlexCourse($e->course) && ! $e->isExpired())
             ->map(fn ($e) => $e->course)
-            ->filter(fn ($c) => $c && $this->isAlexCourse($c) && $this->learning->access($user, $c)['mode'] === 'enrolled')
             ->values();
     }
 

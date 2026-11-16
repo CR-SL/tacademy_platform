@@ -43,6 +43,26 @@ Os problemas de segurança vêm marcados com **[Segurança]**. A auditoria de se
 - A18: ao atualizar a equipa só se aceitam cursos publicados (ou que a equipa já tinha).
 - A19: só o admin cria admins, promove a admin, mexe em contas de admin e muda permissões.
 
+**Corrigidos (grupo 6, exportações, ainda sem commit):** A20 e B7, com 1 teste novo. Depois: **153 testes passaram**. O texto que comece por = + - @ (ou tab ou mudança de linha) leva um apóstrofo à frente: `App\Support\Csv` no registo de atividade e `csvCell` em `TeamReport.jsx` na exportação da equipa. O "sim" da exportação da equipa passou a ser traduzido.
+
+**Corrigidos (grupo 7, rapidez, ainda sem commit):** A13, A21 e A22, com o teste `PerformanceTest`. Depois: **154 testes passaram**.
+
+Consultas à base de dados por página, numa equipa de 30 pessoas com 4 cursos (com 40 pessoas os números são os mesmos):
+
+| Página | Antes | Depois |
+|---|---|---|
+| Início do team leader | 1080 | 40 |
+| Equipa | 687 | 22 |
+| Início do formador | 432 | 34 |
+| Início do gestor de cursos | 347 | 19 |
+| Administração › Geral | 38 | 16 |
+| Início do aluno | 63 | 25 |
+
+- O relatório da equipa (`TeamService::report`) busca os dados de todos os membros de uma vez e é calculado uma só vez por pedido.
+- As presenças por confirmar contam-se com uma consulta por curso e uma só vez por pedido.
+- As inscrições do aluno, as vendas, os cliques e a conclusão da Administração carregam-se uma vez por pedido. Os anexos do aluno e a lista de alunos do formador vêm de uma só vez.
+- `TeamService`, `StudentArea`, `AdminStats` e `Tasks` têm uma só instância por pedido (`AppServiceProvider`), que é esquecida no fim de cada pedido.
+
 **Pendente para a mudança para o OVH (domínio tacademy.pt):**
 1. Verificar o domínio (ou um subdomínio, como `envio.tacademy.pt`) no serviço de email e mudar `MAIL_FROM_ADDRESS`.
 2. Retirar `MAIL_ALWAYS_TO`.

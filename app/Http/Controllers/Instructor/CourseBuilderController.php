@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\LessonProgress;
 use App\Models\User;
 use App\Services\LearningService;
 use App\Services\CourseBuilder;
@@ -131,8 +132,14 @@ class CourseBuilderController extends Controller
         $enrollments = Enrollment::with('user:id,ulid,name,email')->where('course_id', $course->id)->get()
             ->filter(fn ($e) => $e->user)->sortBy(fn ($e) => $e->user->name, SORT_NATURAL | SORT_FLAG_CASE);
 
+        // Aulas feitas e certificados de todos os alunos de uma vez (antes eram duas consultas por aluno)
+        $userIds = $enrollments->pluck('user_id');
+        $done = LessonProgress::whereIn('user_id', $userIds)->whereIn('lesson_id', $lessons->pluck('id'))->where('status', 'completed')
+            ->groupBy('user_id')->selectRaw('user_id, COUNT(DISTINCT lesson_id) as n')->pluck('n', 'user_id');
+        $certified = Certificate::where('course_id', $course->id)->whereIn('user_id', $userIds)->where('status', 'valid')->pluck('user_id')->flip();
+
         return response()->json([
-            'students' => $enrollments->map(fn (Enrollment $e) => $this->studentRow($e, $lessons, $learning))->values(),
+            'students' => $enrollments->map(fn (Enrollment $e) => $this->studentRow($e, $lessons, $learning, (int) ($done[$e->user_id] ?? 0), $certified->has($e->user_id)))->values(),
         ]);
     }
 
@@ -150,9 +157,9 @@ class CourseBuilderController extends Controller
         return response()->json(['student' => $this->studentRow($e, $learning->lessons($course), $learning)]);
     }
 
-    private function studentRow(Enrollment $e, $lessons, LearningService $learning): array
+    private function studentRow(Enrollment $e, $lessons, LearningService $learning, ?int $done = null, ?bool $certificate = null): array
     {
-        $done = $learning->completedIds($e->user, $lessons)->count();
+        $done ??= $learning->completedIds($e->user, $lessons)->count();
 
         return [
             'id' => $e->user->id,
@@ -161,7 +168,7 @@ class CourseBuilderController extends Controller
             'email' => $e->user->email,
             'progress' => $lessons->count() ? (int) floor($done / $lessons->count() * 100) : 0,
             'attended' => $e->attended_at?->format('d/m/Y'),
-            'certificate' => Certificate::where('user_id', $e->user_id)->where('course_id', $e->course_id)->where('status', 'valid')->exists(),
+            'certificate' => $certificate ?? Certificate::where('user_id', $e->user_id)->where('course_id', $e->course_id)->where('status', 'valid')->exists(),
         ];
     }
 

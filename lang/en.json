@@ -1585,5 +1585,6 @@
     "Este pedido já tinha sido tratado.": "This request had already been handled.",
     "Só um admin pode desativar a conta de outro admin.": "Only an admin can deactivate another admin account.",
     "Só um admin pode reativar a conta de um admin.": "Only an admin can reactivate an admin account.",
-    "Só um admin pode dar o perfil de admin ou alterar a conta de um admin.": "Only an admin can give the admin profile or change an admin account."
+    "Só um admin pode dar o perfil de admin ou alterar a conta de um admin.": "Only an admin can give the admin profile or change an admin account.",
+    "sim": "yes"
 }

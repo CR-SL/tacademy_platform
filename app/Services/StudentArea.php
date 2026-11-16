@@ -20,8 +20,19 @@ class StudentArea
 {
     public function __construct(private LearningService $learning) {}
 
-    /** Inscrições com o curso e o programa carregados; cursos apagados ficam de fora. */
+    /** Inscrições já carregadas neste pedido, por pessoa (a classe é única por pedido: AppServiceProvider). */
+    private array $enrolled = [];
+
+    /**
+     * Inscrições com o curso e o programa carregados; cursos apagados ficam de fora.
+     * O Início pedia-as cerca de 8 vezes; agora carregam-se uma vez por pedido.
+     */
     private function enrollments(User $user): Collection
+    {
+        return $this->enrolled[$user->id] ??= $this->loadEnrollments($user);
+    }
+
+    private function loadEnrollments(User $user): Collection
     {
         return Enrollment::with([
             'course',
@@ -314,10 +325,13 @@ class StudentArea
     public function documents(User $user): array
     {
         $done = $this->doneIds($user);
+        // Anexos de todos os cursos de uma vez (antes era uma consulta por curso)
+        $allFiles = LessonAttachment::whereIn('lesson_id', $this->enrollments($user)->flatMap(fn ($e) => $this->courseLessons($e->course)->pluck('id')))
+            ->orderBy('order_index')->get()->toBase()->groupBy('lesson_id');
 
-        return $this->enrollments($user)->map(function (Enrollment $e) use ($done) {
+        return $this->enrollments($user)->map(function (Enrollment $e) use ($done, $allFiles) {
             $lessons = $this->courseLessons($e->course);
-            $files = LessonAttachment::whereIn('lesson_id', $lessons->pluck('id'))->orderBy('order_index')->get()->groupBy('lesson_id');
+            $files = $allFiles->only($lessons->pluck('id')->all());
             $sections = $e->course->modules->map(fn ($m) => [
                 'title' => $m->title,
                 'files' => $m->lessons->flatMap(fn ($l) => $files->get($l->id, collect())->map(fn ($f) => [

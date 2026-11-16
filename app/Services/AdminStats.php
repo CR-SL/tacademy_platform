@@ -41,15 +41,18 @@ class AdminStats
             ->when($since, fn ($q) => $q->where('contact_requests.created_at', '>=', $since));
     }
 
-    /** Vendas e receita por curso, nos últimos 30 dias. */
+    /** Contas já feitas neste pedido (a página Geral pedia as mesmas 2 ou 3 vezes; a classe é única por pedido). */
+    private array $memo = [];
+
+    /** Vendas e receita por curso, nos últimos 30 dias (com o ulid, para o link do curso sem outra consulta). */
     public function salesByCourse(): Collection
     {
-        return $this->personalSales(null, $this->since())
+        return $this->memo['sales'] ??= $this->personalSales(null, $this->since())
             ->join('courses', 'courses.id', '=', 'contact_requests.course_id')
-            ->groupBy('contact_requests.course_id', 'courses.title', 'courses.price')
-            ->selectRaw('contact_requests.course_id, courses.title, courses.price, count(*) as n')
+            ->groupBy('contact_requests.course_id', 'courses.title', 'courses.price', 'courses.ulid')
+            ->selectRaw('contact_requests.course_id, courses.title, courses.price, courses.ulid, count(*) as n')
             ->get()
-            ->map(fn ($r) => ['id' => $r->course_id, 'title' => $r->title, 'sales' => (int) $r->n, 'revenue' => round($r->n * (float) $r->price, 2)])
+            ->map(fn ($r) => ['id' => $r->course_id, 'ulid' => $r->ulid, 'title' => $r->title, 'sales' => (int) $r->n, 'revenue' => round($r->n * (float) $r->price, 2)])
             ->sortByDesc('revenue')->values();
     }
 
@@ -72,7 +75,7 @@ class AdminStats
     /** Cliques por curso nos últimos 30 dias: [course_id => n]. */
     public function viewsByCourse(): Collection
     {
-        return CourseView::where('created_at', '>=', $this->since())
+        return $this->memo['views'] ??= CourseView::where('created_at', '>=', $this->since())
             ->groupBy('course_id')->selectRaw('course_id, count(*) as n')->pluck('n', 'course_id');
     }
 
@@ -91,17 +94,36 @@ class AdminStats
     /** Conclusão por curso: inscritos, concluíram, começaram (com pelo menos uma aula tocada). */
     public function completion(?int $courseId = null): Collection
     {
+        if ($courseId === null) {
+            return $this->memo['completion'] ??= $this->computeCompletion(null);
+        }
+
+        return $this->computeCompletion($courseId);
+    }
+
+    private function computeCompletion(?int $courseId): Collection
+    {
         $courses = Course::where('status', 'published')
             ->when($courseId, fn ($q) => $q->whereKey($courseId))
-            ->with(['lessons:lessons.id'])
             ->withCount(['enrollments', 'enrollments as done_count' => fn ($q) => $q->where('status', 'completed')])
             ->orderBy('title')->get();
 
-        return $courses->map(function (Course $c) {
-            $lessonIds = $c->lessons->pluck('id');
-            $started = $lessonIds->isEmpty() ? 0 : Enrollment::where('course_id', $c->id)
-                ->whereIn('user_id', LessonProgress::whereIn('lesson_id', $lessonIds)->select('user_id'))
-                ->count();
+        // Inscritos que já tocaram em alguma aula do curso, de todos os cursos numa só consulta
+        // (antes era uma por curso); as aulas e módulos apagados não contam, como em Course::lessons
+        $startedByCourse = DB::table('enrollments')
+            ->whereIn('enrollments.course_id', $courses->modelKeys())
+            ->whereExists(fn ($q) => $q->from('lesson_progress')
+                ->join('lessons', 'lessons.id', '=', 'lesson_progress.lesson_id')
+                ->join('modules', 'modules.id', '=', 'lessons.module_id')
+                ->whereColumn('lesson_progress.user_id', 'enrollments.user_id')
+                ->whereColumn('modules.course_id', 'enrollments.course_id')
+                ->whereNull('lessons.deleted_at')->whereNull('modules.deleted_at'))
+            ->groupBy('enrollments.course_id')
+            ->selectRaw('enrollments.course_id as course_id, count(*) as n')
+            ->pluck('n', 'course_id');
+
+        return $courses->map(function (Course $c) use ($startedByCourse) {
+            $started = (int) ($startedByCourse[$c->id] ?? 0);
 
             return [
                 'id' => $c->id,
@@ -143,9 +165,10 @@ class AdminStats
         $views = $this->viewsByCourse();
         $sold = $this->salesByCourse()->keyBy('id');
         $titles = Course::whereIn('id', $views->keys())->pluck('title', 'id');
+        $ulids = Course::whereIn('id', $views->keys())->pluck('ulid', 'id');
         foreach ($views as $courseId => $n) {
             if ($n >= 20 && ! $sold->has($courseId)) {
-                $items[] = ['kind' => 'curso', 'title' => $titles[$courseId] ?? '', 'text' => __(':n cliques no catálogo e nenhuma compra nos últimos 30 dias. Rever o preço ou a apresentação?', ['n' => $n]), 'url' => '/administracao/cursos/'.Course::find($courseId)?->ulid];
+                $items[] = ['kind' => 'curso', 'title' => $titles[$courseId] ?? '', 'text' => __(':n cliques no catálogo e nenhuma compra nos últimos 30 dias. Rever o preço ou a apresentação?', ['n' => $n]), 'url' => '/administracao/cursos/'.($ulids[$courseId] ?? '')];
             }
         }
         foreach ($this->completion() as $c) {

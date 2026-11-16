@@ -140,6 +140,15 @@ class Tasks
     /** Cursos do formador que pedem presença, com quantos alunos já fizeram tudo e só falta a presença. */
     public function attendanceWaiting(User $user): array
     {
+        // Pedido 3 vezes no Início do formador (números, Pendentes, caixa): conta-se uma vez por pedido
+        return $this->waiting[$user->id] ??= $this->countWaiting($user);
+    }
+
+    /** Já calculado neste pedido, por pessoa (a classe é única por pedido: AppServiceProvider). */
+    private array $waiting = [];
+
+    private function countWaiting(User $user): array
+    {
         $courses = Course::where('instructor_id', $user->id)->where('requires_attendance', true)->get();
         $out = [];
         foreach ($courses as $course) {
@@ -147,8 +156,11 @@ class Tasks
             if ($lessons->isEmpty()) {
                 continue;
             }
-            $waiting = Enrollment::with('user')->where('course_id', $course->id)->whereNull('attended_at')->get()
-                ->filter(fn ($e) => $e->user && $this->learning->completedIds($e->user, $lessons)->count() >= $lessons->count())
+            // Uma consulta por curso: alunos (contas ativas) sem presença que já concluíram todas as aulas
+            $waiting = Enrollment::where('course_id', $course->id)->whereNull('attended_at')
+                ->whereHas('user')
+                ->whereIn('user_id', LessonProgress::whereIn('lesson_id', $lessons->pluck('id'))->where('status', 'completed')
+                    ->groupBy('user_id')->havingRaw('COUNT(DISTINCT lesson_id) >= ?', [$lessons->count()])->select('user_id'))
                 ->count();
             if ($waiting) {
                 $out[] = ['course' => $course, 'count' => $waiting];

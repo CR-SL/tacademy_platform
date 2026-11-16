@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\AdminStats;
 use App\Support\Activity;
+use App\Support\Csv;
 use App\Support\Permissions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -65,7 +66,7 @@ class AdminController extends Controller
                 'vendas' => [
                     'overview' => $this->stats->overview(),
                     'months' => $this->stats->salesByMonth(),
-                    'byCourse' => $this->stats->salesByCourse()->map(fn ($r) => [...$r, 'ulid' => Course::find($r['id'])?->ulid]),
+                    'byCourse' => $this->stats->salesByCourse(), // já traz o ulid
                 ],
                 'cliques' => ['catalog' => $this->stats->catalog()],
                 'catalogo' => [
@@ -289,11 +290,12 @@ class AdminController extends Controller
             fputcsv($out, [__('Data'), __('Hora'), __('Quem'), __('Perfil'), __('Ação'), __('Grupo'), __('Sobre'), __('Afetado'), __('Detalhe'), 'IP', __('Browser')], ';');
             $this->activityQuery($f)->limit(10000)->get()->each(function (ActivityLog $a) use ($out) {
                 $r = $this->activityRow($a);
-                fputcsv($out, [
+                // Csv::row: nomes, títulos e o browser podem vir de quem usa a plataforma (ex.: "=HYPERLINK(...)")
+                fputcsv($out, Csv::row([
                     $a->created_at->format('Y-m-d'), $a->created_at->format('H:i:s'), $r['who']['name'] ?? __('Sem sessão'), $r['who']['role'] ?? '',
                     $r['verb'], $r['group'], $r['subject']['label'] ?? '', $r['related']['name'] ?? '',
                     $a->properties ? json_encode($a->properties, JSON_UNESCAPED_UNICODE) : '', $a->ip, $a->user_agent,
-                ], ';');
+                ]), ';');
             });
             fclose($out);
         }, 'registo-atividade-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);

