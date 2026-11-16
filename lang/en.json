@@ -709,7 +709,6 @@
     "Os documentos dos teus cursos aparecem aqui.": "Your courses' documents appear here.",
     "Os documentos são teus para sempre, mesmo depois de terminares o curso.": "The documents are yours to keep, even after you finish the course.",
     "Os emails sobre o acesso aos cursos, os cursos que te atribuem e a palavra-passe chegam sempre.": "Emails about access to courses, courses assigned to you and your password always arrive.",
-    "Os ficheiros desta aula estão aqui em baixo.": "This lesson's files are below.",
     "Os meus": "My",
     "Os meus cursos": "My courses",
     "Os meus cursos ·": "My courses ·",
@@ -1624,5 +1623,11 @@
     "A carregar ficheiro… não feches a página.": "Uploading file… don't close the page.",
     " · a carregar ficheiro…": " · uploading file…",
     "Vídeo “:name”: :error": "Video “:name”: :error",
-    "Ficheiro “:name”: :error": "File “:name”: :error"
+    "Ficheiro “:name”: :error": "File “:name”: :error",
+    "Ficheiros": "Files",
+    "Descarregar :name": "Download :name",
+    "1 ficheiro": "1 file",
+    ":n ficheiros": ":n files",
+    "só descarregar": "download only",
+    "Ver aqui": "View here"
 }

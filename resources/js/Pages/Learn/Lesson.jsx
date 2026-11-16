@@ -9,9 +9,10 @@ import QuickChecks from '@/Components/Learn/QuickChecks';
 import LessonNotes from '@/Components/Learn/LessonNotes';
 import MicCheck from '@/Components/Learn/MicCheck';
 import { ModulesRail, ModuleSheet, ModulesStrip } from '@/Components/Learn/LessonModules';
-import { IconCheck, IconDoc, IconDown, IconHelp, IconLeft, IconPen, IconRight, IconSide, IconSwap, IconUser, IconVideo, IconX } from '@/Components/Learn/LessonIcons';
+import { IconCheck, IconDoc, IconDown, IconDownload, IconHelp, IconLeft, IconPen, IconRight, IconSide, IconSwap, IconUser, IconVideo, IconX } from '@/Components/Learn/LessonIcons';
 import { FlashToast, Toast, useFocusTrap } from '@/Components/ui';
 import AlexLessonPanel, { AlexEvaluationPanel, endEvaluationCall, startEvaluationCall } from '@/Components/Alex/AlexLessonPanel';
+import { PlatformNav } from '@/Layouts/StudentLayout';
 import '../../../css/lesson.css';
 
 import { t } from '@/i18n';
@@ -44,6 +45,8 @@ function EvaluationEnd({ endsAt, onEnd }) {
 }
 const isVideoType = (tx) => tx === 'video_link' || tx === 'video_upload';
 const isPdf = (a) => /\.pdf$/i.test(a.url);
+const fileExt = (a) => (a.name.match(/\.([a-z0-9]+)$/i)?.[1] ?? '').toUpperCase();
+const fileSize = (b) => (!b ? '' : b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
 
 // O aluno mantém os painéis e os tamanhos ao passar de aula (até recarregar a página)
 // place: em que lugar está cada painel (L1/L2 à esquerda, R1/R2 à direita; 1 em cima, 2 em baixo)
@@ -140,7 +143,9 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     const [rail, setRail] = useState(memory.rail);
     const [minBar, setMinBar] = useState(false);
     const [sheet, setSheet] = useState(null);
-    const [attachment, setAttachment] = useState(0);
+    // Ficheiro aberto na caixa do material (null = a lista dos ficheiros, opção A de 2026-11-16)
+    const [attachment, setAttachment] = useState(null);
+    useEffect(() => { setAttachment(null); }, [lesson.ulid]);
 
     // Tamanhos das divisórias, em %
     const [splitX, setSplitX] = useState(memory.splitX);
@@ -369,7 +374,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
         </div>
     );
 
-    const viewer = (lesson.type === 'document' || hasPlayer) && lesson.attachments[attachment] && isPdf(lesson.attachments[attachment]) ? lesson.attachments[attachment] : null;
+    const viewer = attachment != null && lesson.attachments[attachment] && isPdf(lesson.attachments[attachment]) ? lesson.attachments[attachment] : null;
 
     // Cada painel numa função, para ir para o lugar que o aluno escolher (as chaves evitam recarregar na mesma coluna)
     const sections = {
@@ -432,7 +437,14 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                         <QuizRunner key={lesson.ulid} lessonUlid={lesson.ulid} quiz={lesson.quiz} canSave={canSave} />
                     </div></div>
                 ) : viewer ? (
-                    <iframe className="al-pdf" src={`${viewer.url}#view=FitH`} title={viewer.name} />
+                    <>
+                        <div className="al-fv">
+                            <button type="button" className="al-tb-b" onClick={() => setAttachment(null)}><IconLeft />{t('Ficheiros')}</button>
+                            <b title={viewer.name}>{viewer.name}</b>
+                            <a className="al-tb-b" href={viewer.url} download={viewer.name} aria-label={t('Descarregar :name', { name: viewer.name })}><IconDownload /></a>
+                        </div>
+                        <iframe className="al-pdf al-pdf-in" src={`${viewer.url}#view=FitH`} title={viewer.name} />
+                    </>
                 ) : (
                     <div className="al-m-scroll"><div className="al-card">
                         <h2>{lesson.title}</h2>
@@ -445,20 +457,28 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                                     : <p>{t('O link do avatar ainda não foi configurado.')}</p>}
                             </div>
                         )}
-                        {lesson.type !== 'text' && lesson.type !== 'avatar' && (
-                            <p>{lesson.attachments.length ? t('Os ficheiros desta aula estão aqui em baixo.') : t('Esta aula não tem material de apoio.')}</p>
+                        {lesson.type !== 'text' && lesson.type !== 'avatar' && !lesson.attachments.length && (
+                            <p>{t('Esta aula não tem material de apoio.')}</p>
+                        )}
+                        {lesson.attachments.length > 0 && (
+                            <div className="al-files">
+                                <small>{lesson.attachments.length === 1 ? t('1 ficheiro') : t(':n ficheiros', { n: lesson.attachments.length })}</small>
+                                <ul>
+                                    {lesson.attachments.map((a, i) => (
+                                        <li key={a.url}>
+                                            <span className={`al-ext ${isPdf(a) ? 'pdf' : ''}`}>{fileExt(a)}</span>
+                                            <span className="al-fn">
+                                                <b title={a.name}>{a.name}</b>
+                                                <small>{[fileSize(a.size), !isPdf(a) && t('só descarregar')].filter(Boolean).join(' · ')}</small>
+                                            </span>
+                                            {isPdf(a) && <button type="button" className="al-pill" onClick={() => setAttachment(i)}>{t('Ver aqui')}</button>}
+                                            <a className="al-tb-b" href={a.url} download={a.name} aria-label={t('Descarregar :name', { name: a.name })}><IconDownload /></a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         )}
                     </div></div>
-                )}
-                {lesson.attachments.length > 0 && (
-                    <div className="al-m-foot">
-                        {lesson.attachments.map((a, i) => (
-                            <a key={a.url} className={`al-file ${viewer === a ? 'on' : ''}`} href={a.url} target="_blank" rel="noopener noreferrer" title={a.name}
-                                onClick={(e) => { if ((lesson.type === 'document' || hasPlayer) && isPdf(a) && viewer !== a) { e.preventDefault(); setAttachment(i); } }}>
-                                {a.name} ⭳
-                            </a>
-                        ))}
-                    </div>
                 )}
             </section>
         ],
@@ -474,6 +494,9 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     return (
         <div className="al" style={{ '--al-split': `${splitM}%` }}>
             <Head title={`${lesson.title} · ${course.title}`} />
+
+            {/* A barra da plataforma (janelas largas): o aluno passa para os outros separadores sem sair pelo menu */}
+            <PlatformNav className="al-nav" activeKey={mode === 'enrolled' ? 'mine' : 'catalog'} />
 
             <header className="al-head">
                 <Link className="al-logo" href={mode === 'enrolled' ? `/plataforma/meus-cursos?curso=${course.slug}` : mode === 'sample' ? `/plataforma/cursos?curso=${course.slug}` : `/plataforma/cursos/${course.slug}`} aria-label={t('Voltar ao curso :title', { title: course.title })}>
@@ -581,6 +604,11 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                 <footer className="al-foot">
                     <div className="al-f-l">
                         <button type="button" className={`al-f-b ${rail ? 'on' : ''}`} disabled={running} aria-expanded={rail} onClick={() => setRail(!rail)}><IconSide />{t('Módulos')}</button>
+                        {/* Janelas largas: o módulo e a aula ficam aqui (o cabeçalho da aula dá lugar à barra da plataforma) */}
+                        <div className="al-f-t" title={`${moduleOfLesson?.title ?? ''} · ${lesson.title}`}>
+                            <b><span className="n">{numOf(lesson.ulid)}</span> {moduleOfLesson?.title}</b>
+                            <small>{lesson.title}</small>
+                        </div>
                         <span className="al-f-sep" />
                         {prevOpen
                             ? <Link className="al-f-b" href={lessonUrl(prev.ulid)} aria-label={t('Aula anterior')} title={prev.title}><IconLeft /><span className="num">{numOf(prev.ulid)}</span></Link>

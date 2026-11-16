@@ -132,15 +132,13 @@ export function initials(name = '') {
         .toUpperCase();
 }
 
-export default function StudentLayout({ children, navTools }) {
-    const { auth, staffInbox, access, navCounts, can } = usePage().props;
+// Opções da navegação e qual está ativa (a barra de cima e a de baixo usam as mesmas).
+// activeKey: para páginas que não têm "access" (ex.: a aula diz que é "Os meus cursos")
+function usePlatformNav(activeKey) {
+    const { auth, access, can } = usePage().props;
     const currentUrl = usePage().url;
-    const user = auth?.user ?? {};
     const guest = !auth?.user;
     const navItems = navFor(can, auth?.role, auth?.worksOnly, guest);
-    const { theme, toggle } = useTheme();
-    const dark = theme === 'dark';
-
 
     const isActive = ({ href, exact }) => {
         const path = currentUrl.split('?')[0];
@@ -149,12 +147,22 @@ export default function StudentLayout({ children, navTools }) {
     // Páginas de um curso: contam como "Os meus cursos" para quem está inscrito e como "Catálogo" para os outros
     const inCourse = currentUrl.startsWith('/plataforma/cursos/');
     const enrolled = access?.mode === 'enrolled';
-    const active = (item) => isActive(item)
-        || (inCourse && item.key === (enrolled ? 'mine' : 'catalog'));
+    const active = (item) => (activeKey ? item.key === activeKey : isActive(item)
+        || (inCourse && item.key === (enrolled ? 'mine' : 'catalog')));
+
+    return { navItems, active, guest };
+}
+
+// Barra de cima da plataforma (também na página da aula, 2026-11-16)
+export function PlatformNav({ navTools, activeKey, className = '' }) {
+    const { auth, staffInbox, navCounts } = usePage().props;
+    const { navItems, active, guest } = usePlatformNav(activeKey);
+    const user = auth?.user ?? {};
+    const { theme, toggle } = useTheme();
+    const dark = theme === 'dark';
 
     return (
-        <div className="min-h-screen bg-page text-ink">
-            <header className="pn-nav">
+            <header className={`pn-nav ${className}`}>
                 <Link href={auth?.home ?? '/dashboard'} className="pn-logo" aria-label={t('T.Academy, início')}>
                     <img className="ta-logo-light" src="/images/brand/logo-nav.png" alt="T.Academy" />
                     <img className="ta-logo-dark" src="/images/brand/logo-nav-dark.png" alt="" />
@@ -196,6 +204,16 @@ export default function StudentLayout({ children, navTools }) {
                     )}
                 </div>
             </header>
+    );
+}
+
+export default function StudentLayout({ children, navTools }) {
+    const { staffInbox, navCounts } = usePage().props;
+    const { navItems, active } = usePlatformNav();
+
+    return (
+        <div className="min-h-screen bg-page text-ink">
+            <PlatformNav navTools={navTools} />
 
             <main className="pn-main">{children}</main>
 

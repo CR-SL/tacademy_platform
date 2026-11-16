@@ -118,10 +118,21 @@ a.al-les:hover { background: var(--al-hover); }
 .al-card h2 { margin: 0 0 16px; font: 500 21px/1.2 Archivo, sans-serif; letter-spacing: -.01em; }
 .al-card p { margin: 0 0 12px; font-size: 14.5px; color: var(--al-body); white-space: pre-line; }
 .al-pdf { flex: 1; min-height: 0; width: 100%; border: 0; background: var(--color-on-carbon); padding-top: 44px; }
-.al-m-foot { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--color-surface); border-top: 1px solid var(--color-line); font-size: 13px; overflow-x: auto; scrollbar-width: none; }
-.al-file { flex: none; max-width: 240px; padding: 3px 9px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.al-file:hover { background: var(--color-surface2); }
-.al-file.on { background: var(--color-surface2); font-weight: 500; }
+/* Ficheiros da aula (opção A, 2026-11-16): lista com tipo, tamanho, "Ver aqui" (PDF) e descarregar */
+.al-files { margin-top: 18px; }
+.al-files > small { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+.al-files ul { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--color-line); }
+.al-files li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--color-line); }
+.al-ext { flex: none; min-width: 42px; padding: 3px 6px; text-align: center; font: 600 11px/1.2 ui-monospace, monospace; background: var(--color-surface2); color: var(--color-ink); }
+.al-ext.pdf { background: var(--color-ink); color: var(--color-on-ink); }
+.al-fn { flex: 1; min-width: 0; display: grid; line-height: 1.3; }
+.al-fn b { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.al-fn small { font-size: 12px; color: var(--color-muted); }
+.al-files .al-pill { flex: none; }
+/* PDF aberto: barra com voltar à lista, nome e descarregar (por baixo da barra do painel) */
+.al-fv { flex: none; display: flex; align-items: center; gap: 10px; margin-top: 44px; padding: 6px 12px; background: var(--color-surface); border-bottom: 1px solid var(--color-line); font-size: 13.5px; }
+.al-fv b { flex: 1; min-width: 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.al-pdf.al-pdf-in { padding-top: 0; }
 .al-avatar-card { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
 
 /* Notas */
@@ -251,7 +262,6 @@ a.al-les:hover { background: var(--al-hover); }
     .al-m-scroll { padding: 42px 22px 18px; }
     .al-card { padding: 22px 20px; }
     .al-card h2 { font-size: 18px; }
-    .al-m-foot { padding: 8px 12px; }
     .al-n-scroll { padding: 18px 16px 10px; scrollbar-width: none; }
     .al-note .rm { opacity: 1; }
     .al-n-form { padding: 10px 16px; }
@@ -293,4 +303,18 @@ a.al-les:hover { background: var(--al-hover); }
 }
 @media (prefers-reduced-motion: reduce) {
     .al, .al * { animation: none !important; transition: none !important; }
+}
+
+/* Barra da plataforma por cima da aula (2026-11-16), só quando cabe com as opções (como nas outras páginas).
+   Com ela, o cabeçalho da aula sai: o logótipo, o tema e a conta estão na barra (a ajuda em Contactos, no menu
+   da conta) e o módulo e a aula passam para a barra de baixo, ao lado de "Módulos". */
+.al-nav { display: none; }
+.al-f-t { display: none; }
+@media (min-width: 1101px) {
+    .al-nav { display: flex; position: static; }
+    .al-head { display: none; }
+    .al-f-t { display: grid; min-width: 0; line-height: 1.25; }
+    .al-f-t b { font: 600 13.5px Archivo, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .al-f-t b .n { font-weight: 500; color: var(--color-muted); }
+    .al-f-t small { font-size: 12px; color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
