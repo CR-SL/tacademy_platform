@@ -130,7 +130,12 @@ class CourseBuilder
     {
         $this->uploaderId = $uploaderId;
 
-        return DB::transaction(function () use ($course, $data) {
+        // O que já faltava antes desta gravação (num curso publicado): não volta a bloquear a gravação
+        $missingBefore = $course->exists && $course->status === 'published'
+            ? collect($this->publishProblems($course->fresh()))->pluck(0)
+            : collect();
+
+        return DB::transaction(function () use ($course, $data, $missingBefore) {
             $isFree = (bool) ($data['is_free'] ?? false);
             $title = trim($data['title'] ?? '');
 
@@ -239,11 +244,15 @@ class CourseBuilder
                 'sample_lesson_id' => $sample ? ($maps['lessons'][$sample] ?? null) : null,
             ])->save();
 
-            // Um curso publicado nunca fica incompleto no catálogo: se faltar alguma coisa, a gravação é recusada
-            // (o editor mostra o aviso e guarda quando estiver completo). Para mexer a fundo, passa-se a rascunho.
-            if ($course->status === 'published' && ($problems = $this->publishProblems($course))) {
+            // Um curso publicado não fica mais incompleto no catálogo: se esta gravação deixar a faltar alguma
+            // coisa nova, é recusada (o editor mostra o aviso e guarda quando estiver completo). O que já faltava
+            // antes (por ex. um vídeo que não ficou no servidor) não bloqueia: senão nada se gravava, nem anexos.
+            $new = $course->status === 'published'
+                ? collect($this->publishProblems($course))->pluck(0)->diff($missingBefore)
+                : collect();
+            if ($new->isNotEmpty()) {
                 throw ValidationException::withMessages(['course' => __('Este curso está publicado e não pode ficar incompleto. Falta: :items. Completa-o ou passa-o a rascunho para gravar.', [
-                    'items' => collect($problems)->pluck(0)->implode(', '),
+                    'items' => $new->implode(', '),
                 ])]);
             }
 

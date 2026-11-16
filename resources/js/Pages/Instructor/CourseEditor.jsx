@@ -248,7 +248,7 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
 
                 <section className="min-w-0">
                     {save === 'error' && (
-                        <p role="alert" className="mb-3 bg-live/10 px-4 py-2.5 text-sm text-live-ink lg:hidden">{saveError}</p>
+                        <p role="alert" className="mb-3 bg-live/10 px-4 py-2.5 text-sm text-live-ink">{saveError}</p>
                     )}
                     {step === 0 && <StepInfo c={c} update={update} categories={categories} library={library} shortMax={shortMax} upload={upload} />}
                     {step === 1 && <StepProgram c={c} update={update} upload={upload} openKey={openKey} setOpenKey={setOpenKey} />}

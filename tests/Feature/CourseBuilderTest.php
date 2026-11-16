@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Course;
+use App\Models\LessonAttachment;
 use App\Models\LessonProgress;
 use App\Models\QuizAttempt;
 use App\Models\Role;
@@ -205,6 +206,29 @@ class CourseBuilderTest extends TestCase
         $course->update(['status' => 'draft']);
         $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
         $this->assertCount(0, $course->lessons()->get());
+    }
+
+    public function test_a_published_course_already_missing_something_still_saves_other_changes(): void
+    {
+        $formador = $this->user('formador');
+        $this->actingAs($formador)->postJson('/formador/cursos', $this->payload())->assertCreated();
+        $course = Course::firstOrFail();
+        $course->update(['status' => 'published']);
+        // Um vídeo que ficou sem endereço (por ex. não chegou a ficar no servidor)
+        $course->lessons()->where('content_type', 'video_link')->update(['content_url' => null]);
+
+        // Juntar um anexo a outra aula grava na mesma
+        Storage::fake('public');
+        $path = CourseBuilder::UPLOAD_DIR.'/'.CourseBuilder::attachmentDir($formador->id).'/ficha.pdf';
+        Storage::disk('public')->put($path, '%PDF-1.4');
+        $data = $this->editorState($course);
+        $data['modules'][0]['lessons'][1]['attachments'] = [['name' => 'ficha.pdf', 'path' => $path]];
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
+        $this->assertSame(1, LessonAttachment::count());
+
+        // Deixar a faltar outra coisa (o título) continua a ser recusado
+        $data['title'] = '';
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertStatus(422)->assertJsonValidationErrors('course');
     }
 
     public function test_a_course_with_students_cannot_be_deleted(): void
