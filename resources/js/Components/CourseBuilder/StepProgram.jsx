@@ -191,11 +191,11 @@ function LessonEditor({ l, set, upload }) {
             </div>
 
             <div className="grid gap-x-4 sm:grid-cols-[1fr_150px]">
-                <Field label={t('Título da aula')} htmlFor={`${id}-t`} required>
+                <Field label={t('Título da aula')} id={`${id}-t`} required className="mb-5">
                     <input id={`${id}-t`} className={inputCls} value={l.title} maxLength={200} placeholder={t('Ex.: Introdução ao sistema')}
                         onChange={(e) => set((x) => { x.title = e.target.value; })} />
                 </Field>
-                <Field label={t('Duração (min)')} htmlFor={`${id}-m`}>
+                <Field label={t('Duração (min)')} id={`${id}-m`} className="mb-5">
                     <input id={`${id}-m`} type="number" min="0" max="600" className={inputCls} value={l.minutes} placeholder="10"
                         onChange={(e) => set((x) => { x.minutes = e.target.value === '' ? '' : Math.max(0, Math.min(600, parseInt(e.target.value, 10) || 0)); })} />
                 </Field>
@@ -204,11 +204,11 @@ function LessonEditor({ l, set, upload }) {
             {(l.type === 'video_link' || l.type === 'video_upload' || l.type === 'avatar') && (
                 <Field
                     label={l.type === 'avatar' ? t('Link do avatar de IA') : t('Link do vídeo')}
-                    htmlFor={`${id}-u`}
+                    id={`${id}-u`}
                     required
-                    help={l.type === 'avatar'
+                    hint={l.type === 'avatar'
                         ? t('O avatar abre dentro da aula. Mais tarde a ligação pode passar a ser feita por API.')
-                        : t('Carrega o vídeo (MP4) ou cola um link do YouTube (não listado), Vimeo ou outro.')}
+                        : t('Carrega o vídeo (MP4) ou cola um link do YouTube (não listado), Vimeo ou outro.')} className="mb-5"
                 >
                     {l.type !== 'avatar' && <VideoUpload l={l} set={set} />}
                     {!isUploadedVideo(l.url) && (
@@ -236,7 +236,7 @@ function LessonEditor({ l, set, upload }) {
             {(l.type === 'video_link' || l.type === 'video_upload') && <ChecksEditor l={l} set={set} />}
 
             {l.type === 'text' && (
-                <Field label={t('Conteúdo')} htmlFor={`${id}-b`} required>
+                <Field label={t('Conteúdo')} id={`${id}-b`} required className="mb-5">
                     <textarea id={`${id}-b`} rows={7} className={inputCls} value={l.body} placeholder={t('Escreve aqui a aula…')}
                         onChange={(e) => set((x) => { x.body = e.target.value; })} />
                 </Field>
@@ -305,7 +305,7 @@ function ChecksEditor({ l, set }) {
 
 function QuizEditor({ l, set }) {
     return (
-        <Field label={t('Perguntas')} required help={t('Marca a resposta certa em cada pergunta. Mínimo 2 opções.')}>
+        <Field label={t('Perguntas')} required hint={t('Marca a resposta certa em cada pergunta. Mínimo 2 opções.')} className="mb-5">
             {l.quiz.map((q, qi) => (
                 <div key={qi} className="mb-2 bg-page p-3.5">
                     <div className="flex gap-2">

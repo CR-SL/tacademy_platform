@@ -80,7 +80,6 @@ class CourseController extends Controller
             'next' => $next ? ['ulid' => $next->ulid, 'title' => $next->title, 'started' => $done->isNotEmpty(), 'finished' => $lessons->isNotEmpty() && $done->count() === $lessons->count()] : null,
             'sample' => $sample && $access['mode'] === 'none' ? ['ulid' => $sample->ulid, 'title' => $sample->title] : null,
             'certificate' => $this->learning->certificateStatus($user, $course, $lessons, $done),
-            'alexUrl' => $area->alexUrl($user),
             'savedLayout' => $area->layout($user, 'curso'),
         ]);
     }

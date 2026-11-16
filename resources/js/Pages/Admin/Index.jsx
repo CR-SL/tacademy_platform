@@ -1,7 +1,7 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import StudentLayout, { initials } from '@/Layouts/StudentLayout';
-import { Button, Chip, Drawer, Field, FlashToast, inputCls, Pills, useConfirm } from '@/Components/ui';
+import { Box, Button, Chip, Drawer, Field, FlashToast, inputCls, Kpi, Pills, useConfirm } from '@/Components/ui';
 import { Columns, Completion, fmtEuro, fmtInt, HBars } from '@/Components/Admin/Charts';
 import ActivityLog from '@/Components/Admin/ActivityLog';
 import { t } from '@/i18n';
@@ -62,25 +62,6 @@ function Head2({ title, sub, children }) {
         <div className="bo-head">
             <div><h1>{title}</h1>{sub && <p>{sub}</p>}</div>
             {children && <div className="flex flex-wrap gap-2">{children}</div>}
-        </div>
-    );
-}
-
-function Box({ title, chip, children, pad = true }) {
-    return (
-        <section className="bo-box">
-            <div className="bo-box-h"><span className="pn-lab">{title}</span>{chip}</div>
-            <div className={pad ? 'bo-box-b' : ''}>{children}</div>
-        </section>
-    );
-}
-
-function Kpi({ label, value, hint }) {
-    return (
-        <div className="bg-surface px-5 py-4">
-            <p className="pn-lab">{label}</p>
-            <p className="mt-1 font-display text-[28px] font-bold leading-none">{value}</p>
-            {hint && <p className="mt-2 text-[12.5px] text-muted">{hint}</p>}
         </div>
     );
 }
@@ -252,7 +233,7 @@ function AlexSection({ data }) {
                             ))}</tbody>
                         </table>
                     </div>
-                ) : <p className="bo-box-b text-muted">{t('Nenhum curso tem o avatar ligado.')}</p>}
+                ) : <p className="ui-box-b text-muted">{t('Nenhum curso tem o avatar ligado.')}</p>}
             </Box>
             <p className="bo-note">{t('Desbloquear não volta a ligar o avatar: o curso fica sem ele até o formador o ligar no editor.')}</p>
             {confirmDialog}
@@ -275,9 +256,9 @@ function Areas({ areas }) {
     };
 
     return (
-        <section className="bo-box" style={{ marginTop: 12 }}>
-            <div className="bo-box-h"><span className="pn-lab">{t('Áreas')}</span></div>
-            <div className="bo-box-b">
+        <section className="ui-box" style={{ marginTop: 12 }}>
+            <div className="ui-box-h"><span className="pn-lab">{t('Áreas')}</span></div>
+            <div className="ui-box-b">
                 <form className="mb-3 flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); add.post('/administracao/areas', { preserveScroll: true, onSuccess: () => add.reset() }); }}>
                     <input className={inputCls} style={{ maxWidth: 320 }} value={add.data.name} maxLength={100} placeholder={t('Nome da área nova')} aria-label={t('Nome da área nova')} onChange={(e) => add.setData('name', e.target.value)} />
                     <Button variant="soft" type="submit" disabled={add.processing || !add.data.name.trim()}>{t('Criar área')}</Button>

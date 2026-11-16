@@ -39,7 +39,7 @@ function Detail({ r }) {
     );
 }
 
-export default function Assessments({ results, alexUrl, savedLayout }) {
+export default function Assessments({ results, savedLayout }) {
     const [selected, setSelected] = useState(() => {
         const wanted = Number(new URLSearchParams(window.location.search).get('teste'));
         return results.some((r) => r.id === wanted) ? wanted : results[0]?.id ?? null;
@@ -63,7 +63,7 @@ export default function Assessments({ results, alexUrl, savedLayout }) {
             title: t('Resultado'), x: 6, y: 0, w: 13, h: 18, compact: true, float: 'light',
             body: current ? <Detail r={current} /> : <EmptyPanel title={t('Sem resultados')} text={t('Os resultados dos testes aparecem aqui depois de os fazeres.')} href="/plataforma/meus-cursos" cta={t('Ver os meus cursos')} />,
         },
-        alex: alexDef(alexUrl, 0, 18),
+        alex: alexDef(0, 18),
     };
     const board = usePanelBoard({ view: 'avaliacoes', panels, saved: savedLayout });
 

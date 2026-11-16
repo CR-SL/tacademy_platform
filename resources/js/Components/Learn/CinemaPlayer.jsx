@@ -26,7 +26,7 @@ function segmentsOf(map, duration) {
 const Icon = ({ d, className = 'h-[18px] w-[18px]' }) => <svg viewBox="0 0 24 24" className={`${className} fill-current`} aria-hidden="true">{d}</svg>;
 const PLAY = <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z" />;
 const PAUSE = <><rect x="5.5" y="4" width="4.5" height="16" rx="1" /><rect x="14" y="4" width="4.5" height="16" rx="1" /></>;
-const TEN = <text x="12" y="16.5" fontSize="7" fontWeight="700" textAnchor="middle" fontFamily="Geist Mono, monospace">10</text>;
+const TEN = <text x="12" y="16.5" fontSize="7" fontWeight="700" textAnchor="middle" fontFamily="inherit">10</text>;
 const BACK = <><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z" />{TEN}</>;
 const FWD = <><path d="M12 5V2l5 4-5 4V7a6 6 0 1 0 6 6h2a8 8 0 1 1-8-8z" />{TEN}</>;
 const VOL = <path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z" />;
@@ -354,7 +354,7 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
                     <span className="absolute inset-y-0 left-[90%] z-[1] w-0.5 bg-white/70" title={t('Meta: 90%')} aria-hidden="true" />
                     <span className="absolute top-1/2 z-[2] -ml-[7px] -mt-[7px] h-3.5 w-3.5 scale-0 rounded-full bg-accent transition-transform duration-150 group-hover/tl:scale-100" style={{ left: pct(tx) }} aria-hidden="true" />
                     {tip && d > 0 && (
-                        <span className="pointer-events-none absolute bottom-[calc(100%+12px)] -translate-x-1/2 whitespace-nowrap bg-[#18181B] px-2 py-1 font-mono text-[11px] text-white"
+                        <span className="pointer-events-none absolute bottom-[calc(100%+12px)] -translate-x-1/2 whitespace-nowrap bg-carbon px-2 py-1 font-mono text-[11px] text-white"
                             style={{ left: `${Math.min(94, Math.max(6, tip.p * 100))}%` }}>
                             {fmt(tip.t)}
                         </span>

@@ -57,7 +57,8 @@ export function lessonComplete(l) {
         case 'text':
             return l.body.trim().length > 0;
         case 'quiz':
-            return l.quiz.length > 0 && l.quiz.every((q) => q.question.trim() && q.options.filter((o) => o.trim()).length >= 2);
+            // A opção certa tem de ter texto (igual a CourseBuilder::lessonComplete no servidor)
+            return l.quiz.length > 0 && l.quiz.every((q) => q.question.trim() && q.options.filter((o) => o.trim()).length >= 2 && (q.options[q.correct] ?? '').trim());
         default:
             return true;
     }

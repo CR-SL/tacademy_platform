@@ -85,12 +85,21 @@ class Enrollment extends Model
         return $lost->pluck('course_id')->values();
     }
 
-    /** A validade do acesso (access_months do curso, contada desde a inscrição) já passou. */
-    public function isExpired(): bool
+    /**
+     * Fim do acesso: access_months do curso contados desde a inscrição (null = sem fim).
+     * A única regra da validade: LearningService::access, StudentArea e o catálogo usam esta.
+     */
+    public function expiresAt(): ?Carbon
     {
         $months = $this->course?->access_months;
 
-        return $months && $this->enrolled_at && $this->enrolled_at->copy()->addMonths($months)->isPast();
+        return $months && $this->enrolled_at ? $this->enrolled_at->copy()->addMonths($months) : null;
+    }
+
+    /** A validade do acesso já passou. */
+    public function isExpired(): bool
+    {
+        return (bool) $this->expiresAt()?->isPast();
     }
 
     public function user(): BelongsTo

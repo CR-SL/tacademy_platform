@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Chip, FlashToast, btnClass, useConfirm } from '@/Components/ui';
+import { Chip, FlashToast, Kpi, btnClass, useConfirm } from '@/Components/ui';
 import AttendanceDrawer from '@/Components/CourseBuilder/AttendanceDrawer';
 import StudentLayout from '@/Layouts/StudentLayout';
 import { formatMinutes, levelLabels } from '@/Components/CourseBuilder/format';
@@ -124,11 +124,3 @@ export default function Courses({ courses, isAdmin }) {
     );
 }
 
-function Kpi({ label, value }) {
-    return (
-        <div className="bg-surface px-5 py-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted">{label}</p>
-            <p className="mt-1 font-display text-3xl font-bold">{value}</p>
-        </div>
-    );
-}

@@ -53,7 +53,7 @@ function Files({ course, query }) {
     );
 }
 
-export default function Documents({ courses, alexUrl, savedLayout }) {
+export default function Documents({ courses, savedLayout }) {
     const [selected, setSelected] = useState(() => (courses.find((c) => c.count > 0) ?? courses[0])?.id ?? null);
     const [query, setQuery] = useState('');
     const current = courses.find((c) => c.id === selected);
@@ -85,7 +85,7 @@ export default function Documents({ courses, alexUrl, savedLayout }) {
                 ? <Files key={current.id} course={current} query={query} />
                 : <EmptyPanel title={t('Ainda não tens documentos')} text={t('Os documentos dos teus cursos aparecem aqui.')} href="/plataforma/cursos" cta={t('Ver o catálogo')} />,
         },
-        alex: alexDef(alexUrl, 0, 20),
+        alex: alexDef(0, 20),
     };
     const board = usePanelBoard({ view: 'documentos', panels, saved: savedLayout });
 

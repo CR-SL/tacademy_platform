@@ -32,6 +32,9 @@ class LearningService
 
     public const MAX_VIDEO_SECONDS = 6 * 3600; // tamanho máximo do mapa de segundos vistos
 
+    /** Certificado emitido neste pedido (a página da aula dá os parabéns); null se nenhum saiu. */
+    public ?Certificate $lastIssued = null;
+
     /**
      * Segundos de vídeo novos que o servidor aceita: no máximo o tempo real que passou desde o último envio,
      * à velocidade máxima do leitor (2×), mais uma pequena folga. O leitor envia o mapa inteiro, por isso o que
@@ -50,7 +53,7 @@ class LearningService
     public function access(User $user, Course $course): array
     {
         $enrollment = Enrollment::where('user_id', $user->id)->where('course_id', $course->id)->first();
-        $expires = $enrollment && $course->access_months ? $enrollment->enrolled_at?->copy()->addMonths($course->access_months) : null;
+        $expires = $enrollment?->setRelation('course', $course)->expiresAt(); // a regra da validade está em Enrollment
         $canPreview = Gate::forUser($user)->allows('update', $course) || $user->isCourseStaff();
 
         $mode = match (true) {
@@ -305,7 +308,7 @@ class LearningService
                 return null;
             }
 
-            $certificate = Certificate::create([
+            $certificate = $this->lastIssued = Certificate::create([
                 'user_id' => $user->id,
                 'course_id' => $course->id,
                 'certificate_number' => $this->newNumber(),

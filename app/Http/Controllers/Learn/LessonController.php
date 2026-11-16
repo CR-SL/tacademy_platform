@@ -180,8 +180,10 @@ class LessonController extends Controller
 
     private function newCertificate(User $user, Course $course): ?\App\Models\Certificate
     {
-        return \App\Models\Certificate::where('user_id', $user->id)->where('course_id', $course->id)
-            ->where('issued_at', '>=', now()->subSeconds(10))->first();
+        // O certificado que saiu neste pedido (antes: "emitido há menos de 10 segundos", que podia falhar ou repetir)
+        $issued = $this->learning->lastIssued;
+
+        return $issued && $issued->user_id === $user->id && $issued->course_id === $course->id ? $issued : null;
     }
 
     private function doneMessage(User $user, Course $course, string $prefix = 'Aula concluída!'): string
@@ -241,7 +243,9 @@ class LessonController extends Controller
                 'questions' => $quiz->questions->map(fn ($q) => [
                     'id' => $q->id,
                     'question' => $q->question,
-                    'options' => $q->options->map(fn ($o) => ['id' => $o->id, 'text' => $o->option_text])->values(),
+                    // Opções vazias (o editor guarda-as enquanto o formador escreve) não aparecem ao aluno
+                    'options' => $q->options->filter(fn ($o) => trim($o->option_text) !== '')
+                        ->map(fn ($o) => ['id' => $o->id, 'text' => $o->option_text])->values(),
                     'correct' => $reveal ? $correct[$q->id] : null,
                 ])->values(),
                 'attempts' => $attempts->map(fn ($a) => [

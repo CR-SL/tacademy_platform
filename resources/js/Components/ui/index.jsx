@@ -44,21 +44,25 @@ export const IconClose = (props) => (
  * Campo com etiqueta, ajuda e erro. Liga sozinho a ajuda/erro ao campo (aria-describedby, aria-invalid)
  * quando o filho é um único elemento com o mesmo id.
  */
-export function Field({ id, label, hint, error, children, className = '' }) {
+// O único campo de formulário da plataforma (antes havia 3 versões: esta, a do editor de cursos e a da equipa).
+// `required` põe o asterisco; sem `id` (grupo de vários controlos) a etiqueta não aponta para um campo.
+export function Field({ id, label, hint, error, required, children, className = '' }) {
     const describedBy = error ? `${id}-err` : hint ? `${id}-hint` : undefined;
-    const child = Children.only(children);
-    const input = isValidElement(child) && child.props.id === id
+    const items = Children.toArray(children);
+    const child = items.length === 1 ? items[0] : null;
+    const input = id && isValidElement(child) && child.props.id === id
         ? cloneElement(child, {
             'aria-describedby': child.props['aria-describedby'] ?? describedBy,
             'aria-invalid': child.props['aria-invalid'] ?? (error ? true : undefined),
         })
-        : child;
+        : children;
+    const text = <>{label}{required && <span className="text-accent-ink" aria-hidden="true"> *</span>}</>;
     return (
         <div className={`flex flex-col gap-1.5 ${className}`}>
-            {label && <label htmlFor={id} className="ui-label">{label}</label>}
+            {label && (id ? <label htmlFor={id} className="ui-label">{text}</label> : <span className="ui-label">{text}</span>)}
             {input}
-            {hint && !error && <span id={`${id}-hint`} className="ui-hint">{hint}</span>}
-            {error && <span id={`${id}-err`} className="ui-err">{error}</span>}
+            {hint && !error && <span id={id ? `${id}-hint` : undefined} className="ui-hint">{hint}</span>}
+            {error && <span id={id ? `${id}-err` : undefined} className="ui-err">{error}</span>}
         </div>
     );
 }
@@ -101,6 +105,16 @@ export function Kpi({ label, value, hint, bar, alert }) {
             {bar !== undefined && <Bar value={bar} className="mt-2" />}
             {hint && <p className="mt-1 text-[12.5px] text-muted">{hint}</p>}
         </div>
+    );
+}
+
+/** Caixa com etiqueta de gaveta (e algo à direita, ex.: um contador). pad=false para tabelas de ponta a ponta. */
+export function Box({ title, right, pad = true, className = '', children }) {
+    return (
+        <section className={`ui-box ${className}`}>
+            {(title || right) && <div className="ui-box-h"><span className="pn-lab">{title}</span>{right}</div>}
+            <div className={pad ? 'ui-box-b' : ''}>{children}</div>
+        </section>
     );
 }
 

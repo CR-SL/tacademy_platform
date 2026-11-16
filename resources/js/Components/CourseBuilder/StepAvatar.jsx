@@ -24,11 +24,11 @@ export default function StepAvatar({ c, update, canAlex, canManageAlex }) {
                         </Toggle>
                         {c.alex_enabled && (
                             <div className="grid gap-x-4 pl-[52px] sm:grid-cols-2">
-                                <Field label={t('PAL ID')} htmlFor="f-alex-pal" className="mb-0" help={t('O Alex deste curso no Tavus. Vazio = o Alex geral da T.Academy.')}>
+                                <Field label={t('PAL ID')} id="f-alex-pal" hint={t('O Alex deste curso no Tavus. Vazio = o Alex geral da T.Academy.')}>
                                     <input id="f-alex-pal" className={`${inputCls} font-mono`} value={c.alex_pal_id} maxLength={64} placeholder="p18d6e1b675e" autoComplete="off" spellCheck={false}
                                         onChange={(e) => update((d) => { d.alex_pal_id = e.target.value.trim(); })} />
                                 </Field>
-                                <Field label={t('FACE ID')} htmlFor="f-alex-face" className="mb-0" help={t('O rosto do avatar. Vazio = o rosto do PAL.')}>
+                                <Field label={t('FACE ID')} id="f-alex-face" hint={t('O rosto do avatar. Vazio = o rosto do PAL.')}>
                                     <input id="f-alex-face" className={`${inputCls} font-mono`} value={c.alex_face_id} maxLength={64} placeholder="rdea4449f835" autoComplete="off" spellCheck={false}
                                         onChange={(e) => update((d) => { d.alex_face_id = e.target.value.trim(); })} />
                                 </Field>

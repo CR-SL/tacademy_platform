@@ -123,3 +123,8 @@ select.ui-input { padding-right: 36px; }
 @supports not selector(::-webkit-scrollbar) {
     * { scrollbar-width: thin; scrollbar-color: var(--color-accent) transparent; }
 }
+
+/* Caixa: etiqueta de gaveta no cabeçalho, linha por baixo (componente Box de Components/ui) */
+.ui-box { background: var(--color-surface); }
+.ui-box-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 0 18px; border-bottom: 1px solid var(--color-line); }
+.ui-box-b { padding: 16px 18px 18px; }

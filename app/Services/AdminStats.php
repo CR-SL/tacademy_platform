@@ -49,10 +49,11 @@ class AdminStats
     {
         return $this->memo['sales'] ??= $this->personalSales(null, $this->since())
             ->join('courses', 'courses.id', '=', 'contact_requests.course_id')
-            ->groupBy('contact_requests.course_id', 'courses.title', 'courses.price', 'courses.ulid')
-            ->selectRaw('contact_requests.course_id, courses.title, courses.price, courses.ulid, count(*) as n')
+            ->groupBy('contact_requests.course_id', 'courses.title', 'courses.ulid')
+            // Receita = soma do preço pago em cada compra (sem preço guardado, o preço atual do curso)
+            ->selectRaw('contact_requests.course_id, courses.title, courses.ulid, count(*) as n, SUM(COALESCE(contact_requests.amount, courses.price)) as total')
             ->get()
-            ->map(fn ($r) => ['id' => $r->course_id, 'ulid' => $r->ulid, 'title' => $r->title, 'sales' => (int) $r->n, 'revenue' => round($r->n * (float) $r->price, 2)])
+            ->map(fn ($r) => ['id' => $r->course_id, 'ulid' => $r->ulid, 'title' => $r->title, 'sales' => (int) $r->n, 'revenue' => round((float) $r->total, 2)])
             ->sortByDesc('revenue')->values();
     }
 
@@ -248,7 +249,9 @@ class AdminStats
         return [
             'views' => $views,
             'sales' => $sales,
-            'revenue' => round($sales * (float) $course->price, 2),
+            'revenue' => round((float) $this->personalSales($course->id, $this->since())
+                ->join('courses', 'courses.id', '=', 'contact_requests.course_id')
+                ->sum(DB::raw('COALESCE(contact_requests.amount, courses.price)')), 2),
             'allSales' => $this->personalSales($course->id)->count(),
             'enrolled' => $c['enrolled'],
             'started' => $c['started'],

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import StudentLayout, { initials } from '@/Layouts/StudentLayout';
 import { exportTeamCsv } from '@/Components/Teams/TeamReport';
 import { btn, Drawer, FlashToast, inputCls } from '@/Components/Teams/ui';
+import { Field } from '@/Components/ui';
 import PanelBoard, { alexDef, Bar, Crumb, PanelsMenu } from '@/Components/Panels/PanelBoard';
 import usePanelBoard from '@/Components/Panels/usePanelBoard';
 
@@ -57,7 +58,7 @@ function Person({ team, report, member, course, onAction }) {
 }
 
 // "Equipas" do team leader: só a sua equipa e os cursos da equipa. Alterações são pedidas ao Gestor de Cursos.
-export default function Show({ team, report, otherCourses, changeTypes, alexUrl, savedLayout }) {
+export default function Show({ team, report, otherCourses, changeTypes, savedLayout }) {
     const [asking, setAsking] = useState(false);
     const [action, setAction] = useState(null); // { mode: 'remind' | 'assign', members: [ids] }
     const [course, setCourse] = useState(report.courses[0]?.id ?? null);
@@ -101,7 +102,7 @@ export default function Show({ team, report, otherCourses, changeTypes, alexUrl,
                 ? <Person team={team} report={report} member={selected} course={course} onAction={(mode, ids) => setAction({ mode, members: ids })} />
                 : <p className="pn-empty">{t('A equipa ainda não tem pessoas.')}</p>,
         },
-        alex: alexDef(alexUrl, 0, 18),
+        alex: alexDef(0, 18),
     };
     const board = usePanelBoard({ view: 'equipas', panels, saved: savedLayout });
 
@@ -208,7 +209,7 @@ function PeopleAction({ mode, team, report, course, initial, onClose }) {
                             const ok = canPick(m);
                             return (
                                 <label key={m.id} className={`flex items-center gap-3 border-b border-line px-3 py-2.5 last:border-b-0 ${ok ? 'cursor-pointer hover:bg-surface2' : 'opacity-55'}`}>
-                                    <input type="checkbox" className="h-4 w-4 accent-[#F8B101]" disabled={!ok} checked={ok && data.members.includes(m.id)} onChange={() => toggle(m.id)} />
+                                    <input type="checkbox" className="h-4 w-4 accent-accent" disabled={!ok} checked={ok && data.members.includes(m.id)} onChange={() => toggle(m.id)} />
                                     <span className="min-w-0 flex-1">
                                         <b className="block truncate text-[14.5px] font-semibold">{m.name}</b>
                                         <small className="text-[12.5px] text-muted">
@@ -266,7 +267,7 @@ function ChangeRequest({ team, members, otherCourses, changeTypes, onClose }) {
                     <div role="group" aria-label={t('Tipo de alteração')} className="inline-flex flex-wrap gap-[3px] bg-surface2 p-[3px]">
                         {Object.entries(changeTypes).map(([k, label]) => (
                             <button key={k} type="button" aria-pressed={data.change_type === k} onClick={() => setData('change_type', k)}
-                                className={`px-3 py-2 font-display text-[13px] font-semibold ${data.change_type === k ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'}`}>
+                                className={`px-3 py-2 font-display text-[13px] font-semibold ${data.change_type === k ? 'bg-surface text-ink' : 'text-muted hover:text-ink'}`}>
                                 {label}
                             </button>
                         ))}
@@ -323,11 +324,3 @@ function ChangeRequest({ team, members, otherCourses, changeTypes, onClose }) {
     );
 }
 
-function Field({ label, id, children }) {
-    return (
-        <div className="flex flex-col gap-1.5">
-            <label htmlFor={id} className="font-display text-[12.5px] font-semibold uppercase tracking-[0.04em]">{label}</label>
-            {children}
-        </div>
-    );
-}

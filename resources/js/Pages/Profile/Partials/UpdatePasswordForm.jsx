@@ -1,7 +1,4 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import { Button, Field } from '@/Components/ui';
 import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { useRef } from 'react';
@@ -59,71 +56,43 @@ export default function UpdatePasswordForm({ className = '' }) {
             </header>
 
             <form onSubmit={updatePassword} className="mt-6 space-y-6">
-                <div>
-                    <InputLabel
-                        htmlFor="current_password"
-                        value={t('Palavra-passe atual')}
-                    />
-
-                    <TextInput
+                <Field id="current_password" label={t('Palavra-passe atual')} error={errors.current_password}>
+                    <input
                         id="current_password"
                         ref={currentPasswordInput}
                         value={data.current_password}
-                        onChange={(e) =>
-                            setData('current_password', e.target.value)
-                        }
+                        onChange={(e) => setData('current_password', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full"
                         autoComplete="current-password"
+                        className="ui-input w-full"
                     />
+                </Field>
 
-                    <InputError
-                        message={errors.current_password}
-                        className="mt-2"
-                    />
-                </div>
-
-                <div>
-                    <InputLabel htmlFor="password" value={t('Palavra-passe nova')} />
-
-                    <TextInput
+                <Field id="password" label={t('Palavra-passe nova')} error={errors.password}>
+                    <input
                         id="password"
                         ref={passwordInput}
                         value={data.password}
                         onChange={(e) => setData('password', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full"
                         autoComplete="new-password"
+                        className="ui-input w-full"
                     />
+                </Field>
 
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div>
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Repetir a palavra-passe nova"
-                    />
-
-                    <TextInput
+                <Field id="password_confirmation" label={t('Repetir a palavra-passe nova')} error={errors.password_confirmation}>
+                    <input
                         id="password_confirmation"
                         value={data.password_confirmation}
-                        onChange={(e) =>
-                            setData('password_confirmation', e.target.value)
-                        }
+                        onChange={(e) => setData('password_confirmation', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full"
                         autoComplete="new-password"
+                        className="ui-input w-full"
                     />
-
-                    <InputError
-                        message={errors.password_confirmation}
-                        className="mt-2"
-                    />
-                </div>
+                </Field>
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>{processing ? t('A guardar…') : t('Mudar a palavra-passe')}</PrimaryButton>
+                    <Button type="submit" variant="accent" disabled={processing}>{processing ? t('A guardar…') : t('Mudar a palavra-passe')}</Button>
 
                     <Transition
                         show={recentlySuccessful}

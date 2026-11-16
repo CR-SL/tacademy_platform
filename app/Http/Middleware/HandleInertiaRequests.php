@@ -33,7 +33,8 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                // Só os campos que a interface usa (antes ia a conta inteira: créditos, empresa, restos de XP…)
+                'user' => $request->user()?->only(['id', 'ulid', 'name', 'email', 'email_verified_at', 'theme', 'email_reminders']),
                 // Perfil (aluno, formador, team_leader, gestor_cursos, admin): mostra "Os meus cursos" na navbar
                 'role' => $request->user()?->role?->name,
                 // Formador, gestor de cursos e admin: só o seu trabalho na barra (opção D)

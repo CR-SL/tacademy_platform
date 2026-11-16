@@ -27,7 +27,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
     return (
         <div className="space-y-4">
             <Panel title={t('Informação do curso')} sub={t('É o que os alunos vêem no catálogo e na página do curso.')}>
-                <Field label={t('Título do curso')} htmlFor="f-title" required>
+                <Field label={t('Título do curso')} id="f-title" required className="mb-5">
                     <input
                         id="f-title"
                         className={inputCls}
@@ -39,7 +39,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                 </Field>
 
                 <div className="grid gap-x-5 sm:grid-cols-2">
-                    <Field label={t('Área')} htmlFor="f-area" required>
+                    <Field label={t('Área')} id="f-area" required className="mb-5">
                         <select
                             id="f-area"
                             className={inputCls}
@@ -50,12 +50,12 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                             {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                         </select>
                     </Field>
-                    <Field label={t('Nível')} required>
+                    <Field label={t('Nível')} required className="mb-5">
                         <Seg label={t('Nível')} options={Object.entries(levelLabels)} value={c.level} onChange={(v) => update((d) => { d.level = v; })} />
                     </Field>
                 </div>
 
-                <Field label={t('Imagem de capa')} required>
+                <Field label={t('Imagem de capa')} required className="mb-5">
                     <div className="grid gap-5 sm:grid-cols-[200px_1fr]">
                         <div
                             className="relative flex aspect-[4/5] items-center justify-center overflow-hidden p-4 text-center text-[13px] text-muted"
@@ -99,7 +99,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                     </div>
                 </Field>
 
-                <Field label={t('Descrição curta')} htmlFor="f-short" required help={t('Uma frase que resume o curso. Aparece no cartão do catálogo.')}>
+                <Field label={t('Descrição curta')} id="f-short" required hint={t('Uma frase que resume o curso. Aparece no cartão do catálogo.')} className="mb-5">
                     <textarea
                         id="f-short"
                         rows={2}
@@ -113,7 +113,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                     </span>
                 </Field>
 
-                <Field label={t('Descrição completa')} htmlFor="f-long" className="mb-0">
+                <Field label={t('Descrição completa')} id="f-long">
                     <textarea
                         id="f-long"
                         rows={5}
@@ -126,7 +126,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
             </Panel>
 
             <Panel title={t('Para quem é')} sub={t('Ajuda o aluno a perceber se o curso é para ele.')}>
-                <Field label={t('O que vais aprender')}>
+                <Field label={t('O que vais aprender')} className="mb-5">
                     <div className="flex flex-col gap-2">
                         {c.learning_outcomes.map((tx, i) => (
                             <div key={i} className="flex items-center gap-2">
@@ -151,11 +151,11 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                     </div>
                 </Field>
                 <div className="grid gap-x-5 sm:grid-cols-2">
-                    <Field label={t('Pré-requisitos')} htmlFor="f-pre" className="mb-0">
+                    <Field label={t('Pré-requisitos')} id="f-pre">
                         <input id="f-pre" className={inputCls} value={c.prerequisites} maxLength={255} placeholder={t('Ex.: Conhecimentos de OBD-II')}
                             onChange={(e) => update((d) => { d.prerequisites = e.target.value; })} />
                     </Field>
-                    <Field label={t('A quem se destina')} htmlFor="f-aud" className="mb-0">
+                    <Field label={t('A quem se destina')} id="f-aud">
                         <input id="f-aud" className={inputCls} value={c.audience} maxLength={255} placeholder={t('Ex.: Mecânicos e técnicos de diagnóstico')}
                             onChange={(e) => update((d) => { d.audience = e.target.value; })} />
                     </Field>

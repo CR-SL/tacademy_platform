@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { formatMinutes, levelLabels } from '@/Components/CourseBuilder/format';
 import { IconCheck } from '@/Components/Panels/icons';
-import { useFocusTrap } from '@/Components/ui';
+import { IconClose, useFocusTrap } from '@/Components/ui';
 import '../../../css/courses.css';
 
 import { t } from '@/i18n';
@@ -22,14 +22,6 @@ function lessonState(l, isNext) {
     if (l.position) return l.position.of ? t('Em curso · :at de :of', { at: l.position.at, of: l.position.of }) : t('Em curso · :at', { at: l.position.at });
     if (l.status === 'locked') return t('Fechada');
     return isNext ? t('A seguir') : t('Por fazer');
-}
-
-function CloseIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-            <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-        </svg>
-    );
 }
 
 function Tri() {
@@ -68,7 +60,7 @@ export default function CourseDrawer({ detail, onClose }) {
                 <div className="cc-d-scroll">
                     <div className="cc-d-hero">
                         <img src={course.image} alt="" />
-                        <button ref={closeRef} className="cc-x" type="button" onClick={onClose} aria-label={t('Fechar detalhes do curso')}><CloseIcon /></button>
+                        <button ref={closeRef} className="cc-x" type="button" onClick={onClose} aria-label={t('Fechar detalhes do curso')}><IconClose width={24} height={24} strokeWidth={1.6} /></button>
                     </div>
                     <div className="cc-d-body">
                         <div className="cc-d-head">

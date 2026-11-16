@@ -1,6 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
-import { Toast } from '@/Components/ui';
 import { useEffect, useRef, useState } from 'react';
 import useTheme from '@/hooks/useTheme';
 import {
@@ -133,10 +132,6 @@ export function initials(name = '') {
         .toUpperCase();
 }
 
-export function formatXp(n = 0) {
-    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-}
-
 export default function StudentLayout({ children, navTools }) {
     const { auth, staffInbox, access, navCounts, can } = usePage().props;
     const currentUrl = usePage().url;
@@ -145,9 +140,6 @@ export default function StudentLayout({ children, navTools }) {
     const navItems = navFor(can, auth?.role, auth?.worksOnly, guest);
     const { theme, toggle } = useTheme();
     const dark = theme === 'dark';
-    const [notice, setNotice] = useState(null);
-    const noticeTimer = useRef(null);
-    useEffect(() => () => clearTimeout(noticeTimer.current), []);
 
 
     const isActive = ({ href, exact }) => {
@@ -225,7 +217,6 @@ export default function StudentLayout({ children, navTools }) {
                 })}
             </nav>
 
-            <Toast message={notice} />
         </div>
     );
 }

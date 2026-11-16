@@ -17,7 +17,7 @@ export default function StepPrice({ c, update }) {
                 {c.is_free ? (
                     <p className="text-muted">{t('O curso aparece no catálogo como')}{' '}<b className="text-ink">{t('Grátis')}</b>.</p>
                 ) : (
-                    <Field label={t('Preço')} htmlFor="f-price" required className="mb-0">
+                    <Field label={t('Preço')} id="f-price" required>
                         <div className="flex max-w-[240px]">
                             <input
                                 id="f-price"
@@ -38,7 +38,7 @@ export default function StepPrice({ c, update }) {
             </Panel>
 
             <Panel title={t('Acesso e conclusão')} sub={t('Durante quanto tempo o aluno tem acesso e o que conta para terminar o curso.')}>
-                <Field label={t('Validade do acesso')}>
+                <Field label={t('Validade do acesso')} className="mb-5">
                     <Seg
                         label={t('Validade do acesso')}
                         options={[[null, t('Vitalício')], [12, t('12 meses')], [6, t('6 meses')], [3, t('3 meses')]]}
@@ -49,7 +49,7 @@ export default function StepPrice({ c, update }) {
                         })}
                     />
                 </Field>
-                <Field label={t('Prazo para concluir')} help={t('Conta a partir da inscrição. Uma empresa pode definir outro prazo para a sua equipa.')}>
+                <Field label={t('Prazo para concluir')} hint={t('Conta a partir da inscrição. Uma empresa pode definir outro prazo para a sua equipa.')} className="mb-5">
                     <Seg
                         label={t('Prazo para concluir')}
                         options={DEADLINES.map(([d, l]) => [d, t(l)]).filter(([d]) => !d || !c.access_months || d <= c.access_months * 30)}
@@ -71,7 +71,7 @@ export default function StepPrice({ c, update }) {
                         {t('O certificado só é emitido depois de confirmares a presença do aluno, em “Os meus cursos” › Alunos.')}
                     </Toggle>
                 )}
-                <Field label={t('Aula de amostra grátis')} htmlFor="f-sample" className="mb-0 mt-2" help={t('Quem ainda não comprou pode ver esta aula para experimentar.')}>
+                <Field label={t('Aula de amostra grátis')} id="f-sample" className="mt-2" hint={t('Quem ainda não comprou pode ver esta aula para experimentar.')}>
                     <select id="f-sample" className={inputCls} value={c.sample_lesson_key} onChange={(e) => update((d) => { d.sample_lesson_key = e.target.value; })}>
                         <option value="">{t('Nenhuma')}</option>
                         {lessons.map(([k, tx]) => <option key={k} value={k}>{tx}</option>)}
@@ -87,7 +87,7 @@ function Range({ label, min, value, onChange }) {
         <label className="flex flex-col gap-1.5">
             <span className="font-display text-[13px] font-semibold uppercase tracking-[0.04em]">{label}</span>
             <span className="flex items-center gap-2.5">
-                <input type="range" min={min} max="100" step="5" value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-40 accent-[#F8B101]" />
+                <input type="range" min={min} max="100" step="5" value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-40 accent-accent" />
                 <b className="min-w-[46px] font-display text-base">{value}%</b>
             </span>
         </label>

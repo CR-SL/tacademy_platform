@@ -2,7 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
 import Program from '@/Components/Learn/Program';
-import { FlashToast } from '@/Components/Teams/ui';
+import { FlashToast } from '@/Components/ui';
 import { formatEuro, formatMinutes, levelLabels } from '@/Components/CourseBuilder/format';
 
 import { t } from '@/i18n';

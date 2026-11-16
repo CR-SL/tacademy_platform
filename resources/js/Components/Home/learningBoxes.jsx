@@ -214,7 +214,7 @@ export const LEARN_SPOTS = {
 };
 
 /** Definições das caixas de aprender (Pendentes e Mensagens são comuns e ficam na página). */
-export function learningBoxes({ courses, resume, results, notes, suggestions, documents = [], alexUrl }, { best, setBest }) {
+export function learningBoxes({ courses, resume, results, notes, suggestions, documents = [] }, { best, setBest }) {
     const counts = { curso: 0, novo: 0, feito: 0 };
     courses.forEach((c) => { counts[c.state] += 1; });
 
@@ -237,7 +237,7 @@ export function learningBoxes({ courses, resume, results, notes, suggestions, do
             summary: results[0] ? t('Último: :score%', { score: results[0].score }) : t('Sem testes feitos'),
             body: <ResultsPanel results={results} />,
         },
-        alex: { ...alexDef(alexUrl, 0, 11), x: 12, w: 6, compact: false },
+        alex: { ...alexDef(0, 11), x: 12, w: 6, compact: false },
         documentos: {
             title: t('Os meus documentos'), x: 18, y: 15, w: 6, h: 14,
             summary: plural(documents.length, t('1 documento'), t(':n documentos')),

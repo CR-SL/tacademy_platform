@@ -37,7 +37,6 @@ class DashboardController extends Controller
             'results' => $area->results($user, 3),
             'notes' => $area->notes($user),
             'suggestions' => $area->suggestions($user),
-            'alexUrl' => $area->alexUrl($user),
             // Caixa "Os meus documentos": os ficheiros mais recentes dos seus cursos
             'documents' => $area->recentDocuments($user),
         ] : [];

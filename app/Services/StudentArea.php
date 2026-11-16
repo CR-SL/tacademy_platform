@@ -69,12 +69,12 @@ class StudentArea
 
     private function expiry(Enrollment $e): ?\Illuminate\Support\Carbon
     {
-        return $e->course->access_months ? $e->enrolled_at?->copy()->addMonths($e->course->access_months) : null;
+        return $e->expiresAt(); // a mesma regra de LearningService::access
     }
 
     private function isExpired(Enrollment $e): bool
     {
-        return (bool) $this->expiry($e)?->isPast();
+        return $e->isExpired();
     }
 
     /** Os cursos do aluno, com o progresso real (aulas concluídas sobre o total). */
@@ -207,21 +207,6 @@ class StudentArea
         return intdiv($seconds, 60).':'.str_pad((string) ($seconds % 60), 2, '0', STR_PAD_LEFT);
     }
 
-    /** Link do Alex: a primeira aula com avatar do curso a retomar, se existir. */
-    public function alexUrl(User $user): ?string
-    {
-        $done = $this->doneIds($user);
-        foreach ($this->enrollments($user)->reject(fn ($e) => $this->isExpired($e)) as $e) {
-            $lessons = $this->courseLessons($e->course);
-            $avatar = $lessons->first(fn ($l) => $l->content_type === 'avatar' && ! $done->has($l->id))
-                ?? $lessons->firstWhere('content_type', 'avatar');
-            if ($avatar) {
-                return $this->lessonUrl($e->course, $avatar);
-            }
-        }
-
-        return null;
-    }
 
     /** Testes por fazer: ainda sem nota positiva e com tentativas disponíveis. */
     public function pending(User $user): array
@@ -377,7 +362,6 @@ class StudentArea
         };
     }
 
-    /** Cursos publicados em que o aluno não está inscrito; primeiro os das áreas que já estuda. */
     /** Primeiro uso: os três cursos publicados mais recentes (reais), para quem ainda não tem nenhum. */
     public function starter(User $user): array
     {
@@ -402,6 +386,7 @@ class StudentArea
             ])->values()->all();
     }
 
+    /** Cursos publicados em que o aluno não está inscrito; primeiro os das áreas que já estuda. */
     public function suggestions(User $user): array
     {
         $enrollments = $this->enrollments($user);
@@ -477,7 +462,6 @@ class StudentArea
         return ['threads' => $threads->all(), 'canStart' => $canStart->all()];
     }
 
-    /** Disposição guardada de uma página, para o componente dos painéis. */
     /**
      * Certificados (página simples, 2026-11-10; o PDF vem depois): os que a pessoa já tem
      * e os dos cursos em que está inscrita, com o que ainda falta para cada um.
@@ -524,6 +508,7 @@ class StudentArea
         ];
     }
 
+    /** Disposição guardada de uma página, para o componente dos painéis. */
     public function layout(User $user, string $view): ?array
     {
         return $user->panel_layouts[$view] ?? null;

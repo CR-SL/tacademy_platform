@@ -194,6 +194,8 @@ class Activity
     {
         if (Cache::add('activity-log-pruned', true, now()->addDay())) {
             self::prune();
+            // A limpeza dos ficheiros órfãos NÃO corre aqui sozinha: apaga ficheiros do disco, por isso só se corre
+            // à mão (php artisan files:clean), vendo primeiro a lista. Ver OrphanFiles.
         }
     }
 

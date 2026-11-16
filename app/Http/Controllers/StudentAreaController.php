@@ -26,7 +26,6 @@ class StudentAreaController extends Controller
             'courses' => $this->area->courses($request->user()),
             // Caixa lateral do curso aberto (?curso=slug); vem também sozinha, ao abrir um cartão
             'detail' => fn () => $slug !== '' ? $this->detail($request->user(), $slug) : null,
-            'alexUrl' => $this->area->alexUrl($request->user()),
             'savedLayout' => $this->area->layout($request->user(), 'cursos'),
         ]);
     }
@@ -35,7 +34,6 @@ class StudentAreaController extends Controller
     {
         return Inertia::render('Student/Assessments', [
             'results' => $this->area->results($request->user()),
-            'alexUrl' => $this->area->alexUrl($request->user()),
             'savedLayout' => $this->area->layout($request->user(), 'avaliacoes'),
         ]);
     }
@@ -103,7 +101,6 @@ class StudentAreaController extends Controller
     {
         return Inertia::render('Student/Documents', [
             'courses' => $this->area->documents($request->user()),
-            'alexUrl' => $this->area->alexUrl($request->user()),
             'savedLayout' => $this->area->layout($request->user(), 'documentos'),
         ]);
     }

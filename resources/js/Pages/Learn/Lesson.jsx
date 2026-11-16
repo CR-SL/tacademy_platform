@@ -10,8 +10,7 @@ import LessonNotes from '@/Components/Learn/LessonNotes';
 import MicCheck from '@/Components/Learn/MicCheck';
 import { ModulesRail, ModuleSheet, ModulesStrip } from '@/Components/Learn/LessonModules';
 import { IconCheck, IconDoc, IconDown, IconHelp, IconLeft, IconPen, IconRight, IconSide, IconSwap, IconUser, IconVideo, IconX } from '@/Components/Learn/LessonIcons';
-import { FlashToast } from '@/Components/Teams/ui';
-import { Toast, useFocusTrap } from '@/Components/ui';
+import { FlashToast, Toast, useFocusTrap } from '@/Components/ui';
 import AlexLessonPanel from '@/Components/Alex/AlexLessonPanel';
 import '../../../css/lesson.css';
 
@@ -100,7 +99,7 @@ const clampSplit = (v) => Math.max(MIN_PANEL, Math.min(100 - MIN_PANEL, v));
 
 // Página da aula: painéis que se ligam e desligam na barra de baixo, com divisórias para os redimensionar.
 // A aula conclui-se sozinha: o vídeo aos 90%; documento, texto e avatar ao abrir; o teste ao passar.
-export default function Lesson({ course, mode, program, lesson, position, progress, prev, next, avatarUrl, notes }) {
+export default function Lesson({ course, mode, program, lesson, progress, prev, next, avatarUrl, notes }) {
     const mobile = useMobile();
     const { alex } = usePage().props; // o Alex nesta aula (curso com o Alex), ou null
     const canSave = mode === 'enrolled';

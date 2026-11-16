@@ -73,7 +73,7 @@ export default function Contacts({ courses, teamSizes, faqs, contact, social, se
                                 <li key={key}>
                                     <a href={net.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3.5 bg-page p-3 pr-4 text-sm transition-[transform,background-color] duration-200 hover:translate-x-1.5 hover:bg-surface2 motion-reduce:transition-none">
                                         {SOCIAL_ICONS[key] && (
-                                            <span aria-hidden="true" className="grid h-[46px] w-[46px] flex-none place-items-center bg-[#18181B] text-accent [&>svg]:h-[22px] [&>svg]:w-[22px]">{SOCIAL_ICONS[key]}</span>
+                                            <span aria-hidden="true" className="grid h-[46px] w-[46px] flex-none place-items-center bg-carbon text-accent [&>svg]:h-[22px] [&>svg]:w-[22px]">{SOCIAL_ICONS[key]}</span>
                                         )}
                                         <span className="min-w-0 flex-1"><b className="block font-display text-base">{net.label}</b><span className="text-muted">{net.handle}</span></span>
                                         <span className="sr-only">{t('(abre num separador novo)')}</span>

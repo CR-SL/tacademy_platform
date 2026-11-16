@@ -106,7 +106,7 @@ export default function ActivityLog({ data }) {
                 </div>
             )}
 
-            <section className="bo-box">
+            <section className="ui-box">
                 <div className="overflow-x-auto">
                     {rows.data.length ? (
                         <table className="bo-table bo-log">

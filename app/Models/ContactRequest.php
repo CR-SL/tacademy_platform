@@ -61,6 +61,7 @@ class ContactRequest extends Model
     protected $fillable = [
         'kind',
         'credits',
+        'amount', // preço pago (compra pessoal), para a receita não mudar quando o preço do curso muda
         'type',
         'name',
         'email',

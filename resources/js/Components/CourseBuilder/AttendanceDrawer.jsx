@@ -57,7 +57,7 @@ export default function AttendanceDrawer({ course, onClose }) {
                             <label className={`flex flex-none items-center gap-2 font-display text-[13px] font-semibold ${busy === s.id ? 'opacity-50' : 'cursor-pointer'}`}>
                                 <input
                                     type="checkbox"
-                                    className="h-4 w-4 accent-[#F8B101]"
+                                    className="h-4 w-4 accent-accent"
                                     checked={!!s.attended}
                                     disabled={busy === s.id}
                                     onChange={(e) => mark(s, e.target.checked)}

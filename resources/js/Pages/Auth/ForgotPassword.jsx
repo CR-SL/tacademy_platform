@@ -1,7 +1,4 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import { Button, Field } from '@/Components/ui';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
@@ -36,25 +33,21 @@ export default function ForgotPassword({ status }) {
             )}
 
             <form onSubmit={submit}>
-                <InputLabel htmlFor="email" value="Email" />
+                <Field id="email" label={t('Email')} error={errors.email}>
+                    <input
+                        id="email"
+                        type="email"
+                        name="email"
+                        value={data.email}
+                        className="ui-input w-full"
+                        autoFocus
+                        onChange={(e) => setData('email', e.target.value)}
+                    />
+                </Field>
 
-                <TextInput
-                    id="email"
-                    type="email"
-                    name="email"
-                    value={data.email}
-                    className="mt-1 block w-full"
-                    isFocused={true}
-                    onChange={(e) => setData('email', e.target.value)}
-                />
-
-                <InputError message={errors.email} className="mt-2" />
-
-                <div className="mt-6">
-                    <PrimaryButton className="w-full" disabled={processing}>
-                        {t('Enviar link de recuperação')}
-                    </PrimaryButton>
-                </div>
+                <Button type="submit" variant="accent" block className="mt-6" disabled={processing}>
+                    {t('Enviar link de recuperação')}
+                </Button>
 
                 <p className="mt-6 text-center text-sm text-muted">
                     <Link

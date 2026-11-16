@@ -34,8 +34,6 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
         'avatar_url',
         'theme',
         'email_reminders',
-        'level',
-        'streak_days',
         'last_active_at',
     ];
 
@@ -51,7 +49,6 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'email_verified_at' => 'datetime',
             'last_active_at' => 'datetime',
             'password' => 'hashed',
-            'streak_days' => 'integer',
             'alex_credits' => 'integer',
             'panel_layouts' => 'array',
             'email_reminders' => 'boolean',

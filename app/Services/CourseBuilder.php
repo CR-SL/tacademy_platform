@@ -278,8 +278,10 @@ class CourseBuilder
             'avatar' => self::validUrl($l->avatar_ref),
             'document' => $l->attachments->isNotEmpty(),
             'text' => trim(strip_tags((string) $l->body)) !== '',
+            // Cada pergunta: texto, 2 opções com texto e a opção certa com texto (senão ninguém a podia acertar)
             'quiz' => $l->quiz && $l->quiz->questions->isNotEmpty() && $l->quiz->questions->every(
                 fn ($q) => trim($q->question) && $q->options->filter(fn ($o) => trim($o->option_text))->count() >= 2
+                    && $q->options->contains(fn ($o) => $o->is_correct && trim($o->option_text) !== '')
             ),
             default => true,
         };

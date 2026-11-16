@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import StudentLayout, { initials } from '@/Layouts/StudentLayout';
-import { Button, Chip, FlashToast, Progress, useConfirm } from '@/Components/ui';
+import { Button, Chip, FlashToast, Kpi, Progress, useConfirm } from '@/Components/ui';
 import { Columns, fmtEuro, fmtInt, HBars } from '@/Components/Admin/Charts';
 import { t } from '@/i18n';
 
@@ -42,13 +42,13 @@ export default function Course({ course, stats: s, days }) {
                 </div>
 
                 <div className="bo-row bo-row2">
-                    <section className="bo-box">
-                        <div className="bo-box-h"><span className="pn-lab">{t('Cliques por dia · :days dias', { days })}</span></div>
-                        <div className="bo-box-b"><Columns data={s.byDay.map((d) => ({ label: d.label, value: d.value, tip: d.date }))} unit={` ${t('cliques')}`} caption={t('Cliques por dia')} /></div>
+                    <section className="ui-box">
+                        <div className="ui-box-h"><span className="pn-lab">{t('Cliques por dia · :days dias', { days })}</span></div>
+                        <div className="ui-box-b"><Columns data={s.byDay.map((d) => ({ label: d.label, value: d.value, tip: d.date }))} unit={` ${t('cliques')}`} caption={t('Cliques por dia')} /></div>
                     </section>
-                    <section className="bo-box">
-                        <div className="bo-box-h"><span className="pn-lab">{t('Percurso neste curso')}</span></div>
-                        <div className="bo-box-b">
+                    <section className="ui-box">
+                        <div className="ui-box-h"><span className="pn-lab">{t('Percurso neste curso')}</span></div>
+                        <div className="ui-box-b">
                             <HBars caption={t('Percurso neste curso')} rows={[
                                 { name: t('Viram no catálogo'), value: s.views, tip: t('últimos :days dias', { days }) },
                                 { name: t('Inscreveram-se'), value: s.enrolled },
@@ -59,8 +59,8 @@ export default function Course({ course, stats: s, days }) {
                     </section>
                 </div>
 
-                <section className="bo-box" style={{ marginTop: 12 }}>
-                    <div className="bo-box-h"><span className="pn-lab">{t('Alunos · :n', { n: s.enrolled })}</span></div>
+                <section className="ui-box" style={{ marginTop: 12 }}>
+                    <div className="ui-box-h"><span className="pn-lab">{t('Alunos · :n', { n: s.enrolled })}</span></div>
                     <div className="overflow-x-auto px-3 py-1">
                         {s.students.length ? (
                             <table className="bo-table">
@@ -82,15 +82,5 @@ export default function Course({ course, stats: s, days }) {
             {confirmDialog}
             <FlashToast />
         </StudentLayout>
-    );
-}
-
-function Kpi({ label, value, hint }) {
-    return (
-        <div className="bg-surface px-5 py-4">
-            <p className="pn-lab">{label}</p>
-            <p className="mt-1 font-display text-[28px] font-bold leading-none">{value}</p>
-            {hint && <p className="mt-2 text-[12.5px] text-muted">{hint}</p>}
-        </div>
     );
 }

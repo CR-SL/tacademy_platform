@@ -187,7 +187,7 @@ export function AlexPanel() {
     );
 }
 
-export const alexDef = (url, y, h) => ({
+export const alexDef = (y, h) => ({
     title: t('Alex'), x: 19, y, w: 5, h, float: 'dark', summary: t('Formador IA'), compact: true, body: <AlexPanel />,
 });
 

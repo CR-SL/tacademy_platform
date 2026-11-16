@@ -23,6 +23,11 @@
     --color-ink: #111111;
     --color-on-ink: #FFFFFF;
     --color-carbon: #18181B;   /* não muda com o tema */
+    /* Também fixos nos dois temas (zonas sempre escuras ou sempre amarelas: vídeo, fotografias, aviso da avaliação) */
+    --color-on-carbon: #FFFFFF;        /* texto e ícones sobre carvão e fotografias; fundo branco do leitor de PDF */
+    --color-on-carbon-soft: #EDEDED;   /* texto secundário sobre fotografias */
+    --color-accent-light: #FFE08A;     /* brilho do amarelo (orbe do avatar, título em hover sobre fotografia) */
+    --color-live-on-accent: #7A1F12;   /* erro escrito sobre o amarelo */
     --color-text: #3C3B38;
     --color-muted: #6E6B63;
     --color-line: #E7E4DD;
@@ -76,11 +81,6 @@ body {
  | As antigas classes ta-cut-* saíram a 2026-11-07 (ver DESIGN.md).
  */
 
-/* Barras e anéis animam de 0 até ao valor ao montar */
-.ta-fill {
-    transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
 .ta-press {
     transition: transform 0.15s, background-color 0.3s, color 0.3s;
 }
@@ -88,28 +88,3 @@ body {
     transform: scale(0.96);
 }
 
-@keyframes tpop {
-    0% { transform: translateY(-12px) scale(0.9); opacity: 0; }
-    10% { transform: translateY(0) scale(1.05); opacity: 1; }
-    18% { transform: scale(1); }
-    85% { opacity: 1; }
-    100% { opacity: 0; transform: translateY(-8px); }
-}
-@keyframes tblink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.2; }
-}
-@keyframes tslide {
-    0% { transform: translateY(-14px); opacity: 0; }
-    100% { transform: translateY(0); opacity: 1; }
-}
-
-.ta-toast { animation: tpop 2.2s ease forwards; }
-
-@media (prefers-reduced-motion: no-preference) {
-    .ta-live-dot { animation: tblink 1.2s ease-in-out infinite; }
-    .ta-slide-in { animation: tslide 0.4s ease; }
-}
-@media (prefers-reduced-motion: reduce) {
-    .ta-fill { transition: none; }
-}

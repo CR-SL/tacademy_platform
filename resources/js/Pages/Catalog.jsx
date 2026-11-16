@@ -5,7 +5,7 @@ import '../../css/courses.css';
 
 import { t } from '@/i18n';
 import { tilt, untilt } from '@/Components/ui/tilt';
-import { useFocusTrap } from '@/Components/ui';
+import { IconClose, useFocusTrap } from '@/Components/ui';
 
 // Catálogo da plataforma, aberto a quem ainda não tem conta: separadores por área, pesquisa
 // e aba lateral com o detalhe. Comprar pede sessão.
@@ -49,14 +49,6 @@ function SearchIcon({ size = 22 }) {
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2.2" />
             <path d="M15.5 15.5L21 21" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-        </svg>
-    );
-}
-
-function CloseIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-            <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
         </svg>
     );
 }
@@ -132,7 +124,7 @@ function Detail({ c, owned, pending, guest, onClose }) {
                 <div className="cc-d-scroll">
                     <div className="cc-d-hero">
                         <img src={c.image} alt="" />
-                        <button ref={closeRef} className="cc-x" type="button" onClick={onClose} aria-label={t('Fechar detalhes do curso')}><CloseIcon /></button>
+                        <button ref={closeRef} className="cc-x" type="button" onClick={onClose} aria-label={t('Fechar detalhes do curso')}><IconClose width={24} height={24} strokeWidth={1.6} /></button>
                     </div>
                     <div className="cc-d-body">
                         <div className="cc-d-head">
@@ -206,7 +198,7 @@ function Search({ initial, courses, onApply, onPick, onClose }) {
                             aria-label={t('Pesquisar cursos')}
                             autoComplete="off"
                         />
-                        <button className="cc-x" type="button" onClick={onClose} aria-label={t('Fechar pesquisa')}><CloseIcon /></button>
+                        <button className="cc-x" type="button" onClick={onClose} aria-label={t('Fechar pesquisa')}><IconClose width={24} height={24} strokeWidth={1.6} /></button>
                     </div>
                     {!q ? (
                         <div>

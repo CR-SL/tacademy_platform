@@ -72,7 +72,7 @@ function CoursesList({ courses, onOpen }) {
 }
 
 // Ao carregar num cartão abre a caixa lateral do curso (como no catálogo); o ?curso= fica no endereço
-export default function MyCourses({ courses, detail, alexUrl, savedLayout }) {
+export default function MyCourses({ courses, detail, savedLayout }) {
     const [slug, setSlug] = useState(() => new URLSearchParams(location.search).get('curso'));
     const lastFocus = useRef(null);
     // A caixa abre logo, com "A carregar…" até os dados chegarem (antes não se via nada, e cliques repetidos
@@ -116,7 +116,7 @@ export default function MyCourses({ courses, detail, alexUrl, savedLayout }) {
                 ? <CoursesList courses={courses} onOpen={open} />
                 : <EmptyPanel title={t('Ainda não tens cursos')} text={t('Quando te inscreveres num curso, aparece aqui.')} href="/plataforma/cursos" cta={t('Ver o catálogo')} />,
         },
-        alex: alexDef(alexUrl, 0, 22),
+        alex: alexDef(0, 22),
     };
     const board = usePanelBoard({ view: 'cursos', panels, saved: savedLayout });
 

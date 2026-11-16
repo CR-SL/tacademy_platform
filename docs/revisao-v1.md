@@ -79,6 +79,27 @@ Consultas à base de dados por página, numa equipa de 30 pessoas com 4 cursos (
 - B26: o carrossel de sugestões tem um botão Pausar/Continuar.
 - B27: os textos passam por `t()`/`__()`, o catálogo trata por "tu" e há traduções em inglês para tudo.
 
+**Corrigidos (grupo 9, limpeza e design, ainda sem commit):** A23 a A27, B28, B29 e B31; B30 em parte. Depois: **157 testes passaram**.
+- A23: a compra pessoal guarda o preço pago (`contact_requests.amount`, migração `2026_11_16_000001`) e a receita soma esse preço.
+- A24: `php artisan files:clean` mostra os ficheiros carregados que ficaram sem uso; `--force` apaga-os. Só corre à mão (ver o incidente abaixo).
+- A25: a publicação exige que a opção certa de cada pergunta tenha texto (no servidor e no editor), e o aluno deixa de ver opções vazias.
+- A26: `level` e `streak_days` saíram do modelo e dos dados de demonstração, e o browser recebe só os campos do utilizador que a interface usa. As colunas e as tabelas sem uso (`badges`, `payments`, `live_sessions`, `reviews`) continuam na base de dados: apagá-las é uma decisão à parte.
+- A27: uma só regra da validade do acesso (`Enrollment::expiresAt`). O certificado novo é o que o serviço acabou de emitir, e não o "emitido há menos de 10 segundos". Os comentários estão no sítio certo. O `clock()` repetido ficou (são duas linhas).
+- A28: os testes em falta foram sendo acrescentados em cada grupo.
+- B28: `accent-[#F8B101]` passou a `accent-accent`, `bg-[#18181B]` a `bg-carbon`, e o aviso da avaliação usa os tokens.
+- B29: as caixas da Administração, o teste do microfone e as barras ficaram com cantos retos; saíram as sombras em repouso e a letra mono.
+- B30 (concluído a 2026-11-16): `Field`, `Kpi`, `Box` e o ícone de fechar existem só em `Components/ui`. Eram 3 `Field`, 4 `Kpi`, 2 `Box` mais 3 caixas escritas à mão na Administração, e 2 ícones de fechar. Os componentes do Breeze foram apagados, e as 5 páginas que os usavam (entrada, palavra-passe e Definições) passaram a `Field`/`Button`, que ligam o erro ao campo.
+- Cores do CSS (concluído a 2026-11-16): as 51 cores escritas à mão em `panels.css`, `lesson.css` e `alex.css` passaram a tokens. Há 4 tokens novos fixos nos dois temas (`--color-on-carbon`, `--color-on-carbon-soft`, `--color-accent-light`, `--color-live-on-accent`). Verificado no browser: as cores são as mesmas de antes, nos dois temas.
+- B31: saíram `formatXp`, o aviso que nunca mudava, a prop `position`, o parâmetro e a prop `alexUrl` (também no servidor) e o CSS sem uso.
+
+**Incidente (2026-11-16, 12:53) — ficheiros locais apagados pelos testes.** A primeira versão da limpeza (A24) corria sozinha uma vez por dia, no primeiro registo de atividade. Nos testes, a base de dados é temporária e vazia, mas o disco é o real. Ao correr os testes, a limpeza achou que nenhum ficheiro estava em uso e apagou os ficheiros carregados com mais de 24 horas do ambiente local (`storage/app/public/cursos/videos` e `capas`). Perderam-se os vídeos de 4 aulas do curso "Diagnóstico Automóvel" (RECERTIFICAÇÃO AVAC Módulo 1, AULA 2, AULA 3 e AULA 4) e a capa desse curso. A produção não foi afetada (estas alterações ainda não foram publicadas). Correção:
+- a limpeza deixou de correr sozinha;
+- sem `--force` só mostra a lista;
+- recusa correr nos testes sem discos falsos e com a base de dados sem cursos;
+- há testes para estas três proteções.
+
+É preciso voltar a carregar esses 4 vídeos e a capa no editor.
+
 **Pendente para a mudança para o OVH (domínio tacademy.pt):**
 1. Verificar o domínio (ou um subdomínio, como `envio.tacademy.pt`) no serviço de email e mudar `MAIL_FROM_ADDRESS`.
 2. Retirar `MAIL_ALWAYS_TO`.

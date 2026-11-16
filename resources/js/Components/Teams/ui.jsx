@@ -2,9 +2,9 @@
 import { Link } from '@inertiajs/react';
 
 // Botões e campos vêm da base única (Components/ui); os nomes antigos ficam para não mexer nas páginas.
-import { Chip, Drawer, FlashToast, Kpi, Pills, Progress, btn, inputCls } from '@/Components/ui';
+import { Box, Chip, Drawer, FlashToast, Kpi, Pills, Progress, btn, inputCls } from '@/Components/ui';
 
-export { Chip, Drawer, FlashToast, Kpi, Progress, btn, inputCls };
+export { Box, Chip, Drawer, FlashToast, Kpi, Progress, btn, inputCls };
 
 /** Separadores de filtro (o mesmo componente que a área do aluno usa). */
 export const Tabs = (props) => <Pills className="mb-4" {...props} />;
@@ -20,20 +20,6 @@ export function PageHead({ back, title, sub, children }) {
             </div>
             {children && <div className="flex flex-wrap gap-2.5">{children}</div>}
         </div>
-    );
-}
-
-export function Box({ title, right, children }) {
-    return (
-        <section className="bg-surface px-5 py-4">
-            {title && (
-                <h3 className="pn-lab mb-2.5 flex items-center justify-between">
-                    {title}
-                    {right}
-                </h3>
-            )}
-            {children}
-        </section>
     );
 }
 

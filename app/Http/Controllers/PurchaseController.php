@@ -40,6 +40,7 @@ class PurchaseController extends Controller
             'email' => $user->email,
             'user_id' => $user->id,
             'course_id' => $course->id,
+            'amount' => $course->is_free ? 0 : $course->price, // o preço deste momento (a receita não muda se o preço mudar)
             'message' => __('Compra a título pessoal (pagamento simulado enquanto o pagamento pela plataforma não está ativo).'),
         ]);
         $r->messages()->create(['user_id' => $user->id, 'author' => $user->name, 'body' => $r->message]);

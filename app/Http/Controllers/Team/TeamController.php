@@ -39,7 +39,6 @@ class TeamController extends Controller
                 ->whereNotIn('id', $company->courses()->pluck('courses.id'))
                 ->orderBy('title')->get(['id', 'title']),
             'changeTypes' => ContactRequest::labels(ContactRequest::CHANGE_TYPES),
-            'alexUrl' => $area->alexUrl($request->user()),
             'savedLayout' => $area->layout($request->user(), 'equipas'),
         ]);
     }

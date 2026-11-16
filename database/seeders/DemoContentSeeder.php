@@ -29,7 +29,6 @@ class DemoContentSeeder extends Seeder
                 'role_id' => $roles['admin'],
                 'name' => 'Admin T.Academy',
                 'password' => $password,
-                'level' => 'gold',
                 'email_verified_at' => now(),
             ]
         );
@@ -40,7 +39,6 @@ class DemoContentSeeder extends Seeder
                 'role_id' => $roles['formador'],
                 'name' => 'João Formador',
                 'password' => $password,
-                'level' => 'silver',
                 'email_verified_at' => now(),
             ]
         );
@@ -51,7 +49,6 @@ class DemoContentSeeder extends Seeder
                 'role_id' => $roles['aluno'],
                 'name' => 'Maria Aluna',
                 'password' => $password,
-                'streak_days' => 12,
                 'last_active_at' => now(),
                 'email_verified_at' => now(),
             ]

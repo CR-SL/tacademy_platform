@@ -1,8 +1,9 @@
 // Peças de formulário do editor de cursos (mesmo visual do resto da plataforma).
 
-import { inputCls } from '@/Components/ui';
+import { Field, inputCls } from '@/Components/ui';
 
-export { inputCls };
+// O Field é o comum da plataforma (Components/ui); fica reexportado para os passos do editor
+export { Field, inputCls };
 
 export function Panel({ title, sub, children }) {
     return (
@@ -11,28 +12,6 @@ export function Panel({ title, sub, children }) {
             {sub && <p className="mb-6 mt-1.5 text-muted">{sub}</p>}
             {children}
         </section>
-    );
-}
-
-export function Label({ htmlFor, required, children, hint }) {
-    const cls = 'font-display text-[13px] font-semibold uppercase tracking-[0.04em]';
-    const inner = (
-        <>
-            {children}
-            {required && <span className="text-accent-ink"> *</span>}
-            {hint && <span className="ml-1 font-sans text-xs font-normal normal-case tracking-normal text-muted">{hint}</span>}
-        </>
-    );
-    return htmlFor ? <label htmlFor={htmlFor} className={cls}>{inner}</label> : <span className={cls}>{inner}</span>;
-}
-
-export function Field({ label, htmlFor, required, hint, help, children, className = '' }) {
-    return (
-        <div className={`mb-5 flex flex-col gap-1.5 ${className}`}>
-            {label && <Label htmlFor={htmlFor} required={required} hint={hint}>{label}</Label>}
-            {children}
-            {help && <span className="text-[12.5px] text-muted">{help}</span>}
-        </div>
     );
 }
 
@@ -46,7 +25,7 @@ export function Seg({ options, value, onChange, label }) {
                     aria-pressed={value === v}
                     onClick={() => onChange(v)}
                     className={`px-3.5 py-2 font-display text-[13.5px] font-semibold transition-colors ${
-                        value === v ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'
+                        value === v ? 'bg-surface text-ink' : 'text-muted hover:text-ink'
                     }`}
                 >
                     {text}
