@@ -48,7 +48,8 @@ const isPdf = (a) => /\.pdf$/i.test(a.url);
 // O aluno mantém os painéis e os tamanhos ao passar de aula (até recarregar a página)
 // place: em que lugar está cada painel (L1/L2 à esquerda, R1/R2 à direita; 1 em cima, 2 em baixo)
 const PLACES = { ask: 'L1', video: 'L2', material: 'R1', notes: 'R2' };
-const memory = { material: true, notes: true, rail: false, splitX: null, splitR: 55, splitL: 55, splitRow: 60, splitM: 38, place: PLACES };
+// video/ask: o vídeo e o Alex ficam abertos ou fechados como o aluno os deixou, também ao mudar de módulo (2026-11-16)
+const memory = { video: true, ask: false, material: true, notes: true, rail: false, splitX: null, splitR: 55, splitL: 55, splitRow: 60, splitM: 38, place: PLACES };
 
 function useMobile() {
     const query = '(max-width: 767px)';
@@ -119,14 +120,15 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     const checksDone = checks.every((c) => c.chosen != null);
 
     // Painéis
-    const [showVideo, setShowVideo] = useState(hasPlayer);
+    // Abrem como o aluno os deixou na aula anterior (sem nenhum aberto, o vídeo abre)
+    const [showVideo, setShowVideo] = useState(() => hasPlayer && (memory.video || !(memory.material || memory.notes || (alex && memory.ask))));
     const [showMaterial, setShowMaterial] = useState(() => {
         if (!hasPlayer) return true;
-        return !mobile && memory.material && lesson.attachments.length > 0;
+        return !mobile && memory.material;
     });
     const [showNotes, setShowNotes] = useState(() => (mobile ? hasPlayer : memory.notes));
     const [showChecks, setShowChecks] = useState(false);
-    const [ask, setAsk] = useState(false);
+    const [ask, setAsk] = useState(() => !!alex && !mobile && memory.ask);
     const [askStarted, setAskStarted] = useState(false);
     const [evaluation, setEvaluation] = useState(null); // null | 'intro' | 'run'
     const beforeEvaluation = useRef(null);
@@ -151,8 +153,12 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     useEffect(() => { resumeAt.current = null; }, [lesson.ulid]);
 
     useEffect(() => {
-        Object.assign(memory, { material: showMaterial, notes: showNotes, rail, splitX, splitR, splitL, splitRow, splitM, place });
-    }, [showMaterial, showNotes, rail, splitX, splitR, splitL, splitRow, splitM, place]);
+        if (evaluation === 'run') return; // a avaliação muda os painéis por pouco tempo: não conta
+        Object.assign(memory, { notes: showNotes, rail, splitX, splitR, splitL, splitRow, splitM, place });
+        // Numa aula sem vídeo o conteúdo está no Material (abre sempre): o vídeo e o Material ficam como estavam
+        if (hasPlayer) Object.assign(memory, { video: showVideo, material: showMaterial });
+        if (alex) memory.ask = ask;
+    }, [showMaterial, showNotes, rail, splitX, splitR, splitL, splitRow, splitM, place, showVideo, ask, evaluation]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // No telemóvel só cabe um painel em baixo: material ou notas
     useEffect(() => { if (mobile && showMaterial && showNotes) setShowMaterial(false); }, [mobile]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -225,7 +231,13 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     };
 
     const startEvaluation = () => {
-        beforeEvaluation.current = { video: showVideo, material: showMaterial, notes: showNotes, checks: showChecks };
+        beforeEvaluation.current = { video: showVideo, material: showMaterial, notes: showNotes, checks: showChecks, place };
+        // Na avaliação, o vídeo abre ao lado do avatar (na outra coluna, em cima), não por baixo; no fim volta ao seu lugar
+        if (place.video[0] === place.ask[0]) {
+            const side = `${place.ask[0] === 'L' ? 'R' : 'L'}1`;
+            const other = Object.keys(place).find((k) => place[k] === side);
+            setPlace((p) => ({ ...p, video: side, [other]: p.video }));
+        }
         pauseVideo();
         setShowVideo(false); setShowMaterial(false); setShowNotes(false); setShowChecks(false); setAsk(false); setRail(false); setSheet(null);
         setEndsAt(Date.now() + evaluationMin * 60 * 1000);
@@ -235,7 +247,11 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     const endEvaluation = () => {
         if (alexEvaluation) endEvaluationCall();
         const p = beforeEvaluation.current;
-        if (p) { setShowVideo(p.video); setShowMaterial(p.material); setShowNotes(p.notes); setShowChecks(p.checks); }
+        if (p) {
+            if (p.place.video !== place.video) { resumeAt.current = player.current?.time() ?? null; player.current?.flush(); }
+            setPlace(p.place);
+            setShowVideo(p.video); setShowMaterial(p.material); setShowNotes(p.notes); setShowChecks(p.checks);
+        }
         setEvaluation(null);
     };
 
