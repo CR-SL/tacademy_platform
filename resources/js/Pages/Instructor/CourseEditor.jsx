@@ -127,6 +127,18 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
         return () => clearTimeout(tx);
     }, [save, flush]);
 
+    // Envios de ficheiros em curso (continuam com a aula fechada ou noutro passo; param ao sair do editor)
+    const [, setUploadsTick] = useState(0);
+    const [uploadError, setUploadError] = useState('');
+    useEffect(() => {
+        activeUploads.stop = false;
+        activeUploads.notify = (error) => {
+            setUploadsTick((n) => n + 1);
+            if (error) setUploadError(error);
+        };
+        return () => { activeUploads.stop = true; activeUploads.notify = null; };
+    }, []);
+
     // Avisar antes de sair com alterações por gravar ou com um vídeo a carregar (sair perde o envio)
     const confirmRef = useRef(null);
     const leaving = useRef(false);
@@ -141,8 +153,8 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
             if (activeUploads.count > 0) {
                 e.preventDefault();
                 confirmRef.current?.({
-                    title: t('Há um vídeo a carregar'),
-                    body: t('Se saíres agora, o envio perde-se e terás de carregar o vídeo outra vez.'),
+                    title: t('Há um ficheiro a carregar'),
+                    body: t('Se saíres agora, o envio perde-se e terás de carregar o ficheiro outra vez.'),
                     action: t('Sair na mesma'),
                     danger: true,
                 }).then((yes) => {
@@ -208,6 +220,7 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
         saved: c.status === 'published' ? t('Guardado · publicado') : t('Rascunho guardado'),
         error: saveError,
     }[save];
+    const statusLabel = activeUploads.count > 0 && save !== 'error' ? t('A carregar ficheiro… não feches a página.') : saveLabel;
 
     return (
         <StudentLayout>
@@ -242,11 +255,17 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                     })}
                     <div role="status" className="mt-3.5 hidden items-center gap-2 border-t border-line pt-3.5 text-[12.5px] text-muted lg:flex">
                         <i className={`h-2 w-2 flex-none rounded-full ${save === 'error' ? 'bg-live' : save === 'saved' ? 'bg-success' : save === 'new' ? 'bg-track' : 'bg-accent'}`} />
-                        <span className={save === 'error' ? 'text-live-ink' : ''}>{saveLabel}</span>
+                        <span className={save === 'error' ? 'text-live-ink' : ''}>{statusLabel}</span>
                     </div>
                 </aside>
 
                 <section className="min-w-0">
+                    {uploadError && (
+                        <p role="alert" className="mb-3 flex items-start gap-3 bg-live/10 px-4 py-2.5 text-sm text-live-ink">
+                            <span className="flex-1">{uploadError}</span>
+                            <button type="button" onClick={() => setUploadError('')} className="font-display text-[13px] font-semibold hover:text-ink">{t('Fechar')}</button>
+                        </p>
+                    )}
                     {save === 'error' && (
                         <p role="alert" className="mb-3 bg-live/10 px-4 py-2.5 text-sm text-live-ink">{saveError}</p>
                     )}

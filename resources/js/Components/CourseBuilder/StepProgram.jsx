@@ -148,7 +148,8 @@ function LessonRow({ l, index, count, open, onToggle, set, onMove, onDelete, upl
                 </button>
                 <button type="button" onClick={onToggle} className="min-w-0 text-left">
                     <span className={`block truncate ${l.title ? 'font-medium' : 'italic text-muted'}`}>{l.title || t('Aula sem título')}</span>
-                    <small className="block text-xs text-muted">{t(tx.label)}{l.minutes ? t(' · :minutes min', { minutes: l.minutes }) : ''}{extra}</small>
+                    <small className="block text-xs text-muted">{t(tx.label)}{l.minutes ? t(' · :minutes min', { minutes: l.minutes }) : ''}{extra}
+                        {activeUploads.lessons[l.key] > 0 && <b className="font-semibold text-accent-ink">{t(' · a carregar ficheiro…')}</b>}</small>
                 </button>
                 <span className={`hidden font-mono text-[11px] font-semibold uppercase tracking-[0.04em] sm:inline ${ok ? 'text-success-ink' : 'text-live-ink'}`}>
                     {ok ? <><span aria-hidden="true">✓ </span>{t('Completa')}</> : t('Incompleta')}
@@ -356,7 +357,19 @@ const videoMinutes = (file) => new Promise((resolve) => {
 
 // Upload do vídeo da aula aos pedaços (com barra de progresso); o endereço fica no link da aula
 // Vídeos a carregar neste momento: o editor avisa antes de sair da página (sair perde o envio)
-export const activeUploads = { count: 0 };
+// O envio continua quando se fecha a aula ou se muda de passo (antes parava sem aviso e o ficheiro perdia-se);
+// só pára quando se sai do editor (stop). O editor mostra "A carregar…" e os erros (notify).
+export const activeUploads = { count: 0, stop: false, lessons: {}, notify: null };
+const startUpload = (key) => {
+    activeUploads.count++;
+    activeUploads.lessons[key] = (activeUploads.lessons[key] ?? 0) + 1;
+    activeUploads.notify?.();
+};
+const endUpload = (key, error = '') => {
+    activeUploads.count--;
+    activeUploads.lessons[key] = Math.max(0, (activeUploads.lessons[key] ?? 1) - 1);
+    activeUploads.notify?.(error);
+};
 
 function VideoUpload({ l, set }) {
     const { videoMaxMb = 1024 } = usePage().props;
@@ -364,7 +377,6 @@ function VideoUpload({ l, set }) {
     const [err, setErr] = useState('');
     const [name, setName] = useState('');
     const cancel = useRef(false);
-    useEffect(() => () => { cancel.current = true; }, []); // saiu do editor: pára de enviar pedaços
     const uploaded = isUploadedVideo(l.url);
 
     const send = async (file) => {
@@ -378,11 +390,12 @@ function VideoUpload({ l, set }) {
         cancel.current = false;
         setName(file.name);
         setProgress(0);
-        activeUploads.count++;
+        startUpload(l.key);
+        let failed = '';
         try {
             let res;
             for (let i = 0; i < total; i++) {
-                if (cancel.current) { setProgress(null); return; }
+                if (cancel.current || activeUploads.stop) { setProgress(null); return; }
                 const form = new FormData();
                 form.append('id', id);
                 form.append('index', i);
@@ -399,9 +412,10 @@ function VideoUpload({ l, set }) {
             });
         } catch (e) {
             const d = e.response?.data;
-            setErr(d?.message && e.response.status !== 500 ? (Object.values(d.errors ?? {})[0]?.[0] ?? d.message) : t('Não foi possível carregar o vídeo. Tenta outra vez.'));
+            failed = d?.message && e.response.status !== 500 ? (Object.values(d.errors ?? {})[0]?.[0] ?? d.message) : t('Não foi possível carregar o vídeo. Tenta outra vez.');
+            setErr(failed);
         } finally {
-            activeUploads.count--;
+            endUpload(l.key, failed && t('Vídeo “:name”: :error', { name: file.name, error: failed }));
             setProgress(null);
         }
     };
@@ -456,7 +470,6 @@ function Attachments({ l, set, main }) {
     const [name, setName] = useState('');
     const [err, setErr] = useState('');
     const cancel = useRef(false);
-    useEffect(() => () => { cancel.current = true; }, []); // saiu do editor: pára de enviar pedaços
 
     const send = async (file) => {
         if (!file) return;
@@ -468,11 +481,12 @@ function Attachments({ l, set, main }) {
         cancel.current = false;
         setName(file.name);
         setProgress(0);
-        activeUploads.count++;
+        startUpload(l.key);
+        let failed = '';
         try {
             let res;
             for (let i = 0; i < total; i++) {
-                if (cancel.current) return;
+                if (cancel.current || activeUploads.stop) return;
                 const form = new FormData();
                 form.append('id', id);
                 form.append('index', i);
@@ -487,9 +501,10 @@ function Attachments({ l, set, main }) {
             set((x) => { x.attachments.push({ name: r.name, path: r.path, size: r.size, url: r.url }); });
         } catch (e) {
             const d = e.response?.data;
-            setErr(d?.message && e.response.status !== 500 ? (Object.values(d.errors ?? {})[0]?.[0] ?? d.message) : t('Não foi possível carregar o ficheiro. Tenta outra vez.'));
+            failed = d?.message && e.response.status !== 500 ? (Object.values(d.errors ?? {})[0]?.[0] ?? d.message) : t('Não foi possível carregar o ficheiro. Tenta outra vez.');
+            setErr(failed);
         } finally {
-            activeUploads.count--;
+            endUpload(l.key, failed && t('Ficheiro “:name”: :error', { name: file.name, error: failed }));
             setProgress(null);
         }
     };

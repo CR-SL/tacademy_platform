@@ -1618,5 +1618,11 @@
     "Não foi possível carregar o ficheiro. Tenta outra vez.": "The file could not be uploaded. Try again.",
     "O envio foi interrompido. Tenta carregar o ficheiro outra vez.": "The upload was interrupted. Try uploading the file again.",
     "O ficheiro não corresponde ao tipo indicado (PDF, imagens, Office ou zip).": "The file does not match its type (PDF, images, Office or zip).",
-    "O ficheiro não ficou guardado no servidor (pode estar sem espaço). Avisa a equipa T.Academy.": "The file was not saved on the server (it may be out of space). Let the T.Academy team know."
+    "O ficheiro não ficou guardado no servidor (pode estar sem espaço). Avisa a equipa T.Academy.": "The file was not saved on the server (it may be out of space). Let the T.Academy team know.",
+    "Há um ficheiro a carregar": "A file is uploading",
+    "Se saíres agora, o envio perde-se e terás de carregar o ficheiro outra vez.": "If you leave now, the upload is lost and you will have to upload the file again.",
+    "A carregar ficheiro… não feches a página.": "Uploading file… don't close the page.",
+    " · a carregar ficheiro…": " · uploading file…",
+    "Vídeo “:name”: :error": "Video “:name”: :error",
+    "Ficheiro “:name”: :error": "File “:name”: :error"
 }

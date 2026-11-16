@@ -361,7 +361,8 @@ class CourseBuilder
                 ]);
             }
         }
-        $current->except($keep)->each(function (LessonAttachment $a) {
+        // Pelo caminho (o except() de uma coleção Eloquent compara ids, não chaves: apagava todos os anexos que já existiam)
+        $current->reject(fn (LessonAttachment $a) => in_array($a->path, $keep, true))->each(function (LessonAttachment $a) {
             $a->delete();
             // Ficheiros do projeto não se apagam; os outros só depois de a gravação ser confirmada (pode ser recusada)
             // e só se nenhuma outra aula usar o mesmo ficheiro

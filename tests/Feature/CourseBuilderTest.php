@@ -208,6 +208,30 @@ class CourseBuilderTest extends TestCase
         $this->assertCount(0, $course->lessons()->get());
     }
 
+    public function test_saved_attachments_stay_when_the_course_is_saved_again(): void
+    {
+        $formador = $this->user('formador');
+        $this->actingAs($formador)->postJson('/formador/cursos', $this->payload())->assertCreated();
+        $course = Course::firstOrFail();
+        Storage::fake('public');
+        $dir = CourseBuilder::UPLOAD_DIR.'/'.CourseBuilder::attachmentDir($formador->id);
+        Storage::disk('public')->put("$dir/a.pdf", '%PDF-1.4');
+        Storage::disk('public')->put("$dir/b.pdf", '%PDF-1.4');
+
+        $data = $this->editorState($course);
+        $data['modules'][0]['lessons'][0]['attachments'] = [['name' => 'a.pdf', 'path' => "$dir/a.pdf"]];
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
+
+        // Gravar outra vez (como o editor faz a cada alteração) e juntar um segundo anexo: o primeiro fica
+        $data = $this->editorState($course);
+        $data['modules'][0]['lessons'][0]['attachments'][] = ['name' => 'b.pdf', 'path' => "$dir/b.pdf"];
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $this->editorState($course))->assertOk();
+
+        $this->assertSame(['a.pdf', 'b.pdf'], LessonAttachment::orderBy('order_index')->pluck('name')->all());
+        Storage::disk('public')->assertExists(["$dir/a.pdf", "$dir/b.pdf"]);
+    }
+
     public function test_a_published_course_already_missing_something_still_saves_other_changes(): void
     {
         $formador = $this->user('formador');
