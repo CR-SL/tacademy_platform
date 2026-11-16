@@ -397,6 +397,12 @@ export default function Lesson({ course, mode, program, lesson, position, progre
             ),
             <section key="material" className={`al-panel al-m ${materialOn ? '' : 'off'}`} aria-label={t('Material')} style={{ flexGrow: grow }}>
                 {panelBar('material', <IconDoc />)}
+                {/* Depois dos 90%, as perguntas rápidas voltam a abrir-se daqui (fechadas ou depois de recarregar a página) */}
+                {hasChecks && videoReady && (
+                    <button type="button" className="al-pill al-m-checks" onClick={() => { setShowChecks(true); if (mobile) setShowNotes(false); }}>
+                        {checksDone ? t('Ver as perguntas rápidas') : t('Perguntas rápidas')}
+                    </button>
+                )}
                 {lesson.type === 'quiz' && lesson.quiz ? (
                     <div className="al-m-scroll"><div className="al-card flush">
                         <QuizRunner key={lesson.ulid} lessonUlid={lesson.ulid} quiz={lesson.quiz} canSave={canSave} />

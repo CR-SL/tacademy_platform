@@ -29,8 +29,14 @@ export function dock(on) {
 
 const xsrf = () => decodeURIComponent((document.cookie.match(/XSRF-TOKEN=([^;]+)/) || [])[1] || '');
 
+// Número do arranque em curso: "Terminar" enquanto a conversa se prepara muda-o, e o arranque antigo desiste
+// (sem isto, a conversa entrava na sala segundos depois de o aluno a ter terminado, com o microfone aberto)
+let attempt = 0;
+
 export async function startAlex({ place, lesson = null }) {
     if (isActive(state)) return;
+    const mine = ++attempt;
+    const cancelled = () => mine !== attempt;
     set({ ...idle, docked: state.docked, status: 'starting', place });
 
     let conv;
@@ -38,26 +44,34 @@ export async function startAlex({ place, lesson = null }) {
         const { data } = await window.axios.post('/plataforma/alex/conversas', { place, lesson });
         conv = data;
     } catch (e) {
+        if (cancelled()) return;
         const res = e.response;
         set({ status: 'error', error: res?.data?.message || t('O Alex não está disponível agora. Tenta daqui a pouco.'), left: res?.data?.left ?? state.left, credits: res?.data?.credits ?? state.credits });
         return;
     }
+    // Terminou enquanto a sala era criada: fecha-a já no servidor e não entra
+    if (cancelled()) { tellServer(conv.id); return; }
     set({ conv, left: conv.left, credits: conv.credits });
 
     try {
         const { default: Daily } = await import('@daily-co/daily-js');
+        if (cancelled()) return; // endAlex já avisou o servidor (a conversa estava guardada)
         call?.destroy?.();
         call = Daily.createCallObject({ subscribeToTracksAutomatically: true });
         alexWasHere = false;
         const sync = () => syncTracks();
         call.on('participant-joined', sync).on('participant-updated', sync).on('participant-left', onParticipantLeft)
             .on('track-started', sync).on('track-stopped', sync)
-            .on('joined-meeting', () => { set({ status: 'waiting' }); sync(); })
+            .on('joined-meeting', () => { if (cancelled()) return; set({ status: 'waiting' }); sync(); })
             .on('left-meeting', () => finish())
             .on('camera-error', () => fail(t('Precisamos do microfone para falares com o Alex. Autoriza-o no browser e tenta outra vez.')))
             .on('error', () => fail(t('A ligação ao Alex caiu. Tenta outra vez.')));
-        await call.join({ url: conv.url, token: conv.token || undefined, startVideoOff: true, startAudioOff: false });
+        const joining = call;
+        await joining.join({ url: conv.url, token: conv.token || undefined, startVideoOff: true, startAudioOff: false });
+        // Terminou enquanto entrava na sala: sai já (o finish do endAlex pode ter corrido antes de haver chamada)
+        if (cancelled() && joining === call) teardown();
     } catch {
+        if (cancelled()) return;
         fail(t('Não foi possível ligar ao Alex. Verifica o microfone e a ligação à internet.'));
     }
 }
@@ -119,6 +133,7 @@ function tellServer(id, keepalive = false) {
 export async function endAlex() {
     const conv = state.conv;
     if (!conv && !isActive(state)) return;
+    attempt++; // cancela um arranque que ainda esteja a meio
     finish();
     if (conv) {
         const data = await tellServer(conv.id);

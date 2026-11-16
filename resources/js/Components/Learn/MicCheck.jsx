@@ -7,6 +7,7 @@ export default function MicCheck() {
     const [state, setState] = useState('idle'); // idle | asking | on | heard | denied | none
     const [level, setLevel] = useState(0);
     const live = useRef(null);
+    const gone = useRef(false); // o teste fechou (Continuar, Esc, fechar) enquanto o browser pedia autorização
 
     const stop = () => {
         const l = live.current;
@@ -16,13 +17,18 @@ export default function MicCheck() {
         l.ctx.close().catch(() => {});
         live.current = null;
     };
-    useEffect(() => stop, []);
+    useEffect(() => {
+        gone.current = false;
+        return () => { gone.current = true; stop(); };
+    }, []);
 
     const start = async () => {
         if (!navigator.mediaDevices?.getUserMedia) { setState('none'); return; }
         setState('asking');
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // A autorização chegou depois de o teste fechar: desliga já o microfone
+            if (gone.current) { stream.getTracks().forEach((tr) => tr.stop()); return; }
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const analyser = ctx.createAnalyser();
             analyser.fftSize = 512;

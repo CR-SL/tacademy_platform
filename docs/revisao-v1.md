@@ -23,6 +23,15 @@ Os problemas de segurança vêm marcados com **[Segurança]**. A auditoria de se
 - A8 (decisão): gravar um curso publicado incompleto é recusado. Os ficheiros retirados só se apagam do disco depois de a gravação ser aceite.
 - A16: a inscrição passa a concluída quando sai o certificado.
 
+**Corrigidos (grupo 4, aula e Alex, ainda sem commit):** B1, B2, B8, B10, B11 e B12. Os testes continuam a passar (146) e a interface compila. Não foi experimentado no browser.
+- B9 (decisão): a Avaliação fica como está, como demonstração do que vem aí.
+- B1: se o teste do microfone fechar enquanto o browser pede autorização, o microfone desliga-se assim que a autorização chega.
+- B2: "Terminar" enquanto a conversa com o Alex se prepara cancela-a e fecha a sala no servidor.
+- B8: o leitor de vídeo deixa de acumular envios de posições antigas ao fechar a página.
+- B10: depois dos 90%, há um botão "Perguntas rápidas" no painel do material para as reabrir.
+- B11: sem a resposta certa (aula de amostra), mostra só "A tua escolha", sem certo nem errado.
+- B12: mensagem com "Tentar outra vez" quando o vídeo próprio não carrega, e aviso quando a resposta rápida não é guardada.
+
 **Pendente para a mudança para o OVH (domínio tacademy.pt):**
 1. Verificar o domínio (ou um subdomínio, como `envio.tacademy.pt`) no serviço de email e mudar `MAIL_FROM_ADDRESS`.
 2. Retirar `MAIL_ALWAYS_TO`.

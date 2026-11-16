@@ -148,12 +148,16 @@ const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initia
         const autosave = setInterval(() => save(), 15000);
         const onHide = () => { if (document.visibilityState === 'hidden') save(true); };
         document.addEventListener('visibilitychange', onHide);
-        window.addEventListener('pagehide', () => save(true));
+        // Removido ao fechar o leitor: senão cada aula aberta deixava um ouvinte que, ao fechar a página,
+        // enviava a posição antiga dessa aula e podia estragar o "retomar onde ficou"
+        const onPageHide = () => save(true);
+        window.addEventListener('pagehide', onPageHide);
         return () => {
             cancelled = true;
             clearInterval(tick);
             clearInterval(autosave);
             document.removeEventListener('visibilitychange', onHide);
+            window.removeEventListener('pagehide', onPageHide);
             save(true);
             try { player.current?.destroy?.(); } catch { /* leitor já fechado */ }
         };

@@ -108,6 +108,9 @@ a.al-les:hover { background: var(--al-hover); }
 
 /* Material */
 .al-m { background: var(--color-surface2); }
+/* Reabrir as perguntas rápidas depois dos 90% (sempre visível, por cima do material) */
+.al-m-checks { position: absolute; left: 18px; bottom: 14px; z-index: 4; box-shadow: 0 14px 40px rgba(0, 0, 0, .18); }
+.al-m-checks:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
 .al-m-scroll { flex: 1; min-height: 0; overflow: auto; padding: 48px 28px 28px; scrollbar-width: none; }
 .al-m-scroll::-webkit-scrollbar { display: none; }
 .al-card { background: var(--color-surface); border-radius: 0; padding: 34px 34px 30px; max-width: 760px; margin: 0 auto; }

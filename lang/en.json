@@ -1573,5 +1573,9 @@
     "A aula \":title\" é um teste que já tem tentativas de alunos. Não podes mudar o tipo desta aula.": "The lesson \":title\" is a test that students have already taken. You cannot change the type of this lesson.",
     "Este curso tem alunos inscritos e não pode ser apagado. Podes deixá-lo em rascunho: sai do catálogo e os alunos continuam a ter acesso.": "This course has enrolled students and cannot be deleted. You can keep it as a draft: it leaves the catalogue and students keep their access.",
     "O curso voltou a rascunho e saiu do catálogo. Quem já está inscrito continua a ter acesso.": "The course is back to draft and out of the catalogue. Students already enrolled keep their access.",
-    "Este curso está publicado e não pode ficar incompleto. Falta: :items. Completa-o ou passa-o a rascunho para gravar.": "This course is published and cannot be left incomplete. Missing: :items. Complete it or move it back to draft to save."
+    "Este curso está publicado e não pode ficar incompleto. Falta: :items. Completa-o ou passa-o a rascunho para gravar.": "This course is published and cannot be left incomplete. Missing: :items. Complete it or move it back to draft to save.",
+    "Ver as perguntas rápidas": "See the quick questions",
+    "A tua escolha": "Your choice",
+    "Não foi possível guardar a resposta. Verifica a ligação e tenta outra vez.": "Your answer could not be saved. Check your connection and try again.",
+    "Não foi possível carregar o vídeo. Verifica a ligação à internet e tenta outra vez.": "The video could not be loaded. Check your internet connection and try again."
 }

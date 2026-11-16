@@ -70,6 +70,9 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
     const [muted, setMuted] = useState(false);
     const [rate, setRate] = useState(1);
     const [levels, setLevels] = useState([]);
+    const [failed, setFailed] = useState(false); // o vídeo não carregou (rede, ficheiro em falta)
+    const [retry, setRetry] = useState(0);
+    const resumeFrom = useRef(startAt); // segundo onde retomar (ao abrir ou ao tentar outra vez)
     const [level, setLevel] = useState(-1);
     const [autoH, setAutoH] = useState(null);
     const [menu, setMenu] = useState(null); // 'speed' | 'quality'
@@ -102,12 +105,20 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
                     d.levels.map((l, i) => ({ i, h: l.height })).sort((a, b) => b.h - a.h).filter((x, k, a) => !k || a[k - 1].h !== x.h),
                 ));
                 h.on(Hls.Events.LEVEL_SWITCHED, (e, d) => setAutoH(h.levels[d.level]?.height ?? null));
-            });
+                // Erros que o hls.js não resolve sozinho: mostra o aviso com "Tentar outra vez"
+                h.on(Hls.Events.ERROR, (e, d) => { if (d.fatal) { setWaiting(false); setFailed(true); } });
+            }).catch(() => { if (!cancelled) setFailed(true); });
         } else {
             v.src = src;
         }
         return () => { cancelled = true; hls.current?.destroy(); hls.current = null; };
-    }, [src]);
+    }, [src, retry]);
+
+    const tryAgain = () => {
+        resumeFrom.current = tx;
+        setFailed(false);
+        setRetry((n) => n + 1);
+    };
 
     useEffect(() => {
         const onFs = () => setFull(fsElement() === root.current);
@@ -216,7 +227,8 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
                 className="absolute inset-0 h-full w-full bg-black object-contain"
                 onLoadedMetadata={(e) => {
                     const v = e.currentTarget;
-                    if (startAt > 2 && v.currentTime < 1) v.currentTime = startAt - 2; // retoma onde parou
+                    const from = resumeFrom.current;
+                    if (from > 2 && v.currentTime < 1) v.currentTime = from - 2; // retoma onde parou
                     setDur(v.duration);
                     onReady?.(v.duration);
                 }}
@@ -235,7 +247,15 @@ const CinemaPlayer = forwardRef(function CinemaPlayer({ src, startAt = 0, map, d
                     if (v.volume > 0) { try { localStorage.setItem(VOLUME_KEY, String(v.volume)); } catch { /* sem armazenamento: não guarda */ } }
                 }}
                 onRateChange={(e) => setRate(e.currentTarget.playbackRate)}
+                onError={() => { if (!hls.current) { setWaiting(false); setFailed(true); } }}
             />
+
+            {failed && (
+                <div role="alert" className="absolute inset-0 z-[6] flex flex-col items-center justify-center gap-3 bg-black/80 p-6 text-center">
+                    <p className="max-w-sm text-[15px]">{t('Não foi possível carregar o vídeo. Verifica a ligação à internet e tenta outra vez.')}</p>
+                    <button type="button" className="ui-btn ui-btn-sm ui-btn-glass" onClick={tryAgain}>{t('Tentar outra vez')}</button>
+                </div>
+            )}
 
             {waiting && <span className="pointer-events-none absolute left-1/2 top-1/2 -ml-[22px] -mt-[22px] h-11 w-11 animate-spin rounded-full border-[3px] border-white/25 border-t-accent" aria-hidden="true" />}
             {flash && (
