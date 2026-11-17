@@ -280,10 +280,10 @@ class TeamsAndRequestsTest extends TestCase
         $aluno = $this->user('aluno', ['alex_credits' => 0]);
         $r = ContactRequest::create(['kind' => 'creditos', 'type' => 'particular', 'status' => 'pago', 'name' => $aluno->name, 'email' => $aluno->email, 'user_id' => $aluno->id, 'credits' => 10, 'message' => 'Créditos']);
 
-        $this->actingAs($gestor)->post("/gestao/pedidos/{$r->id}/autorizar")->assertRedirect();
+        $this->actingAs($gestor)->post("/gestao/pedidos/{$r->id}/autorizar", ['payment_ref' => 'MB Way 12/11'])->assertRedirect();
         // O segundo clique não dá os créditos outra vez
         $this->assertSame(10, $aluno->fresh()->alex_credits);
-        $this->actingAs($gestor)->post("/gestao/pedidos/{$r->id}/autorizar");
+        $this->actingAs($gestor)->post("/gestao/pedidos/{$r->id}/autorizar", ['payment_ref' => 'MB Way 12/11']);
         $this->assertSame(10, $aluno->fresh()->alex_credits);
         $this->assertSame('concluido', $r->fresh()->status);
     }
@@ -329,15 +329,21 @@ class TeamsAndRequestsTest extends TestCase
 
         $this->actingAs($aluno)->post("/cursos/{$course->slug}/comprar")->assertRedirect();
         $r = ContactRequest::firstOrFail();
-        $this->assertSame(['compra', 'particular', 'pago'], [$r->kind, $r->type, $r->status]);
+        $this->assertSame(['compra', 'particular', 'aguardar_pagamento'], [$r->kind, $r->type, $r->status]);
         $this->assertFalse($aluno->enrollments()->exists());
 
         // Uma segunda compra do mesmo curso não cria outro pedido
         $this->actingAs($aluno)->post("/cursos/{$course->slug}/comprar");
         $this->assertSame(1, ContactRequest::count());
 
-        $this->actingAs($gestor)->post("/gestao/pedidos/{$r->id}/autorizar")->assertRedirect();
-        $this->assertSame('concluido', $r->fresh()->status);
+        // Sem a referência do pagamento, o gestor não consegue autorizar (nem que mude o estado para "Pago" à mão)
+        $this->actingAs($gestor)->post("/gestao/pedidos/{$r->id}/autorizar")->assertSessionHasErrors('payment_ref');
+        $this->actingAs($gestor)->patch("/gestao/pedidos/{$r->id}", ['status' => 'pago']);
+        $this->actingAs($gestor)->post("/gestao/pedidos/{$r->id}/autorizar", ['payment_ref' => '  '])->assertSessionHasErrors('payment_ref');
+        $this->assertFalse($aluno->enrollments()->exists());
+
+        $this->actingAs($gestor)->post("/gestao/pedidos/{$r->id}/autorizar", ['payment_ref' => 'MB Way 12/11'])->assertRedirect();
+        $this->assertSame(['concluido', 'MB Way 12/11'], [$r->fresh()->status, $r->fresh()->payment_ref]);
         $this->assertTrue($aluno->enrollments()->where('course_id', $course->id)->whereNull('company_id')->exists());
     }
 

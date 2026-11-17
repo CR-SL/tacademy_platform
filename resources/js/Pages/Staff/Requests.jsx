@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
 import MembersEditor from '@/Components/Teams/MembersEditor';
 import { Box, btn, Chip, Drawer, FlashToast, inputCls, PageHead, Tabs, Td, Th } from '@/Components/Teams/ui';
-import { useConfirm } from '@/Components/ui';
+import { Field, useConfirm } from '@/Components/ui';
 
 import { t } from '@/i18n';
 
@@ -61,7 +61,7 @@ export default function Requests({ requests, open, statuses, kinds, changeTypes,
             </div>
 
             {current && !creating && (
-                <RequestDrawer r={current} statuses={statuses} kinds={kinds} changeTypes={changeTypes} onClose={() => setSelected(null)} onCreateTeam={() => setCreating(true)} />
+                <RequestDrawer key={current.id} r={current} statuses={statuses} kinds={kinds} changeTypes={changeTypes} onClose={() => setSelected(null)} onCreateTeam={() => setCreating(true)} />
             )}
             {current && creating && <CreateTeam r={current} courses={courses} onClose={() => setCreating(false)} />}
             <FlashToast />
@@ -82,10 +82,19 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
         reply.post(`/gestao/pedidos/${r.id}/responder`, { preserveScroll: true, preserveState: true, onSuccess: () => reply.reset() });
     };
     const [confirm, confirmDialog] = useConfirm();
+    // Compra pessoal ou de créditos ainda por autorizar. Com dinheiro envolvido, só com a referência do pagamento.
+    const authorizable = personal && ['aguardar_pagamento', 'pago'].includes(r.status);
+    const pay = useForm({ payment_ref: r.payment_ref ?? '' });
+    const missingRef = r.needs_payment && !pay.data.payment_ref.trim();
     const authorize = async () => {
+        if (missingRef) {
+            pay.setError('payment_ref', t('Escreve a referência do pagamento (MB Way, transferência, fatura…) antes de autorizar.'));
+            document.getElementById('payment_ref')?.focus();
+            return;
+        }
         const body = credits ? t('Recebe :n créditos de avatar (:n conversas com o Alex).', { n: r.credits }) : t('Passa a ter acesso ao curso “:v1”.', { v1: r.course?.title });
         if (await confirm({ title: t('Autorizar o acesso de :name?', { name: r.name }), body, action: t('Autorizar o acesso') })) {
-            router.post(`/gestao/pedidos/${r.id}/autorizar`, {}, { preserveScroll: true, preserveState: true });
+            pay.post(`/gestao/pedidos/${r.id}/autorizar`, { preserveScroll: true, preserveState: true });
         }
     };
 
@@ -104,8 +113,8 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
                     {r.kind === 'compra' && !personal && r.status === 'pago' && !r.team && (
                         <button type="button" className={btn.accent} onClick={onCreateTeam}>{t('Criar equipa ▶')}</button>
                     )}
-                    {personal && r.status === 'pago' && (
-                        <button type="button" className={btn.accent} onClick={authorize}>{t('Autorizar acesso ▶')}</button>
+                    {authorizable && (
+                        <button type="button" className={btn.accent} onClick={authorize} disabled={pay.processing}>{t('Autorizar acesso ▶')}</button>
                     )}
                     {r.team && (
                         <Link href={`/gestao/equipas/${r.team.ulid}`} className={btn.dark}>{isChange ? t('Abrir equipa ▶') : t('Ver equipa ▶')}</Link>
@@ -125,10 +134,24 @@ function RequestDrawer({ r, statuses, kinds, changeTypes, onClose, onCreateTeam 
                     })}
                 </div>
             )}
-            {personal && r.status === 'pago' && (
-                <p className="bg-accent/15 px-4 py-3 text-sm">{credits
-                    ? t('Compra de créditos de avatar com pagamento simulado (o pagamento pela plataforma ainda não está ativo). Ao autorizar, os créditos entram na conta do aluno.')
-                    : t('Compra a título pessoal com pagamento simulado (o pagamento pela plataforma ainda não está ativo). Ao autorizar, o aluno passa a ter o curso.')}</p>
+            {authorizable && (
+                <div className="flex flex-col gap-3 bg-accent/15 px-4 py-3 text-sm">
+                    <p>{r.needs_payment
+                        ? (credits
+                            ? t('O pagamento pela plataforma ainda não está ativo. Envia ao aluno os dados de pagamento (responde em baixo) e, quando o pagamento chegar, escreve a referência e autoriza: os créditos entram na conta do aluno.')
+                            : t('O pagamento pela plataforma ainda não está ativo. Envia ao aluno os dados de pagamento (responde em baixo) e, quando o pagamento chegar, escreve a referência e autoriza: o aluno passa a ter o curso.'))
+                        : t('Curso gratuito: ao autorizar, o aluno passa a ter o curso.')}</p>
+                    {r.amount > 0 && <p><b>{t('Valor')}:</b> {r.amount.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</p>}
+                    {r.needs_payment && (
+                        <Field id="payment_ref" label={t('Referência do pagamento')} hint={t('Ex.: MB Way 912 345 678 · 12/11, transferência, n.º da fatura.')} error={pay.errors.payment_ref} required>
+                            <input id="payment_ref" className={inputCls} maxLength={120} value={pay.data.payment_ref}
+                                onChange={(e) => { pay.setData('payment_ref', e.target.value); pay.clearErrors('payment_ref'); }} />
+                        </Field>
+                    )}
+                </div>
+            )}
+            {personal && r.payment_ref && !authorizable && (
+                <p className="text-sm"><span className="text-muted">{t('Referência do pagamento')}:</span> {r.payment_ref}</p>
             )}
 
             <Box title={t('Contacto')}>

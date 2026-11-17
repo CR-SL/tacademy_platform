@@ -266,17 +266,20 @@ class AlexTest extends TestCase
         $outsider = $this->student($this->other);
         $gestor = User::factory()->create(['role_id' => Role::where('name', 'gestor_cursos')->value('id')]);
 
-        // Compra: fica um pedido "Pago" (simulado) à espera do gestor; uma de cada vez; só pacotes à venda
+        // Compra: fica um pedido "A aguardar pagamento" à espera do gestor; uma de cada vez; só pacotes à venda
         $this->actingAs($outsider)->post('/plataforma/alex/creditos', ['credits' => 7])->assertSessionHasErrors('credits');
         $this->actingAs($outsider)->post('/plataforma/alex/creditos', ['credits' => 5])->assertRedirect();
         $this->actingAs($outsider)->post('/plataforma/alex/creditos', ['credits' => 10])->assertRedirect();
         $request = ContactRequest::where('kind', 'creditos')->sole();
-        $this->assertSame([5, 'pago'], [$request->credits, $request->status]);
+        $this->assertSame([5, 'aguardar_pagamento'], [$request->credits, $request->status]);
         $this->assertSame(0, $outsider->fresh()->alex_credits);
         $this->actingAs($outsider)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.buy', true)->where('alex.pending', 5));
 
         // O gestor autoriza: os créditos entram e o Alex passa a falar no Início
-        $this->actingAs($gestor)->post("/gestao/pedidos/{$request->id}/autorizar")->assertRedirect();
+        // Sem a referência do pagamento não se autoriza; com ela, os créditos entram e o Alex passa a falar no Início
+        $this->actingAs($gestor)->post("/gestao/pedidos/{$request->id}/autorizar")->assertSessionHasErrors('payment_ref');
+        $this->assertSame(0, $outsider->fresh()->alex_credits);
+        $this->actingAs($gestor)->post("/gestao/pedidos/{$request->id}/autorizar", ['payment_ref' => 'MB Way 12/11'])->assertRedirect();
         $this->assertSame(5, $outsider->refresh()->alex_credits);
         $this->assertSame('concluido', $request->fresh()->status);
         $this->actingAs($outsider)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.place', 'inicio')->where('alex.credits', 5)->where('alex.left', 0)->where('alex.free', false));

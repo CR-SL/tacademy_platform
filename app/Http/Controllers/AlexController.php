@@ -42,8 +42,8 @@ class AlexController extends Controller
     }
 
     /**
-     * Compra de créditos de avatar (1 crédito = 1 conversa). Como a compra de cursos: o pagamento ainda é
-     * simulado, fica um pedido "Pago" e o gestor de cursos autoriza em Pedidos; os créditos entram aí.
+     * Compra de créditos de avatar (1 crédito = 1 conversa). Como a compra de cursos: fica um pedido
+     * "A aguardar pagamento" e o gestor de cursos autoriza em Pedidos, com a referência do pagamento; os créditos entram aí.
      */
     public function buy(Request $request, TeamService $teams): RedirectResponse
     {
@@ -59,17 +59,18 @@ class AlexController extends Controller
         $r = ContactRequest::create([
             'kind' => 'creditos',
             'type' => 'particular',
-            'status' => 'pago',
+            'status' => 'aguardar_pagamento', // o gestor só autoriza com a referência do pagamento
             'credits' => $credits,
+            'amount' => (float) $packs[$credits],
             'name' => $user->name,
             'email' => $user->email,
             'user_id' => $user->id,
-            'message' => __('Compra de :n créditos de avatar (:price €). Pagamento simulado enquanto o pagamento pela plataforma não está ativo.', ['n' => $credits, 'price' => $price]),
+            'message' => __('Compra de :n créditos de avatar (:price €). A aguardar pagamento: a equipa da T.Academy envia os dados de pagamento por email.', ['n' => $credits, 'price' => $price]),
         ]);
         $r->messages()->create(['user_id' => $user->id, 'author' => $user->name, 'body' => $r->message]);
         $teams->notifyStaff($r);
 
-        return back()->with('status', __('Compra registada. Os créditos ficam disponíveis assim que o gestor de cursos a autorizar.'));
+        return back()->with('status', __('Compra registada. Vais receber por email os dados de pagamento; os créditos ficam disponíveis assim que o pagamento for confirmado.'));
     }
 
     public function end(Request $request, AlexConversation $conversation): JsonResponse

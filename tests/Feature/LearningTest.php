@@ -177,7 +177,7 @@ class LearningTest extends TestCase
 
         $this->actingAs($u)->post('/cursos/curso-de-teste/comprar')->assertRedirect();
         $r = \App\Models\ContactRequest::where('user_id', $u->id)->firstOrFail();
-        $this->actingAs($this->user('gestor_cursos'))->post("/gestao/pedidos/{$r->id}/autorizar")->assertRedirect();
+        $this->actingAs($this->user('gestor_cursos'))->post("/gestao/pedidos/{$r->id}/autorizar", ['payment_ref' => 'Transferência 14/11'])->assertRedirect();
 
         $this->assertTrue(Enrollment::where('user_id', $u->id)->value('enrolled_at') > now()->subDay());
         $this->assertSame(1, Enrollment::where('user_id', $u->id)->count());

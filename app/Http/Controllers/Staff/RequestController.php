@@ -45,6 +45,9 @@ class RequestController extends Controller
                 'course' => $r->course ? ['id' => $r->course->id, 'title' => $r->course->title] : null,
                 'packs' => $r->packs,
                 'credits' => $r->credits,
+                'amount' => $r->amount !== null ? (float) $r->amount : null,
+                'payment_ref' => $r->payment_ref,
+                'needs_payment' => $r->needsPayment(),
                 'people' => $r->people ?? [],
                 'change_type' => $r->change_type,
                 'team' => $r->team ? ['id' => $r->team->id, 'ulid' => $r->team->ulid, 'name' => $r->team->name] : null,
@@ -122,18 +125,22 @@ class RequestController extends Controller
         return to_route('staff.teams.show', $company)->with('status', __('Equipa criada. Os convites foram enviados por email.'));
     }
 
-    /** Compra a título pessoal (pagamento simulado, estado "Pago") → dá acesso ao curso, ou os créditos de avatar. */
+    /**
+     * Compra a título pessoal → dá acesso ao curso, ou os créditos de avatar. Ainda não há pagamento pela plataforma:
+     * quando a compra envolve dinheiro, o gestor tem de escrever a referência do pagamento que confirmou.
+     */
     public function authorizePurchase(Request $request, ContactRequest $contactRequest): RedirectResponse
     {
+        $ref = $this->paymentRef($request, $contactRequest);
         if ($contactRequest->kind === 'creditos') {
-            return $this->authorizeCredits($request, $contactRequest);
+            return $this->authorizeCredits($request, $contactRequest, $ref);
         }
-        abort_unless($contactRequest->kind === 'compra' && $contactRequest->type === 'particular' && $contactRequest->status === 'pago'
-            && $contactRequest->user_id && $contactRequest->course_id, 422, __('Este pedido não é uma compra pessoal paga.'));
+        abort_unless($contactRequest->kind === 'compra' && $contactRequest->type === 'particular' && in_array($contactRequest->status, ContactRequest::AUTHORIZABLE, true)
+            && $contactRequest->user_id && $contactRequest->course_id, 422, __('Este pedido não é uma compra pessoal por autorizar.'));
 
         $student = User::findOrFail($contactRequest->user_id);
-        $done = DB::transaction(function () use ($request, $contactRequest, $student) {
-            if (! $this->claim($request, $contactRequest)) return false;
+        $done = DB::transaction(function () use ($request, $contactRequest, $student, $ref) {
+            if (! $this->claim($request, $contactRequest, $ref)) return false;
             $this->teams->enroll($student, $contactRequest->course_id, null);
 
             return true;
@@ -152,13 +159,13 @@ class RequestController extends Controller
     }
 
     /** Compra de créditos de avatar paga → os créditos entram na conta do aluno. */
-    private function authorizeCredits(Request $request, ContactRequest $contactRequest): RedirectResponse
+    private function authorizeCredits(Request $request, ContactRequest $contactRequest, ?string $ref): RedirectResponse
     {
-        abort_unless($contactRequest->status === 'pago' && $contactRequest->user_id && $contactRequest->credits > 0, 422, __('Este pedido não é uma compra de créditos paga.'));
+        abort_unless(in_array($contactRequest->status, ContactRequest::AUTHORIZABLE, true) && $contactRequest->user_id && $contactRequest->credits > 0, 422, __('Este pedido não é uma compra de créditos por autorizar.'));
 
         $student = User::findOrFail($contactRequest->user_id);
-        $done = DB::transaction(function () use ($request, $contactRequest, $student) {
-            if (! $this->claim($request, $contactRequest)) return false;
+        $done = DB::transaction(function () use ($request, $contactRequest, $student, $ref) {
+            if (! $this->claim($request, $contactRequest, $ref)) return false;
             $student->increment('alex_credits', $contactRequest->credits);
 
             return true;
@@ -177,15 +184,28 @@ class RequestController extends Controller
     }
 
     /**
-     * Passa o pedido de "pago" a "concluido" só se ainda estiver "pago", com a linha bloqueada (chamar dentro de uma
+     * A referência do pagamento (MB Way, transferência, fatura…). Obrigatória quando a compra envolve dinheiro,
+     * a não ser que já esteja no pedido. Um pedido marcado "Pago" à mão também precisa dela.
+     */
+    private function paymentRef(Request $request, ContactRequest $contactRequest): ?string
+    {
+        $ref = $request->validate([
+            'payment_ref' => [$contactRequest->needsPayment() && ! $contactRequest->payment_ref ? 'required' : 'nullable', 'string', 'max:120'],
+        ], ['payment_ref.required' => __('Escreve a referência do pagamento (MB Way, transferência, fatura…) antes de autorizar.')])['payment_ref'] ?? null;
+
+        return trim((string) $ref) ?: $contactRequest->payment_ref;
+    }
+
+    /**
+     * Passa a compra a "concluido" só se ainda estiver por autorizar, com a linha bloqueada (chamar dentro de uma
      * transação). Dois cliques ao mesmo tempo: só o primeiro muda o estado, por isso o acesso ou os créditos só se
      * dão uma vez. Pelo modelo, para o registo de atividade continuar a ver a mudança de estado.
      */
-    private function claim(Request $request, ContactRequest $contactRequest): bool
+    private function claim(Request $request, ContactRequest $contactRequest, ?string $ref): bool
     {
         $locked = ContactRequest::whereKey($contactRequest->id)->lockForUpdate()->first();
-        if (! $locked || $locked->status !== 'pago') return false;
-        $locked->update(['status' => 'concluido', 'assigned_to' => $locked->assigned_to ?? $request->user()->id]);
+        if (! $locked || ! in_array($locked->status, ContactRequest::AUTHORIZABLE, true)) return false;
+        $locked->update(['status' => 'concluido', 'payment_ref' => $ref, 'assigned_to' => $locked->assigned_to ?? $request->user()->id]);
 
         return true;
     }

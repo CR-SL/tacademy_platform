@@ -9,8 +9,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
- * Compra de um curso a título pessoal. O pagamento pela plataforma ainda não está decidido:
- * por agora a "compra" é simulada e cria um pedido já no estado Pago, que o Gestor de Cursos autoriza.
+ * Compra de um curso a título pessoal. O pagamento pela plataforma ainda não está decidido: por agora cria um pedido
+ * "A aguardar pagamento"; o Gestor de Cursos combina o pagamento e autoriza com a referência do pagamento.
  */
 class PurchaseController extends Controller
 {
@@ -32,20 +32,26 @@ class PurchaseController extends Controller
             return $back(__('A tua compra já está registada e aguarda autorização.'));
         }
 
+        $amount = $course->is_free ? 0 : (float) $course->price; // o preço deste momento (a receita não muda se o preço mudar)
         $r = ContactRequest::create([
             'kind' => 'compra',
             'type' => 'particular',
-            'status' => 'pago',
+            // Ainda não há pagamento pela plataforma: o gestor combina o pagamento e só autoriza com a referência
+            'status' => $amount > 0 ? 'aguardar_pagamento' : 'pago',
             'name' => $user->name,
             'email' => $user->email,
             'user_id' => $user->id,
             'course_id' => $course->id,
-            'amount' => $course->is_free ? 0 : $course->price, // o preço deste momento (a receita não muda se o preço mudar)
-            'message' => __('Compra a título pessoal (pagamento simulado enquanto o pagamento pela plataforma não está ativo).'),
+            'amount' => $amount,
+            'message' => $amount > 0
+                ? __('Compra a título pessoal. A aguardar pagamento: a equipa da T.Academy envia os dados de pagamento por email.')
+                : __('Inscrição a título pessoal num curso gratuito.'),
         ]);
         $r->messages()->create(['user_id' => $user->id, 'author' => $user->name, 'body' => $r->message]);
         $teams->notifyStaff($r->load('course'));
 
-        return $back(__('Compra registada. Ficas com acesso assim que o gestor de cursos a autorizar.'));
+        return $back($amount > 0
+            ? __('Compra registada. Vais receber por email os dados de pagamento; ficas com acesso assim que o pagamento for confirmado.')
+            : __('Compra registada. Ficas com acesso assim que o gestor de cursos a autorizar.'));
     }
 }

@@ -50,6 +50,9 @@ class ContactRequest extends Model
 
     public const OPEN = ['novo', 'em_esclarecimento', 'aguardar_pagamento', 'pago', 'equipa_criada'];
 
+    /** Estados em que uma compra pessoal ou de créditos ainda se pode autorizar. */
+    public const AUTHORIZABLE = ['aguardar_pagamento', 'pago'];
+
     public const CHANGE_TYPES = [
         'adicionar' => 'Adicionar pessoa',
         'retirar' => 'Retirar pessoa',
@@ -62,6 +65,7 @@ class ContactRequest extends Model
         'kind',
         'credits',
         'amount', // preço pago (compra pessoal), para a receita não mudar quando o preço do curso muda
+        'payment_ref', // referência do pagamento, escrita pelo gestor ao autorizar
         'type',
         'name',
         'email',
@@ -104,6 +108,14 @@ class ContactRequest extends Model
     public function requester(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /** Compra pessoal ou de créditos que envolve dinheiro: só se autoriza com a referência do pagamento. */
+    public function needsPayment(): bool
+    {
+        // Pedidos antigos não têm o preço guardado (amount vazio): conta como pago
+        return $this->kind === 'creditos'
+            || ($this->kind === 'compra' && $this->type === 'particular' && ($this->amount === null || (float) $this->amount > 0));
     }
 
     public function assignee(): BelongsTo

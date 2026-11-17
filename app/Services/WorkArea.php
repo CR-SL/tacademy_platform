@@ -47,7 +47,7 @@ class WorkArea
                     'ago' => $r->created_at?->diffForHumans(),
                 ]);
             $out['purchases'] = ContactRequest::with('course:id,title')->where('kind', 'compra')->where('type', 'particular')
-                ->where('status', 'pago')->oldest()->limit(6)->get()
+                ->whereIn('status', ContactRequest::AUTHORIZABLE)->oldest()->limit(6)->get()
                 ->map(fn ($r) => [
                     'id' => $r->id,
                     'who' => $r->name,
@@ -99,13 +99,13 @@ class WorkArea
         $list = [];
 
         if ($user->canDo('pedidos')) {
-            $paid = ContactRequest::whereIn('kind', ['compra', 'creditos'])->where('type', 'particular')->where('status', 'pago')->count();
+            $paid = ContactRequest::whereIn('kind', ['compra', 'creditos'])->where('type', 'particular')->whereIn('status', ContactRequest::AUTHORIZABLE)->count();
             if ($paid) {
                 $list[] = [
                     'kind' => 'Compra',
-                    'title' => trans_choice('{1} 1 compra paga por autorizar|[2,*] :count compras pagas por autorizar', $paid),
+                    'title' => trans_choice('{1} 1 compra por autorizar|[2,*] :count compras por autorizar', $paid),
                     'course' => __('Pedidos'),
-                    'text' => __('Os alunos só têm acesso ao curso depois de autorizares.'),
+                    'text' => __('Confirma o pagamento e autoriza: só depois disso os alunos têm acesso.'),
                     'cta' => __('Ver os pedidos'),
                     'url' => '/gestao/pedidos',
                 ];

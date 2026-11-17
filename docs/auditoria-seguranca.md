@@ -168,6 +168,13 @@ Gravidades:
 
 **No Railway, já agora:** o `APP_URL` tem de ser exatamente o endereço por onde se entra. Se não for, a plataforma recusa os pedidos (400) e os links dos emails ficam errados.
 
+**Grupo 2 — corrigido (2026-11-17): ponto 10.**
+- **Como nascem as compras:** as compras pessoais de cursos pagos e as compras de créditos do Alex começam em "A aguardar pagamento". As de cursos gratuitos continuam em "Pago".
+- **Referência obrigatória:** o gestor só autoriza escrevendo a referência do pagamento (MB Way, transferência, fatura…), que fica guardada no pedido (coluna `payment_ref`). Um pedido marcado "Pago" à mão também precisa da referência. Os pedidos antigos, sem preço guardado, contam como pagos.
+- **Contadores:** os do gestor e do admin incluem as compras que aguardam pagamento.
+- **Valor das compras de créditos:** passa a ficar guardado no pedido.
+- **Testes:** atualizados (166, todos a passar).
+
 ## Ordem recomendada para as correções
 1. **Antes da mudança para a OVH:** pontos 1, 3 e 18 (proxies e domínio fixos, atualização das dependências). São pequenos e fecham a tomada de contas.
 2. **Pagamentos simulados:** ponto 10.
