@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Models\User;
 use App\Support\ActivityRecorder;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -31,6 +33,20 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        // Em produção, todos os links (emails incluídos) usam o APP_URL, nunca o domínio que vem no pedido
+        if ($this->app->isProduction() && ($root = config('app.url'))) {
+            URL::forceRootUrl($root);
+            if (str_starts_with($root, 'https://')) {
+                URL::forceScheme('https');
+            }
+        }
+
+        // Palavras-passe novas: pelo menos 10 carateres. Em produção recusa também as que aparecem em fugas de
+        // dados conhecidas (Have I Been Pwned: só sai o início do hash; se o serviço falhar, aceita).
+        Password::defaults(fn () => $this->app->isProduction()
+            ? Password::min(10)->uncompromised()
+            : Password::min(10));
 
         // O admin passa por cima de todas as Policies (super-utilizador).
         Gate::before(fn (User $user) => $user->isAdmin() ? true : null);

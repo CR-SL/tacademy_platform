@@ -24,8 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Os avisos do Tavus chegam sem sessão: a assinatura X-Tavus-Signature substitui o CSRF
         $middleware->validateCsrfTokens(except: ['webhooks/tavus']);
 
-        // Railway (e outros PaaS) termina o HTTPS num proxy à frente da app.
-        $middleware->trustProxies(at: '*');
+        // Os proxies em que se confia (HTTPS e IP real do visitante) vêm de config/trustedproxy.php (TRUSTED_PROXIES).
+
+        // Só se aceitam pedidos com o domínio do APP_URL (links dos emails não podem ser desviados)
+        $middleware->trustHosts();
+        $middleware->replace(\Illuminate\Http\Middleware\TrustHosts::class, \App\Http\Middleware\TrustHosts::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Página 404 da plataforma (Pages/Error.jsx) para quem navega; pedidos JSON e de ficheiros

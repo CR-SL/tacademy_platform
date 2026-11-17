@@ -194,7 +194,7 @@ function RegisterForm() {
             <Field id="email" label={t('Email')} error={errors.email}>
                 <input id="email" type="email" className="ui-input" autoComplete="email" placeholder="nome@oficina.pt" value={data.email} onChange={(e) => setData('email', e.target.value)} />
             </Field>
-            <Field id="password" label={t('Palavra-passe')} hint={t('Pelo menos 8 carateres.')} error={errors.password}>
+            <Field id="password" label={t('Palavra-passe')} hint={t('Pelo menos 10 carateres.')} error={errors.password}>
                 <div className="en-pw">
                     <input id="password" type={show ? 'text' : 'password'} className="ui-input" autoComplete="new-password" value={data.password} onChange={(e) => setData('password', e.target.value)} aria-invalid={errors.password ? true : undefined} aria-describedby={errors.password ? 'password-err' : 'password-hint'} />
                     <button type="button" onClick={() => setShow((s) => !s)} aria-pressed={show} aria-controls="password">{show ? t('Esconder') : t('Mostrar')}</button>

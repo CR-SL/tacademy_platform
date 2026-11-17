@@ -12,6 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
+    private const EMAIL_ATTEMPTS = 20;
+
+    private const EMAIL_DECAY = 15 * 60;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -44,6 +48,7 @@ class LoginRequest extends FormRequest
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->emailThrottleKey(), self::EMAIL_DECAY);
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
@@ -51,6 +56,7 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+        RateLimiter::clear($this->emailThrottleKey());
     }
 
     /**
@@ -60,13 +66,19 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        // 5 por minuto do mesmo IP; e, mesmo mudando de IP, 20 por 15 minutos na mesma conta
+        $key = match (true) {
+            RateLimiter::tooManyAttempts($this->throttleKey(), 5) => $this->throttleKey(),
+            RateLimiter::tooManyAttempts($this->emailThrottleKey(), self::EMAIL_ATTEMPTS) => $this->emailThrottleKey(),
+            default => null,
+        };
+        if ($key === null) {
             return;
         }
 
         event(new Lockout($this));
 
-        $seconds = RateLimiter::availableIn($this->throttleKey());
+        $seconds = RateLimiter::availableIn($key);
 
         throw ValidationException::withMessages([
             'email' => trans('auth.throttle', [
@@ -82,5 +94,11 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+    }
+
+    /** Tentativas falhadas numa conta, venham de que IP vierem. */
+    public function emailThrottleKey(): string
+    {
+        return 'login-email|'.Str::transliterate(Str::lower($this->string('email')));
     }
 }
