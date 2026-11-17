@@ -25,3 +25,22 @@ Artisan::command('files:clean {--force : Apagar mesmo (sem isto, só mostra a li
     $n = array_sum(array_map('count', $found));
     $this->info($this->option('force') ? "Apagados: $n ficheiros." : "$n ficheiros sem uso. Nada foi apagado: corre com --force para apagar.");
 })->purpose('Mostra (ou apaga, com --force) os ficheiros carregados que ficaram sem uso');
+
+// Vídeos e anexos carregados antes da proteção (ainda na pasta pública, abrem para quem tiver o link).
+// Sem --force mostra a lista; com --force passa-os para a pasta privada (copia, confirma o tamanho, e só então
+// tira o original). Os endereços não mudam. Só à mão, uma vez, depois de publicar esta versão.
+Artisan::command('files:make-private {--force : Passar mesmo (sem isto, só mostra a lista)}', function () {
+    try {
+        $result = \App\Support\CourseFiles::makePrivate((bool) $this->option('force'));
+    } catch (\RuntimeException $e) {
+        $this->error($e->getMessage());
+
+        return 1;
+    }
+    foreach ($result['moved'] as $path) $this->line('  '.$path);
+    foreach ($result['failed'] as $path) $this->error('  falhou (ficou na pasta pública): '.$path);
+    $n = count($result['moved']);
+    $this->info($this->option('force')
+        ? "Passados para a pasta privada: $n ficheiros.".($result['failed'] ? ' Falharam: '.count($result['failed']).'.' : '')
+        : "$n ficheiros ainda na pasta pública. Nada foi mexido: corre com --force para os passar.");
+})->purpose('Passa os vídeos e anexos das aulas para a pasta privada (com --force)');

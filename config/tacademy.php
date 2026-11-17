@@ -15,6 +15,15 @@ return [
      | (em local, "password"). Os perfis e as áreas dos cursos criam-se sempre.
      */
     'seed_demo' => (bool) env('SEED_DEMO', false),
+
+    /*
+     | Vídeos e anexos das aulas na pasta privada (storage/app/private), entregues só a quem pode ver a aula
+     | (ver App\Support\CourseFiles). Ligado por defeito, MENOS no Railway: lá o volume que sobrevive aos deploys
+     | é só storage/app/public (e só há um volume por serviço), por isso a pasta privada perdia-se a cada deploy.
+     | No Railway a proteção vem do Caddyfile (raiz do projeto), que manda esses pedidos para a app em vez de
+     | entregar o ficheiro diretamente. Num servidor sem esse Caddyfile, ligar e correr `files:make-private --force`.
+     */
+    'private_files' => (bool) env('COURSE_FILES_PRIVATE', env('RAILWAY_ENVIRONMENT') === null),
     'seed_demo_password' => env('SEED_DEMO_PASSWORD'),
 
     'contact' => [

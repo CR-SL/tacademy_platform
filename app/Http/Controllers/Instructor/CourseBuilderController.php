@@ -11,6 +11,7 @@ use App\Models\LessonProgress;
 use App\Models\User;
 use App\Services\LearningService;
 use App\Services\CourseBuilder;
+use App\Support\CourseFiles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -191,7 +192,8 @@ class CourseBuilderController extends Controller
         $file = $request->file('file');
         // Anexos numa pasta de quem os carrega: ao gravar o curso só se aceitam anexos novos da própria pessoa
         $dir = $kind === 'cover' ? 'capas' : CourseBuilder::attachmentDir($request->user()->id);
-        $path = $file->store(CourseBuilder::UPLOAD_DIR.'/'.$dir, 'public');
+        // Capas no disco public (aparecem no catálogo); anexos no privado (só para quem pode ver a aula)
+        $path = $file->store(CourseBuilder::UPLOAD_DIR.'/'.$dir, $kind === 'cover' ? 'public' : CourseFiles::diskName());
         if (! $path) {
             return $this->notStored();
         }
@@ -206,7 +208,7 @@ class CourseBuilderController extends Controller
 
     /**
      * Vídeo da aula (MP4 ou WebM), enviado aos pedaços de CourseBuilder::VIDEO_CHUNK_BYTES.
-     * Os pedaços juntam-se num ficheiro temporário; no último, o vídeo passa para o disco public
+     * Os pedaços juntam-se num ficheiro temporário; no último, o vídeo passa para o disco privado
      * (cursos/videos/…) e devolve o endereço que fica no link da aula.
      */
     public function uploadVideo(Request $request): JsonResponse
@@ -250,7 +252,7 @@ class CourseBuilderController extends Controller
         }
         $ext = $mime === 'video/webm' ? 'webm' : 'mp4';
         $final = CourseBuilder::VIDEO_DIR.'/'.Str::lower((string) Str::ulid()).'.'.$ext;
-        if (! $this->storePublic($path, $final)) {
+        if (! $this->storeFile($path, $final)) {
             $tmp->delete($part);
 
             return $this->notStored();
@@ -312,7 +314,7 @@ class CourseBuilderController extends Controller
         }
         $ext = Str::lower(pathinfo($data['name'], PATHINFO_EXTENSION));
         $final = CourseBuilder::UPLOAD_DIR.'/'.CourseBuilder::attachmentDir($request->user()->id).'/'.Str::random(40).'.'.$ext;
-        if (! $this->storePublic($path, $final)) {
+        if (! $this->storeFile($path, $final)) {
             $tmp->delete($part);
 
             return $this->notStored();
@@ -329,13 +331,13 @@ class CourseBuilderController extends Controller
     }
 
     /**
-     * Copia o ficheiro juntado para o disco public (o volume pode ser outro disco: copiar em vez de mover) e
+     * Copia o ficheiro juntado para o disco privado (o volume pode ser outro disco: copiar em vez de mover) e
      * confirma que ficou lá inteiro. Com o disco cheio a cópia falha ou fica cortada: apaga-se e devolve false,
      * para o editor avisar em vez de guardar um endereço para um ficheiro que não existe.
      */
-    private function storePublic(string $from, string $to): bool
+    private function storeFile(string $from, string $to): bool
     {
-        $disk = Storage::disk('public');
+        $disk = CourseFiles::disk(); // privado: os vídeos e anexos só se entregam a quem pode ver a aula
         $in = fopen($from, 'rb');
         try {
             $ok = $disk->writeStream($to, $in);
@@ -348,7 +350,7 @@ class CourseBuilderController extends Controller
         if ($ok && $disk->exists($to) && $disk->size($to) === filesize($from)) {
             return true;
         }
-        report(new RuntimeException("Ficheiro não gravado no disco public: {$to} (disco cheio?)"));
+        report(new RuntimeException("Ficheiro não gravado no disco: {$to} (disco cheio?)"));
         $disk->delete($to);
 
         return false;

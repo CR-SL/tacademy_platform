@@ -57,7 +57,10 @@ class OrphanFilesTest extends TestCase
 
     public function test_it_refuses_to_run_on_the_real_disk_or_an_empty_database(): void
     {
-        // Nos testes, sem discos falsos: recusa (foi assim que a 1.ª versão apagou os ficheiros locais)
+        // Nos testes, sem discos falsos: recusa (foi assim que a 1.ª versão apagou os ficheiros locais).
+        // O TestCase põe discos falsos; aqui aponta-se o disco public para a pasta real só para ver a recusa
+        // (a recusa vem antes de qualquer leitura ou escrita).
+        Storage::set('public', Storage::build(['driver' => 'local', 'root' => storage_path('app/public')]));
         $this->expectException(\RuntimeException::class);
         OrphanFiles::clean();
     }

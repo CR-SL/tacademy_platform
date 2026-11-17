@@ -33,7 +33,7 @@ class AlexController extends Controller
         } catch (AuthorizationException) {
             return response()->json(['message' => __('O Alex não está disponível aqui.')], 403);
         } catch (AlexEvaluationDone) {
-            return response()->json(['message' => __('Já fizeste a avaliação final deste curso. Só há uma.')], 409);
+            return response()->json(['message' => __('Já fizeste a avaliação final deste curso, ou usaste todas as tentativas.')], 409);
         } catch (AlexLimitReached $e) {
             return response()->json(['message' => __('Não tens conversas disponíveis. Compra créditos para continuar a falar com o Alex.'), 'left' => 0, 'credits' => 0], 429);
         } catch (RuntimeException) {

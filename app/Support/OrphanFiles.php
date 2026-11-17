@@ -45,15 +45,22 @@ class OrphanFiles
         $videos = Lesson::withTrashed()->whereNotNull('content_url')->pluck('content_url')
             ->map(fn ($u) => preg_match('#/storage/('.preg_quote(CourseBuilder::VIDEO_DIR, '#').'/[\w-]+\.(mp4|webm))#', (string) $u, $m) ? $m[1] : null)
             ->filter()->flip();
-        foreach ($public->files(CourseBuilder::VIDEO_DIR) as $path) {
-            if (! $videos->has($path) && $old($public, $path)) $found['videos'][] = $path;
+        // Nos dois discos: os novos ficam no privado, os antigos no public até passarem (files:make-private)
+        foreach ([$local, $public] as $disk) {
+            foreach ($disk->files(CourseBuilder::VIDEO_DIR) as $path) {
+                if (! $videos->has($path) && $old($disk, $path)) $found['videos'][] = $path;
+            }
         }
 
         // Anexos (na pasta de cada pessoa ou na pasta antiga)
         $attachments = LessonAttachment::pluck('path')->flip();
-        foreach ($public->allFiles(CourseBuilder::UPLOAD_DIR.'/anexos') as $path) {
-            if (! $attachments->has($path) && $old($public, $path)) $found['anexos'][] = $path;
+        foreach ([$local, $public] as $disk) {
+            foreach ($disk->allFiles(CourseBuilder::UPLOAD_DIR.'/anexos') as $path) {
+                if (! $attachments->has($path) && $old($disk, $path)) $found['anexos'][] = $path;
+            }
         }
+        $found['videos'] = array_values(array_unique($found['videos']));
+        $found['anexos'] = array_values(array_unique($found['anexos']));
 
         // Capas: o curso guarda o endereço (/storage/cursos/capas/…)
         $covers = Course::withTrashed()->whereNotNull('thumbnail_url')->pluck('thumbnail_url')
@@ -69,7 +76,8 @@ class OrphanFiles
         }
 
         if ($delete) {
-            $public->delete([...$found['videos'], ...$found['anexos'], ...$found['capas']]);
+            CourseFiles::delete([...$found['videos'], ...$found['anexos']]);
+            $public->delete($found['capas']);
             $local->delete($found['pedacos']);
         }
 

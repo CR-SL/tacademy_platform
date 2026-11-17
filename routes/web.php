@@ -14,6 +14,8 @@ use App\Http\Controllers\Instructor\HomeController as InstructorHomeController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Learn\CourseController as LearnCourseController;
 use App\Http\Controllers\Learn\LessonController;
+use App\Http\Controllers\Learn\MediaController;
+use App\Services\CourseBuilder;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PanelLayoutController;
 use App\Http\Controllers\ProfileController;
@@ -70,6 +72,13 @@ Route::middleware(['auth', 'verified'])->prefix('plataforma')->group(function ()
 
 // Avisos do Tavus sobre as conversas do Alex (assinados; sem sessão nem CSRF)
 Route::post('/webhooks/tavus', [AlexController::class, 'webhook'])->middleware('throttle:120,1')->name('alex.webhook');
+
+// Vídeos e anexos das aulas no disco privado: só para quem pode abrir a aula (ver CourseFiles).
+// Os ficheiros que ainda estejam na pasta pública são entregues diretamente pelo servidor web, sem passar aqui.
+Route::middleware(['auth', 'verified', 'throttle:600,1'])->prefix('storage/'.CourseBuilder::UPLOAD_DIR)->name('media.')->group(function () {
+    Route::get('/videos/{file}', [MediaController::class, 'video'])->where('file', '[\w-]+\.(mp4|webm)')->name('video');
+    Route::get('/anexos/{path}', [MediaController::class, 'attachment'])->where('path', '[\w./-]+')->name('attachment');
+});
 
 // Página do curso e da aula do aluno
 Route::middleware(['auth', 'verified'])->group(function () {

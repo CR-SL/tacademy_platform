@@ -1594,14 +1594,11 @@
     "criadas nos últimos 30 dias": "created in the last 30 days",
     "Sugeridos para ti": "Suggested for you",
     "Não foi possível abrir o curso. Verifica a ligação e tenta outra vez.": "The course could not be opened. Check your connection and try again.",
-    "Já fizeste a avaliação final deste curso com o Alex. Só há uma.": "You have already taken this course's final assessment with Alex. There is only one.",
-    "Já fizeste a avaliação final deste curso. Só há uma.": "You have already taken this course's final assessment. There is only one.",
     "Alex por módulo": "Alex per module",
     "Cada módulo pode ter o seu Alex no Tavus, com a avaliação desse módulo. Nas aulas do módulo, as dúvidas e a avaliação usam o PAL do módulo. Vazio = o PAL do curso.": "Each module can have its own Alex in Tavus, with that module's assessment. In the module's lessons, questions and the assessment use the module's PAL. Empty = the course PAL.",
     "Módulo sem título": "Untitled module",
     "PAL do curso": "Course PAL",
     "Rosto do PAL": "PAL face",
-    "Já fizeste a avaliação deste módulo com o Alex. Só há uma.": "You have already taken this module's assessment with Alex. There is only one.",
     "· PDF, imagens, Office · até :mb MB": "· PDF, images, Office · up to :mb MB",
     "Este tipo de ficheiro não é aceite. Usa PDF, imagens, Office ou zip.": "This file type is not accepted. Use PDF, images, Office or zip.",
     "O ficheiro não pode ter mais de :mb MB.": "The file cannot be larger than :mb MB.",
@@ -1636,5 +1633,11 @@
     "Curso gratuito: ao autorizar, o aluno passa a ter o curso.": "Free course: once you authorise it, the student gets the course.",
     "Valor": "Amount",
     "Referência do pagamento": "Payment reference",
-    "Ex.: MB Way 912 345 678 · 12/11, transferência, n.º da fatura.": "E.g. MB Way 912 345 678 · 12/11, bank transfer, invoice no."
+    "Ex.: MB Way 912 345 678 · 12/11, transferência, n.º da fatura.": "E.g. MB Way 912 345 678 · 12/11, bank transfer, invoice no.",
+    "Demasiadas tentativas. Tenta outra vez daqui a 1 minuto.|Demasiadas tentativas. Tenta outra vez daqui a :count minutos.": "Too many attempts. Try again in 1 minute.|Too many attempts. Try again in :count minutes.",
+    "Se existir uma conta com este email, enviámos-te um link para criares uma palavra-passe nova.": "If there's an account with this email, we've sent you a link to create a new password.",
+    "Sair antes do fim também conta como tentativa: tens no máximo :n.": "Leaving before the end also counts as an attempt: you have :n at most.",
+    "Já fizeste a avaliação deste módulo com o Alex, ou usaste todas as tentativas.": "You've already taken this module's assessment with Alex, or used all your attempts.",
+    "Já fizeste a avaliação final deste curso com o Alex, ou usaste todas as tentativas.": "You've already taken this course's final assessment with Alex, or used all your attempts.",
+    "Já fizeste a avaliação final deste curso, ou usaste todas as tentativas.": "You've already taken this course's final assessment, or used all your attempts."
 }

@@ -175,6 +175,34 @@ Gravidades:
 - **Valor das compras de créditos:** passa a ficar guardado no pedido.
 - **Testes:** atualizados (166, todos a passar).
 
+**Grupo 3 — corrigido (2026-11-17): pontos 4, 6 e 7.**
+- **Ponto 4:**
+  - limites por IP: registo com 10 contas por hora, "esqueci-me" com 5 pedidos em 10 minutos. Quando se passa o limite, o formulário mostra um aviso em vez da página 429;
+  - campo-armadilha `website` no registo;
+  - o "esqueci-me" responde sempre "Se existir uma conta com este email…". O registo ainda diz "email já usado", como quase todos os sites.
+- **Ponto 6:**
+  - a avaliação final já não envia ao Tavus as opções nem a marca `(CERTA)`, só as perguntas, como temas. O Alex avalia pelo que sabe da matéria;
+  - o nome do aluno entra limpo (`safeName`): só letras e sinais simples, numa linha, com 60 carateres no máximo.
+- **Ponto 7:** cada avaliação que chega ao Tavus conta como tentativa, com um máximo de 3 por curso (ou por módulo com PAL próprio). O aluno é avisado antes de começar. O limite de gasto mensal fica na conta do Tavus (ver a lista do OVH).
+- **Testes:** 170, todos a passar.
+
+**Grupo 4 — corrigido (2026-11-17): ponto 2.**
+- **Onde ficam os ficheiros:** os vídeos e anexos das aulas vão para a pasta privada (`storage/app/private/cursos/…`), entregue pelo servidor web. Os endereços não mudam (`/storage/cursos/videos/…`, `/storage/cursos/anexos/…`): quando o ficheiro não está na pasta pública, o pedido chega à app.
+- **Quem os recebe:** o `Learn\MediaController` só entrega o ficheiro a quem pode abrir a aula (a mesma regra da página da aula). Quem não tem acesso recebe 404.
+  - A entrega suporta avançar no vídeo (Range) e a cache é só do browser (`private`).
+  - Um ficheiro acabado de carregar no editor só abre para quem o carregou.
+- **Ficheiros antigos:** passam com `php artisan files:make-private` (lista) e `--force` (passa). O comando copia, confirma o tamanho e só depois tira o original. As capas continuam públicas.
+- **No Railway, protegido de outra forma:** lá, o volume que sobrevive aos deploys é só `storage/app/public` e há apenas um volume por serviço, por isso a pasta privada perdia-se em cada deploy. Os ficheiros ficam na pasta pública (`COURSE_FILES_PRIVATE`; por defeito, desligado se houver `RAILWAY_ENVIRONMENT`). O `Caddyfile` na raiz do projeto (o servidor web do Railway) manda os pedidos a `/storage/cursos/videos/*` e `/storage/cursos/anexos/*` para a app, em vez de entregar o ficheiro diretamente. Assim passam pela mesma verificação de acesso.
+- **Testes:** passam a usar sempre discos falsos (`TestCase::setUp`), para nenhum teste voltar a mexer nos ficheiros reais. Há testes novos em `tests/Feature/MediaTest.php`. O total passou a 176 testes, todos a passar.
+
+**Na mudança para a OVH (escolher um dos dois caminhos):**
+- **Com Docker/FrankenPHP, como no Railway:** levar o mesmo `Caddyfile` e definir `COURSE_FILES_PRIVATE=false`. Os ficheiros ficam onde estão e não é preciso correr nada.
+- **Com nginx ou Apache:**
+  - o disco de ficheiros tem de incluir `storage/app/private`, além de `storage/app/public`;
+  - depois de copiar os ficheiros do Railway, correr uma vez `php artisan files:make-private` (ver a lista) e depois com `--force`;
+  - (opcional, mais rápido) usar `X-Accel-Redirect` no nginx para a entrega dos vídeos.
+- **Em qualquer dos casos:** confirmar que um vídeo sem sessão iniciada vai para a entrada e não abre.
+
 ## Ordem recomendada para as correções
 1. **Antes da mudança para a OVH:** pontos 1, 3 e 18 (proxies e domínio fixos, atualização das dependências). São pequenos e fecham a tomada de contas.
 2. **Pagamentos simulados:** ponto 10.

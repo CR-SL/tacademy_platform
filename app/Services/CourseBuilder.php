@@ -7,8 +7,8 @@ use App\Models\Lesson;
 use App\Models\LessonAttachment;
 use App\Models\Module;
 use App\Models\QuizAttempt;
+use App\Support\CourseFiles;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -41,10 +41,10 @@ class CourseBuilder
         return 'anexos/u'.$userId;
     }
 
-    /** Pasta (disco public) onde ficam capas e anexos carregados no editor. */
+    /** Pasta onde ficam capas (disco public) e anexos (disco privado, ver CourseFiles) carregados no editor. */
     public const UPLOAD_DIR = 'cursos';
 
-    /** Vídeos carregados pelo formador (disco public), servidos em /storage/cursos/videos/… */
+    /** Vídeos carregados pelo formador (disco privado, ver CourseFiles), entregues em /storage/cursos/videos/… só a quem pode ver a aula */
     public const VIDEO_DIR = self::UPLOAD_DIR.'/videos';
 
     /** Tamanho de cada pedaço do upload de vídeo (abaixo do upload_max_filesize de 2 MB por defeito do PHP). */
@@ -236,7 +236,7 @@ class CourseBuilder
             // Vídeos carregados que deixaram de ser usados (aula apagada ou vídeo trocado) saem do disco
             // (só depois de a gravação ser confirmada)
             $unused = $oldVideos->diff(Lesson::whereNotNull('content_url')->pluck('content_url')->map(fn ($u) => self::uploadedVideo($u))->filter());
-            DB::afterCommit(fn () => $unused->each(fn ($path) => Storage::disk('public')->delete($path)));
+            DB::afterCommit(fn () => $unused->each(fn ($path) => CourseFiles::delete($path)));
 
             $sample = $data['sample_lesson_key'] ?? '';
             $course->forceFill([
@@ -352,11 +352,11 @@ class CourseBuilder
                 && ! str_contains($path, '..');
             if (! $mine) continue;
             $keep[] = $path;
-            if (Storage::disk('public')->exists($path)) {
+            if (CourseFiles::exists($path)) {
                 $lesson->attachments()->create([
                     'name' => Str::limit($a['name'] ?? basename($path), 195, ''),
                     'path' => $path,
-                    'size' => Storage::disk('public')->size($path),
+                    'size' => CourseFiles::size($path),
                     'order_index' => $i,
                 ]);
             }
@@ -369,7 +369,7 @@ class CourseBuilder
             if (! str_starts_with($a->path, '/')) {
                 $path = $a->path;
                 DB::afterCommit(function () use ($path) {
-                    if (! LessonAttachment::where('path', $path)->exists()) Storage::disk('public')->delete($path);
+                    if (! LessonAttachment::where('path', $path)->exists()) CourseFiles::delete($path);
                 });
             }
         });

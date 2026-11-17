@@ -401,13 +401,15 @@ class CourseBuilderTest extends TestCase
         $r = $send($u, $pdf, 'Caderno técnico.pdf')->assertOk()->assertJsonPath('done', true)->assertJsonPath('name', 'Caderno técnico.pdf')->json();
         $this->assertStringStartsWith('cursos/anexos/u'.$u->id.'/', $r['path']);
         $this->assertStringEndsWith('.pdf', $r['path']);
-        $this->assertSame(strlen($pdf), Storage::disk('public')->size($r['path']));
+        // Na pasta privada (só se entrega a quem pode ver a aula)
+        $this->assertSame(strlen($pdf), Storage::disk('local')->size($r['path']));
 
         // Tipo errado no nome ou no conteúdo, ou quem não cria cursos: recusado e nada fica guardado
         $send($u, $pdf, 'script.php')->assertStatus(422);
         $send($u, '<?php echo 1; ?>', 'falso.pdf')->assertStatus(422);
         $send($this->user('aluno'), $pdf, 'c.pdf')->assertForbidden();
-        $this->assertCount(1, Storage::disk('public')->allFiles());
+        $this->assertCount(1, Storage::disk('local')->allFiles('cursos'));
+        $this->assertEmpty(Storage::disk('public')->allFiles());
 
         // Acima do limite: recusado logo no primeiro pedaço
         $this->actingAs($u)->post('/formador/anexos', [
@@ -439,7 +441,7 @@ class CourseBuilderTest extends TestCase
 
         $data['modules'][0]['lessons'][0]['attachments'] = [];
         $this->actingAs($b)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
-        Storage::disk('public')->assertExists($doc['path']);
+        Storage::disk('local')->assertExists($doc['path']);
     }
 
     public function test_videos_are_uploaded_in_chunks_and_play_in_the_own_player(): void
@@ -451,8 +453,8 @@ class CourseBuilderTest extends TestCase
         $video = $this->sendVideo($formador, $this->mp4(CourseBuilder::VIDEO_CHUNK_BYTES + 5000))->assertOk()->assertJson(['done' => true])->json();
         $this->assertMatchesRegularExpression('#^/storage/cursos/videos/[a-z0-9]+.mp4$#', $video['url']);
         $path = substr($video['url'], strlen('/storage/'));
-        Storage::disk('public')->assertExists($path);
-        $this->assertSame(CourseBuilder::VIDEO_CHUNK_BYTES + 5000, Storage::disk('public')->size($path));
+        Storage::disk('local')->assertExists($path);
+        $this->assertSame(CourseBuilder::VIDEO_CHUNK_BYTES + 5000, Storage::disk('local')->size($path));
         $this->assertEmpty(Storage::disk('local')->allFiles('video-uploads')); // o temporário foi apagado
 
         // A aula com o vídeo carregado fica completa e toca no leitor próprio
@@ -469,7 +471,7 @@ class CourseBuilderTest extends TestCase
         $data['modules'][0]['lessons'][0]['id'] = $lesson->id;
         $data['modules'][0]['lessons'][0]['url'] = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
         $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
-        Storage::disk('public')->assertMissing($path);
+        Storage::disk('local')->assertMissing($path);
     }
 
     public function test_video_upload_rejects_other_files_and_students(): void
@@ -481,6 +483,7 @@ class CourseBuilderTest extends TestCase
         $this->sendVideo($this->user('formador'), $this->mp4(2000), 'aula.mov')->assertStatus(422);
         $this->sendVideo($this->user('aluno'), $this->mp4(2000))->assertForbidden();
         $this->assertEmpty(Storage::disk('public')->allFiles());
+        $this->assertEmpty(Storage::disk('local')->allFiles('cursos'));
 
         // Pedaços fora de ordem não se juntam
         $this->actingAs($this->user('formador'))->post('/formador/videos', [

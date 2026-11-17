@@ -1,0 +1,40 @@
+{
+	admin off
+	persist_config off
+	auto_https off
+
+	{$CADDY_GLOBAL_OPTIONS}
+
+	log {
+		format json
+		output stderr
+		level DEBUG
+	}
+
+	frankenphp {
+		{$FRANKENPHP_CONFIG}
+	}
+}
+
+{$CADDY_EXTRA_CONFIG}
+
+# Servidor web do Railway (Railpack/FrankenPHP). É o Caddyfile de origem do Railpack, com uma regra a mais:
+# os vídeos e anexos das aulas nunca são entregues diretamente do disco. O pedido vai sempre para a app
+# (Learn/MediaController), que só entrega o ficheiro a quem pode abrir a aula. As capas e o resto ficam como estavam.
+:{$PORT:80} {
+	root * /app/public
+
+	encode zstd br gzip
+
+	@cursos path /storage/cursos/videos/* /storage/cursos/anexos/*
+	rewrite @cursos /index.php
+
+	file_server {
+		hide .git
+		hide .env*
+	}
+
+	{$CADDY_SERVER_EXTRA_DIRECTIVES}
+
+	php_server
+}

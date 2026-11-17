@@ -567,10 +567,13 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                                 <h2>{t('Vai começar a avaliação.')}</h2>
                                 <p>{t('O teste final é feito com o avatar. Podes usar o microfone para responder às perguntas ou escrever a tua resposta.')}</p>
                                 {alexEvaluation?.done ? (
-                                    <p>{alexEvaluation.module ? t('Já fizeste a avaliação deste módulo com o Alex. Só há uma.') : t('Já fizeste a avaliação final deste curso com o Alex. Só há uma.')}</p>
+                                    <p>{alexEvaluation.module ? t('Já fizeste a avaliação deste módulo com o Alex, ou usaste todas as tentativas.') : t('Já fizeste a avaliação final deste curso com o Alex, ou usaste todas as tentativas.')}</p>
                                 ) : (
                                     <>
                                         <p>{t('Tens :min minutos. O tempo que falta aparece no botão Terminar.', { min: evaluationMin })}</p>
+                                        {alexEvaluation?.attempts > 0 && (
+                                            <p>{t('Sair antes do fim também conta como tentativa: tens no máximo :n.', { n: alexEvaluation.attempts })}</p>
+                                        )}
                                         <MicCheck />
                                         <div className="bs">{t('Boa sorte!')}</div>
                                         <button type="button" className="al-pill" onClick={startEvaluation}>{t('Continuar')}</button>

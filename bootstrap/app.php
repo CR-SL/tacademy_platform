@@ -31,6 +31,18 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->replace(\Illuminate\Http\Middleware\TrustHosts::class, \App\Http\Middleware\TrustHosts::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Limite de pedidos atingido num formulário (registo, "esqueci-me"): volta ao formulário com um aviso,
+        // em vez da página de erro 429. Pedidos JSON continuam a receber o 429.
+        $exceptions->render(function (\Illuminate\Http\Exceptions\ThrottleRequestsException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson() || $request->isMethod('GET')) {
+                return null;
+            }
+            $minutes = (int) ceil(((int) ($e->getHeaders()['Retry-After'] ?? 60)) / 60);
+
+            return back()->withInput($request->except('password', 'password_confirmation'))
+                ->withErrors(['email' => trans_choice('Demasiadas tentativas. Tenta outra vez daqui a 1 minuto.|Demasiadas tentativas. Tenta outra vez daqui a :count minutos.', $minutes)]);
+        });
+
         // Página 404 da plataforma (Pages/Error.jsx) para quem navega; pedidos JSON e de ficheiros
         // (imagens, scripts) continuam com a resposta simples. Endereços que não existem não passam
         // pelas rotas, por isso a língua vem da conta, do cookie ou do browser (SetLocale::pick).

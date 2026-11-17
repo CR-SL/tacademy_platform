@@ -180,7 +180,7 @@ function LoginForm({ canResetPassword }) {
 }
 
 function RegisterForm() {
-    const { data, setData, post, processing, errors, reset } = useForm({ name: '', email: '', password: '' });
+    const { data, setData, post, processing, errors, reset } = useForm({ name: '', email: '', password: '', website: '' });
     const [show, setShow] = useState(false);
     const submit = (e) => {
         e.preventDefault();
@@ -200,6 +200,10 @@ function RegisterForm() {
                     <button type="button" onClick={() => setShow((s) => !s)} aria-pressed={show} aria-controls="password">{show ? t('Esconder') : t('Mostrar')}</button>
                 </div>
             </Field>
+            {/* Armadilha para robôs: invisível para pessoas */}
+            <div className="hidden" aria-hidden="true">
+                <input name="website" tabIndex={-1} autoComplete="off" value={data.website} onChange={(e) => setData('website', e.target.value)} />
+            </div>
             <Button type="submit" variant="accent" size="lg" block disabled={processing}>{processing ? t('A criar a conta…') : t('Criar conta')}</Button>
         </form>
     );

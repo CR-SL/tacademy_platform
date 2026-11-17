@@ -33,7 +33,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Desligado: a rota automática ocupava /storage/{path}. Os vídeos e anexos privados são entregues
+            // pelo MediaController, que verifica o acesso à aula.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],
