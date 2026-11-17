@@ -195,6 +195,15 @@ Gravidades:
 - **No Railway, protegido de outra forma:** lá, o volume que sobrevive aos deploys é só `storage/app/public` e há apenas um volume por serviço, por isso a pasta privada perdia-se em cada deploy. Os ficheiros ficam na pasta pública (`COURSE_FILES_PRIVATE`; por defeito, desligado se houver `RAILWAY_ENVIRONMENT`). O `Caddyfile` na raiz do projeto (o servidor web do Railway) manda os pedidos a `/storage/cursos/videos/*` e `/storage/cursos/anexos/*` para a app, em vez de entregar o ficheiro diretamente. Assim passam pela mesma verificação de acesso.
 - **Testes:** passam a usar sempre discos falsos (`TestCase::setUp`), para nenhum teste voltar a mexer nos ficheiros reais. Há testes novos em `tests/Feature/MediaTest.php`. O total passou a 176 testes, todos a passar.
 
+**Grupo 5 — corrigido (2026-11-17): pontos 5 e 20.**
+- **Ponto 5:** sem os minutos do formador, o vídeo deixa de concluir a aula. Antes, bastava um pedido a dizer "o vídeo tem 1 segundo".
+  - Os minutos passam a ser obrigatórios em todas as aulas de vídeo para publicar (no editor e no servidor).
+  - Um curso já publicado sem minutos continua a gravar o resto, como antes.
+  - O aluno vê o aviso "Esta aula fica concluída quando o formador indicar a duração do vídeo".
+  - Os vídeos carregados preenchem os minutos sozinhos.
+- **Ponto 20:** ao fechar a aula ou o separador, o leitor envia o progresso com `fetch` `keepalive` e o cabeçalho `X-XSRF-TOKEN`, como o `alexStore.js`. A forma antiga (`sendBeacon` com `_token` vazio) dava 419; confirmado no browser.
+- **Testes:** 178, todos a passar.
+
 **Na mudança para a OVH (escolher um dos dois caminhos):**
 - **Com Docker/FrankenPHP, como no Railway:** levar o mesmo `Caddyfile` e definir `COURSE_FILES_PRIVATE=false`. Os ficheiros ficam onde estão e não é preciso correr nada.
 - **Com nginx ou Apache:**

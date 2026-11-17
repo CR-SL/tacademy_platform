@@ -119,7 +119,8 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     const [checks, setChecks] = useState(lesson.checks);
 
     const hasChecks = hasPlayer && checks.length > 0;
-    const videoReady = !hasPlayer || done || needed <= 0 || watched >= needed;
+    // Sem os minutos do formador o vídeo não conclui a aula (o servidor recusa): fica o aviso em baixo
+    const videoReady = !hasPlayer || done || (!progress.noDuration && watched >= needed);
     const checksDone = checks.every((c) => c.chosen != null);
 
     // Painéis
@@ -304,6 +305,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     const currentPct = done ? 100 : hasPlayer && needed > 0 ? Math.min(100, Math.round(watched / needed * 90)) : 0;
     const hint = !canSave || done || lesson.type === 'quiz' || !hasPlayer
         ? null
+        : progress.noDuration ? t('Esta aula fica concluída quando o formador indicar a duração do vídeo.')
         : !videoReady ? t('Faltam :v1 de vídeo', { v1: fmt(needed - watched) }) : null;
     const nextOpen = next?.open && !running;
     const prevOpen = prev && !running;

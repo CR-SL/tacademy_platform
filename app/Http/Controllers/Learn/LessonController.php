@@ -71,6 +71,8 @@ class LessonController extends Controller
                 'duration' => $duration,
                 'position' => (int) ($p?->last_position_seconds ?? 0),
                 'needed' => (int) ceil($duration * LearningService::VIDEO_THRESHOLD),
+                // Vídeo sem os minutos do formador: não conclui a aula (o aluno é avisado)
+                'noDuration' => $this->learning->isVideo($lesson) && ! $this->learning->hasKnownDuration($lesson),
             ],
             'prev' => $prev ? ['ulid' => $prev->ulid, 'title' => $prev->title] : null,
             'next' => $next ? ['ulid' => $next->ulid, 'title' => $next->title, 'open' => $this->learning->canOpen($access, $course, $next)] : null,

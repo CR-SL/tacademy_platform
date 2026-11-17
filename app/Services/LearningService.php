@@ -97,11 +97,23 @@ class LearningService
         return (int) ($p?->video_duration_seconds ?: $lesson->duration_seconds);
     }
 
+    /**
+     * O vídeo já conta como visto (90%)? Sem os minutos do formador não há como confirmar quanto falta (a duração
+     * enviada pelo browser podia ser 1 segundo), por isso o vídeo não conclui a aula (auditoria, ponto 5).
+     */
     public function videoReady(Lesson $lesson, ?LessonProgress $p): bool
     {
-        $duration = $this->videoDuration($lesson, $p);
+        if (! $this->hasKnownDuration($lesson)) {
+            return false;
+        }
 
-        return $duration <= 0 || ($p && $p->watched_seconds >= (int) ceil($duration * self::VIDEO_THRESHOLD));
+        return $p !== null && $p->watched_seconds >= (int) ceil($this->videoDuration($lesson, $p) * self::VIDEO_THRESHOLD);
+    }
+
+    /** O formador indicou os minutos do vídeo (obrigatório para publicar). */
+    public function hasKnownDuration(Lesson $lesson): bool
+    {
+        return (int) $lesson->duration_seconds > 0;
     }
 
     /**

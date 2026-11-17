@@ -303,6 +303,20 @@ class CourseBuilderTest extends TestCase
         $this->assertSame('draft', $course->fresh()->status);
     }
 
+    public function test_a_video_lesson_without_minutes_blocks_publishing(): void
+    {
+        // Sem os minutos o vídeo não conclui a aula (auditoria, ponto 5), por isso são obrigatórios para publicar
+        $formador = $this->user('formador');
+        $this->actingAs($formador)->postJson('/formador/cursos', $this->payload());
+        $course = Course::firstOrFail();
+        $course->modules->flatMap->lessons->firstWhere('content_type', 'video_link')->update(['duration_seconds' => 0]);
+
+        $problems = app(\App\Services\CourseBuilder::class)->publishProblems($course->fresh());
+        $this->assertContains('Minutos em todas as aulas de vídeo', array_column($problems, 0));
+        $this->actingAs($formador)->post("/formador/cursos/{$course->ulid}/publicar")->assertSessionHasErrors('publish');
+        $this->assertSame('draft', $course->fresh()->status);
+    }
+
     public function test_a_published_course_appears_in_the_public_catalog(): void
     {
         $formador = $this->user('formador');

@@ -282,6 +282,10 @@ class CourseBuilder
         if ($lessons->contains(fn ($l) => ! $this->lessonComplete($l))) {
             $problems[] = [__('Todas as aulas completas (título + link/conteúdo)'), 1];
         }
+        // Sem os minutos, o vídeo não conclui a aula (o aluno ficava preso; ver LearningService::videoReady)
+        if ($lessons->contains(fn ($l) => in_array($l->content_type, ['video_link', 'video_upload'], true) && (int) $l->duration_seconds <= 0)) {
+            $problems[] = [__('Minutos em todas as aulas de vídeo'), 1];
+        }
         if (! $course->is_free && (float) $course->price <= 0) $problems[] = [__('Preço definido'), 2];
 
         return $problems;

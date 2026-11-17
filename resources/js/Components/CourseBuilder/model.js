@@ -75,6 +75,8 @@ export function checklist(c, shortMax) {
         [t('Pelo menos 1 módulo com 1 aula'), 1, lessons.length > 0],
         [t('Todos os módulos têm título'), 1, c.modules.every((m) => m.title.trim())],
         [t('Todas as aulas completas (título + link/conteúdo)'), 1, lessons.every(lessonComplete)],
+        // Igual ao servidor: sem os minutos, o vídeo não conclui a aula
+        [t('Minutos em todas as aulas de vídeo'), 1, lessons.every((l) => !['video_link', 'video_upload'].includes(l.type) || Number(l.minutes) > 0)],
         [t('Preço definido'), 3, c.is_free || Number(c.price) > 0],
     ];
 }

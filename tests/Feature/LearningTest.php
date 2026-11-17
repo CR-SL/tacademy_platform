@@ -201,7 +201,20 @@ class LearningTest extends TestCase
         $this->l[0]->update(['duration_seconds' => 0]); // duração ainda desconhecida
 
         $this->actingAs($this->student())->get($this->lessonUrl(0))->assertOk()
-            ->assertInertia(fn ($p) => $p->where('progress.status', 'not_started'));
+            ->assertInertia(fn ($p) => $p->where('progress.status', 'not_started')->where('progress.noDuration', true));
+    }
+
+    public function test_a_video_without_the_instructor_minutes_is_not_completed_by_a_forged_duration(): void
+    {
+        // Auditoria, ponto 5: sem os minutos do formador, "o vídeo tem 1 segundo" concluía a aula com um só pedido
+        $this->l[0]->checks()->delete();
+        $this->l[0]->update(['duration_seconds' => 0]);
+        $u = $this->student();
+        $url = "/plataforma/aulas/{$this->l[0]->ulid}";
+
+        $this->actingAs($u)->postJson("$url/progresso", ['position' => 1, 'map' => $this->map(1), 'duration' => 1])
+            ->assertJson(['ready' => false, 'completed' => false]);
+        $this->assertFalse(LessonProgress::where('user_id', $u->id)->where('lesson_id', $this->l[0]->id)->value('status') === 'completed');
     }
 
     public function test_notes_are_saved_per_student_and_only_the_owner_deletes_them(): void

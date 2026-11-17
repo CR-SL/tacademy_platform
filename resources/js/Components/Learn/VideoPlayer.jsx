@@ -69,11 +69,17 @@ const VideoPlayer = forwardRef(function VideoPlayer({ source, lessonUlid, initia
         st.dirty = false;
         const body = { position: Math.floor(st.position || 0), map: toBase64(map.current), duration: Math.floor(st.duration || 0) || null };
         const url = `/plataforma/aulas/${lessonUlid}/progresso`;
-        if (beacon && navigator.sendBeacon) {
-            const fd = new FormData();
-            Object.entries(body).forEach(([k, v]) => v != null && fd.append(k, v));
-            fd.append('_token', document.querySelector('meta[name="csrf-token"]')?.content ?? '');
-            navigator.sendBeacon(url, fd);
+        if (beacon) {
+            // Ao fechar a aula ou o separador: keepalive deixa o pedido acabar depois de a página fechar.
+            // Leva o token do cookie XSRF-TOKEN (a página não tem o meta csrf-token; antes dava 419 e perdia-se).
+            const xsrf = decodeURIComponent((document.cookie.match(/XSRF-TOKEN=([^;]+)/) || [])[1] || '');
+            fetch(url, {
+                method: 'POST',
+                keepalive: true,
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf },
+                body: JSON.stringify(body),
+            }).catch(() => {});
         } else {
             window.axios.post(url, body).then((r) => onSaved?.(r.data)).catch(() => { st.dirty = true; });
         }
