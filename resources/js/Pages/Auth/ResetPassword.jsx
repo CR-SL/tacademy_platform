@@ -4,10 +4,11 @@ import { Head, useForm } from '@inertiajs/react';
 
 import { t } from '@/i18n';
 
-export default function ResetPassword({ token, email }) {
+export default function ResetPassword({ token, email, invite }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         token: token,
         email: email,
+        invite: !!invite, // link de convite (3 dias) ou de "esqueci-me" (60 minutos)
         password: '',
         password_confirmation: '',
     });

@@ -10,7 +10,6 @@ use App\Support\Permissions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -41,8 +40,7 @@ class PeopleController extends Controller
         ]);
         $user->forceFill(['email_verified_at' => now()])->save();
 
-        $token = Password::broker()->createToken($user);
-        $url = url(route('password.reset', ['token' => $token, 'email' => $user->email], false));
+        $url = \App\Support\InviteLink::url($user); // link do convite: 3 dias
         PlatformMail::inLocaleOf($user, fn () => PlatformMail::deliver($user->email, new PlatformMail(
             subjectLine: __('Tens uma conta na T.Academy'),
             heading: __('Olá :name, já tens acesso à T.Academy', ['name' => Str::before($user->name, ' ')]),
@@ -73,11 +71,37 @@ class PeopleController extends Controller
         $this->guardRole($data['role'], $user);
         $this->guardAdmin($request, $data['role'], $user);
 
+        $oldEmail = $user->email;
         $user->forceFill([
             'name' => $data['name'],
             'email' => Str::lower($data['email']),
             'role_id' => Role::where('name', $data['role'])->value('id'),
-        ])->save();
+        ]);
+        $emailChanged = $user->isDirty('email');
+        if ($emailChanged) {
+            // Email mudado pela gestão (auditoria, ponto 14): o novo tem de ser confirmado pela pessoa, e o antigo é avisado.
+            // Assim, quem tem "pessoas" não consegue passar uma conta para um email seu sem a pessoa saber.
+            $user->email_verified_at = null;
+        }
+        $user->save();
+
+        if ($emailChanged) {
+            try {
+                $user->sendEmailVerificationNotification();
+            } catch (\Throwable $e) {
+                report($e); // a pessoa pode pedir outro na página de confirmação
+            }
+            PlatformMail::inLocaleOf($user, fn () => PlatformMail::deliver($oldEmail, new PlatformMail(
+                subjectLine: __('O email da tua conta T.Academy mudou'),
+                heading: __('Olá :name, o email da tua conta mudou', ['name' => Str::before($user->name, ' ')]),
+                lines: [
+                    __('A equipa da T.Academy mudou o email da tua conta para :email.', ['email' => $user->email]),
+                    __('Se não pediste esta mudança, responde a este email ou fala connosco.'),
+                ],
+            )));
+
+            return back()->with('status', __('Alterações guardadas. :name tem de confirmar o email novo; o antigo foi avisado.', ['name' => $user->name]));
+        }
 
         return back()->with('status', __('Alterações guardadas.'));
     }

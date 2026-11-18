@@ -96,8 +96,16 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
-            'expire' => 4320, // 3 dias: também serve o convite de quem entra numa equipa
+            'expire' => 60, // "Esqueci-me": 60 minutos (auditoria, ponto 13)
             'throttle' => 60,
+        ],
+        // Convites (conta criada pela gestão ou pela equipa): 3 dias, numa tabela à parte, para um link de
+        // "esqueci-me" nunca valer 3 dias. Ver App\Support\InviteLink.
+        'invites' => [
+            'provider' => 'users',
+            'table' => 'invite_tokens',
+            'expire' => 4320,
+            'throttle' => 0,
         ],
     ],
 

@@ -23,6 +23,8 @@ class PasswordController extends Controller
         $request->user()->update([
             'password' => Hash::make($validated['password']),
         ]);
+        // As outras sessões (outro computador, telemóvel) terminam; esta continua (auditoria, ponto 12)
+        \App\Support\InviteLink::endOtherSessions($request->user(), $request->session()->getId());
 
         return back();
     }

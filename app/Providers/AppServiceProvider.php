@@ -34,6 +34,14 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
 
+        // Formulário de contactos (auditoria, ponto 16): além do limite por minuto, um limite diário por ligação
+        // e por email, para não servir para encher a caixa dos gestores
+        \Illuminate\Support\Facades\RateLimiter::for('contacts', fn (\Illuminate\Http\Request $r) => [
+            \Illuminate\Cache\RateLimiting\Limit::perMinute(5)->by('contacts-min|'.$r->ip()),
+            \Illuminate\Cache\RateLimiting\Limit::perDay(20)->by('contacts-day|'.$r->ip()),
+            \Illuminate\Cache\RateLimiting\Limit::perDay(5)->by('contacts-email|'.mb_strtolower((string) $r->input('email'))),
+        ]);
+
         // Em produção, todos os links (emails incluídos) usam o APP_URL, nunca o domínio que vem no pedido
         if ($this->app->isProduction() && ($root = config('app.url'))) {
             URL::forceRootUrl($root);

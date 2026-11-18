@@ -233,6 +233,24 @@ Gravidades:
 - **Ponto 19:** a letra Archivo vem da própria plataforma (`@fontsource-variable/archivo`) e já não da Google. A CSP deixou de permitir as fontes da Google.
 - **Testes:** 187, todos a passar.
 
+**Grupo 8 — corrigido (2026-11-18): pontos 12 a 17, 21, 23 e 24.**
+- **12. Sessões:** mudar a palavra-passe termina as outras sessões; repor a palavra-passe termina todas. Também invalida o "manter a sessão iniciada" (`InviteLink::endOtherSessions`).
+- **13. Prazo dos links:** o "esqueci-me" dura 60 minutos. Os convites duram 3 dias, numa tabela à parte (`invite_tokens`, broker `invites`, links com `?convite=1`), por isso um link de "esqueci-me" nunca vale 3 dias.
+- **14. Mudança de email pela gestão:** o email novo tem de ser confirmado pela pessoa, e o antigo recebe um aviso com o novo endereço.
+- **15. Disco:** cada pessoa pode ter no máximo 3 envios de vídeo ou anexo a decorrer.
+  - Ao começar um envio, saem os pedaços interrompidos da própria pessoa com mais de 24 h. São só ficheiros temporários, nunca de um curso.
+  - O `files:clean` continua para o resto.
+- **16. Spam:** o formulário de contactos tem limites de 5 por minuto, 20 por dia por ligação e 5 por dia por email.
+  - O Turnstile fica para quando houver conta na Cloudflare.
+- **17. Conversas grátis:** a contagem das conversas do dia (e das tentativas da avaliação) e a criação da conversa correm com a linha da pessoa bloqueada.
+- **21. Lista de rotas:** só vão para as páginas as 12 rotas que o React usa (`config/ziggy.php`). Ao usar `route('nome')` num `.jsx` novo, juntar o nome lá.
+- **23. Logs:**
+  - ficheiro por dia, guardado 14 dias (`LOG_STACK=daily`, `LOG_DAILY_DAYS`);
+  - no registo de atividade, as entradas falhadas só guardam o que é mesmo um email.
+- **24. Atribuições:** voltar a atribuir o mesmo curso muda o prazo, mas o email só sai uma vez por dia a cada pessoa.
+- **22:** não precisou de correção.
+- **Testes:** 194, todos a passar (`tests/Feature/LowFindingsTest.php`).
+
 **Na mudança para a OVH (escolher um dos dois caminhos):**
 - **Com Docker/FrankenPHP, como no Railway:** levar o mesmo `Caddyfile` e definir `COURSE_FILES_PRIVATE=false`. Os ficheiros ficam onde estão e não é preciso correr nada.
 - **Com nginx ou Apache:**

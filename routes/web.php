@@ -43,7 +43,7 @@ Route::permanentRedirect('/contactos', '/plataforma/contactos');
 // Catálogo e contactos abertos a quem ainda não tem conta; comprar pede sessão
 Route::get('/plataforma/cursos', CatalogController::class)->name('catalog');
 Route::get('/plataforma/contactos', [ContactController::class, 'show'])->name('contacts');
-Route::post('/plataforma/contactos', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contacts.store');
+Route::post('/plataforma/contactos', [ContactController::class, 'store'])->middleware('throttle:contacts')->name('contacts.store');
 
 Route::get('/dashboard', DashboardController::class)
     ->middleware(['auth', 'verified'])

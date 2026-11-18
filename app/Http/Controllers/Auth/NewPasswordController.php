@@ -24,6 +24,7 @@ class NewPasswordController extends Controller
         return Inertia::render('Auth/ResetPassword', [
             'email' => $request->email,
             'token' => $request->route('token'),
+            'invite' => $request->boolean('convite'),
         ]);
     }
 
@@ -43,7 +44,8 @@ class NewPasswordController extends Controller
         // Here we will attempt to reset the user's password. If it is successful we
         // will update the password on an actual user model and persist it to the
         // database. Otherwise we will parse the error and return the response.
-        $status = Password::reset(
+        // Convite (3 dias) ou "esqueci-me" (60 minutos): cada um só vale na sua tabela (auditoria, ponto 13)
+        $status = Password::broker($request->boolean('invite') ? 'invites' : 'users')->reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user) use ($request) {
                 $user->forceFill([
@@ -55,6 +57,8 @@ class NewPasswordController extends Controller
                     $user->email_verified_at = now();
                 }
                 $user->save();
+                // Quem estava dentro com a palavra-passe antiga sai (auditoria, ponto 12)
+                \App\Support\InviteLink::endOtherSessions($user);
 
                 event(new PasswordReset($user));
             }

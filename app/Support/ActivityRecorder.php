@@ -29,13 +29,19 @@ use Illuminate\Support\Facades\Event;
  */
 class ActivityRecorder
 {
+    /** Só guarda o que é mesmo um email (auditoria, ponto 23): uma palavra-passe escrita no campo errado não fica no registo. */
+    private static function emailOnly(mixed $value): ?string
+    {
+        return is_string($value) && filter_var($value, FILTER_VALIDATE_EMAIL) ? mb_strtolower($value) : null;
+    }
+
     public static function register(): void
     {
         // Contas: entrar, falhar, sair, bloqueio por tentativas, palavra-passe reposta
         Event::listen(Login::class, fn (Login $e) => Activity::log('conta.entrou', $e->user, ['lembrar' => $e->remember ?: null], actor: $e->user));
         Event::listen(Logout::class, fn (Logout $e) => $e->user && Activity::log('conta.saiu', $e->user, actor: $e->user));
-        Event::listen(Failed::class, fn (Failed $e) => Activity::log('conta.entrada_falhou', $e->user, ['email' => $e->credentials['email'] ?? null], actor: null));
-        Event::listen(Lockout::class, fn (Lockout $e) => Activity::log('conta.bloqueada_tentativas', null, ['email' => $e->request->input('email')]));
+        Event::listen(Failed::class, fn (Failed $e) => Activity::log('conta.entrada_falhou', $e->user, ['email' => self::emailOnly($e->credentials['email'] ?? null)], actor: null));
+        Event::listen(Lockout::class, fn (Lockout $e) => Activity::log('conta.bloqueada_tentativas', null, ['email' => self::emailOnly($e->request->input('email'))]));
         Event::listen(PasswordReset::class, fn (PasswordReset $e) => Activity::log('conta.palavra_passe_reposta', $e->user, actor: $e->user));
 
         // Pessoas e contas

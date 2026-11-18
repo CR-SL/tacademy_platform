@@ -368,13 +368,40 @@ class CourseBuilderController extends Controller
     private function appendChunk(Request $request, string $part, int $index, string $interrupted): ?JsonResponse
     {
         $tmp = Storage::disk('local');
-        if ($index === 0) $tmp->delete($part);
+        if ($index === 0) {
+            $tmp->delete($part);
+            if ($busy = $this->tooManyUploads($tmp, $part)) {
+                return $busy;
+            }
+        }
         $have = $tmp->exists($part) ? $tmp->size($part) : 0;
         if ($have !== $index * CourseBuilder::VIDEO_CHUNK_BYTES) {
             return response()->json(['message' => $interrupted], 409);
         }
         $tmp->makeDirectory(dirname($part));
         file_put_contents($tmp->path($part), $request->file('chunk')->get(), FILE_APPEND | LOCK_EX);
+
+        return null;
+    }
+
+    /** Envios a decorrer ao mesmo tempo, por pessoa (cada um pode ter até o tamanho máximo do vídeo). */
+    public const MAX_OPEN_UPLOADS = 3;
+
+    /**
+     * Ao começar um envio (auditoria, ponto 15): os envios interrompidos da própria pessoa com mais de 24 h saem
+     * (são só pedaços temporários, nunca ficheiros de um curso). Se ainda tiver MAX_OPEN_UPLOADS a decorrer, recusa,
+     * para os envios a meio não poderem encher o disco.
+     */
+    private function tooManyUploads(\Illuminate\Contracts\Filesystem\Filesystem $tmp, string $part): ?JsonResponse
+    {
+        $dir = dirname($part);
+        $mine = collect($tmp->files($dir))
+            ->filter(fn ($p) => str_starts_with(basename($p), auth()->id().'-') && str_ends_with($p, '.part') && $p !== $part);
+        $stale = $mine->filter(fn ($p) => $tmp->lastModified($p) < now()->subDay()->getTimestamp());
+        $tmp->delete($stale->all());
+        if ($mine->count() - $stale->count() >= self::MAX_OPEN_UPLOADS) {
+            return response()->json(['message' => __('Já tens :n envios a decorrer. Espera que acabem (ou volta a tentar amanhã) para começar outro.', ['n' => self::MAX_OPEN_UPLOADS])], 429);
+        }
 
         return null;
     }

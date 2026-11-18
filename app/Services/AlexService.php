@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -238,20 +239,29 @@ class AlexService
         AlexConversation::where('user_id', $user->id)->whereIn('status', ['starting', 'active'])->get()
             ->each(fn ($c) => $this->end($c, 'nova conversa'));
 
-        // Primeiro as conversas grátis do dia; depois 1 crédito por conversa
-        $paid = $place !== 'avaliacao' && $this->leftToday($user) <= 0;
-        if ($paid && User::whereKey($user->id)->where('alex_credits', '>', 0)->decrement('alex_credits') === 0) {
-            throw new AlexLimitReached($this->perDay());
-        }
+        // Contar e criar com a linha da pessoa bloqueada (auditoria, ponto 17): dois pedidos ao mesmo tempo não podem
+        // ver os dois "ainda tens 1 conversa grátis" (ou "ainda tens 1 tentativa"). O Tavus é chamado só depois.
+        [$conversation, $paid] = DB::transaction(function () use ($user, $place, $course, $lesson) {
+            User::whereKey($user->id)->lockForUpdate()->value('id');
+            if ($place === 'avaliacao' && $this->evaluationDone($user, $course, $lesson)) {
+                throw new AlexEvaluationDone;
+            }
 
-        $conversation = AlexConversation::create([
-            'user_id' => $user->id,
-            'course_id' => $course?->id,
-            'lesson_id' => $lesson?->id,
-            'place' => $place,
-            'paid_credit' => $paid,
-            'status' => 'starting',
-        ]);
+            // Primeiro as conversas grátis do dia; depois 1 crédito por conversa
+            $paid = $place !== 'avaliacao' && $this->leftToday($user) <= 0;
+            if ($paid && User::whereKey($user->id)->where('alex_credits', '>', 0)->decrement('alex_credits') === 0) {
+                throw new AlexLimitReached($this->perDay());
+            }
+
+            return [AlexConversation::create([
+                'user_id' => $user->id,
+                'course_id' => $course?->id,
+                'lesson_id' => $lesson?->id,
+                'place' => $place,
+                'paid_credit' => $paid,
+                'status' => 'starting',
+            ]), $paid];
+        });
 
         try {
             $room = $this->tavus->createConversation($this->payload($user, $place, $course, $lesson));

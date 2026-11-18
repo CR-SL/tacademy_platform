@@ -1648,5 +1648,11 @@
     "Para apagar esta conta, fala com a administração.": "To delete this account, contact the administration.",
     "Antes de continuar, descarrega os teus certificados em": "Before you continue, download your certificates from",
     "Depois de apagares a conta, deixam de ser válidos.": "Once you delete your account, they are no longer valid.",
-    "Apagamos o teu nome, o email, o progresso, as notas, as mensagens, as conversas com o Alex e os certificados. Só os registos das compras ficam guardados, porque a lei obriga a guardar a faturação. Isto não se pode desfazer.": "We delete your name, email, progress, notes, messages, conversations with Alex and certificates. Only purchase records are kept, because the law requires invoicing records to be kept. This cannot be undone."
+    "Apagamos o teu nome, o email, o progresso, as notas, as mensagens, as conversas com o Alex e os certificados. Só os registos das compras ficam guardados, porque a lei obriga a guardar a faturação. Isto não se pode desfazer.": "We delete your name, email, progress, notes, messages, conversations with Alex and certificates. Only purchase records are kept, because the law requires invoicing records to be kept. This cannot be undone.",
+    "O email da tua conta T.Academy mudou": "The email of your T.Academy account has changed",
+    "Olá :name, o email da tua conta mudou": "Hi :name, your account email has changed",
+    "A equipa da T.Academy mudou o email da tua conta para :email.": "The T.Academy team changed your account email to :email.",
+    "Se não pediste esta mudança, responde a este email ou fala connosco.": "If you did not ask for this change, reply to this email or contact us.",
+    "Alterações guardadas. :name tem de confirmar o email novo; o antigo foi avisado.": "Changes saved. :name must confirm the new email; the old one was notified.",
+    "Já tens :n envios a decorrer. Espera que acabem (ou volta a tentar amanhã) para começar outro.": "You already have :n uploads in progress. Wait for them to finish (or try again tomorrow) before starting another."
 }

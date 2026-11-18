@@ -14,7 +14,6 @@ use App\Support\Activity;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -177,8 +176,7 @@ class TeamService
         $courses = $company->courses()->pluck('title')->implode(', ');
         $first = Str::before($user->name, ' ');
         if ($isNew) {
-            $token = Password::broker()->createToken($user);
-            $url = url(route('password.reset', ['token' => $token, 'email' => $user->email], false));
+            $url = \App\Support\InviteLink::url($user); // link do convite: 3 dias
             PlatformMail::inLocaleOf($user, fn () => PlatformMail::deliver($user->email, new PlatformMail(
                 subjectLine: __('Bem-vindo à T.Academy (equipa :team)', ['team' => $company->name]),
                 heading: __('Olá :name, já tens acesso à T.Academy', ['name' => $first]),
@@ -375,16 +373,24 @@ class TeamService
         $members = $company->users()->whereIn('users.id', $memberIds)->get();
         $dueDate = $due ? \Illuminate\Support\Carbon::parse($due) : null;
 
-        DB::transaction(function () use ($members, $course, $company, $leader, $dueDate) {
+        // Voltar a atribuir o mesmo curso muda o prazo, mas o email só sai uma vez por dia a cada pessoa
+        // (auditoria, ponto 24: antes dava para enviar emails sem limite)
+        $notify = DB::transaction(function () use ($members, $course, $company, $leader, $dueDate) {
+            $notify = [];
             foreach ($members as $u) {
                 $e = $this->enroll($u, $course->id, $company->id);
+                if (! $e->assigned_at || $e->assigned_at->lt(now()->subDay())) {
+                    $notify[] = $u->id;
+                }
                 $e->forceFill(['assigned_at' => now(), 'assigned_by' => $leader->id]);
                 if ($dueDate) $e->due_at = $dueDate;
                 $e->save();
             }
+
+            return $notify;
         });
 
-        foreach ($members as $u) {
+        foreach ($members->whereIn('id', $notify) as $u) {
             $first = Str::before($u->name, ' ');
             $deadline = Enrollment::with('course')->where('user_id', $u->id)->where('course_id', $course->id)->first()?->deadlineInfo(false);
             PlatformMail::inLocaleOf($u, function () use ($u, $course, $deadline, $leader, $company, $message, $first) {
@@ -410,9 +416,7 @@ class TeamService
     private function entryAction(User $u, Course $course, string $text): array
     {
         if ($u->last_active_at === null && ! LessonProgress::where('user_id', $u->id)->exists()) {
-            $token = Password::broker()->createToken($u);
-
-            return ['actionText' => __('Definir palavra-passe'), 'actionUrl' => url(route('password.reset', ['token' => $token, 'email' => $u->email], false))];
+            return ['actionText' => __('Definir palavra-passe'), 'actionUrl' => \App\Support\InviteLink::url($u)];
         }
 
         return ['actionText' => $text, 'actionUrl' => url('/plataforma/cursos/'.$course->slug)];
