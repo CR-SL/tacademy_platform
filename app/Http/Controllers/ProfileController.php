@@ -24,6 +24,7 @@ class ProfileController extends Controller
             'status' => session('status'),
             // Só quem pertence a uma equipa recebe lembretes do team leader
             'inTeam' => $request->user()->company_id !== null,
+            'canErase' => $request->user()->canEraseOwnAccount(),
         ]);
     }
 
@@ -62,10 +63,12 @@ class ProfileController extends Controller
     }
 
     /**
-     * Delete the user's account.
+     * Apagar a própria conta (RGPD): apaga os dados pessoais de vez (ver AccountEraser). Só alunos; os outros
+     * perfis pedem à administração.
      */
     public function destroy(Request $request): SymfonyResponse
     {
+        abort_unless($request->user()->canEraseOwnAccount(), 403, __('Para apagar esta conta, fala com a administração.'));
         $request->validate([
             'password' => ['required', 'current_password'],
         ]);
@@ -74,7 +77,7 @@ class ProfileController extends Controller
 
         Auth::logout();
 
-        $user->delete();
+        \App\Support\AccountEraser::erase($user);
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

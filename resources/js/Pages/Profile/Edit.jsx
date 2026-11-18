@@ -9,7 +9,7 @@ import UpdateProfileInformationForm from './Partials/UpdateProfileInformationFor
 import { t } from '@/i18n';
 
 // Definições (menu da conta): Conta, Aparência, Notificações (quem está numa equipa) e, no fim, apagar a conta.
-export default function Edit({ mustVerifyEmail, status, inTeam }) {
+export default function Edit({ mustVerifyEmail, status, inTeam, canErase }) {
     return (
         <StudentLayout>
             <Head title={t('Definições')} />
@@ -49,7 +49,7 @@ export default function Edit({ mustVerifyEmail, status, inTeam }) {
                 <section aria-labelledby="def-apagar">
                     <h2 id="def-apagar" className="sr-only">{t('Apagar a conta')}</h2>
                     <div className="bg-surface p-6">
-                        <DeleteUserForm className="max-w-xl" />
+                        <DeleteUserForm className="max-w-xl" canErase={canErase} />
                     </div>
                 </section>
             </div>

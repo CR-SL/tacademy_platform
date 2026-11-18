@@ -334,12 +334,14 @@ function People({ data }) {
                             <tbody>{users.data.map((u) => (
                                 <tr key={u.id} className={u.disabled ? 'bo-dim' : ''}>
                                     <td><div className="bo-who"><span className="bo-av">{initials(u.name)}</span><span style={{ minWidth: 0 }}><b>{u.name}{u.me && <> <Chip>{t('Tu')}</Chip></>}</b><small>{u.email}</small></span></div></td>
-                                    <td><Chip tone={u.role === 'admin' ? 'dark' : 'mut'}>{roleName[u.role] ?? u.role}</Chip>{u.disabled && <> <Chip tone="bad">{t('Desativada')}</Chip></>}</td>
+                                    <td><Chip tone={u.role === 'admin' ? 'dark' : 'mut'}>{roleName[u.role] ?? u.role}</Chip>{u.erased ? <> <Chip tone="bad">{t('Apagada')}</Chip></> : u.disabled && <> <Chip tone="bad">{t('Desativada')}</Chip></>}</td>
                                     <td>{u.company ?? <span className="text-muted">—</span>}</td>
                                     <td className="num">{u.courses}</td>
                                     <td className="text-muted">{u.last ?? t('nunca entrou')}</td>
                                     <td className="num" style={{ whiteSpace: 'nowrap' }}>
-                                        {u.disabled ? (
+                                        {u.erased ? (
+                                            <span className="text-muted">{t('Apagada pela pessoa')}</span>
+                                        ) : u.disabled ? (
                                             <Button variant="soft" size="sm" onClick={() => router.post(`/administracao/pessoas/${u.id}/reativar`, {}, { preserveScroll: true })}>{t('Reativar')}</Button>
                                         ) : (
                                             <>

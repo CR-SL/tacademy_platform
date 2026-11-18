@@ -189,11 +189,23 @@ class Activity
         return ActivityLog::where('created_at', '<', $limit)->whereNot($longer)->delete();
     }
 
+    /**
+     * Transcrições das conversas com o Alex: apagam-se ao fim de 90 dias (RGPD, auditoria ponto 11).
+     * A conversa (datas, minutos, resultado da avaliação) fica; só o texto do que se disse sai. Devolve quantas.
+     */
+    public static function pruneTranscripts(): int
+    {
+        return \App\Models\AlexConversation::whereNotNull('transcript')
+            ->where('created_at', '<', now()->subDays((int) config('tacademy.alex_transcript_days', 90)))
+            ->update(['transcript' => null]);
+    }
+
     /** No Railway não há agendador: a limpeza corre no primeiro registo de cada dia. */
     private static function pruneDaily(): void
     {
         if (Cache::add('activity-log-pruned', true, now()->addDay())) {
             self::prune();
+            self::pruneTranscripts();
             // A limpeza dos ficheiros órfãos NÃO corre aqui sozinha: apaga ficheiros do disco, por isso só se corre
             // à mão (php artisan files:clean), vendo primeiro a lista. Ver OrphanFiles.
         }

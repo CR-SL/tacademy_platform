@@ -97,8 +97,9 @@ class ProfileTest extends TestCase
             ->assertRedirect('/');
 
         $this->assertGuest();
-        // A conta fica apagada (soft delete): sai da plataforma, mas o histórico e os certificados ficam guardados
+        // Apagada pela própria pessoa: sem dados pessoais e sem volta (ver AccountErasureTest)
         $this->assertSoftDeleted($user);
+        $this->assertNotNull($user->fresh()->erased_at);
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void

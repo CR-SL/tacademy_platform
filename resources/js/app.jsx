@@ -1,3 +1,5 @@
+// Letra da plataforma (Archivo, larguras e pesos variáveis), alojada aqui e não na Google (RGPD, auditoria ponto 19)
+import '@fontsource-variable/archivo/wdth.css';
 import '../css/app.css';
 import './bootstrap';
 

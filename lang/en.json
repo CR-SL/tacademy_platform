@@ -759,7 +759,6 @@
     "Pelo menos 10 carateres.": "At least 10 characters.",
     "Pendentes": "To do",
     "Pendentes · :length": "To do · :length",
-    "Perdes os cursos, o progresso, as notas e os certificados. Isto não se pode desfazer.": "You'll lose your courses, progress, notes and certificates. This can't be undone.",
     "Pergunta :v1": "Question :v1",
     "Pergunta :v1, opção :v2": "Question :v1, option :v2",
     "Pergunta rápida :v1": "Quick question :v1",
@@ -1553,7 +1552,7 @@
     "Não": "No",
     "Hoje": "Today",
     "Ontem": "Yesterday",
-    "Conta apagada": "Deleted account",
+    "Conta apagada": "Account deleted",
     "Sem sessão": "Not signed in",
     "Data": "Date",
     "Hora": "Time",
@@ -1642,5 +1641,12 @@
     "Já fizeste a avaliação final deste curso, ou usaste todas as tentativas.": "You've already taken this course's final assessment, or used all your attempts.",
     "Minutos em todas as aulas de vídeo": "Minutes on every video lesson",
     "Esta aula fica concluída quando o formador indicar a duração do vídeo.": "This lesson will be completed once the instructor sets the video length.",
-    "O avatar tem de ser um link https de um destes sites: :hosts.": "The avatar must be an https link from one of these sites: :hosts."
+    "O avatar tem de ser um link https de um destes sites: :hosts.": "The avatar must be an https link from one of these sites: :hosts.",
+    "Apagada": "Erased",
+    "Apagada pela pessoa": "Erased by the person",
+    "Esta conta foi apagada pela própria pessoa e não se pode reativar.": "This account was erased by its owner and cannot be reactivated.",
+    "Para apagar esta conta, fala com a administração.": "To delete this account, contact the administration.",
+    "Antes de continuar, descarrega os teus certificados em": "Before you continue, download your certificates from",
+    "Depois de apagares a conta, deixam de ser válidos.": "Once you delete your account, they are no longer valid.",
+    "Apagamos o teu nome, o email, o progresso, as notas, as mensagens, as conversas com o Alex e os certificados. Só os registos das compras ficam guardados, porque a lei obriga a guardar a faturação. Isto não se pode desfazer.": "We delete your name, email, progress, notes, messages, conversations with Alex and certificates. Only purchase records are kept, because the law requires invoicing records to be kept. This cannot be undone."
 }

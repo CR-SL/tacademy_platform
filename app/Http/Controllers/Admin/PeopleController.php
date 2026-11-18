@@ -99,6 +99,10 @@ class PeopleController extends Controller
     public function restore(Request $request, int $id): RedirectResponse
     {
         $user = User::onlyTrashed()->findOrFail($id);
+        // Apagada pela própria pessoa (RGPD): já não tem dados para reativar
+        if ($user->isErased()) {
+            return back()->withErrors(['person' => __('Esta conta foi apagada pela própria pessoa e não se pode reativar.')]);
+        }
         abort_if($user->isAdmin() && ! $request->user()->isAdmin(), 403, __('Só um admin pode reativar a conta de um admin.'));
         $user->restore();
 

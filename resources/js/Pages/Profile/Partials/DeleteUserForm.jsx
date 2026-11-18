@@ -5,8 +5,9 @@ import { useRef, useState } from 'react';
 
 import { t } from '@/i18n';
 
-// Apagar a conta: pede a palavra-passe numa janela de confirmação, porque não se pode desfazer.
-export default function DeleteUserForm({ className = '' }) {
+// Apagar a conta (RGPD): apaga os dados pessoais de vez. Pede a palavra-passe numa janela de confirmação, porque
+// não se pode desfazer. Só alunos; os outros perfis pedem à administração (têm cursos e trabalho ligados à conta).
+export default function DeleteUserForm({ className = '', canErase = true }) {
     const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
     const passwordInput = useRef();
 
@@ -44,19 +45,29 @@ export default function DeleteUserForm({ className = '' }) {
             <header>
                 <h2 className="font-display text-lg font-bold text-ink">{t('Apagar a conta')}</h2>
                 <p className="mt-1 text-sm text-muted">
-                    {t('Perdes os cursos, o progresso, as notas e os certificados. Isto não se pode desfazer.')}
+                    {t('Apagamos o teu nome, o email, o progresso, as notas, as mensagens, as conversas com o Alex e os certificados. Só os registos das compras ficam guardados, porque a lei obriga a guardar a faturação. Isto não se pode desfazer.')}
                 </p>
             </header>
 
-            <Button variant="danger" onClick={() => setConfirmingUserDeletion(true)}>
-                {t('Apagar a conta')}
-            </Button>
+            {canErase ? (
+                <Button variant="danger" onClick={() => setConfirmingUserDeletion(true)}>
+                    {t('Apagar a conta')}
+                </Button>
+            ) : (
+                <p className="text-sm text-text">{t('Para apagar esta conta, fala com a administração.')}</p>
+            )}
 
             <Modal show={confirmingUserDeletion} onClose={closeModal} maxWidth="md">
                 <form onSubmit={deleteUser} className="p-6">
                     <h2 className="font-display text-xl font-extrabold leading-tight">{t('Apagar a tua conta?')}</h2>
                     <p className="mt-2 text-text">
-                        {t('Perdes os cursos, o progresso, as notas e os certificados. Isto não se pode desfazer.')}
+                        {t('Apagamos o teu nome, o email, o progresso, as notas, as mensagens, as conversas com o Alex e os certificados. Só os registos das compras ficam guardados, porque a lei obriga a guardar a faturação. Isto não se pode desfazer.')}
+                    </p>
+
+                    <p className="mt-3 bg-page p-3 text-sm text-text">
+                        {t('Antes de continuar, descarrega os teus certificados em')}{' '}
+                        <a className="ui-link" href="/plataforma/certificados" target="_blank" rel="noopener noreferrer">{t('Certificados')}</a>.{' '}
+                        {t('Depois de apagares a conta, deixam de ser válidos.')}
                     </p>
 
                     <Field id="delete-password" label={t('Palavra-passe')} hint={t('Escreve a tua palavra-passe para confirmar.')} error={errors.password} className="mt-6">

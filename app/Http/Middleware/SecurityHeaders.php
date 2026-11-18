@@ -83,8 +83,8 @@ class SecurityHeaders
             // strict-dynamic: os scripts carregados pelos da página (API do YouTube e do Vimeo, Daily do Alex) também passam
             "script-src 'nonce-$nonce' 'strict-dynamic' 'wasm-unsafe-eval' 'self' https:",
             // Estilos inline: o React usa o atributo style
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-            "font-src 'self' data: https://fonts.gstatic.com",
+            "style-src 'self' 'unsafe-inline'",
+            "font-src 'self' data:",
             "img-src 'self' data: blob: https:",
             "media-src 'self' blob: https:",
             "connect-src 'self' https: wss:",

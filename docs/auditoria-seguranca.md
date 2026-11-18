@@ -218,6 +218,21 @@ Gravidades:
 - **Verificado no browser local:** o vídeo próprio e o do YouTube carregam sem avisos da CSP, e os relatórios chegam ao registo.
 - **Testes:** 183, todos a passar.
 
+**Grupo 7 — corrigido (2026-11-18): pontos 11 e 19.**
+- **Ponto 11 (decidido com a dona do projeto):**
+  - "Desativar" (gestão, reversível) fica separado de "Apagar a minha conta" (`App\Support\AccountEraser`).
+  - Apagar a conta remove o progresso, os testes, as notas, as mensagens com o formador, as conversas com o Alex, as inscrições, os certificados, as avaliações, as notificações e as sessões.
+  - A conta fica sem nome, email, telefone nem palavra-passe utilizável (`erased_at`), e o email verdadeiro fica livre para uma conta nova.
+  - Os pedidos de compra ficam para a faturação. Os outros pedidos perdem os dados de contacto.
+  - O registo de atividade fica sem nome nem IP.
+  - Uma conta apagada não se pode reativar.
+  - Só alunos apagam a própria conta. Os outros perfis pedem à administração.
+  - Antes de confirmar, o aluno é avisado para descarregar os certificados.
+  - As transcrições do Alex apagam-se ao fim de 90 dias (`ALEX_TRANSCRIPT_DAYS`). Corre na limpeza diária, com o registo de atividade.
+  - **Fica para a dona do projeto:** o acordo de tratamento de dados (DPA) com o Tavus e a página de privacidade.
+- **Ponto 19:** a letra Archivo vem da própria plataforma (`@fontsource-variable/archivo`) e já não da Google. A CSP deixou de permitir as fontes da Google.
+- **Testes:** 187, todos a passar.
+
 **Na mudança para a OVH (escolher um dos dois caminhos):**
 - **Com Docker/FrankenPHP, como no Railway:** levar o mesmo `Caddyfile` e definir `COURSE_FILES_PRIVATE=false`. Os ficheiros ficam onde estão e não é preciso correr nada.
 - **Com nginx ou Apache:**

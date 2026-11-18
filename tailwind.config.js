@@ -17,9 +17,9 @@ export default {
         extend: {
             fontFamily: {
                 // Archivo em toda a plataforma (aparência decidida a 2026-11-04); a landing tem letra própria
-                sans: ['Archivo', ...defaultTheme.fontFamily.sans],
-                display: ['Archivo', ...defaultTheme.fontFamily.sans],
-                mono: ['Archivo', ...defaultTheme.fontFamily.sans],
+                sans: ['"Archivo Variable"', 'Archivo', ...defaultTheme.fontFamily.sans],
+                display: ['"Archivo Variable"', 'Archivo', ...defaultTheme.fontFamily.sans],
+                mono: ['"Archivo Variable"', 'Archivo', ...defaultTheme.fontFamily.sans],
             },
             colors: {
                 // Tokens em resources/css/app.css (mudam com o tema claro/escuro)

@@ -52,7 +52,20 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'alex_credits' => 'integer',
             'panel_layouts' => 'array',
             'email_reminders' => 'boolean',
+            'erased_at' => 'datetime',
         ];
+    }
+
+    /** A própria pessoa apagou a conta (RGPD, ver AccountEraser): sem dados pessoais e não se reativa. */
+    public function isErased(): bool
+    {
+        return $this->erased_at !== null;
+    }
+
+    /** Pode apagar a própria conta nas Definições: só alunos (os outros perfis têm cursos e trabalho ligados à conta). */
+    public function canEraseOwnAccount(): bool
+    {
+        return $this->hasRole('aluno');
     }
 
     // Relações

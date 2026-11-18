@@ -133,9 +133,9 @@
  */
 .cc-app .cc-ph, .cc-app .cc-res, .cc-app .cc-res img, .cc-app .cc-stats, .cc-app .cc-prog-box, .cc-app .cc-drawer, .cc-app .cc-sheet { border-radius: 0; }
 .cc-app {
-    --display: Archivo, system-ui, sans-serif;
-    --body: Archivo, system-ui, sans-serif;
-    --mono: Archivo, system-ui, sans-serif;
+    --display: 'Archivo Variable', Archivo, system-ui, sans-serif;
+    --body: 'Archivo Variable', Archivo, system-ui, sans-serif;
+    --mono: 'Archivo Variable', Archivo, system-ui, sans-serif;
     --accent: var(--color-accent);
     --cc-paper: var(--color-bg);
     --cc-ink: var(--color-ink);

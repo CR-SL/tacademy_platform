@@ -26,6 +26,9 @@ return [
     'private_files' => (bool) env('COURSE_FILES_PRIVATE', env('RAILWAY_ENVIRONMENT') === null),
     'seed_demo_password' => env('SEED_DEMO_PASSWORD'),
 
+    // Dias que se guardam as transcrições das conversas com o Alex (RGPD). Depois, só fica a conversa sem o texto.
+    'alex_transcript_days' => (int) env('ALEX_TRANSCRIPT_DAYS', 90),
+
     /*
      | Sites aceites no link das aulas de avatar (abrem dentro da aula, com câmara e microfone). Só estes, para uma
      | conta de formador comprometida não poder mostrar uma página falsa de entrada na conta (auditoria, ponto 8).

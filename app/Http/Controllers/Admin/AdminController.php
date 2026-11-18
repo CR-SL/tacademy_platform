@@ -168,6 +168,7 @@ class AdminController extends Controller
                 'courses' => $u->enrollments_count,
                 'last' => $u->last_active_at?->diffForHumans(),
                 'disabled' => $u->trashed(),
+                'erased' => $u->isErased(), // apagada pela própria pessoa (RGPD): não se reativa
                 'me' => $u->id === $request->user()->id,
             ]),
             'counts' => Role::withCount('users')->pluck('users_count', 'name'),

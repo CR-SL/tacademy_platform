@@ -11,7 +11,8 @@ Artisan::command('inspire', function () {
 // Também corre sozinho no primeiro registo de cada dia, porque no Railway não há agendador.
 Artisan::command('activity:prune', function () {
     $this->info('Linhas apagadas: '.\App\Support\Activity::prune());
-})->purpose('Limpa o registo de atividade com mais de 12 meses');
+    $this->info('Transcrições do Alex apagadas: '.\App\Support\Activity::pruneTranscripts());
+})->purpose('Limpa o registo de atividade com mais de 12 meses e as transcrições do Alex com mais de 90 dias');
 
 \Illuminate\Support\Facades\Schedule::command('activity:prune')->daily();
 

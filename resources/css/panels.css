@@ -3,7 +3,7 @@
  | Grelha de 24 colunas com linhas de 36 px; o motor está em Components/Panels/usePanelBoard.js.
  | Tudo com prefixo pn- para não colidir com as classes do Tailwind.
  */
-.pn-root { font: 400 14px/1.45 Archivo, system-ui, sans-serif; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; color: var(--color-ink); }
+.pn-root { font: 400 14px/1.45 'Archivo Variable', Archivo, system-ui, sans-serif; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; color: var(--color-ink); }
 :where(.pn-root) button, :where(.pn-nav) button { text-align: inherit; }
 
 .pn-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
