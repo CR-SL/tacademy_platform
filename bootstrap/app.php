@@ -16,13 +16,14 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\TouchLastActive::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            \App\Http\Middleware\SecurityHeaders::class,
         ]);
 
         // A língua escolhida antes de entrar fica num cookie simples (não precisa de ser cifrado)
         $middleware->encryptCookies(except: ['lang']);
 
         // Os avisos do Tavus chegam sem sessão: a assinatura X-Tavus-Signature substitui o CSRF
-        $middleware->validateCsrfTokens(except: ['webhooks/tavus']);
+        $middleware->validateCsrfTokens(except: ['webhooks/tavus', 'csp-report']);
 
         // Os proxies em que se confia (HTTPS e IP real do visitante) vêm de config/trustedproxy.php (TRUSTED_PROXIES).
 

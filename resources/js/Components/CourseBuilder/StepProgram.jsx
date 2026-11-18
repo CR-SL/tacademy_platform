@@ -2,7 +2,7 @@ import { usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { useConfirm } from '@/Components/ui';
 import { AddLink, Field, IconButton, inputCls, Panel } from './ui';
-import { formatBytes, formatMinutes, isHttpUrl, isUploadedVideo, linkInfo } from './format';
+import { avatarHostList, formatBytes, formatMinutes, isAvatarUrl, isHttpUrl, isUploadedVideo, linkInfo } from './format';
 import { lessonComplete, newKey, totalMinutes } from './model';
 
 import { t } from '@/i18n';
@@ -217,7 +217,9 @@ function LessonEditor({ l, set, upload }) {
                             placeholder={l.type === 'avatar' ? 'https://… (link da plataforma do avatar)' : 'https://www.youtube.com/watch?v=… ou https://vimeo.com/…'}
                             onChange={(e) => set((x) => { x.url = e.target.value; })} />
                     )}
-                    {isUploadedVideo(l.url) ? null : info ? (
+                    {isUploadedVideo(l.url) ? null : l.type === 'avatar' && l.url.trim() && !isAvatarUrl(l.url) ? (
+                        <span className="text-[13px] text-live-ink">{t('O avatar tem de ser um link https de um destes sites: :hosts.', { hosts: avatarHostList().join(', ') })}</span>
+                    ) : info ? (
                         <div className="mt-1 flex flex-wrap items-center gap-3 bg-page p-2.5">
                             {info.thumb && <img src={info.thumb} alt="" className="aspect-video w-[120px] object-cover" />}
                             <span className="bg-ink px-2 py-0.5 font-mono text-[11px] font-semibold text-on-ink">{info.tag}</span>

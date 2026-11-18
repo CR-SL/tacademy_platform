@@ -23,7 +23,7 @@ class DemoCourseSeeder extends Seeder
     // Vídeo de teste em HLS (várias qualidades) para o leitor próprio; Big Buck Bunny, Blender Foundation, CC BY 3.0
     public const VIDEO = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
 
-    private const AVATAR = 'https://example.com/avatar/tacademy-demo'; // a substituir pelo link real da plataforma do avatar
+    private const AVATAR = 'https://tavus.daily.co/tacademy-demo'; // a substituir pelo link real da plataforma do avatar
 
     public function run(): void
     {

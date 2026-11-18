@@ -204,6 +204,20 @@ Gravidades:
 - **Ponto 20:** ao fechar a aula ou o separador, o leitor envia o progresso com `fetch` `keepalive` e o cabeçalho `X-XSRF-TOKEN`, como o `alexStore.js`. A forma antiga (`sendBeacon` com `_token` vazio) dava 419; confirmado no browser.
 - **Testes:** 178, todos a passar.
 
+**Grupo 6 — corrigido (2026-11-17): pontos 9 e 8.**
+- **Ponto 9:** `App\Http\Middleware\SecurityHeaders` em todas as respostas da app.
+  - Sempre: `X-Frame-Options: SAMEORIGIN`, `nosniff`, `Referrer-Policy` e, em HTTPS, HSTS (1 ano, sem subdomínios enquanto o domínio não está fixo).
+  - Uma CSP sempre aplicada: `frame-ancestors 'self'` (clickjacking), `object-src 'none'`, `base-uri 'self'` e `frame-src` só para a plataforma, YouTube, Vimeo e o avatar.
+  - A CSP completa (scripts com nonce e `strict-dynamic`, ligações, imagens) começa em modo "só reportar". Os avisos ficam no registo como `CSP` (rota `/csp-report`).
+  - Depois de uns dias sem avisos, incluindo uma conversa com o Alex, passa-se a aplicar com `CSP_ENFORCE=true`.
+  - Nas páginas ficam fora o PDF e o vídeo, para o leitor de PDF do browser continuar a funcionar.
+  - Os ficheiros que o Caddy entrega diretamente (capas) não levam estes cabeçalhos.
+- **Ponto 8:** o link das aulas de avatar só é aceite em https e nos sites do Tavus, do Daily e da plataforma de avatares da T.Academy (`AVATAR_HOSTS`, por defeito `daily.co,tavus.io,avatar.tacademy.pt`, com os subdomínios).
+  - Isto vale no editor, para publicar, e na aula: outro link não abre.
+  - O iframe tem `sandbox` (não navega a página da plataforma nem abre janelas) e `referrerpolicy="no-referrer"`.
+- **Verificado no browser local:** o vídeo próprio e o do YouTube carregam sem avisos da CSP, e os relatórios chegam ao registo.
+- **Testes:** 183, todos a passar.
+
 **Na mudança para a OVH (escolher um dos dois caminhos):**
 - **Com Docker/FrankenPHP, como no Railway:** levar o mesmo `Caddyfile` e definir `COURSE_FILES_PRIVATE=false`. Os ficheiros ficam onde estão e não é preciso correr nada.
 - **Com nginx ou Apache:**

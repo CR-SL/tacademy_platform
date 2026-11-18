@@ -1641,5 +1641,6 @@
     "Já fizeste a avaliação final deste curso com o Alex, ou usaste todas as tentativas.": "You've already taken this course's final assessment with Alex, or used all your attempts.",
     "Já fizeste a avaliação final deste curso, ou usaste todas as tentativas.": "You've already taken this course's final assessment, or used all your attempts.",
     "Minutos em todas as aulas de vídeo": "Minutes on every video lesson",
-    "Esta aula fica concluída quando o formador indicar a duração do vídeo.": "This lesson will be completed once the instructor sets the video length."
+    "Esta aula fica concluída quando o formador indicar a duração do vídeo.": "This lesson will be completed once the instructor sets the video length.",
+    "O avatar tem de ser um link https de um destes sites: :hosts.": "The avatar must be an https link from one of these sites: :hosts."
 }

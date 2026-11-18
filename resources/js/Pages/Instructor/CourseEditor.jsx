@@ -7,6 +7,7 @@ import StepAvatar from '@/Components/CourseBuilder/StepAvatar';
 import StepPrice from '@/Components/CourseBuilder/StepPrice';
 import StepReview from '@/Components/CourseBuilder/StepReview';
 import { blankCourse, checklist } from '@/Components/CourseBuilder/model';
+import { setAvatarHosts } from '@/Components/CourseBuilder/format';
 import { useConfirm } from '@/Components/ui';
 
 import { t } from '@/i18n';
@@ -35,7 +36,8 @@ function withQuestionIds(q, saved) {
 }
 
 // Editor de cursos dos formadores: assistente em 5 passos que se guarda sozinho.
-export default function CourseEditor({ course, categories, library, shortMax, canAlex, canManageAlex }) {
+export default function CourseEditor({ course, categories, library, shortMax, canAlex, canManageAlex, avatarHosts }) {
+    setAvatarHosts(avatarHosts); // antes de qualquer verificação do avatar (lista do que falta, campo do link)
     const [c, setC] = useState(() => course ?? blankCourse());
     const [step, setStep] = useState(0);
     const [openKey, setOpenKey] = useState(() => (course ? null : blankFirstLesson(c)));

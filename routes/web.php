@@ -73,6 +73,19 @@ Route::middleware(['auth', 'verified'])->prefix('plataforma')->group(function ()
 // Avisos do Tavus sobre as conversas do Alex (assinados; sem sessão nem CSRF)
 Route::post('/webhooks/tavus', [AlexController::class, 'webhook'])->middleware('throttle:120,1')->name('alex.webhook');
 
+// Avisos do browser sobre o que a política de conteúdo (CSP) bloquearia: ficam no registo (ver SecurityHeaders)
+Route::post('/csp-report', function (\Illuminate\Http\Request $request) {
+    $report = json_decode((string) $request->getContent(), true);
+    $r = is_array($report) ? ($report['csp-report'] ?? $report[0]['body'] ?? $report) : [];
+    \Illuminate\Support\Facades\Log::warning('CSP', [
+        'page' => mb_substr((string) ($r['document-uri'] ?? $r['documentURL'] ?? ''), 0, 300),
+        'directive' => mb_substr((string) ($r['violated-directive'] ?? $r['effectiveDirective'] ?? ''), 0, 100),
+        'blocked' => mb_substr((string) ($r['blocked-uri'] ?? $r['blockedURL'] ?? ''), 0, 300),
+    ]);
+
+    return response()->noContent();
+})->middleware('throttle:30,1')->name('csp.report');
+
 // Vídeos e anexos das aulas no disco privado: só para quem pode abrir a aula (ver CourseFiles).
 // Os ficheiros que ainda estejam na pasta pública são entregues diretamente pelo servidor web, sem passar aqui.
 Route::middleware(['auth', 'verified', 'throttle:600,1'])->prefix('storage/'.CourseBuilder::UPLOAD_DIR)->name('media.')->group(function () {

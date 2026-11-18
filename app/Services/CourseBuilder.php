@@ -297,7 +297,7 @@ class CourseBuilder
 
         return match ($l->content_type) {
             'video_link', 'video_upload' => self::validUrl($l->content_url) || self::uploadedVideo($l->content_url),
-            'avatar' => self::validUrl($l->avatar_ref),
+            'avatar' => self::validAvatarUrl($l->avatar_ref),
             'document' => $l->attachments->isNotEmpty(),
             'text' => trim(strip_tags((string) $l->body)) !== '',
             // Cada pergunta: texto, 2 opções com texto e a opção certa com texto (senão ninguém a podia acertar)
@@ -312,6 +312,23 @@ class CourseBuilder
     public static function validUrl(?string $url): bool
     {
         return (bool) filter_var($url, FILTER_VALIDATE_URL) && preg_match('#^https?://#i', $url);
+    }
+
+    /** Link de avatar: https e num dos sites aceites (config tacademy.avatar_hosts, também os subdomínios). */
+    public static function validAvatarUrl(?string $url): bool
+    {
+        if (! self::validUrl($url) || ! str_starts_with(strtolower((string) $url), 'https://')) {
+            return false;
+        }
+        $host = strtolower((string) parse_url((string) $url, PHP_URL_HOST));
+        foreach (config('tacademy.avatar_hosts', []) as $allowed) {
+            $allowed = strtolower($allowed);
+            if ($host === $allowed || str_ends_with($host, '.'.$allowed)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Caminho no disco public de um vídeo carregado pelo formador (/storage/cursos/videos/…), ou null. */

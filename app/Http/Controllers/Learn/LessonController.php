@@ -52,7 +52,8 @@ class LessonController extends Controller
         $prev = $lessons->get($i - 1);
         $next = $lessons->get($i + 1);
         $duration = $this->learning->videoDuration($lesson, $p);
-        $avatar = $lessons->first(fn ($l) => $l->content_type === 'avatar' && CourseBuilder::validUrl($l->avatar_ref));
+        // Só links de avatar dos sites aceites (auditoria, ponto 8): outro link não abre dentro da aula
+        $avatar = $lessons->first(fn ($l) => $l->content_type === 'avatar' && CourseBuilder::validAvatarUrl($l->avatar_ref));
 
         return Inertia::render('Learn/Lesson', [
             'course' => [
@@ -211,7 +212,7 @@ class LessonController extends Controller
             'title' => $lesson->title,
             'type' => $lesson->content_type,
             'minutes' => (int) round($lesson->duration_seconds / 60),
-            'url' => CourseBuilder::validUrl($url) ? $url : null,
+            'url' => ($lesson->content_type === 'avatar' ? CourseBuilder::validAvatarUrl($url) : CourseBuilder::validUrl($url)) ? $url : null,
             'video' => $this->videoSource($lesson->content_url),
             'body' => $lesson->content_type === 'text' ? $lesson->body : null,
             'attachments' => $lesson->attachments()->get()->map(fn ($a) => ['name' => $a->name, 'url' => $a->url(), 'size' => $a->size])->values(),

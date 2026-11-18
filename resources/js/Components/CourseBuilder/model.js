@@ -1,5 +1,5 @@
 // Estado do editor de cursos e as mesmas regras de publicação do servidor (CourseBuilder::publishProblems).
-import { isHttpUrl, isUploadedVideo } from './format';
+import { isAvatarUrl, isHttpUrl, isUploadedVideo } from './format';
 
 import { t } from '@/i18n';
 
@@ -51,7 +51,7 @@ export function lessonComplete(l) {
         case 'video_upload':
             return isHttpUrl(l.url) || isUploadedVideo(l.url);
         case 'avatar':
-            return isHttpUrl(l.url);
+            return isAvatarUrl(l.url);
         case 'document':
             return l.attachments.length > 0;
         case 'text':

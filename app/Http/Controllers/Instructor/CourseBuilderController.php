@@ -393,6 +393,7 @@ class CourseBuilderController extends Controller
                     '/images/cursos/geometria-suspensao.jpg', '/images/cursos/pintura.jpg', '/images/cursos/travagem-abs.jpg'],
             ))),
             'shortMax' => CourseBuilder::SHORT_MAX,
+            'avatarHosts' => config('tacademy.avatar_hosts'),
             // Avatar (Alex): o formador liga-o nos seus cursos; o admin e o gestor de cursos também o bloqueiam
             'canAlex' => (bool) (request()->user()?->canDo('cursos.alex') || request()->user()?->canDo('cursos.alex.gerir')),
             'canManageAlex' => (bool) request()->user()?->canDo('cursos.alex.gerir'),

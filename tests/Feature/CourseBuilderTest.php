@@ -65,7 +65,7 @@ class CourseBuilderTest extends TestCase
                         ['question' => 'O que é o common rail?', 'options' => ['Um coletor de alta pressão', 'Um filtro', ''], 'correct' => 0, 'explanation' => 'Alimenta todos os injetores.'],
                         ['question' => '', 'options' => ['a', 'b'], 'correct' => 0, 'explanation' => ''],
                     ]],
-                    ['key' => 'nC', 'id' => null, 'title' => 'Pergunta ao avatar', 'type' => 'avatar', 'url' => 'https://avatar.exemplo.pt/s/1', 'minutes' => 8, 'body' => '', 'attachments' => [], 'quiz' => []],
+                    ['key' => 'nC', 'id' => null, 'title' => 'Pergunta ao avatar', 'type' => 'avatar', 'url' => 'https://tavus.daily.co/s1', 'minutes' => 8, 'body' => '', 'attachments' => [], 'quiz' => []],
                     ['key' => 'nD', 'id' => null, 'title' => 'Teste', 'type' => 'quiz', 'url' => '', 'minutes' => 5, 'body' => '', 'attachments' => [], 'quiz' => [
                         ['question' => 'Pressão em ralenti?', 'options' => ['50 bar', '300 bar'], 'correct' => 1],
                     ]],
@@ -100,7 +100,7 @@ class CourseBuilderTest extends TestCase
         $this->assertSame(25, $course->duration_minutes);
         $this->assertSame(['Testar injetores'], $course->learning_outcomes);
         $this->assertCount(3, $course->lessons);
-        $this->assertSame('https://avatar.exemplo.pt/s/1', $course->lessons()->where('content_type', 'avatar')->value('avatar_ref'));
+        $this->assertSame('https://tavus.daily.co/s1', $course->lessons()->where('content_type', 'avatar')->value('avatar_ref'));
         $this->assertSame($res->json('lessons.nB'), $course->sample_lesson_id);
 
         // Perguntas rápidas do vídeo: as vazias são ignoradas e as opções vazias retiradas

@@ -394,7 +394,9 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                 ) : alex ? (
                     <AlexLessonPanel alex={alex} open={avatarOn} onStart={pauseVideo} />
                 ) : avatarUrl ? (
-                    askStarted && <iframe src={avatarUrl} title={t('Perguntar ao avatar')} allow="microphone; camera; autoplay" />
+                    // Só sites de avatar aceites (o servidor filtra); sandbox: não navega a página da plataforma nem abre janelas sozinho
+                    askStarted && <iframe src={avatarUrl} title={t('Perguntar ao avatar')} allow="microphone; camera; autoplay; display-capture"
+                        sandbox="allow-scripts allow-same-origin allow-forms" referrerPolicy="no-referrer" />
                 ) : (
                     <div className="al-a-stage">
                         <span className="al-orb" aria-hidden="true" />

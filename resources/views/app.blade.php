@@ -10,7 +10,7 @@
         <link rel="icon" type="image/png" href="/images/brand/passarinho.png">
 
         <!-- Tema: o da conta (Definições) ou, sem sessão, o deste browser. Aplicado antes de pintar (evita o flash claro→escuro). -->
-        <script>
+        <script nonce="{{ Vite::cspNonce() }}">
             try {
                 var p = document.documentElement.getAttribute('data-theme-pref') || localStorage.getItem('ta-theme') || 'light';
                 if (p === 'system') p = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -24,7 +24,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
-        @routes
+        @routes(nonce: Vite::cspNonce())
         @viteReactRefresh
         @vite(['resources/js/app.jsx', "resources/js/Pages/{$page['component']}.jsx"])
         @inertiaHead

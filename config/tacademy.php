@@ -26,6 +26,20 @@ return [
     'private_files' => (bool) env('COURSE_FILES_PRIVATE', env('RAILWAY_ENVIRONMENT') === null),
     'seed_demo_password' => env('SEED_DEMO_PASSWORD'),
 
+    /*
+     | Sites aceites no link das aulas de avatar (abrem dentro da aula, com câmara e microfone). Só estes, para uma
+     | conta de formador comprometida não poder mostrar uma página falsa de entrada na conta (auditoria, ponto 8).
+     | Cada um vale também para os subdomínios (tavus.daily.co entra com daily.co). Separados por vírgula.
+     */
+    'avatar_hosts' => array_values(array_filter(array_map('trim', explode(',', (string) env('AVATAR_HOSTS', 'daily.co,tavus.io,avatar.tacademy.pt'))))),
+
+    /*
+     | Política de conteúdo (CSP) completa: por defeito só reporta (Content-Security-Policy-Report-Only) o que
+     | bloquearia, para o registo (/csp-report). Depois de uns dias sem avisos, incluindo uma conversa com o Alex,
+     | pôr CSP_ENFORCE=true. Ver App\Http\Middleware\SecurityHeaders.
+     */
+    'csp_enforce' => (bool) env('CSP_ENFORCE', false),
+
     'contact' => [
         'email' => env('TACADEMY_CONTACT_EMAIL'),
         'phone' => env('TACADEMY_CONTACT_PHONE'),
