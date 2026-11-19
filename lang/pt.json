@@ -11,5 +11,21 @@
     "Whoops!": "Não foi possível concluir o pedido.",
     "Regards,": "Até já,",
     "If you're having trouble clicking the \":actionText\" button, copy and paste the URL below\ninto your web browser:": "Se o botão \":actionText\" não funcionar, copia este link para o browser:",
-    "All rights reserved.": "Todos os direitos reservados."
+    "All rights reserved.": "Todos os direitos reservados.",
+    "{1} 1 aluno|[2,*] :count alunos": "{1} 1 aluno|[2,*] :count alunos",
+    "{1} 1 aula|[2,*] :count aulas": "{1} 1 aula|[2,*] :count aulas",
+    "{1} 1 compra por autorizar|[2,*] :count compras por autorizar": "{1} 1 compra por autorizar|[2,*] :count compras por autorizar",
+    "{1} 1 compra à espera de autorização|[2,*] :count compras à espera de autorização": "{1} 1 compra à espera de autorização|[2,*] :count compras à espera de autorização",
+    "{1} 1 curso em rascunho de um formador|[2,*] :count cursos em rascunho de formadores": "{1} 1 curso em rascunho de um formador|[2,*] :count cursos em rascunho de formadores",
+    "{1} 1 lembrete enviado.|[2,*] :count lembretes enviados.": "{1} 1 lembrete enviado.|[2,*] :count lembretes enviados.",
+    "{1} 1 mensagem por ler, :when.|[2,*] :count mensagens por ler, :when.": "{1} 1 mensagem por ler, :when.|[2,*] :count mensagens por ler, :when.",
+    "{1} 1 módulo|[2,*] :count módulos": "{1} 1 módulo|[2,*] :count módulos",
+    "{1} 1 pedido sem resposta há mais de um dia|[2,*] :count pedidos sem resposta há mais de um dia": "{1} 1 pedido sem resposta há mais de um dia|[2,*] :count pedidos sem resposta há mais de um dia",
+    "{1} 1 pessoa ficou de fora (já concluiu, recebeu um lembrete há pouco ou desligou os lembretes).|[2,*] :count pessoas ficaram de fora (já concluíram, receberam um lembrete há pouco ou desligaram os lembretes).": "{1} 1 pessoa ficou de fora (já concluiu, recebeu um lembrete há pouco ou desligou os lembretes).|[2,*] :count pessoas ficaram de fora (já concluíram, receberam um lembrete há pouco ou desligaram os lembretes).",
+    "{1} 1 pessoa nunca entrou|[2,*] :count pessoas nunca entraram": "{1} 1 pessoa nunca entrou|[2,*] :count pessoas nunca entraram",
+    "{1} 1 pessoa precisa de atenção|[2,*] :count pessoas precisam de atenção": "{1} 1 pessoa precisa de atenção|[2,*] :count pessoas precisam de atenção",
+    "{1} Curso atribuído a 1 pessoa. Recebeu um email.|[2,*] Curso atribuído a :count pessoas. Receberam um email.": "{1} Curso atribuído a 1 pessoa. Recebeu um email.|[2,*] Curso atribuído a :count pessoas. Receberam um email.",
+    "{1} Falta 1 dia para concluir o curso.|[2,*] Faltam :count dias para concluir o curso.": "{1} Falta 1 dia para concluir o curso.|[2,*] Faltam :count dias para concluir o curso.",
+    "{1} Lembrete enviado.|[2,*] :count lembretes enviados.": "{1} Lembrete enviado.|[2,*] :count lembretes enviados.",
+    "{1} Um aluno já fez as aulas e espera que confirmes a presença para receber o certificado.|[2,*] :count alunos já fizeram as aulas e esperam que confirmes a presença para receberem o certificado.": "{1} Um aluno já fez as aulas e espera que confirmes a presença para receber o certificado.|[2,*] :count alunos já fizeram as aulas e esperam que confirmes a presença para receberem o certificado."
 }

@@ -18,7 +18,7 @@
             } catch (e) {}
         </script>
 
-        <!-- Letra da plataforma: Archivo, alojada na própria plataforma (importada em app.jsx; RGPD, sem pedidos à Google) -->
+        <!-- Letra da plataforma: Manrope, alojada na própria plataforma (importada em app.jsx; RGPD, sem pedidos à Google) -->
 
         <!-- Scripts -->
         @routes(nonce: Vite::cspNonce())

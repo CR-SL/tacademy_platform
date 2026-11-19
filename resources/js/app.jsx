@@ -1,5 +1,5 @@
-// Letra da plataforma (Archivo, larguras e pesos variáveis), alojada aqui e não na Google (RGPD, auditoria ponto 19)
-import '@fontsource-variable/archivo/wdth.css';
+// Letra da plataforma (Manrope, pesos variáveis, decidida pela equipa a 2026-11-19), alojada aqui e não na Google (RGPD, auditoria ponto 19)
+import '@fontsource-variable/manrope';
 import '../css/app.css';
 import './bootstrap';
 

@@ -9,7 +9,7 @@
 
 /*
  | Design tokens da aparência decidida a 2026-11-04 (ver PRODUCT.md e panels.css):
- | amarelo T.Academy como acento, painéis brancos sem cantos arredondados, botões em cápsula, letra Archivo.
+ | amarelo T.Academy como acento, painéis brancos sem cantos arredondados, botões em cápsula, letra Manrope (desde 2026-11-19).
  | Tema claro/escuro via data-theme no <html> (preferência guardada em localStorage).
  */
 :root,

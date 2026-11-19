@@ -16,7 +16,7 @@
     border-radius: 999px;
     background: var(--color-ink);
     color: var(--color-on-ink);
-    font-family: 'Archivo Variable', Archivo, system-ui, sans-serif;
+    font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
     font-size: 13.5px;
     font-weight: 700;
     line-height: 1;
@@ -63,7 +63,7 @@
     border-radius: 0;
     background: var(--color-surface);
     color: var(--color-ink);
-    font-family: 'Archivo Variable', Archivo, system-ui, sans-serif;
+    font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
     font-size: 15px;
     line-height: 1.4;
     box-shadow: none;

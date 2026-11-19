@@ -67,6 +67,42 @@ class AppServiceProvider extends ServiceProvider
             Gate::define($permission, fn (User $user) => $user->canDo($permission));
         }
 
+        // Confirmar o email e criar palavra-passe nova: o mesmo aspeto dos outros emails da plataforma
+        // (a língua é a da conta, porque o User tem HasLocalePreference)
+        \Illuminate\Auth\Notifications\VerifyEmail::toMailUsing(function ($user, string $url) {
+            $name = \Illuminate\Support\Str::before(trim((string) $user->name), ' ');
+
+            return \App\Mail\PlatformMail::notification(__('Confirma o teu email'), [
+                'preheader' => __('Falta só um passo para começares a aprender na T.Academy.'),
+                'heading' => $name ? __('Olá :name, confirma o teu email', ['name' => $name]) : __('Confirma o teu email'),
+                'lines' => [__('A tua conta na T.Academy está criada. Falta só um passo: confirma que este email é teu.')],
+                'actionText' => __('Confirmar o email'),
+                'actionUrl' => $url,
+                'steps' => [
+                    __('Confirma o email com o botão acima.'),
+                    __('Explora o catálogo e escolhe o teu primeiro curso.'),
+                    __('Aprende ao teu ritmo e recebe o certificado T.Academy no fim.'),
+                ],
+                'note' => __('O link funciona durante :count minutos. Se não criaste uma conta, ignora este email.', ['count' => config('auth.verification.expire', 60)]),
+            ]);
+        });
+
+        \Illuminate\Auth\Notifications\ResetPassword::toMailUsing(function ($user, string $token) {
+            $email = $user->getEmailForPasswordReset();
+
+            return \App\Mail\PlatformMail::notification(__('Criar uma palavra-passe nova'), [
+                'preheader' => __('O link para criares uma palavra-passe nova para a tua conta.'),
+                'heading' => __('Cria uma palavra-passe nova'),
+                'lines' => [
+                    __('Recebemos um pedido para criar uma palavra-passe nova para a conta :email.', ['email' => $email]),
+                    __('Escolhe uma com pelo menos 10 carateres.'),
+                ],
+                'actionText' => __('Criar palavra-passe nova'),
+                'actionUrl' => url(route('password.reset', ['token' => $token, 'email' => $email], false)),
+                'note' => __('Este link funciona durante :count minutos. Se não foste tu que pediste, ignora este email: a tua palavra-passe não muda.', ['count' => config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60)]),
+            ]);
+        });
+
         // Em desenvolvimento/testes, todos os emails vão para uma só caixa (MAIL_ALWAYS_TO).
         // Só quando o mailer é criado (ao enviar): ligar já no arranque obrigava a ter a chave
         // do Resend em todo o lado e partia o `config:cache` do build sem ela.

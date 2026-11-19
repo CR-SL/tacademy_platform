@@ -16,10 +16,10 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                // Archivo em toda a plataforma (aparência decidida a 2026-11-04); a landing tem letra própria
-                sans: ['"Archivo Variable"', 'Archivo', ...defaultTheme.fontFamily.sans],
-                display: ['"Archivo Variable"', 'Archivo', ...defaultTheme.fontFamily.sans],
-                mono: ['"Archivo Variable"', 'Archivo', ...defaultTheme.fontFamily.sans],
+                // Manrope em toda a plataforma (identidade decidida pela equipa a 2026-11-19)
+                sans: ['"Manrope Variable"', 'Manrope', ...defaultTheme.fontFamily.sans],
+                display: ['"Manrope Variable"', 'Manrope', ...defaultTheme.fontFamily.sans],
+                mono: ['"Manrope Variable"', 'Manrope', ...defaultTheme.fontFamily.sans],
             },
             colors: {
                 // Tokens em resources/css/app.css (mudam com o tema claro/escuro)

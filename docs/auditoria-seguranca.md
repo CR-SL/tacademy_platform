@@ -230,7 +230,7 @@ Gravidades:
   - Antes de confirmar, o aluno é avisado para descarregar os certificados.
   - As transcrições do Alex apagam-se ao fim de 90 dias (`ALEX_TRANSCRIPT_DAYS`). Corre na limpeza diária, com o registo de atividade.
   - **Fica para a dona do projeto:** o acordo de tratamento de dados (DPA) com o Tavus e a página de privacidade.
-- **Ponto 19:** a letra Archivo vem da própria plataforma (`@fontsource-variable/archivo`) e já não da Google. A CSP deixou de permitir as fontes da Google.
+- **Ponto 19:** a letra da plataforma vem da própria plataforma (`@fontsource-variable/manrope`, desde 2026-11-19; antes a Archivo) e já não da Google. A CSP deixou de permitir as fontes da Google.
 - **Testes:** 187, todos a passar.
 
 **Grupo 8 — corrigido (2026-11-18): pontos 12 a 17, 21, 23 e 24.**

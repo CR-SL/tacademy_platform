@@ -27,7 +27,49 @@ class PlatformMail extends Mailable
         public ?string $quote = null,
         public ?string $actionText = null,
         public ?string $actionUrl = null,
+        // Opcionais: etiqueta de estado (ex.: "Compra confirmada"), cartão do curso, resumo e próximos passos
+        public ?string $badge = null,
+        public ?array $card = null,
+        public ?array $summary = null,
+        public ?string $summaryTitle = null,
+        public array $steps = [],
     ) {}
+
+    /** Cartão do curso para o email: capa, área e nível, título e números verdadeiros do curso. */
+    public static function courseCard(\App\Models\Course $course): array
+    {
+        $course->loadMissing('category')->loadCount(['modules', 'lessons']);
+        $image = $course->thumbnail_url ?: (config('tacademy.course_images')[$course->slug] ?? null);
+        $minutes = (int) $course->duration_minutes;
+        $levels = ['iniciante' => __('Iniciante'), 'intermedio' => __('Intermédio'), 'avancado' => __('Avançado')];
+
+        return [
+            'image' => $image ? url($image) : null,
+            'label' => collect([$course->category?->name, $levels[$course->level] ?? null])->filter()->implode(' · '),
+            'title' => $course->title,
+            'facts' => array_values(array_filter([
+                $course->modules_count ? trans_choice('{1} 1 módulo|[2,*] :count módulos', $course->modules_count) : null,
+                $course->lessons_count ? trans_choice('{1} 1 aula|[2,*] :count aulas', $course->lessons_count) : null,
+                $minutes ? ($minutes >= 60 ? intdiv($minutes, 60).' h'.($minutes % 60 ? ' '.($minutes % 60).' min' : '') : $minutes.' min') : null,
+                $course->certificate_enabled ? __('Certificado') : null,
+            ])),
+        ];
+    }
+
+    /**
+     * O mesmo aspeto para as notificações do Laravel (confirmar o email, criar palavra-passe nova):
+     * devolve a MailMessage com a vista dos emails da plataforma.
+     */
+    public static function notification(string $subject, array $data): \Illuminate\Notifications\Messages\MailMessage
+    {
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject($subject)
+            ->view('emails.message', $data + [
+                'subject' => $subject, 'heading' => $subject, 'lines' => [], 'quote' => null,
+                'actionText' => null, 'actionUrl' => null, 'badge' => null, 'card' => null,
+                'summary' => null, 'summaryTitle' => null, 'steps' => [], 'note' => null,
+            ]);
+    }
 
     public function envelope(): Envelope
     {

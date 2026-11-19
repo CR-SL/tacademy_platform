@@ -147,12 +147,29 @@ class RequestController extends Controller
         });
         if (! $done) return back()->with('status', __('Este pedido já tinha sido tratado.'));
 
+        $course = $contactRequest->course;
+        $amount = $contactRequest->amount ?? $course->price;
         PlatformMail::inLocaleOf($student, fn () => PlatformMail::deliver($student->email, new PlatformMail(
-            subjectLine: __('Já tens acesso ao curso :course', ['course' => $contactRequest->course->title]),
+            subjectLine: __('Já tens acesso ao curso :course', ['course' => $course->title]),
             heading: __('Olá :name, o teu curso está pronto', ['name' => Str::before($student->name, ' ')]),
-            lines: [__('A tua compra do curso :course foi autorizada.', ['course' => $contactRequest->course->title])],
+            lines: [__('A tua compra foi confirmada e o curso já está na tua conta. Podes começar quando quiseres.')],
             actionText: __('Começar o curso'),
             actionUrl: url('/plataforma/cursos'),
+            badge: __('Compra confirmada'),
+            card: PlatformMail::courseCard($course),
+            summaryTitle: __('Resumo da compra'),
+            summary: array_values(array_filter([
+                [__('Curso'), $course->title],
+                $amount !== null ? [__('Valor pago'), number_format((float) $amount, 2, ',', ' ').' €'] : null,
+                $ref ? [__('Referência do pagamento'), $ref] : null,
+                [__('Data'), now()->format('d/m/Y')],
+                [__('Acesso'), $course->access_months ? __('Durante :n meses', ['n' => $course->access_months]) : __('Sem fim')],
+            ])),
+            steps: [
+                __('Abre o curso em Os meus cursos e escolhe a primeira aula.'),
+                __('O teu progresso fica guardado: retomas sempre onde paraste, no computador ou no telemóvel.'),
+                __('Conclui as aulas e os testes para receberes o certificado T.Academy.'),
+            ],
         )));
 
         return back()->with('status', __('Acesso autorizado. :name já tem o curso.', ['name' => $student->name]));
