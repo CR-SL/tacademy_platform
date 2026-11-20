@@ -20,27 +20,6 @@ const SUGGESTIONS = ['Diagnóstico', 'OBD', 'Eletrónica', 'Bateria', 'Gestão']
 
 // Opção A (2026-11-12): 5 por fila, inclinação 3D com reflexo a seguir o rato (Components/ui/tilt) e botão que sobe no hover
 
-// O número do título conta até ao novo total
-function useCount(n) {
-    const [v, setV] = useState(n);
-    const from = useRef(n);
-    useEffect(() => {
-        const a = from.current;
-        from.current = n;
-        if (a === n || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setV(n); return; }
-        let raf;
-        const t0 = performance.now();
-        const step = (now) => {
-            const k = Math.min(1, (now - t0) / 500);
-            setV(Math.round(a + (n - a) * k));
-            if (k < 1) raf = requestAnimationFrame(step);
-        };
-        raf = requestAnimationFrame(step);
-        return () => cancelAnimationFrame(raf);
-    }, [n]);
-    return v;
-}
-
 // Mantém o estado do Inertia no histórico ao mudar o ?curso= (link partilhável)
 const setUrl = (search) => window.history.replaceState(window.history.state, '', location.pathname + search);
 
@@ -291,7 +270,6 @@ export default function Catalog({ courses, areas, owned, pending }) {
     const shown = courses.filter((c) => (area === 'all' || c.area === area) && (!query || norm(textOf(c)).includes(norm(query))));
     // O detalhe aberto acompanha os dados novos depois de comprar
     const current = detail && (courses.find((c) => c.id === detail.id) ?? detail);
-    const count = useCount(shown.length);
 
     // O traço amarelo vai para o separador escolhido
     useLayoutEffect(() => {
@@ -312,8 +290,7 @@ export default function Catalog({ courses, areas, owned, pending }) {
             <div className="cc-app">
                 <div className="cc">
                     <div className="cc-top">
-                        <span className="cc-mono">{t('Catálogo')}</span>
-                        <h1><span className="cc-n">{count}</span> {shown.length === 1 ? t('curso') : t('cursos')}{' '}{t('disponíveis')}</h1>
+                        <h1 className="cc-mono">{t('Catálogo')}</h1>
                     </div>
 
                     <div className="cc-filters">
@@ -335,6 +312,9 @@ export default function Catalog({ courses, areas, owned, pending }) {
                     <div className="cc-grid" key={`${area}|${query}`}>
                         {shown.map((c, i) => <Card key={c.id} c={c} i={i} onOpen={open} />)}
                     </div>
+                    {shown.length > 0 && (
+                        <p className="cc-total">{shown.length === 1 ? t('1 curso disponível') : t(':n cursos disponíveis', { n: shown.length })}</p>
+                    )}
                     {!shown.length && (
                         <div className="cc-empty"><b>{t('Nenhum curso corresponde a estes filtros')}</b><span>{t('Limpa a pesquisa ou escolhe «Todas» para ver o catálogo completo.')}</span></div>
                     )}

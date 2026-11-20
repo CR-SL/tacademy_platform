@@ -1684,5 +1684,7 @@
     "Recebemos um pedido para criar uma palavra-passe nova para a conta :email.": "We received a request to create a new password for the account :email.",
     "Escolhe uma com pelo menos 10 carateres.": "Choose one with at least 10 characters.",
     "Criar palavra-passe nova": "Create new password",
-    "Este link funciona durante :count minutos. Se não foste tu que pediste, ignora este email: a tua palavra-passe não muda.": "This link works for :count minutes. If you didn't ask for it, ignore this email: your password stays the same."
+    "Este link funciona durante :count minutos. Se não foste tu que pediste, ignora este email: a tua palavra-passe não muda.": "This link works for :count minutes. If you didn't ask for it, ignore this email: your password stays the same.",
+    "1 curso disponível": "1 course available",
+    ":n cursos disponíveis": ":n courses available"
 }
