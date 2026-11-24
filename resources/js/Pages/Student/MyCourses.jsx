@@ -9,15 +9,40 @@ import { tilt, untilt } from '@/Components/ui/tilt';
 
 import { t } from '@/i18n';
 
-const STATE_LABEL = { curso: 'Em curso', novo: 'Por começar', feito: 'Concluídos' };
+// Desenho do colega (2026-11-24): os filtros vão na barra da caixa, ao lado do título.
+// "Por concluir" junta os cursos em curso e os por começar.
+const FILTERS = [
+    ['todos', 'Todos', () => true],
+    ['abertos', 'Por concluir', (c) => c.state !== 'feito'],
+    ['feitos', 'Concluídos', (c) => c.state === 'feito'],
+];
 
-function Group({ title, courses, onOpen }) {
-    if (!courses.length) return null;
+function Tabs({ courses, filter, onChange }) {
     return (
-        <>
-            <span className="pn-lab">{title}</span>
+        <div className="pn-htabs" role="group" aria-label={t('Filtrar cursos')}>
+            {FILTERS.map(([key, label, test]) => (
+                <button key={key} type="button" aria-pressed={filter === key} onClick={() => onChange(key)}>
+                    {t(label)} · {courses.filter(test).length}
+                </button>
+            ))}
+        </div>
+    );
+}
+
+function CoursesList({ courses, filter, onOpen }) {
+    const test = FILTERS.find(([key]) => key === filter)[2];
+    // Os atribuídos pela empresa aparecem primeiro
+    const list = [...courses.filter((c) => c.company), ...courses.filter((c) => !c.company)].filter(test);
+
+    if (!list.length) {
+        return filter === 'feitos'
+            ? <EmptyPanel title={t('Ainda não concluíste nenhum curso')} text={t('Quando acabares um curso, aparece aqui.')} />
+            : <EmptyPanel title={t('Concluíste todos os teus cursos')} href="/plataforma/cursos" cta={t('Ver o catálogo')} />;
+    }
+    return (
+        <div className="pn-page-c">
             <div className="pn-covers">
-                {courses.map((c, i) => (
+                {list.map((c, i) => (
                     // Mesmo movimento dos cartões do catálogo: inclinação 3D com reflexo, subida e entrada em cascata
                     <a key={c.id} href={`?curso=${encodeURIComponent(c.slug)}`} className="pn-cover" style={{ '--i': i }} aria-haspopup="dialog"
                         onClick={(e) => { e.preventDefault(); onOpen(c.slug); }} onPointerMove={tilt} onPointerLeave={untilt}>
@@ -43,30 +68,6 @@ function Group({ title, courses, onOpen }) {
                     </a>
                 ))}
             </div>
-        </>
-    );
-}
-
-function CoursesList({ courses, onOpen }) {
-    const [filter, setFilter] = useState('todos');
-    const states = ['curso', 'novo', 'feito'].filter((s) => courses.some((c) => c.state === s));
-    const list = courses.filter((c) => filter === 'todos' || c.state === filter);
-
-    return (
-        <div className="pn-page-c">
-            <div className="pn-page-t">
-                <h3 className="pn-disp">{t('Os meus cursos')}</h3>
-                <div className="ui-pills" role="group" aria-label={t('Filtrar cursos')}>
-                    <button type="button" aria-pressed={filter === 'todos'} onClick={() => setFilter('todos')}>{t('Todos ·')}{' '}{courses.length}</button>
-                    {states.map((s) => (
-                        <button key={s} type="button" aria-pressed={filter === s} onClick={() => setFilter(s)}>
-                            {t(STATE_LABEL[s])} · {courses.filter((c) => c.state === s).length}
-                        </button>
-                    ))}
-                </div>
-            </div>
-            <Group title={t('Atribuídos pela empresa')} courses={list.filter((c) => c.company)} onOpen={onOpen} />
-            <Group title={t('Os meus')} courses={list.filter((c) => !c.company)} onOpen={onOpen} />
         </div>
     );
 }
@@ -74,6 +75,7 @@ function CoursesList({ courses, onOpen }) {
 // Ao carregar num cartão abre a caixa lateral do curso (como no catálogo); o ?curso= fica no endereço
 export default function MyCourses({ courses, detail, savedLayout }) {
     const [slug, setSlug] = useState(() => new URLSearchParams(location.search).get('curso'));
+    const [filter, setFilter] = useState('todos');
     const lastFocus = useRef(null);
     // A caixa abre logo, com "A carregar…" até os dados chegarem (antes não se via nada, e cliques repetidos
     // faziam vários pedidos); se o pedido falhar, mostra o erro com "Tentar outra vez"
@@ -108,15 +110,18 @@ export default function MyCourses({ courses, detail, savedLayout }) {
         return () => { removeEventListener('keydown', esc); document.body.style.overflow = ''; };
     }, [shown, waiting]);
 
+    // As caixas mudaram de nome a 2026-11-24 (desenho do colega: lista mais estreita, Alex mais largo e com título),
+    // para que quem tinha a disposição antiga guardada passe a ver a nova
     const panels = {
-        lista: {
-            title: t('Os meus cursos'), x: 0, y: 0, w: 19, h: 22, compact: true, float: 'light',
+        meus: {
+            title: t('Os meus cursos'), x: 0, y: 0, w: 16, h: 22,
             summary: `${courses.length} ${courses.length === 1 ? t('curso') : t('cursos')}`,
+            mini: courses.length ? <Tabs courses={courses} filter={filter} onChange={setFilter} /> : null,
             body: courses.length
-                ? <CoursesList courses={courses} onOpen={open} />
+                ? <CoursesList courses={courses} filter={filter} onOpen={open} />
                 : <EmptyPanel title={t('Ainda não tens cursos')} text={t('Quando te inscreveres num curso, aparece aqui.')} href="/plataforma/cursos" cta={t('Ver o catálogo')} />,
         },
-        alex: alexDef(0, 22),
+        formador: { ...alexDef(0, 22), x: 16, w: 8, compact: false, float: null, showSum: true },
     };
     const board = usePanelBoard({ view: 'cursos', panels, saved: savedLayout });
 

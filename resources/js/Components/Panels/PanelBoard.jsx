@@ -38,6 +38,7 @@ function Box({ board, id, panel }) {
     const classes = [
         'pn-box',
         panel.compact && 'pn-compact',
+        panel.showSum && 'pn-show-sum',
         panel.float === 'dark' && 'pn-float pn-float-d',
         panel.float === 'light' && 'pn-float',
         f.collapsed && 'pn-is-col',

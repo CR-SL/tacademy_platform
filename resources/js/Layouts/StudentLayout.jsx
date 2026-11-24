@@ -8,6 +8,7 @@ import {
 
 import { t } from '@/i18n';
 import LanguageToggle from '@/Components/LanguageToggle';
+import TopSearch from '@/Components/TopSearch';
 
 // Navegação da plataforma (a aparência decidida a 2026-11-04): logótipo e opções à esquerda.
 const baseNav = () => [
@@ -178,6 +179,7 @@ export function PlatformNav({ navTools, activeKey, className = '' }) {
                     ))}
                 </nav>
                 <div className="pn-nav-end">
+                    <TopSearch />
                     {navTools}
                     {staffInbox && <Bell inbox={staffInbox} />}
                     {/* Língua: nas Definições (2026-11-10); quem não tem conta muda-a aqui */}

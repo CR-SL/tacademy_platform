@@ -27,5 +27,6 @@
     "{1} Curso atribuído a 1 pessoa. Recebeu um email.|[2,*] Curso atribuído a :count pessoas. Receberam um email.": "{1} Curso atribuído a 1 pessoa. Recebeu um email.|[2,*] Curso atribuído a :count pessoas. Receberam um email.",
     "{1} Falta 1 dia para concluir o curso.|[2,*] Faltam :count dias para concluir o curso.": "{1} Falta 1 dia para concluir o curso.|[2,*] Faltam :count dias para concluir o curso.",
     "{1} Lembrete enviado.|[2,*] :count lembretes enviados.": "{1} Lembrete enviado.|[2,*] :count lembretes enviados.",
-    "{1} Um aluno já fez as aulas e espera que confirmes a presença para receber o certificado.|[2,*] :count alunos já fizeram as aulas e esperam que confirmes a presença para receberem o certificado.": "{1} Um aluno já fez as aulas e espera que confirmes a presença para receber o certificado.|[2,*] :count alunos já fizeram as aulas e esperam que confirmes a presença para receberem o certificado."
+    "{1} Um aluno já fez as aulas e espera que confirmes a presença para receber o certificado.|[2,*] :count alunos já fizeram as aulas e esperam que confirmes a presença para receberem o certificado.": "{1} Um aluno já fez as aulas e espera que confirmes a presença para receber o certificado.|[2,*] :count alunos já fizeram as aulas e esperam que confirmes a presença para receberem o certificado.",
+    "{1} 1 curso|[2,*] :count cursos": "{1} 1 curso|[2,*] :count cursos"
 }

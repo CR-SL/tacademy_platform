@@ -126,7 +126,7 @@ function ThemeSettings() {
 
 // Miniatura da plataforma em cada tema (cores fixas: mostram o tema, não o atual)
 const SWATCH = {
-    light: { bg: '#F5F3EE', box: '#FFFFFF', ink: '#111111', line: '#E7E4DD' },
+    light: { bg: '#F4F4F4', box: '#FFFFFF', ink: '#111111', line: '#E7E4DD' },
     dark: { bg: '#0F1013', box: '#191B20', ink: '#F4F4F2', line: '#2C2F36' },
 };
 

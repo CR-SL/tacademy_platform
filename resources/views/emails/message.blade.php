@@ -16,13 +16,13 @@
 
     @if ($quote)
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;"><tr>
-            <td style="padding:14px 16px;background:#F4F3EF;border-left:3px solid #F8B101;white-space:pre-line;color:#18181B;">{{ $quote }}</td>
+            <td style="padding:14px 16px;background:#F4F4F4;border-left:3px solid #F8B101;white-space:pre-line;color:#18181B;">{{ $quote }}</td>
         </tr></table>
     @endif
 
     {{-- Cartão do curso: capa pequena ao lado (serve para capas na vertical e na horizontal) --}}
     @if ($card)
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0 4px;background:#F4F3EF;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0 4px;background:#F4F4F4;">
             <tr>
                 @if (! empty($card['image']))
                     <td width="128" valign="top" style="padding:16px 0 16px 16px;">

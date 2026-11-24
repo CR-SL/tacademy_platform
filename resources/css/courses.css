@@ -15,12 +15,7 @@
 .cc-tab { all: unset; cursor: pointer; padding: 10px 0; font-size: 14px; color: var(--cc-mut); transition: color .2s; }
 .cc-tab:hover { color: var(--cc-ink); }
 .cc-tab[aria-pressed="true"] { color: var(--cc-ink); box-shadow: inset 0 -2px 0 var(--accent); }
-.cc-sbtn { all: unset; cursor: pointer; width: 44px; height: 44px; border-radius: 999px; display: flex; align-items: center; justify-content: center; transition: background .3s ease, transform .3s var(--cc-ease); }
-.cc-sbtn:hover { background: rgba(17, 17, 17, .08); }
-.cc-sbtn:active { transform: scale(.94); }
-.cc-qline { margin: -16px 0 32px; display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--cc-body); }
-.cc-chip { all: unset; cursor: pointer; padding: 5px 12px; border-radius: 999px; background: var(--cc-soft); font-size: 13px; }
-.cc-tab:focus-visible, .cc-sbtn:focus-visible, .cc-chip:focus-visible, .cc-res:focus-visible, .cc-x:focus-visible, .cc-cta:focus-visible { outline: 2px solid var(--cc-ink); outline-offset: 3px; }
+.cc-tab:focus-visible, .cc-x:focus-visible, .cc-cta:focus-visible { outline: 2px solid var(--cc-ink); outline-offset: 3px; }
 
 /* Grelha de cartões 4:5 */
 .cc-grid { --cc-gap: 16px; --cc-pad: 20px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--cc-gap); }
@@ -49,26 +44,8 @@
 .cc-scrim { position: fixed; inset: 0; z-index: 70; background: rgba(28, 22, 10, .38); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
 
 /* Pesquisa: folha que desce do topo */
-.cc-sheet { position: fixed; top: 0; left: 0; right: 0; z-index: 71; max-height: 86vh; overflow: auto; background: var(--cc-paper); border-radius: 0 0 8px 8px; box-shadow: 0 30px 80px -30px rgba(28, 22, 10, .45); padding: 28px clamp(20px, 4vw, 72px) 32px; }
-.cc-sheet-in { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
-.cc-field { display: flex; align-items: center; gap: 14px; padding-bottom: 14px; border-bottom: 2px solid var(--cc-ink); }
-.cc-field input { all: unset; flex: 1; min-width: 0; font-family: var(--display); font-size: clamp(24px, 3vw, 36px); font-weight: 500; letter-spacing: -0.02em; color: var(--cc-ink); }
 .cc-x { all: unset; cursor: pointer; flex: none; width: 44px; height: 44px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: var(--cc-ink); }
 .cc-x:hover { background: var(--cc-soft); }
-.cc-sheet .cc-mono { font-size: 11px; color: var(--cc-mut); }
-.cc-sugg { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.cc-sugg .cc-chip { background: #fff; padding: 8px 14px; font-size: 14px; }
-.cc-sugg .cc-chip:hover { background: var(--cc-soft); }
-.cc-results { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
-.cc-res { all: unset; cursor: pointer; display: flex; align-items: center; gap: 16px; padding: 10px 12px; border-radius: 8px; transition: background .25s ease; }
-.cc-res:hover { background: var(--cc-soft); }
-.cc-res img { flex: none; width: 56px; height: 56px; border-radius: 8px; object-fit: cover; }
-.cc-res b { display: block; font-family: var(--display); font-weight: 500; font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; }
-.cc-res .cc-mono { font-size: 11px; letter-spacing: .06em; }
-.cc-res .cc-p { flex: none; font-family: var(--mono); font-size: 13px; }
-.cc-pill { all: unset; cursor: pointer; align-self: flex-start; margin-top: 12px; padding: 11px 20px; border-radius: 999px; background: var(--cc-ink); color: #fff; font-size: 14px; font-weight: 500; }
-.cc-pill:hover { background: #2A2A2A; }
-.cc-nores { padding: 12px; color: var(--cc-mut); }
 
 /* Detalhe do curso: aba lateral */
 .cc-drawer { position: fixed; top: 12px; right: 12px; bottom: 12px; z-index: 72; width: min(600px, calc(100% - 24px)); display: flex; flex-direction: column; background: #FBFAF7; border-radius: 8px; overflow: hidden; box-shadow: 0 40px 100px -30px rgba(28, 22, 10, .5); }
@@ -107,11 +84,9 @@
 .cc-cta span { width: 36px; height: 36px; border-radius: 999px; background: var(--accent); color: var(--cc-ink); display: flex; align-items: center; justify-content: center; }
 
 /* Movimento, só se o sistema o permitir */
-@keyframes cc-sheet-in { from { transform: translateY(-100%); } to { transform: none; } }
 @keyframes cc-drawer-in { from { transform: translateX(104%); } to { transform: none; } }
 @keyframes cc-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: no-preference) {
-    .cc-sheet { animation: cc-sheet-in .6s var(--cc-ease); }
     .cc-drawer { animation: cc-drawer-in .7s var(--cc-ease); }
     .cc-scrim { animation: cc-fade-in .5s ease; }
 }
@@ -131,7 +106,7 @@
  | O mesmo catálogo dentro da plataforma (Pages/Catalog.jsx, /plataforma/cursos).
  | Usa as cores do tema da plataforma, para funcionar também no modo escuro.
  */
-.cc-app .cc-ph, .cc-app .cc-res, .cc-app .cc-res img, .cc-app .cc-stats, .cc-app .cc-prog-box, .cc-app .cc-drawer, .cc-app .cc-sheet { border-radius: 0; }
+.cc-app .cc-ph, .cc-app .cc-stats, .cc-app .cc-prog-box, .cc-app .cc-drawer { border-radius: 0; }
 .cc-app {
     --display: 'Manrope Variable', Manrope, system-ui, sans-serif;
     --body: 'Manrope Variable', Manrope, system-ui, sans-serif;
@@ -149,12 +124,10 @@
 }
 .cc-app .cc { padding: 8px 0 48px; }
 .cc-app .cc-top { margin-bottom: 20px; }
-.cc-app .cc-sbtn:hover { background: var(--color-surface2); }
 .cc-app .cc-drawer { background: var(--color-bg); }
-.cc-app .cc-stats span, .cc-app .cc-prog-box, .cc-app .cc-d-foot, .cc-app .cc-sugg .cc-chip { background: var(--color-surface); }
-.cc-app .cc-sugg .cc-chip:hover { background: var(--color-surface2); }
-.cc-app .cc-cta, .cc-app .cc-pill { background: var(--color-ink); color: var(--color-bg) !important; }
-.cc-app .cc-cta:hover, .cc-app .cc-pill:hover { background: color-mix(in srgb, var(--color-ink) 86%, var(--color-bg)); }
+.cc-app .cc-stats span, .cc-app .cc-prog-box, .cc-app .cc-d-foot { background: var(--color-surface); }
+.cc-app .cc-cta { background: var(--color-ink); color: var(--color-bg) !important; }
+.cc-app .cc-cta:hover { background: color-mix(in srgb, var(--color-ink) 86%, var(--color-bg)); }
 .cc-app button.cc-cta { border: 0; cursor: pointer; font: inherit; font-size: 15px; font-weight: 500; }
 .cc-app button.cc-cta:disabled { cursor: wait; opacity: .7; }
 .cc-app .cc-cta.cc-wait { background: var(--color-surface2); color: var(--color-muted) !important; }

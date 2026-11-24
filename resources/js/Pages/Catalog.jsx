@@ -7,30 +7,18 @@ import { t } from '@/i18n';
 import { tilt, untilt } from '@/Components/ui/tilt';
 import { IconClose, useFocusTrap } from '@/Components/ui';
 
-// Catálogo da plataforma, aberto a quem ainda não tem conta: separadores por área, pesquisa
-// e aba lateral com o detalhe. Comprar pede sessão.
+// Catálogo da plataforma, aberto a quem ainda não tem conta: separadores por área e aba lateral
+// com o detalhe. Comprar pede sessão. A pesquisa é a lupa do topo (a do catálogo saiu a 2026-11-24).
 
-const norm = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const euro = (v) => v.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 const dur = (m) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, '0') : ''}` : `${m} min`);
-const textOf = (c) => `${c.title} ${c.areaName} ${c.level} ${c.description}`;
 // Conta a abertura do curso para as estatísticas da Administração (sem bloquear nada se falhar)
 const countView = (c, guest) => !guest && window.axios.post(`/plataforma/cursos/${encodeURIComponent(c.slug)}/visto`).catch(() => {});
-const SUGGESTIONS = ['Diagnóstico', 'OBD', 'Eletrónica', 'Bateria', 'Gestão'];
 
 // Opção A (2026-11-12): 5 por fila, inclinação 3D com reflexo a seguir o rato (Components/ui/tilt) e botão que sobe no hover
 
 // Mantém o estado do Inertia no histórico ao mudar o ?curso= (link partilhável)
 const setUrl = (search) => window.history.replaceState(window.history.state, '', location.pathname + search);
-
-function SearchIcon({ size = 22 }) {
-    return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2.2" />
-            <path d="M15.5 15.5L21 21" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-        </svg>
-    );
-}
 
 function Card({ c, i, onOpen }) {
     return (
@@ -148,76 +136,11 @@ function Detail({ c, owned, pending, guest, onClose }) {
     );
 }
 
-function Search({ initial, courses, onApply, onPick, onClose }) {
-    const [v, setV] = useState(initial);
-    const inputRef = useRef(null);
-    const box = useRef(null);
-    useFocusTrap(box);
-    useEffect(() => {
-        const tx = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 60);
-        return () => clearTimeout(tx);
-    }, []);
-    const q = v.trim();
-    const all = q ? courses.filter((c) => norm(textOf(c)).includes(norm(q))) : [];
-
-    return (
-        <>
-            <div className="cc-scrim" onClick={onClose} />
-            <div ref={box} className="cc-sheet" role="dialog" aria-modal="true" aria-label={t('Pesquisar cursos')}>
-                <div className="cc-sheet-in">
-                    <div className="cc-field">
-                        <SearchIcon size={26} />
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            value={v}
-                            onChange={(e) => setV(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && onApply(q)}
-                            placeholder={t('O que queres aprender?')}
-                            aria-label={t('Pesquisar cursos')}
-                            autoComplete="off"
-                        />
-                        <button className="cc-x" type="button" onClick={onClose} aria-label={t('Fechar pesquisa')}><IconClose width={24} height={24} strokeWidth={1.6} /></button>
-                    </div>
-                    {!q ? (
-                        <div>
-                            <span className="cc-mono">{t('Sugestões')}</span>
-                            <div className="cc-sugg">
-                                {SUGGESTIONS.map((s) => (
-                                    <button key={s} className="cc-chip" type="button" onClick={() => { setV(s); inputRef.current?.focus(); }}>{s}</button>
-                                ))}
-                            </div>
-                        </div>
-                    ) : (
-                        <div>
-                            <span className="cc-mono">{all.length} {all.length === 1 ? t('resultado') : t('resultados')}</span>
-                            <div className="cc-results">
-                                {all.slice(0, 6).map((c) => (
-                                    <button key={c.id} className="cc-res" type="button" onClick={() => onPick(c)}>
-                                        <img src={c.image} alt="" />
-                                        <span style={{ flex: 1, minWidth: 0 }}><b>{c.title}</b><span className="cc-mono">{c.areaName} · {t(c.level)}</span></span>
-                                        <span className="cc-p">{euro(c.price)}</span>
-                                    </button>
-                                ))}
-                                {all.length
-                                    ? <button className="cc-pill" type="button" onClick={() => onApply(q)}>{t('Ver todos os :n resultados', { n: all.length })}</button>
-                                    : <span className="cc-nores">{t('Nenhum curso encontrado. Experimenta «diagnóstico», «bateria» ou «gestão».')}</span>}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </>
-    );
-}
-
 export default function Catalog({ courses, areas, owned, pending }) {
     const { flash, auth } = usePage().props;
     const guest = !auth?.user;
     const [area, setArea] = useState('all');
-    const [query, setQuery] = useState('');
     const [detail, setDetail] = useState(null);
-    const [searching, setSearching] = useState(false);
     const [notice, setNotice] = useState(null);
     const lastFocus = useRef(null);
     const tabsRef = useRef(null);
@@ -241,7 +164,6 @@ export default function Catalog({ courses, areas, owned, pending }) {
 
     const open = (c) => {
         lastFocus.current = document.activeElement;
-        setSearching(false);
         setDetail(c);
         setUrl(`?curso=${encodeURIComponent(c.slug)}`);
         countView(c, guest);
@@ -251,23 +173,19 @@ export default function Catalog({ courses, areas, owned, pending }) {
         setUrl('');
         lastFocus.current?.focus?.({ preventScroll: true });
     };
-    const openSearch = () => { lastFocus.current = document.activeElement; setSearching(true); };
-    const closeSearch = () => { setSearching(false); lastFocus.current?.focus?.({ preventScroll: true }); };
-    const applySearch = (q) => { setQuery(q); setArea('all'); setSearching(false); };
 
     // Esc fecha; com o detalhe aberto a página não faz scroll por trás
     useEffect(() => {
         const esc = (e) => {
             if (e.key !== 'Escape') return;
             if (detail) close();
-            else if (searching) closeSearch();
         };
         addEventListener('keydown', esc);
         document.body.style.overflow = detail ? 'hidden' : '';
         return () => { removeEventListener('keydown', esc); document.body.style.overflow = ''; };
-    }, [detail, searching]);
+    }, [detail]);
 
-    const shown = courses.filter((c) => (area === 'all' || c.area === area) && (!query || norm(textOf(c)).includes(norm(query))));
+    const shown = courses.filter((c) => area === 'all' || c.area === area);
     // O detalhe aberto acompanha os dados novos depois de comprar
     const current = detail && (courses.find((c) => c.id === detail.id) ?? detail);
 
@@ -301,26 +219,19 @@ export default function Catalog({ courses, areas, owned, pending }) {
                             ))}
                             {bar && <i className="cc-bar" aria-hidden="true" style={{ width: bar.w, transform: `translateX(${bar.x}px)` }} />}
                         </nav>
-                        <button className="cc-sbtn" type="button" onClick={openSearch} aria-label={t('Pesquisar cursos')} aria-expanded={searching}>
-                            <SearchIcon />
-                        </button>
                     </div>
-                    {query && (
-                        <div className="cc-qline">{t('A mostrar resultados para')}{' '}<b>«{query}»</b><button className="cc-chip" type="button" onClick={() => setQuery('')}>{t('Limpar ✕')}</button></div>
-                    )}
 
-                    <div className="cc-grid" key={`${area}|${query}`}>
+                    <div className="cc-grid" key={area}>
                         {shown.map((c, i) => <Card key={c.id} c={c} i={i} onOpen={open} />)}
                     </div>
                     {shown.length > 0 && (
                         <p className="cc-total">{shown.length === 1 ? t('1 curso disponível') : t(':n cursos disponíveis', { n: shown.length })}</p>
                     )}
                     {!shown.length && (
-                        <div className="cc-empty"><b>{t('Nenhum curso corresponde a estes filtros')}</b><span>{t('Limpa a pesquisa ou escolhe «Todas» para ver o catálogo completo.')}</span></div>
+                        <div className="cc-empty"><b>{t('Ainda não há cursos nesta área')}</b><span>{t('Escolhe «Todas» para ver o catálogo completo.')}</span></div>
                     )}
                 </div>
 
-                {searching && <Search initial={query} courses={courses} onApply={applySearch} onPick={open} onClose={closeSearch} />}
                 {current && <Detail c={current} owned={owned} pending={pending} guest={guest} onClose={close} />}
                 {notice && <div className="cc-notice" role="status">{notice}</div>}
             </div>

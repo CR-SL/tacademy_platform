@@ -24,11 +24,11 @@
     }
 </style>
 </head>
-<body style="margin:0;padding:0;background:#F4F3EF;font-family:Manrope,Arial,Helvetica,sans-serif;color:#18181B;-webkit-font-smoothing:antialiased;">
+<body style="margin:0;padding:0;background:#F4F4F4;font-family:Manrope,Arial,Helvetica,sans-serif;color:#18181B;-webkit-font-smoothing:antialiased;">
 @isset($preheader)
-    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#F4F3EF;">{{ $preheader }}</div>
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#F4F4F4;">{{ $preheader }}</div>
 @endisset
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F3EF;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F4F4;">
     <tr><td align="center" style="padding:32px 12px 40px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
             {{-- Cabeçalho --}}

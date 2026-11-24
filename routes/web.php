@@ -43,6 +43,8 @@ Route::permanentRedirect('/contactos', '/plataforma/contactos');
 // Catálogo e contactos abertos a quem ainda não tem conta; comprar pede sessão
 Route::get('/plataforma/cursos', CatalogController::class)->name('catalog');
 Route::get('/plataforma/contactos', [ContactController::class, 'show'])->name('contacts');
+// Lupa do topo: só categorias e cursos (2026-11-24)
+Route::get('/plataforma/pesquisa', \App\Http\Controllers\SearchController::class)->middleware('throttle:120,1')->name('search');
 Route::post('/plataforma/contactos', [ContactController::class, 'store'])->middleware('throttle:contacts')->name('contacts.store');
 
 Route::get('/dashboard', DashboardController::class)
