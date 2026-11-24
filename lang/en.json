@@ -1700,5 +1700,19 @@
     "Por concluir": "Not finished",
     "Ainda não concluíste nenhum curso": "You haven't finished a course yet",
     "Quando acabares um curso, aparece aqui.": "When you finish a course, it shows up here.",
-    "Concluíste todos os teus cursos": "You've finished all your courses"
+    "Concluíste todos os teus cursos": "You've finished all your courses",
+    "Auto (:h)": "Auto (:h)",
+    "10 segundos": "10 seconds",
+    "Já viste": "Already watched",
+    "Pausar (espaço)": "Pause (space)",
+    "Reproduzir (espaço)": "Play (space)",
+    "Recuar 10 segundos (←)": "Back 10 seconds (←)",
+    "Avançar 10 segundos (→)": "Forward 10 seconds (→)",
+    "Ligar o som (M)": "Unmute (M)",
+    "Tirar o som (M)": "Mute (M)",
+    "Visto": "Watched",
+    "meta 90%": "goal 90%",
+    "Para concluir a aula basta ver 90% do vídeo": "Watch 90% of the video to complete the lesson",
+    "Sair do ecrã inteiro (F)": "Exit full screen (F)",
+    "Ecrã inteiro (F)": "Full screen (F)"
 }

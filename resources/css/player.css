@@ -1,0 +1,92 @@
+/* Leitor de vídeo das aulas, estilo YouTube (escolhido a 2026-11-24; exemplo em landing-concepts/leitor-youtube.html).
+   Barra a toda a largura no fundo, linha do tempo por cima dos botões; cores da T.Academy (amarelo em vez do vermelho). */
+.yp { position: relative; aspect-ratio: 16 / 9; width: 100%; background: #000; color: #fff; overflow: hidden; user-select: none; -webkit-user-select: none; outline: none; }
+.yp:focus-visible { box-shadow: inset 0 0 0 2px var(--color-accent); }
+.yp video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.yp.yp-idle { cursor: none; }
+
+.yp-shade { position: absolute; inset: auto 0 0 0; height: 140px; background: linear-gradient(transparent, rgba(0, 0, 0, .72)); pointer-events: none; transition: opacity .25s; z-index: 2; }
+.yp-ui { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 0 14px 4px; transition: opacity .25s; }
+.yp-idle .yp-ui, .yp-idle .yp-shade { opacity: 0; }
+
+/* Linha do tempo */
+.yp-tl { position: relative; height: 18px; display: flex; align-items: center; cursor: pointer; touch-action: none; }
+.yp-track { position: relative; width: 100%; height: 3px; background: rgba(255, 255, 255, .22); transition: height .12s; }
+.yp-tl:hover .yp-track, .yp-tl.yp-drag .yp-track { height: 6px; }
+.yp-buf, .yp-hov { position: absolute; inset: 0 auto 0 0; }
+.yp-buf { background: rgba(255, 255, 255, .28); }
+.yp-hov { background: rgba(255, 255, 255, .3); opacity: 0; }
+.yp-tl:hover .yp-hov { opacity: 1; }
+.yp-seen { position: absolute; top: 0; bottom: 0; background: var(--color-accent); }
+.yp-goal { position: absolute; top: -3px; bottom: -3px; left: 90%; z-index: 1; width: 2px; background: rgba(255, 255, 255, .85); }
+.yp-head { position: absolute; top: 50%; z-index: 2; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--color-accent); transform: scale(0); transition: transform .12s; }
+.yp-tl:hover .yp-head, .yp-tl.yp-drag .yp-head, .yp-tl:focus-visible .yp-head { transform: scale(1); }
+.yp-tl:focus-visible { outline: none; }
+.yp-tl:focus-visible .yp-track { height: 6px; box-shadow: 0 0 0 2px var(--color-accent); }
+.yp-tip { position: absolute; bottom: 26px; transform: translateX(-50%); padding: 3px 8px; background: rgba(17, 17, 17, .9); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; text-align: center; }
+.yp-tip small { display: block; font-weight: 500; font-size: 10.5px; color: rgba(255, 255, 255, .7); }
+
+/* Botões */
+.yp-row { display: flex; align-items: center; height: 46px; gap: 2px; }
+.yp-b { display: grid; place-items: center; flex: none; width: 42px; height: 42px; opacity: .92; transition: opacity .15s, transform .15s; }
+.yp-b:hover { opacity: 1; }
+.yp-b:active { transform: scale(.92); }
+.yp-b svg { width: 26px; height: 26px; fill: currentColor; }
+.yp-b.yp-sm svg { width: 23px; height: 23px; }
+.yp-b:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -4px; }
+.yp-vol { display: flex; align-items: center; }
+.yp-slide { width: 0; overflow: hidden; transition: width .2s ease; display: flex; align-items: center; height: 42px; cursor: pointer; touch-action: none; outline: none; }
+.yp-vol:hover .yp-slide, .yp-vol:focus-within .yp-slide, .yp-vol.yp-drag .yp-slide { width: 68px; }
+.yp-slide i { position: relative; display: block; width: 56px; height: 3px; margin: 0 6px; background: rgba(255, 255, 255, .3); }
+.yp-slide i b { position: absolute; inset: 0 auto 0 0; background: #fff; }
+.yp-slide i em { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #fff; }
+.yp-slide:focus-visible i { box-shadow: 0 0 0 2px var(--color-accent); }
+.yp-time { padding: 0 10px; font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.yp-time span { opacity: .7; font-weight: 500; }
+.yp-chip { margin-left: auto; margin-right: 6px; display: flex; align-items: center; gap: 7px; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .12); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.yp-chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--color-accent); }
+.yp-chip.yp-done { background: var(--color-accent); color: var(--color-on-accent); }
+.yp-chip.yp-done i { background: var(--color-on-accent); }
+.yp-spacer { margin-left: auto; }
+
+/* Menu da roda dentada */
+.yp-menu { position: absolute; right: 12px; bottom: 70px; z-index: 5; width: 250px; padding: 8px 0; overflow-y: auto; background: rgba(28, 28, 28, .92); backdrop-filter: blur(8px); border-radius: 12px; font-size: 14px; animation: yp-in .15s ease; }
+@keyframes yp-in { from { opacity: 0; transform: translateY(6px); } }
+.yp-menu button { display: flex; width: 100%; align-items: center; gap: 12px; padding: 0 16px; height: 40px; text-align: left; }
+.yp-menu button:hover, .yp-menu button:focus-visible { background: rgba(255, 255, 255, .1); outline: 0; }
+.yp-menu button svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
+.yp-menu .yp-v { margin-left: auto; color: rgba(255, 255, 255, .75); font-size: 13px; }
+.yp-menu .yp-v::after { content: '›'; margin-left: 8px; font-size: 18px; vertical-align: -1px; }
+.yp-menu .yp-head-b { border-bottom: 1px solid rgba(255, 255, 255, .18); margin-bottom: 6px; font-weight: 600; }
+.yp-menu .yp-head-b::before { content: '‹'; font-size: 20px; margin-right: 4px; }
+.yp-menu .yp-ck { width: 22px; color: var(--color-accent); font-weight: 800; }
+.yp-menu small { margin-left: 6px; color: rgba(255, 255, 255, .6); }
+
+/* Botão grande ao início, avisos ao clicar e ao saltar */
+.yp-big { position: absolute; left: 50%; top: 50%; z-index: 4; width: 76px; height: 54px; margin: -27px 0 0 -38px; display: grid; place-items: center; border-radius: 14px; background: rgba(17, 17, 17, .75); transition: background .15s, color .15s; }
+.yp-big:hover, .yp:hover .yp-big, .yp-big:focus-visible { background: var(--color-accent); color: var(--color-on-accent); outline: none; }
+.yp-big svg { width: 30px; height: 30px; fill: currentColor; }
+.yp-pulse { position: absolute; left: 50%; top: 50%; z-index: 4; width: 64px; height: 64px; margin: -32px 0 0 -32px; display: grid; place-items: center; border-radius: 50%; background: rgba(0, 0, 0, .55); pointer-events: none; animation: yp-pulse .55s ease-out forwards; }
+.yp-pulse svg { width: 30px; height: 30px; fill: #fff; }
+@keyframes yp-pulse { from { opacity: 1; transform: scale(.85); } to { opacity: 0; transform: scale(1.35); } }
+.yp-skip { position: absolute; top: 0; bottom: 0; z-index: 4; width: 34%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 700; pointer-events: none; animation: yp-fade .7s ease-out forwards; }
+.yp-skip.yp-l { left: 0; background: radial-gradient(ellipse at 0 50%, rgba(255, 255, 255, .18), transparent 70%); }
+.yp-skip.yp-r { right: 0; background: radial-gradient(ellipse at 100% 50%, rgba(255, 255, 255, .18), transparent 70%); }
+.yp-skip span { letter-spacing: -.1em; font-size: 18px; }
+@keyframes yp-fade { 0%, 60% { opacity: 1; } to { opacity: 0; } }
+.yp-flash { position: absolute; left: 50%; top: 18px; z-index: 4; transform: translateX(-50%); padding: 6px 12px; border-radius: 6px; background: rgba(0, 0, 0, .65); font-size: 13px; font-weight: 600; pointer-events: none; }
+.yp-spin { position: absolute; left: 50%; top: 50%; z-index: 4; width: 46px; height: 46px; margin: -23px 0 0 -23px; border: 3px solid rgba(255, 255, 255, .25); border-top-color: var(--color-accent); border-radius: 50%; animation: yp-rot .8s linear infinite; pointer-events: none; }
+@keyframes yp-rot { to { transform: rotate(360deg); } }
+.yp-fail { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; background: rgba(0, 0, 0, .8); }
+
+/* Telemóvel: sem volume (usa-se o do aparelho) e o selo só com a percentagem */
+@media (max-width: 640px) {
+    .yp-vol, .yp-chip .yp-long { display: none; }
+    .yp-b { width: 36px; }
+    .yp-ui { padding: 0 8px 2px; }
+    .yp-time { padding: 0 6px; font-size: 12.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .yp-pulse, .yp-skip, .yp-menu { animation: none; }
+    .yp-pulse { opacity: 0; }
+}

@@ -104,7 +104,7 @@ a.al-les:hover { background: var(--al-hover); }
 
 /* Vídeo: o leitor ocupa o painel todo e a imagem ajusta-se */
 .al-v { background: var(--color-carbon); color: var(--color-on-carbon); }
-.al-v .aspect-video { aspect-ratio: auto; flex: 1; min-height: 0; height: 100%; }
+.al-v .aspect-video, .al-v .yp { aspect-ratio: auto; flex: 1; min-height: 0; height: 100%; }
 
 /* Material */
 .al-m { background: var(--color-surface2); }
