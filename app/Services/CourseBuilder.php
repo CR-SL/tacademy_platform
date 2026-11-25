@@ -97,7 +97,13 @@ class CourseBuilder
                     'id' => $l->id,
                     'title' => $l->title,
                     'type' => $l->content_type,
-                    'url' => ($l->content_type === 'avatar' ? $l->avatar_ref : $l->content_url) ?? '',
+                    'parts' => $l->setRelation('module', $m->setRelation('course', $course))->partList(),
+                    'evaluation' => $l->evaluationKind(),
+                    'evaluation_prompt' => $l->evaluation_prompt ?? '',
+                    'alex_pal_id' => $l->alex_pal_id ?? '',
+                    'evaluation_pal_id' => $l->evaluation_pal_id ?? '',
+                    // Só o vídeo: o avatar já não usa este campo (antes partilhavam-no e o link do vídeo aparecia no avatar)
+                    'url' => $l->content_url ?? '',
                     'minutes' => $l->duration_seconds ? (int) round($l->duration_seconds / 60) : '',
                     'body' => $l->body ?? '',
                     'attachments' => $l->attachments->map(fn (LessonAttachment $a) => [
@@ -203,26 +209,47 @@ class CourseBuilder
 
                 foreach (array_values($m['lessons'] ?? []) as $li => $l) {
                     $lesson = isset($l['id']) && $existingLessons->has($l['id']) ? $existingLessons[$l['id']] : new Lesson;
-                    $type = $l['type'];
+                    // Editor aberto antes das partes (só com o tipo): as partes vêm do tipo, como na migração
+                    if (! array_key_exists('parts', $l)) {
+                        $old = (new Lesson(['content_type' => $l['type'] ?? 'video_link']))->setRelation('module', null);
+                        $l['parts'] = $old->partList();
+                        $l['evaluation'] = $old->evaluationKind();
+                    }
+                    $parts = array_values(array_intersect(Lesson::PARTS, (array) ($l['parts'] ?? [])));
+                    $evaluation = in_array($l['evaluation'] ?? 'none', Lesson::EVALUATIONS, true) ? $l['evaluation'] : 'none';
+                    $hasVideo = in_array('video', $parts, true);
                     $url = trim($l['url'] ?? '');
                     $lesson->fill([
                         'module_id' => $module->id,
                         'title' => trim($l['title'] ?? ''),
-                        'content_type' => $type,
-                        'content_url' => $type === 'avatar' ? null : ($url ?: null),
-                        'avatar_ref' => $type === 'avatar' ? ($url ?: null) : null,
-                        'body' => $type === 'text' ? ($l['body'] ?? null) : null,
+                        'parts' => $parts,
+                        'evaluation' => $evaluation,
+                        'evaluation_prompt' => $evaluation === 'avatar' ? (trim($l['evaluation_prompt'] ?? '') ?: null) : null,
+                        'content_type' => Lesson::mainType($parts, $evaluation, $lesson->content_type),
+                        'content_url' => $hasVideo ? ($url ?: null) : null,
+                        'body' => in_array('notas', $parts, true) ? ($l['body'] ?? null) : null,
                         'duration_seconds' => (int) ($l['minutes'] ?? 0) * 60,
                         'order_index' => $li,
                     ]);
+                    // O link de avatar antigo (aulas do tipo avatar) sai quando a aula deixa de ter o avatar
+                    if (! in_array('avatar', $parts, true)) {
+                        $lesson->avatar_ref = null;
+                    }
+                    // PAL do avatar desta aula: só quem pode mudar o Alex do curso (como o PAL dos módulos)
+                    if (array_key_exists('alex_enabled', $data)) {
+                        $lesson->fill([
+                            'alex_pal_id' => in_array('avatar', $parts, true) ? (($l['alex_pal_id'] ?? null) ?: null) : null,
+                            'evaluation_pal_id' => $evaluation === 'avatar' ? (($l['evaluation_pal_id'] ?? null) ?: null) : null,
+                        ]);
+                    }
                     $lesson->save();
                     $keptLessons[] = $lesson->id;
                     $maps['lessons'][$l['key']] = $lesson->id;
                     $minutes += (int) ($l['minutes'] ?? 0);
 
                     $this->syncAttachments($lesson, $l['attachments'] ?? []);
-                    $maps['questions'] += $this->syncQuiz($lesson, $type === 'quiz' ? ($l['quiz'] ?? []) : null);
-                    $maps['checks'] += $this->syncChecks($lesson, in_array($type, ['video_link', 'video_upload'], true) ? ($l['checks'] ?? []) : []);
+                    $maps['questions'] += $this->syncQuiz($lesson, $evaluation === 'quiz' ? ($l['quiz'] ?? []) : null);
+                    $maps['checks'] += $this->syncChecks($lesson, $hasVideo ? ($l['checks'] ?? []) : []);
                 }
             }
 
@@ -283,7 +310,7 @@ class CourseBuilder
             $problems[] = [__('Todas as aulas completas (título + link/conteúdo)'), 1];
         }
         // Sem os minutos, o vídeo não conclui a aula (o aluno ficava preso; ver LearningService::videoReady)
-        if ($lessons->contains(fn ($l) => in_array($l->content_type, ['video_link', 'video_upload'], true) && (int) $l->duration_seconds <= 0)) {
+        if ($lessons->contains(fn ($l) => $l->hasPart('video') && (int) $l->duration_seconds <= 0)) {
             $problems[] = [__('Minutos em todas as aulas de vídeo'), 1];
         }
         if (! $course->is_free && (float) $course->price <= 0) $problems[] = [__('Preço definido'), 2];
@@ -294,19 +321,29 @@ class CourseBuilder
     public function lessonComplete(Lesson $l): bool
     {
         if (! trim($l->title)) return false;
+        if ($l->content_type === 'live') return true; // aulas antigas do backoffice
 
-        return match ($l->content_type) {
-            'video_link', 'video_upload' => self::validUrl($l->content_url) || self::uploadedVideo($l->content_url),
-            'avatar' => self::validAvatarUrl($l->avatar_ref),
-            'document' => $l->attachments->isNotEmpty(),
-            'text' => trim(strip_tags((string) $l->body)) !== '',
+        $parts = $l->partList();
+        $evaluation = $l->evaluationKind();
+        // Cada parte ligada tem de ter o seu conteúdo; o avatar e a avaliação com o avatar não pedem nada (PAL opcional)
+        $checks = [
+            'video' => fn () => self::validUrl($l->content_url) || self::uploadedVideo($l->content_url),
+            'material' => fn () => $l->attachments->isNotEmpty(),
+            'notas' => fn () => trim(strip_tags((string) $l->body)) !== '',
+            'avatar' => fn () => true,
+        ];
+        foreach ($parts as $part) {
+            if (! $checks[$part]()) return false;
+        }
+        if ($evaluation === 'quiz') {
             // Cada pergunta: texto, 2 opções com texto e a opção certa com texto (senão ninguém a podia acertar)
-            'quiz' => $l->quiz && $l->quiz->questions->isNotEmpty() && $l->quiz->questions->every(
+            return $l->quiz && $l->quiz->questions->isNotEmpty() && $l->quiz->questions->every(
                 fn ($q) => trim($q->question) && $q->options->filter(fn ($o) => trim($o->option_text))->count() >= 2
                     && $q->options->contains(fn ($o) => $o->is_correct && trim($o->option_text) !== '')
-            ),
-            default => true,
-        };
+            );
+        }
+
+        return $parts !== [] || $evaluation !== 'none'; // uma aula vazia não está completa
     }
 
     public static function validUrl(?string $url): bool

@@ -13,7 +13,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
     const items = checklist(c, shortMax);
     const ready = items.every((i) => i[2]);
     const area = categories.find((x) => x.id === c.category_id)?.name;
-    const ai = c.modules.some((m) => m.lessons.some((l) => l.type === 'avatar'));
+    const ai = c.modules.some((m) => m.lessons.some((l) => (l.parts ?? []).includes('avatar') || l.evaluation === 'avatar'));
     const published = c.status === 'published';
 
     return (

@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\Lesson;
 use App\Models\LessonProgress;
 use App\Models\User;
 use App\Services\LearningService;
@@ -473,7 +474,14 @@ class CourseBuilderController extends Controller
             'modules.*.lessons.*.key' => ['required', 'string', 'max:40'],
             'modules.*.lessons.*.id' => ['nullable', 'integer'],
             'modules.*.lessons.*.title' => ['nullable', 'string', 'max:200'],
-            'modules.*.lessons.*.type' => ['required', Rule::in($types)],
+            'modules.*.lessons.*.type' => ['nullable', Rule::in($types)],
+            // O que a aula tem e a avaliação (2026-11-25); sem `parts`, as partes vêm do tipo (editor antigo)
+            'modules.*.lessons.*.parts' => ['sometimes', 'array', 'max:4'],
+            'modules.*.lessons.*.parts.*' => [Rule::in(Lesson::PARTS)],
+            'modules.*.lessons.*.evaluation' => ['nullable', Rule::in(Lesson::EVALUATIONS)],
+            'modules.*.lessons.*.evaluation_prompt' => ['nullable', 'string', 'max:2000'],
+            'modules.*.lessons.*.alex_pal_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'modules.*.lessons.*.evaluation_pal_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
             'modules.*.lessons.*.url' => ['nullable', 'string', 'max:500'],
             'modules.*.lessons.*.minutes' => ['nullable', 'integer', 'between:0,600'],
             'modules.*.lessons.*.body' => ['nullable', 'string', 'max:50000'],

@@ -100,7 +100,9 @@ class CourseBuilderTest extends TestCase
         $this->assertSame(25, $course->duration_minutes);
         $this->assertSame(['Testar injetores'], $course->learning_outcomes);
         $this->assertCount(3, $course->lessons);
-        $this->assertSame('https://tavus.daily.co/s1', $course->lessons()->where('content_type', 'avatar')->value('avatar_ref'));
+        // Editor antigo (só com o tipo): as partes vêm do tipo; o avatar já não guarda links (2026-11-25)
+        $this->assertSame(['avatar'], $course->lessons()->where('content_type', 'avatar')->first()->parts);
+        $this->assertSame('quiz', $course->lessons()->where('content_type', 'quiz')->value('evaluation'));
         $this->assertSame($res->json('lessons.nB'), $course->sample_lesson_id);
 
         // Perguntas rápidas do vídeo: as vazias são ignoradas e as opções vazias retiradas
@@ -266,6 +268,51 @@ class CourseBuilderTest extends TestCase
         $this->assertNotNull($course->fresh());
     }
 
+    public function test_a_lesson_keeps_several_parts_an_evaluation_and_its_own_pal(): void
+    {
+        $formador = $this->user('formador');
+        $this->actingAs($formador)->postJson('/formador/cursos', $this->payload())->assertCreated();
+        $course = Course::firstOrFail();
+
+        $data = $this->editorState($course);
+        $lesson = &$data['modules'][0]['lessons'][0];
+        $lesson['parts'] = ['video', 'notas', 'avatar'];
+        $lesson['url'] = 'https://vimeo.com/123456';
+        $lesson['body'] = 'Confirma a pressão antes de abrir o circuito.';
+        $lesson['alex_pal_id'] = 'p18d6e1b675e';
+        $lesson['evaluation'] = 'avatar';
+        $lesson['evaluation_prompt'] = 'Pergunta como se verifica a pressão.';
+        unset($lesson);
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
+
+        $saved = $course->lessons()->orderBy('lessons.order_index')->first();
+        $this->assertSame(['video', 'notas', 'avatar'], $saved->parts);
+        $this->assertSame('avatar', $saved->evaluation);
+        $this->assertSame('video_link', $saved->content_type); // o tipo principal continua a ser o vídeo
+        // O link do vídeo e o PAL do avatar ficam cada um no seu campo (antes partilhavam o mesmo)
+        $this->assertSame('https://vimeo.com/123456', $saved->content_url);
+        $this->assertSame('p18d6e1b675e', $saved->alex_pal_id);
+        $this->assertSame('Pergunta como se verifica a pressão.', $saved->evaluation_prompt);
+        $this->assertTrue(app(CourseBuilder::class)->lessonComplete($saved->load('attachments', 'quiz')));
+
+        // O editor recebe tudo de volta
+        $state = $this->editorState($course);
+        $this->assertSame(['video', 'notas', 'avatar'], $state['modules'][0]['lessons'][0]['parts']);
+        $this->assertSame('p18d6e1b675e', $state['modules'][0]['lessons'][0]['alex_pal_id']);
+        $this->assertSame('https://vimeo.com/123456', $state['modules'][0]['lessons'][0]['url']);
+
+        // Desligar uma parte apaga o que ela tinha; uma aula com o material ligado e sem ficheiros não está completa
+        $state['modules'][0]['lessons'][0]['parts'] = ['material'];
+        $state['modules'][0]['lessons'][0]['evaluation'] = 'none';
+        $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $state)->assertOk();
+        $saved->refresh();
+        $this->assertNull($saved->content_url);
+        $this->assertNull($saved->body);
+        $this->assertNull($saved->alex_pal_id);
+        $this->assertSame('document', $saved->content_type);
+        $this->assertFalse(app(CourseBuilder::class)->lessonComplete($saved->load('attachments', 'quiz')));
+    }
+
     public function test_a_quiz_with_attempts_cannot_change_type(): void
     {
         $formador = $this->user('formador');
@@ -275,7 +322,9 @@ class CourseBuilderTest extends TestCase
         QuizAttempt::create(['user_id' => $this->user('aluno')->id, 'quiz_id' => $quizLesson->quiz->id, 'score' => 0, 'passed' => false, 'answers' => [], 'attempted_at' => now()]);
 
         $data = $this->editorState($course);
-        $data['modules'][0]['lessons'][2]['type'] = 'text';
+        $data['modules'][0]['lessons'][2]['evaluation'] = 'none';
+        $data['modules'][0]['lessons'][2]['parts'] = ['notas'];
+        $data['modules'][0]['lessons'][2]['body'] = 'Texto';
         $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertStatus(422);
 
         $this->assertSame('quiz', $quizLesson->fresh()->content_type);

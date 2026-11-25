@@ -1,40 +1,90 @@
 import { usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { useConfirm } from '@/Components/ui';
-import { AddLink, Field, IconButton, inputCls, Panel } from './ui';
-import { avatarHostList, formatBytes, formatMinutes, isAvatarUrl, isHttpUrl, isUploadedVideo, linkInfo } from './format';
-import { lessonComplete, newKey, totalMinutes } from './model';
+import { AddLink, Field, IconButton, inputCls, Panel, Seg } from './ui';
+import { formatBytes, formatMinutes, isHttpUrl, isUploadedVideo, linkInfo } from './format';
+import { blankLessonData, lessonMissing, newKey, totalMinutes } from './model';
+import EditorGuide from './EditorGuide';
 
 import { t } from '@/i18n';
 
-export const LESSON_TYPES = {
-    video_link: { label: 'Vídeo', short: '▶', hint: 'ficheiro ou link', cls: 'bg-ink text-on-ink' },
-    avatar: { label: 'Avatar IA', short: 'IA', hint: 'link', cls: 'bg-accent text-on-accent' },
-    document: { label: 'Documento', short: 'PDF', hint: 'ficheiro', cls: 'bg-surface2' },
-    text: { label: 'Texto', short: 'Aa', cls: 'bg-surface2' },
-    quiz: { label: 'Teste', short: '?', cls: 'bg-surface2' },
-};
-// Tipos antigos (criados no backoffice) que o editor mostra mas não oferece
-const LEGACY = { video_upload: { label: 'Vídeo (upload)', short: '▶', cls: 'bg-ink text-on-ink' }, live: { label: 'Ao vivo', short: '●', cls: 'bg-surface2' } };
-const typeOf = (tx) => LESSON_TYPES[tx] ?? LEGACY[tx] ?? LESSON_TYPES.video_link;
+// O que uma aula pode ter: o formador liga cada parte (2026-11-25). [chave, nome, dica curta, ícone da linha]
+export const PARTS = [
+    ['video', 'Vídeo', 'Carregar ou colar link', { short: '▶', cls: 'bg-ink text-on-ink' }],
+    ['material', 'Material didático', 'PDF, fichas, esquemas', { short: 'PDF', cls: 'bg-surface2' }],
+    ['notas', 'Notas', 'Texto que o aluno lê', { short: 'Aa', cls: 'bg-surface2' }],
+    ['avatar', 'Avatar', 'O Alex tira dúvidas', { short: 'IA', cls: 'bg-accent text-on-accent' }],
+];
+const EVALUATIONS = [['none', 'Sem avaliação'], ['quiz', 'Questionário'], ['avatar', 'Com o avatar']];
+const QUIZ_ICON = { short: '?', cls: 'bg-surface2' };
 
-export const blankLesson = () => ({ key: newKey(), id: null, title: '', type: 'video_link', url: '', minutes: '', body: '', attachments: [], quiz: [], checks: [] });
+export const blankLesson = blankLessonData;
 // key/id/option_ids: o servidor atualiza pelo id, para não estragar as tentativas dos alunos
 const blankQuestion = () => ({ key: newKey(), id: null, question: '', options: ['', ''], option_ids: [null, null], correct: 0 });
 
 // Passo 2 · Programa: módulos e aulas, por ordem.
-export default function StepProgram({ c, update, upload, openKey, setOpenKey }) {
+export default function StepProgram({ c, update, upload, openKey, setOpenKey, canAlex = true }) {
     const lessons = c.modules.reduce((a, m) => a + m.lessons.length, 0);
     const move = (arr, i, d) => { const j = i + d; if (j >= 0 && j < arr.length) [arr[i], arr[j]] = [arr[j], arr[i]]; };
     const [confirm, confirmDialog] = useConfirm();
+    const [guide, setGuide] = useState(false);
+
+    // O que falta em cada aula (o guia mostra-o por cima do programa)
+    const all = c.modules.flatMap((m, mi) => m.lessons.map((l, li) => ({ n: `${mi + 1}.${li + 1}`, l, miss: lessonMissing(l) })));
+    const ready = all.filter((x) => !x.miss.length).length;
+    const todo = all.filter((x) => x.miss.length);
+
+    // O guia abre sozinho na primeira vez; depois, no botão "Ver o guia"
+    useEffect(() => {
+        let seen = true;
+        try { seen = !!localStorage.getItem('ta-guia-editor'); } catch { /* sem armazenamento: não abre sozinho */ }
+        if (!seen) setGuide(true);
+    }, []);
+    const closeGuide = () => {
+        setGuide(false);
+        try { localStorage.setItem('ta-guia-editor', '1'); } catch { /* ignora */ }
+    };
+    // Os passos 2 e 3 mostram partes de uma aula aberta
+    const firstKey = c.modules.flatMap((m) => m.lessons)[0]?.key;
+    const guideSteps = [
+        { target: 'lesson-row', title: t('Cada linha é uma aula'), body: t('Carrega na aula para a abrir. À direita vês o que falta para ficar completa.') },
+        { target: 'parts', title: t('Escolhe o que a aula tem'), body: t('Liga o vídeo, o material didático, as notas ou o avatar. Só aparecem os campos do que ligares.'), before: () => { if (!openKey && firstKey) setOpenKey(firstKey); } },
+        { target: 'evaluation', title: t('Escolhe a avaliação'), body: t('Um questionário (3 tentativas) ou uma conversa de avaliação com o avatar. Também podes não avaliar.'), before: () => { if (!openKey && firstKey) setOpenKey(firstKey); } },
+        { target: 'ready', title: t('Acompanha o que falta'), body: t('Aqui vês quantas aulas estão prontas e o que falta em cada uma. Carrega numa para a abrir.') },
+    ];
 
     return (
-        <Panel title={t('Programa')} sub={t('Organiza o curso em módulos e aulas. Usa as setas para mudar a ordem.')}>
-            <div className="mb-4 flex flex-wrap gap-5 font-mono text-xs uppercase tracking-[0.06em] text-muted">
+        <Panel title={t('Programa')} sub={t('Organiza o curso em módulos e aulas. Em cada aula, liga só o que ela precisa.')}>
+            <div className="mb-4 flex flex-wrap items-center gap-5 font-mono text-xs uppercase tracking-[0.06em] text-muted">
                 <span><b className="mr-1 font-display text-base text-ink">{c.modules.length}</b>{t('Módulos')}</span>
                 <span><b className="mr-1 font-display text-base text-ink">{lessons}</b>{t('Aulas')}</span>
                 <span><b className="mr-1 font-display text-base text-ink">{formatMinutes(totalMinutes(c))}</b>{t('Duração total')}</span>
+                <button type="button" onClick={() => setGuide(true)}
+                    className="ml-auto px-3 py-2 font-display text-[13px] font-semibold normal-case tracking-normal text-ink shadow-[inset_0_0_0_1px_var(--color-line)] hover:bg-page">
+                    {t('↺ Ver o guia')}
+                </button>
             </div>
+
+            {all.length > 0 && (
+                <div data-guide="ready" className="mb-4 bg-page px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <b className="font-display text-sm">{t(':ready de :total aulas prontas', { ready, total: all.length })}</b>
+                        <div className="h-1.5 min-w-[120px] flex-1 bg-track" aria-hidden="true"><div className="h-full bg-accent transition-[width]" style={{ width: `${(ready / all.length) * 100}%` }} /></div>
+                    </div>
+                    {todo.length > 0 && (
+                        <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
+                            {todo.slice(0, 4).map((x) => (
+                                <li key={x.l.key}>
+                                    <button type="button" className="text-muted hover:text-ink hover:underline" onClick={() => setOpenKey(x.l.key)}>
+                                        {t('Aula :n: falta :what', { n: x.n, what: x.miss[0] })}
+                                    </button>
+                                </li>
+                            ))}
+                            {todo.length > 4 && <li className="text-muted">{t('e mais :n', { n: todo.length - 4 })}</li>}
+                        </ul>
+                    )}
+                </div>
+            )}
 
             {c.modules.map((m, mi) => (
                 <div key={m.key} className="mb-3.5 border border-line bg-surface">
@@ -103,6 +153,10 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey }) 
                                     });
                                 }}
                                 upload={upload}
+                                confirm={confirm}
+                                c={c}
+                                canAlex={canAlex}
+                                guide={mi === 0 && li === 0}
                             />
                         ))}
                         <button
@@ -130,29 +184,34 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey }) 
                 </button>
             )}
             {confirmDialog}
+            {guide && <EditorGuide steps={guideSteps} onClose={closeGuide} />}
         </Panel>
     );
 }
 
-function LessonRow({ l, index, count, open, onToggle, set, onMove, onDelete, upload }) {
-    const tx = typeOf(l.type);
-    const ok = lessonComplete(l);
-    const extra = l.type !== 'document' && l.attachments.length ? t(' · :length anexo:v2', { length: l.attachments.length, v2: l.attachments.length > 1 ? 's' : '' }) : '';
+function LessonRow({ l, index, count, open, onToggle, set, onMove, onDelete, upload, confirm, c, canAlex, guide }) {
+    const parts = l.parts ?? [];
+    const icon = l.evaluation === 'quiz' && !parts.length ? QUIZ_ICON : (PARTS.find(([k]) => parts.includes(k))?.[3] ?? QUIZ_ICON);
+    const miss = lessonMissing(l);
+    const summary = [
+        ...PARTS.filter(([k]) => parts.includes(k)).map(([, label]) => t(label)),
+        l.evaluation === 'quiz' ? t('Questionário') : l.evaluation === 'avatar' ? t('Avaliação com o avatar') : null,
+    ].filter(Boolean).join(' · ') || t('Nada escolhido');
 
     return (
         <div className="border border-line bg-surface">
-            <div className="grid grid-cols-[34px_1fr_auto] items-center gap-2.5 px-3 py-2.5 sm:grid-cols-[34px_1fr_auto_auto]">
+            <div data-guide={guide ? 'lesson-row' : undefined} className="grid grid-cols-[34px_1fr_auto] items-center gap-2.5 px-3 py-2.5 sm:grid-cols-[34px_1fr_auto_auto]">
                 <button type="button" onClick={onToggle} aria-expanded={open} aria-label={open ? t('Fechar a aula :n', { n: index + 1 }) : t('Abrir a aula :n', { n: index + 1 })}
-                    className={`rounded-full flex h-[34px] w-[34px] items-center justify-center font-mono text-[11px] font-bold ${tx.cls}`}>
-                    {tx.short}
+                    className={`rounded-full flex h-[34px] w-[34px] items-center justify-center font-mono text-[11px] font-bold ${icon.cls}`}>
+                    {icon.short}
                 </button>
                 <button type="button" onClick={onToggle} className="min-w-0 text-left">
                     <span className={`block truncate ${l.title ? 'font-medium' : 'italic text-muted'}`}>{l.title || t('Aula sem título')}</span>
-                    <small className="block text-xs text-muted">{t(tx.label)}{l.minutes ? t(' · :minutes min', { minutes: l.minutes }) : ''}{extra}
+                    <small className="block text-xs text-muted">{summary}{l.minutes ? t(' · :minutes min', { minutes: l.minutes }) : ''}
                         {activeUploads.lessons[l.key] > 0 && <b className="font-semibold text-accent-ink">{t(' · a carregar ficheiro…')}</b>}</small>
                 </button>
-                <span className={`hidden font-mono text-[11px] font-semibold uppercase tracking-[0.04em] sm:inline ${ok ? 'text-success-ink' : 'text-live-ink'}`}>
-                    {ok ? <><span aria-hidden="true">✓ </span>{t('Completa')}</> : t('Incompleta')}
+                <span className={`hidden font-mono text-[11px] font-semibold uppercase tracking-[0.04em] sm:inline ${miss.length ? 'text-live-ink' : 'text-success-ink'}`}>
+                    {miss.length ? t('Falta: :what', { what: miss[0] }) : <><span aria-hidden="true">✓ </span>{t('Completa')}</>}
                 </span>
                 <span className="flex gap-1">
                     <IconButton label={t('Subir aula')} className="hidden sm:inline-flex" disabled={index === 0} onClick={() => onMove(-1)}>↑</IconButton>
@@ -160,38 +219,81 @@ function LessonRow({ l, index, count, open, onToggle, set, onMove, onDelete, upl
                     <IconButton label={t('Apagar aula')} danger onClick={onDelete}>✕</IconButton>
                 </span>
             </div>
-            {open && <LessonEditor l={l} set={set} upload={upload} />}
+            {open && <LessonEditor l={l} set={set} upload={upload} confirm={confirm} c={c} canAlex={canAlex} />}
         </div>
     );
 }
 
-function LessonEditor({ l, set, upload }) {
+// Dica curta em cada bloco do editor (o "?" do guia)
+function Hint({ children }) {
+    return (
+        <p className="mb-2.5 mt-1 flex gap-2 text-[12.5px] text-muted">
+            <span aria-hidden="true" className="mt-px grid h-[17px] w-[17px] flex-none place-items-center rounded-full bg-ink font-display text-[11px] font-bold text-on-ink">?</span>
+            <span>{children}</span>
+        </p>
+    );
+}
+
+function Block({ title, hint, onRemove, children }) {
+    return (
+        <div className="mb-3 border-l-[3px] border-accent bg-page px-3.5 pb-3.5 pt-3">
+            <div className="flex items-center gap-2">
+                <b className="font-display text-sm font-bold">{title}</b>
+                {onRemove && (
+                    <button type="button" onClick={onRemove} className="ml-auto font-display text-[12.5px] font-semibold text-muted hover:text-live-ink">{t('Tirar')}</button>
+                )}
+            </div>
+            {hint && <Hint>{hint}</Hint>}
+            {children}
+        </div>
+    );
+}
+
+// O que se perde ao desligar uma parte (pergunta antes, para não apagar um vídeo carregado sem querer)
+const filled = {
+    video: (l) => !!l.url.trim() || (l.checks ?? []).length > 0,
+    material: (l) => l.attachments.length > 0,
+    notas: (l) => !!l.body.trim(),
+    avatar: (l) => !!(l.alex_pal_id ?? '').trim(),
+};
+
+function LessonEditor({ l, set, upload, confirm, c, canAlex }) {
     const id = `l-${l.key}`;
     const info = linkInfo(l.url);
+    const parts = l.parts ?? [];
+
+    const togglePart = async (k) => {
+        if (parts.includes(k)) {
+            const label = t(PARTS.find(([p]) => p === k)[1]);
+            if (filled[k](l) && !(await confirm({
+                title: t('Tirar “:part” desta aula?', { part: label }),
+                body: t('O que puseste nesta parte deixa de aparecer ao aluno e é apagado quando o curso for guardado.'),
+                action: t('Tirar'),
+                danger: true,
+            }))) return;
+            set((x) => { x.parts = (x.parts ?? []).filter((p) => p !== k); });
+        } else {
+            // Mantém a ordem do editor: vídeo, material, notas, avatar
+            set((x) => { x.parts = PARTS.map(([p]) => p).filter((p) => p === k || (x.parts ?? []).includes(p)); });
+        }
+    };
+    const setEvaluation = async (k) => {
+        if (k === l.evaluation) return;
+        if (l.evaluation === 'quiz' && l.quiz.some((q) => q.question.trim()) && !(await confirm({
+            title: t('Trocar o questionário?'),
+            body: t('As perguntas do questionário são apagadas quando o curso for guardado.'),
+            action: t('Trocar'),
+            danger: true,
+        }))) return;
+        set((x) => {
+            x.evaluation = k;
+            if (k === 'quiz' && !x.quiz.length) x.quiz.push(blankQuestion());
+        });
+    };
 
     return (
         <div className="border-t border-line px-3.5 pb-4 sm:pl-[66px]">
-            <div className="my-3 flex flex-wrap gap-1.5" role="group" aria-label={t('Tipo de aula')}>
-                {Object.entries(LESSON_TYPES).map(([k, tx]) => (
-                    <button
-                        key={k}
-                        type="button"
-                        aria-pressed={l.type === k}
-                        onClick={() => set((x) => {
-                            x.type = k;
-                            if (k === 'quiz' && !x.quiz.length) x.quiz.push(blankQuestion());
-                        })}
-                        className={`inline-flex items-center gap-2 border px-3 py-2 font-display text-[13px] font-semibold ${
-                            l.type === k ? 'border-ink bg-ink text-on-ink' : 'border-line bg-surface hover:border-muted'
-                        }`}
-                    >
-                        {t(tx.label)}
-                        {tx.hint && <em className="font-mono text-[10px] not-italic opacity-70">{t(tx.hint)}</em>}
-                    </button>
-                ))}
-            </div>
-
-            <div className="grid gap-x-4 sm:grid-cols-[1fr_150px]">
+            <div className="mt-3 grid gap-x-4 sm:grid-cols-[1fr_150px]">
                 <Field label={t('Título da aula')} id={`${id}-t`} required className="mb-5">
                     <input id={`${id}-t`} className={inputCls} value={l.title} maxLength={200} placeholder={t('Ex.: Introdução ao sistema')}
                         onChange={(e) => set((x) => { x.title = e.target.value; })} />
@@ -202,57 +304,138 @@ function LessonEditor({ l, set, upload }) {
                 </Field>
             </div>
 
-            {(l.type === 'video_link' || l.type === 'video_upload' || l.type === 'avatar') && (
-                <Field
-                    label={l.type === 'avatar' ? t('Link do avatar de IA') : t('Link do vídeo')}
-                    id={`${id}-u`}
-                    required
-                    hint={l.type === 'avatar'
-                        ? t('O avatar abre dentro da aula. Mais tarde a ligação pode passar a ser feita por API.')
-                        : t('Carrega o vídeo (MP4) ou cola um link do YouTube (não listado), Vimeo ou outro.')} className="mb-5"
-                >
-                    {l.type !== 'avatar' && <VideoUpload l={l} set={set} />}
-                    {!isUploadedVideo(l.url) && (
-                        <input id={`${id}-u`} className={inputCls} value={l.url} maxLength={500}
-                            placeholder={l.type === 'avatar' ? 'https://… (link da plataforma do avatar)' : 'https://www.youtube.com/watch?v=… ou https://vimeo.com/…'}
-                            onChange={(e) => set((x) => { x.url = e.target.value; })} />
-                    )}
-                    {isUploadedVideo(l.url) ? null : l.type === 'avatar' && l.url.trim() && !isAvatarUrl(l.url) ? (
-                        <span className="text-[13px] text-live-ink">{t('O avatar tem de ser um link https de um destes sites: :hosts.', { hosts: avatarHostList().join(', ') })}</span>
-                    ) : info ? (
-                        <div className="mt-1 flex flex-wrap items-center gap-3 bg-page p-2.5">
-                            {info.thumb && <img src={info.thumb} alt="" className="aspect-video w-[120px] object-cover" />}
-                            <span className="bg-ink px-2 py-0.5 font-mono text-[11px] font-semibold text-on-ink">{info.tag}</span>
-                            <span className="font-mono text-[11px] font-semibold uppercase text-success-ink"><span aria-hidden="true">✓ </span>{t('Link válido')}</span>
-                            {isHttpUrl(l.url) && (
-                                <a href={l.url.trim()} target="_blank" rel="noopener noreferrer" className="ml-auto font-display text-[13px] font-semibold text-accent-ink hover:text-ink">
-                                    {t('Abrir ↗')}
-                                </a>
-                            )}
-                        </div>
-                    ) : l.url ? (
-                        <span className="text-[13px] text-live-ink">{t('O link tem de começar por https://')}</span>
-                    ) : null}
-                </Field>
+            <span className="mb-1.5 block font-display text-[13px] font-semibold uppercase tracking-[0.04em]">
+                {t('O que tem esta aula?')}
+                <span className="ml-1 font-sans text-xs font-normal normal-case tracking-normal text-muted">{t('Liga só o que precisas. Podes ligar várias.')}</span>
+            </span>
+            <div data-guide="parts" className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4" role="group" aria-label={t('O que tem esta aula')}>
+                {PARTS.map(([k, label, hint]) => {
+                    const on = parts.includes(k);
+                    return (
+                        <button key={k} type="button" aria-pressed={on} onClick={() => togglePart(k)}
+                            className={`flex min-h-[64px] items-start gap-2.5 border p-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${on ? 'border-ink bg-accent/10' : 'border-line bg-surface hover:border-muted'}`}>
+                            <span aria-hidden="true" className={`relative mt-0.5 h-5 w-[34px] flex-none rounded-full transition-colors ${on ? 'bg-accent' : 'bg-track'}`}>
+                                <span className={`absolute left-[3px] top-[3px] h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-[14px]' : ''}`} />
+                            </span>
+                            <span className="min-w-0">
+                                <b className="block font-display text-sm font-bold">{t(label)}</b>
+                                <small className="block text-xs leading-snug text-muted">{t(hint)}</small>
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+
+            {parts.includes('video') && (
+                <Block title={t('Vídeo')} onRemove={() => togglePart('video')}
+                    hint={t('A aula fica concluída quando o aluno vê 90% do vídeo. Indica os minutos acima.')}>
+                    <div className="flex flex-col gap-1.5">
+                        <VideoUpload l={l} set={set} />
+                        {!isUploadedVideo(l.url) && (
+                            <input id={`${id}-u`} aria-label={t('Link do vídeo')} className={inputCls} value={l.url} maxLength={500}
+                                placeholder="https://vimeo.com/… ou https://www.youtube.com/watch?v=…"
+                                onChange={(e) => set((x) => { x.url = e.target.value; })} />
+                        )}
+                        {isUploadedVideo(l.url) ? null : info ? (
+                            <div className="mt-1 flex flex-wrap items-center gap-3 bg-surface p-2.5">
+                                {info.thumb && <img src={info.thumb} alt="" className="aspect-video w-[120px] object-cover" />}
+                                <span className="bg-ink px-2 py-0.5 font-mono text-[11px] font-semibold text-on-ink">{info.tag}</span>
+                                <span className="font-mono text-[11px] font-semibold uppercase text-success-ink"><span aria-hidden="true">✓ </span>{t('Link válido')}</span>
+                                {isHttpUrl(l.url) && (
+                                    <a href={l.url.trim()} target="_blank" rel="noopener noreferrer" className="ml-auto font-display text-[13px] font-semibold text-accent-ink hover:text-ink">
+                                        {t('Abrir ↗')}
+                                    </a>
+                                )}
+                            </div>
+                        ) : l.url ? (
+                            <span className="text-[13px] text-live-ink">{t('O link tem de começar por https://')}</span>
+                        ) : null}
+                    </div>
+                    <div className="mt-4"><ChecksEditor l={l} set={set} /></div>
+                </Block>
             )}
 
-            {(l.type === 'video_link' || l.type === 'video_upload') && <ChecksEditor l={l} set={set} />}
+            {parts.includes('material') && (
+                <Block title={t('Material didático')} onRemove={() => togglePart('material')}
+                    hint={t('O aluno vê e descarrega ao lado da aula. Põe aqui as fichas técnicas e os esquemas.')}>
+                    <Attachments l={l} set={set} upload={upload} bare />
+                </Block>
+            )}
 
-            {l.type === 'text' && (
-                <Field label={t('Conteúdo')} id={`${id}-b`} required className="mb-5">
-                    <textarea id={`${id}-b`} rows={7} className={inputCls} value={l.body} placeholder={t('Escreve aqui a aula…')}
+            {parts.includes('notas') && (
+                <Block title={t('Notas')} onRemove={() => togglePart('notas')}
+                    hint={t('Texto que o aluno lê durante a aula: avisos, resumos, passos a seguir.')}>
+                    <textarea id={`${id}-b`} aria-label={t('Notas da aula')} rows={5} className={inputCls} value={l.body} placeholder={t('Escreve as notas da aula…')}
                         onChange={(e) => set((x) => { x.body = e.target.value; })} />
-                </Field>
+                </Block>
             )}
 
-            {l.type === 'quiz' && <QuizEditor l={l} set={set} />}
+            {parts.includes('avatar') && (
+                <Block title={t('Avatar nesta aula')} onRemove={() => togglePart('avatar')}
+                    hint={t('O aluno carrega no botão do Alex e tira dúvidas sobre esta aula. Só precisas do PAL ID se esta aula tiver um avatar diferente.')}>
+                    {!c.alex_enabled && (
+                        <p className="mb-2 bg-accent/15 px-3 py-2 text-[13px]">{t('O avatar só aparece aos alunos quando estiver ligado no passo 3 · Avatar.')}</p>
+                    )}
+                    <PalInput id={`${id}-pal`} label={t('PAL ID desta aula (opcional)')} value={l.alex_pal_id ?? ''} disabled={!canAlex}
+                        onChange={(v) => set((x) => { x.alex_pal_id = v; })} />
+                    <Inherit own={!!(l.alex_pal_id ?? '').trim()} />
+                </Block>
+            )}
 
-            <Attachments
-                l={l}
-                set={set}
-                upload={upload}
-                main={l.type === 'document'}
-            />
+            <div data-guide="evaluation" className="mt-5 border-t border-dashed border-line pt-4">
+                <span className="mb-2 block font-display text-[13px] font-semibold uppercase tracking-[0.04em]">{t('Avaliação da aula')}</span>
+                <Seg label={t('Tipo de avaliação')} value={l.evaluation ?? 'none'} onChange={setEvaluation}
+                    options={EVALUATIONS.map(([k, label]) => [k, t(label)])} />
+                {(l.evaluation ?? 'none') === 'none' && <div className="mt-2"><Hint>{t('Sem avaliação, a aula conta como feita quando o aluno a vê.')}</Hint></div>}
+                {l.evaluation === 'quiz' && (
+                    <div className="mt-3">
+                        <Hint>{t('O aluno tem 3 tentativas. A aula fica concluída quando passar no questionário.')}</Hint>
+                        <QuizEditor l={l} set={set} />
+                    </div>
+                )}
+                {l.evaluation === 'avatar' && (
+                    <div className="mt-3 border-l-[3px] border-accent bg-page px-3.5 pb-3.5 pt-3">
+                        <Hint>{t('O Alex conversa com o aluno e avalia o que ele sabe. A nota chega da plataforma dos avatares.')}</Hint>
+                        {!c.alex_enabled && (
+                            <p className="mb-2 bg-accent/15 px-3 py-2 text-[13px]">{t('A avaliação com o avatar só aparece aos alunos quando o avatar estiver ligado no passo 3 · Avatar.')}</p>
+                        )}
+                        <div className="mb-3 grid gap-2 sm:grid-cols-3">
+                            {[[t('15 min'), t('por conversa')], [t('Sem limite'), t('de tentativas')], [t('Por você'), t('trata o aluno')]].map(([b, s]) => (
+                                <div key={b} className="bg-surface p-2.5 text-[12.5px] text-muted"><b className="block font-display text-[15px] text-ink">{b}</b>{s}</div>
+                            ))}
+                        </div>
+                        <Field label={t('O que o Alex deve avaliar (opcional)')} id={`${id}-ep`} className="mb-3">
+                            <textarea id={`${id}-ep`} rows={3} maxLength={2000} className={inputCls} value={l.evaluation_prompt ?? ''}
+                                placeholder={t('Ex.: pede ao aluno para explicar como se verifica a pressão do circuito.')}
+                                onChange={(e) => set((x) => { x.evaluation_prompt = e.target.value; })} />
+                        </Field>
+                        <PalInput id={`${id}-epal`} label={t('PAL ID do avaliador (opcional: vazio = o Alex do módulo ou do curso)')} value={l.evaluation_pal_id ?? ''} disabled={!canAlex}
+                            onChange={(v) => set((x) => { x.evaluation_pal_id = v; })} />
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function PalInput({ id, label, value, onChange, disabled }) {
+    const bad = value && !/^[A-Za-z0-9_-]+$/.test(value);
+    return (
+        <Field label={label} id={id} hint={disabled ? t('Só quem gere o avatar pode mudar o PAL ID.') : undefined}>
+            <input id={id} className={`${inputCls} font-mono`} value={value} maxLength={64} placeholder="p18d6e1b675e" autoComplete="off" spellCheck={false} disabled={disabled}
+                onChange={(e) => onChange(e.target.value.trim())} />
+            {bad && <span className="text-[13px] text-live-ink">{t('O PAL ID só tem letras, números, - e _.')}</span>}
+        </Field>
+    );
+}
+
+// Que avatar fala nesta aula: o da aula, se tiver PAL; senão o do módulo ou o do curso
+function Inherit({ own }) {
+    return (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12.5px] text-muted">
+            {t('Fala:')}
+            <span className={`border px-2 py-0.5 ${own ? 'border-ink font-bold text-ink' : 'border-line'}`}>{t('o desta aula')}</span>
+            <span className={`border px-2 py-0.5 ${own ? 'border-line' : 'border-ink font-bold text-ink'}`}>{t('o do módulo ou do curso')}</span>
         </div>
     );
 }
@@ -271,7 +454,7 @@ function ChecksEditor({ l, set }) {
                 </span>
             </span>
             {checks.map((q, qi) => (
-                <div key={qi} className="bg-page p-3.5">
+                <div key={qi} className="bg-surface p-3.5">
                     <div className="flex gap-2">
                         <input className={inputCls} value={q.question} maxLength={500} placeholder={t('Pergunta :v1', { v1: qi + 1 })} aria-label={t('Pergunta rápida :v1', { v1: qi + 1 })}
                             onChange={(e) => set((x) => { x.checks[qi].question = e.target.value; })} />
@@ -424,7 +607,7 @@ function VideoUpload({ l, set }) {
 
     if (progress !== null) {
         return (
-            <div className="flex flex-col gap-2 bg-page p-3">
+            <div className="flex flex-col gap-2 bg-surface p-3">
                 <div className="flex items-center gap-3 text-sm">
                     <span className="min-w-0 flex-1 truncate">{t('A carregar')}{' '}<b>{name}</b>…</span>
                     <span className="font-mono text-xs font-semibold">{Math.round(progress * 100)}%</span>
@@ -439,7 +622,7 @@ function VideoUpload({ l, set }) {
     return (
         <div className="flex flex-col gap-1.5">
             {uploaded ? (
-                <div className="flex flex-wrap items-center gap-3 bg-page p-2.5">
+                <div className="flex flex-wrap items-center gap-3 bg-surface p-2.5">
                     <video src={l.url} preload="metadata" muted className="aspect-video w-[120px] bg-black object-cover" />
                     <span className="bg-ink px-2 py-0.5 font-mono text-[11px] font-semibold uppercase text-on-ink">{t('Vídeo carregado')}</span>
                     <span className="font-mono text-[11px] font-semibold uppercase text-success-ink"><span aria-hidden="true">✓ </span>{t('Leitor T.Academy')}</span>
@@ -452,7 +635,7 @@ function VideoUpload({ l, set }) {
                     </span>
                 </div>
             ) : (
-                <label className="flex cursor-pointer flex-wrap items-center gap-3 border border-dashed border-line bg-page px-3 py-2.5 text-sm hover:border-muted">
+                <label className="flex cursor-pointer flex-wrap items-center gap-3 border border-dashed border-line bg-surface px-3 py-2.5 text-sm hover:border-muted">
                     <span className="rounded-full bg-ink px-3 py-1.5 font-display text-xs font-bold uppercase tracking-[0.04em] text-on-ink">{t('Carregar vídeo')}</span>
                     <span className="text-muted">{t('MP4 ou WebM, até')}{' '}{videoMaxMb >= 1024 ? `${(videoMaxMb / 1024).toString().replace('.', ',')} GB` : `${videoMaxMb} MB`}{' '}{t('· ou cola um link abaixo')}</span>
                     <input type="file" accept="video/mp4,video/webm,.mp4,.webm" className="sr-only" onChange={(e) => { send(e.target.files[0]); e.target.value = ''; }} />
@@ -466,7 +649,8 @@ function VideoUpload({ l, set }) {
 const ATTACH_TYPES = /.(pdf|jpe?g|png|webp|docx?|xlsx?|pptx?|zip)$/i;
 
 // Anexos das aulas: enviados aos pedaços, como os vídeos (sem limite do servidor por pedido, com progresso)
-function Attachments({ l, set, main }) {
+// bare: dentro do bloco "Material didático" (sem título próprio, com a caixa grande para carregar)
+function Attachments({ l, set, bare, main = bare }) {
     const { attachmentMaxMb = 100 } = usePage().props;
     const [progress, setProgress] = useState(null); // null = parado; 0..1 = a enviar
     const [name, setName] = useState('');
@@ -514,12 +698,14 @@ function Attachments({ l, set, main }) {
 
     return (
         <div className="flex flex-col gap-1.5">
-            <span className="font-display text-[13px] font-semibold uppercase tracking-[0.04em]">
-                {main ? <>{t('Documento')}<span className="text-accent-ink"> *</span></> : t('Materiais de apoio')}
-                {!main && <span className="ml-1 font-sans text-xs font-normal normal-case tracking-normal text-muted">{t('(opcional: fichas técnicas, esquemas)')}</span>}
-            </span>
+            {!bare && (
+                <span className="font-display text-[13px] font-semibold uppercase tracking-[0.04em]">
+                    {main ? <>{t('Documento')}<span className="text-accent-ink"> *</span></> : t('Materiais de apoio')}
+                    {!main && <span className="ml-1 font-sans text-xs font-normal normal-case tracking-normal text-muted">{t('(opcional: fichas técnicas, esquemas)')}</span>}
+                </span>
+            )}
             {l.attachments.map((a, i) => (
-                <div key={a.path} className="flex items-center gap-2.5 bg-page px-2.5 py-2 text-[13.5px]">
+                <div key={a.path} className={`flex items-center gap-2.5 px-2.5 py-2 text-[13.5px] ${bare ? 'bg-surface' : 'bg-page'}`}>
                     <span className="bg-ink px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase text-on-ink">{a.name.split('.').pop()}</span>
                     <a href={a.url} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate hover:underline">{a.name}</a>
                     <small className="text-muted">{formatBytes(a.size)}</small>
@@ -527,7 +713,7 @@ function Attachments({ l, set, main }) {
                 </div>
             ))}
             {busy && (
-                <div className="flex flex-col gap-2 bg-page p-3">
+                <div className="flex flex-col gap-2 bg-surface p-3">
                     <div className="flex items-center gap-3 text-sm">
                         <span className="min-w-0 flex-1 truncate">{t('A carregar')}{' '}<b>{name}</b>…</span>
                         <span className="font-mono text-xs font-semibold">{Math.round(progress * 100)}%</span>
@@ -538,7 +724,7 @@ function Attachments({ l, set, main }) {
             )}
             {l.attachments.length < 20 && !busy && (
                 <label className={main
-                    ? 'block cursor-pointer border-[1.5px] border-dashed border-line bg-page p-4 text-center text-sm text-muted hover:border-accent hover:text-ink'
+                    ? 'block cursor-pointer border-[1.5px] border-dashed border-line bg-surface p-4 text-center text-sm text-muted hover:border-accent hover:text-ink'
                     : 'cursor-pointer self-start py-1 font-display text-[13.5px] font-semibold text-accent-ink hover:text-ink'}>
                     <input type="file" className="sr-only" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"
                         onChange={(e) => { send(e.target.files[0]); e.target.value = ''; }} />

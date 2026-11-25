@@ -29,15 +29,6 @@ class AlexService
     // avaliacao: a avaliação final do curso, no botão Avaliação da aula (à parte das conversas do dia, sem créditos)
     public const PLACES = ['inicio', 'avaliacoes', 'aula', 'avaliacao'];
 
-    /** Uma avaliação conta como feita a partir deste tempo de conversa (abaixo disto foi uma falha de ligação). */
-    public const EVALUATION_COUNTS_AFTER = 120;
-
-    /**
-     * Tentativas de avaliação final por curso (ou módulo com PAL próprio): qualquer avaliação que chegou ao Tavus conta,
-     * mesmo curta. Sem isto, terminar antes dos 2 minutos e repetir dava avaliações sem fim (e minutos pagos ao Tavus).
-     */
-    public const EVALUATION_ATTEMPTS = 3;
-
     public function __construct(
         private TavusClient $tavus,
         private LearningService $learning,
@@ -90,7 +81,6 @@ class AlexService
             'minutes' => $this->minutes(),
             'evaluation' => $place === 'aula' ? [
                 'minutes' => $this->evaluationMinutes(),
-                'attempts' => self::EVALUATION_ATTEMPTS,
                 'done' => $this->evaluationDone($user, $request->route('course'), $lesson),
                 'module' => (bool) $lesson?->module?->alex_pal_id, // a avaliação é a do módulo (PAL próprio)
             ] : null,
@@ -163,30 +153,16 @@ class AlexService
 
     public function evaluationMinutes(): int
     {
-        return max(1, (int) config('services.tavus.evaluation_minutes', 10));
+        return max(1, (int) config('services.tavus.evaluation_minutes', 15));
     }
 
     /**
-     * Só há uma avaliação final por curso. Conta a que durou pelo menos 2 minutos (uma ligação que cai logo
-     * no início não conta), e acaba também ao fim de EVALUATION_ATTEMPTS tentativas, curtas ou não.
-     * O admin e a pré-visualização da equipa podem repetir, para testar.
+     * A avaliação com o Alex só fica concluída quando a plataforma dos avatares enviar a nota (decidido a 2026-11-25).
+     * Até essa ligação existir, nunca fecha: sem limite de tentativas, só o limite de tempo de cada conversa.
      */
     public function evaluationDone(User $user, Course $course, ?Lesson $lesson = null): bool
     {
-        if ($user->isAdmin() || $this->learning->access($user, $course)['mode'] === 'preview') {
-            return false;
-        }
-        // Módulo com PAL próprio: uma avaliação por módulo; senão, uma por curso
-        $module = $lesson?->module?->alex_pal_id ? $lesson->module : null;
-
-        $attempts = AlexConversation::where('user_id', $user->id)->where('course_id', $course->id)->where('place', 'avaliacao')
-            ->when($module, fn ($q) => $q->whereIn('lesson_id', $module->lessons()->pluck('id')))
-            // A do curso não conta as avaliações dos módulos com PAL próprio
-            ->when(! $module, fn ($q) => $q->whereNotIn('lesson_id', Lesson::whereIn('module_id', $course->modules()->whereNotNull('alex_pal_id')->select('id'))->select('id')))
-            ->where('status', '!=', 'failed')->get();
-
-        return $attempts->count() >= self::EVALUATION_ATTEMPTS
-            || $attempts->contains(fn ($c) => ! in_array($c->status, ['starting', 'active'], true) && $c->seconds() >= self::EVALUATION_COUNTS_AFTER);
+        return false;
     }
 
     /** Conversas grátis que ainda há hoje (0 para quem não tem um curso com o avatar). */
@@ -340,17 +316,21 @@ class AlexService
     {
         // O Alex do módulo da aula, se tiver um (dúvidas e avaliação desse módulo); senão o do curso; senão o Alex
         // geral (config). O rosto acompanha o PAL escolhido.
+        // Antes de tudo, o PAL que o formador pôs na própria aula (avatar da aula ou avaliador da aula, 2026-11-25)
+        $lessonPal = $place === 'avaliacao' ? $lesson?->evaluation_pal_id : ($place === 'aula' ? $lesson?->alex_pal_id : null);
         $module = $lesson?->module?->alex_pal_id ? $lesson->module : null;
-        $ownPal = $module?->alex_pal_id ?: $course?->alex_pal_id;
-        $face = $module
-            ? $module->alex_face_id // vazio = o rosto do PAL do módulo
-            : ($course?->alex_face_id ?: ($ownPal ? null : config('services.tavus.face_id')));
+        $ownPal = $lessonPal ?: ($module?->alex_pal_id ?: $course?->alex_pal_id);
+        $face = match (true) {
+            (bool) $lessonPal => null, // o rosto do PAL da aula
+            (bool) $module => $module->alex_face_id, // vazio = o rosto do PAL do módulo
+            default => $course?->alex_face_id ?: ($ownPal ? null : config('services.tavus.face_id')),
+        };
         $payload = [
             'pal_id' => $ownPal ?: config('services.tavus.pal_id'),
             'conversation_name' => Str::limit('T.Academy · '.$user->name.' · '.$place, 100, ''),
             'conversational_context' => match (true) {
-                $place === 'avaliacao' && $module => Str::limit($this->moduleEvaluationContext($user, $course, $module), 3500),
-                $place === 'avaliacao' => Str::limit($this->evaluationContext($user, $course), 9000),
+                $place === 'avaliacao' && $module => Str::limit($this->moduleEvaluationContext($user, $course, $module).$this->evaluationBrief($lesson), 4500),
+                $place === 'avaliacao' => Str::limit($this->evaluationContext($user, $course).$this->evaluationBrief($lesson), 10000),
                 default => Str::limit($this->context($user, $place, $course, $lesson), 3500),
             },
             'custom_greeting' => $this->greeting($user, $place, $lesson),
@@ -369,7 +349,7 @@ class AlexService
             $payload['face_id'] = $face;
         }
         // Avaliação de um módulo com PAL próprio: o PAL já tem a abertura e as perguntas; a saudação dele fica
-        if ($place === 'avaliacao' && $module) {
+        if ($place === 'avaliacao' && ($module || $lessonPal)) {
             unset($payload['custom_greeting']);
         }
         // Os avisos do Tavus só chegam a um endereço público (produção)
@@ -387,18 +367,27 @@ class AlexService
         $first = Str::before($this->safeName($user), ' ');
 
         return match ($place) {
-            'avaliacao' => "Olá {$first}! Sou o Alex e vou fazer a tua avaliação final do curso. Vou fazer-te algumas perguntas, uma de cada vez. Estás pronto para começar?",
-            'avaliacoes' => "Olá {$first}! Sou o Alex. Queres rever algum teste comigo?",
-            'aula' => "Olá {$first}! Estás na aula {$lesson?->title}. Tens alguma dúvida?",
-            default => "Olá {$first}! Sou o Alex. Em que te posso ajudar hoje?",
+            // O Alex trata o aluno por você (2026-11-25)
+            'avaliacao' => "Olá {$first}! Sou o Alex e vou fazer a sua avaliação final do curso. Vou fazer-lhe algumas perguntas, uma de cada vez. Podemos começar?",
+            'avaliacoes' => "Olá {$first}! Sou o Alex. Quer rever algum teste comigo?",
+            'aula' => "Olá {$first}! Está na aula {$lesson?->title}. Tem alguma dúvida?",
+            default => "Olá {$first}! Sou o Alex. Em que o posso ajudar hoje?",
         };
     }
 
     /** Avaliação de um módulo com PAL próprio: as perguntas e as regras estão no PAL; aqui só quem é e que módulo. */
+    /** O que o formador pediu para avaliar nesta aula (editor › Avaliação da aula › Com o avatar). */
+    private function evaluationBrief(?Lesson $lesson): string
+    {
+        $brief = trim((string) $lesson?->evaluation_prompt);
+
+        return $brief === '' ? '' : "\nO formador pede que avalies sobretudo isto: ".Str::limit($brief, 900);
+    }
+
     private function moduleEvaluationContext(User $user, Course $course, Module $module): string
     {
         return implode("\n", [
-            "O aluno chama-se {$this->safeName($user)}. Fala em português de Portugal e trata-o por tu.",
+            "O aluno chama-se {$this->safeName($user)}. Fala em português de Portugal e trata-o por você.",
             "Esta conversa é a AVALIAÇÃO do módulo \"{$module->title}\" do curso \"{$course->title}\", na plataforma T.Academy. Faz a avaliação deste módulo tal como está definida.",
             'Esta avaliação só se faz uma vez.',
         ]);
@@ -414,7 +403,7 @@ class AlexService
     {
         $pass = (int) config('services.tavus.evaluation_pass', 70);
         $lines = [
-            "O aluno chama-se {$this->safeName($user)}. Fala em português de Portugal e trata-o por tu.",
+            "O aluno chama-se {$this->safeName($user)}. Fala em português de Portugal e trata-o por você.",
             "Estás a fazer a AVALIAÇÃO FINAL do curso \"{$course->title}\" na plataforma T.Academy. Tens {$this->evaluationMinutes()} minutos.",
             'Regras da avaliação:',
             '- Faz entre 6 e 10 perguntas sobre a matéria do curso, uma de cada vez, e espera pela resposta antes de passar à seguinte.',
@@ -458,7 +447,7 @@ class AlexService
 
     private function context(User $user, string $place, ?Course $course, ?Lesson $lesson): string
     {
-        $lines = ["O aluno chama-se {$this->safeName($user)}. Fala em português de Portugal e trata-o por tu. Está na plataforma de cursos T.Academy."];
+        $lines = ["O aluno chama-se {$this->safeName($user)}. Fala em português de Portugal e trata-o por você. Está na plataforma de cursos T.Academy."];
 
         if ($course && $place !== 'aula') {
             $lines[] = "És o formador IA do curso \"{$course->title}\".";

@@ -272,7 +272,7 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                         <p role="alert" className="mb-3 bg-live/10 px-4 py-2.5 text-sm text-live-ink">{saveError}</p>
                     )}
                     {step === 0 && <StepInfo c={c} update={update} categories={categories} library={library} shortMax={shortMax} upload={upload} />}
-                    {step === 1 && <StepProgram c={c} update={update} upload={upload} openKey={openKey} setOpenKey={setOpenKey} />}
+                    {step === 1 && <StepProgram c={c} update={update} upload={upload} openKey={openKey} setOpenKey={setOpenKey} canAlex={canManageAlex || (canAlex && !c.alex_blocked)} />}
                     {step === 2 && <StepAvatar c={c} update={update} canAlex={canAlex} canManageAlex={canManageAlex} />}
                     {step === 3 && <StepPrice c={c} update={update} />}
                     {step === LAST && (

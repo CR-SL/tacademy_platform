@@ -160,7 +160,8 @@ class LessonController extends Controller
     /** Conclui ao abrir as aulas sem nada para ver até ao fim; o vídeo só se já cumpre as condições. */
     private function finishOnOpen(User $user, Lesson $lesson): bool
     {
-        if ($lesson->content_type === 'quiz') {
+        // Com questionário, a aula conclui-se ao passar. A avaliação com o avatar não prende a aula (ver LearningService)
+        if ($lesson->evaluationKind() === 'quiz') {
             return false;
         }
         if ($this->learning->isVideo($lesson) && $this->videoSource($lesson->content_url)) {
@@ -204,17 +205,21 @@ class LessonController extends Controller
 
     private function lessonPayload(Lesson $lesson, User $user, ?LessonProgress $p): array
     {
-        $url = $lesson->content_type === 'avatar' ? $lesson->avatar_ref : $lesson->content_url;
         $answers = $p?->check_answers ?? [];
+        $parts = $lesson->partList();
+        $evaluation = $lesson->evaluationKind();
 
         $payload = [
             'ulid' => $lesson->ulid,
             'title' => $lesson->title,
             'type' => $lesson->content_type,
+            'parts' => $parts,
+            'evaluation' => $evaluation,
             'minutes' => (int) round($lesson->duration_seconds / 60),
-            'url' => ($lesson->content_type === 'avatar' ? CourseBuilder::validAvatarUrl($url) : CourseBuilder::validUrl($url)) ? $url : null,
-            'video' => $this->videoSource($lesson->content_url),
-            'body' => $lesson->content_type === 'text' ? $lesson->body : null,
+            // Link de avatar antigo (aulas do tipo avatar de antes do Alex): só dos sites aceites
+            'url' => in_array('avatar', $parts, true) && CourseBuilder::validAvatarUrl($lesson->avatar_ref) ? $lesson->avatar_ref : null,
+            'video' => in_array('video', $parts, true) ? $this->videoSource($lesson->content_url) : null,
+            'body' => in_array('notas', $parts, true) ? $lesson->body : null,
             'attachments' => $lesson->attachments()->get()->map(fn ($a) => ['name' => $a->name, 'url' => $a->url(), 'size' => $a->size])->values(),
             'checks' => $lesson->checks()->get()->map(function (LessonCheck $c) use ($answers) {
                 $answered = array_key_exists((string) $c->id, $answers);
@@ -231,7 +236,7 @@ class LessonController extends Controller
             'quiz' => null,
         ];
 
-        if ($lesson->content_type === 'quiz' && ($quiz = $lesson->quiz()->with('questions.options')->first())) {
+        if ($evaluation === 'quiz' && ($quiz =$lesson->quiz()->with('questions.options')->first())) {
             $attempts = QuizAttempt::where('user_id', $user->id)->where('quiz_id', $quiz->id)->orderBy('attempted_at')->orderBy('id')->get();
             $max = $this->learning->maxAttempts($quiz);
             $passed = $attempts->contains('passed', true);

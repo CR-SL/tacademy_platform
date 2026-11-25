@@ -105,10 +105,15 @@ const clampSplit = (v) => Math.max(MIN_PANEL, Math.min(100 - MIN_PANEL, v));
 // A aula conclui-se sozinha: o vídeo aos 90%; documento, texto e avatar ao abrir; o teste ao passar.
 export default function Lesson({ course, mode, program, lesson, progress, prev, next, avatarUrl, notes }) {
     const mobile = useMobile();
-    const { alex } = usePage().props; // o Alex nesta aula (curso com o Alex), ou null
+    const { alex: alexProp } = usePage().props; // o Alex neste curso (curso com o Alex), ou null
+    // O que o formador ligou nesta aula (2026-11-25): vídeo, material, notas, avatar; e a avaliação
+    const parts = lesson.parts ?? [];
+    const evalKind = lesson.evaluation ?? (lesson.type === 'quiz' ? 'quiz' : 'none');
+    const alex = alexProp && (parts.includes('avatar') || evalKind === 'avatar') ? alexProp : null;
+    const askAlex = alexProp && parts.includes('avatar') ? alexProp : null; // tirar dúvidas com o Alex nesta aula
     const canSave = mode === 'enrolled';
     const done = progress.status === 'completed';
-    const videoLesson = isVideoType(lesson.type);
+    const videoLesson = lesson.parts ? parts.includes('video') : isVideoType(lesson.type);
     const hasPlayer = videoLesson && !!lesson.video;
     const lessonUrl = (ulid) => `/plataforma/cursos/${course.slug}/aulas/${ulid}`;
 
@@ -125,14 +130,14 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
 
     // Painéis
     // Abrem como o aluno os deixou na aula anterior (sem nenhum aberto, o vídeo abre)
-    const [showVideo, setShowVideo] = useState(() => hasPlayer && (memory.video || !(memory.material || memory.notes || (alex && memory.ask))));
+    const [showVideo, setShowVideo] = useState(() => hasPlayer && (memory.video || !(memory.material || memory.notes || (askAlex && memory.ask))));
     const [showMaterial, setShowMaterial] = useState(() => {
         if (!hasPlayer) return true;
         return !mobile && memory.material;
     });
     const [showNotes, setShowNotes] = useState(() => (mobile ? hasPlayer : memory.notes));
     const [showChecks, setShowChecks] = useState(false);
-    const [ask, setAsk] = useState(() => !!alex && !mobile && memory.ask);
+    const [ask, setAsk] = useState(() => !!askAlex && !mobile && memory.ask);
     const [askStarted, setAskStarted] = useState(false);
     const [evaluation, setEvaluation] = useState(null); // null | 'intro' | 'run'
     const beforeEvaluation = useRef(null);
@@ -163,7 +168,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
         Object.assign(memory, { notes: showNotes, rail, splitX, splitR, splitL, splitRow, splitM, place });
         // Numa aula sem vídeo o conteúdo está no Material (abre sempre): o vídeo e o Material ficam como estavam
         if (hasPlayer) Object.assign(memory, { video: showVideo, material: showMaterial });
-        if (alex) memory.ask = ask;
+        if (askAlex) memory.ask = ask;
     }, [showMaterial, showNotes, rail, splitX, splitR, splitL, splitRow, splitM, place, showVideo, ask, evaluation]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // No telemóvel só cabe um painel em baixo: material ou notas
@@ -276,7 +281,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     }, []);
 
     const running = evaluation === 'run';
-    const alexEvaluation = alex?.evaluation ?? null; // curso com o Alex: é ele que faz a avaliação final
+    const alexEvaluation = evalKind === 'avatar' ? (alex?.evaluation ?? null) : null; // curso com o Alex: é ele que faz a avaliação final
     const evaluationMin = alexEvaluation?.minutes ?? EVALUATION_MIN;
     const videoOn = hasPlayer && showVideo;
     const avatarOn = ask || running;
@@ -303,7 +308,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     };
     const moduleOfLesson = program.find((m) => m.lessons.some((l) => l.current));
     const currentPct = done ? 100 : hasPlayer && needed > 0 ? Math.min(100, Math.round(watched / needed * 90)) : 0;
-    const hint = !canSave || done || lesson.type === 'quiz' || !hasPlayer
+    const hint = !canSave || done || evalKind === 'quiz' || !hasPlayer
         ? null
         : progress.noDuration ? t('Esta aula fica concluída quando o formador indicar a duração do vídeo.')
         : !videoReady ? t('Faltam :v1 de vídeo', { v1: fmt(needed - watched) }) : null;
@@ -365,18 +370,36 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
         );
     };
 
+    const hasQuiz = evalKind === 'quiz' && !!lesson.quiz;
+    const hasMaterial = !!lesson.body || lesson.attachments.length > 0 || (!!lesson.url && !askAlex);
+    // Botão Avaliação de uma aula com questionário: abre o Material e vai até ao questionário
+    const openQuiz = () => {
+        if (running) return;
+        setShowChecks(false);
+        setAttachment(null);
+        if (mobile) setShowNotes(false);
+        setShowMaterial(true);
+        setTimeout(() => document.getElementById('al-quiz')?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 80);
+    };
+
     const tools = (
         <div className="al-tools" role="group" aria-label={t('O que mostrar')}>
             <button type="button" className="al-sw" data-tip={t('Vídeo')} aria-label={t('Vídeo')} aria-pressed={videoOn} disabled={!hasPlayer} onClick={toggleVideo}><IconVideo /></button>
             <button type="button" className="al-sw" data-tip={t('Material')} aria-label={t('Material')} aria-pressed={showMaterial} onClick={toggleMaterial}><IconDoc /></button>
             <button type="button" className="al-sw" data-tip={t('Notas')} aria-label={t('Notas')} aria-pressed={showNotes} onClick={toggleNotes}><IconPen /></button>
-            {alex && <button type="button" className="al-sw" data-tip={t('Alex')} aria-label={t('Falar com o Alex')} aria-pressed={avatarOn} disabled={running} onClick={toggleAsk}><IconUser /></button>}
-            <span className="div" />
-            <button type="button" className={`al-ev ${evaluation ? 'on' : ''}`} onClick={() => { if (!running) { setEvaluation(evaluation ? null : 'intro'); setSheet(null); } }}><IconUser />{t('Avaliação')}</button>
+            {askAlex && <button type="button" className="al-sw" data-tip={t('Alex')} aria-label={t('Falar com o Alex')} aria-pressed={avatarOn} disabled={running} onClick={toggleAsk}><IconUser /></button>}
+            {evalKind !== 'none' && <span className="div" />}
+            {/* Avaliação da aula: com o avatar abre o aviso e a conversa; o questionário abre no Material */}
+            {evalKind === 'avatar' && (
+                <button type="button" className={`al-ev ${evaluation ? 'on' : ''}`} onClick={() => { if (!running) { setEvaluation(evaluation ? null : 'intro'); setSheet(null); } }}><IconUser />{t('Avaliação')}</button>
+            )}
+            {evalKind === 'quiz' && hasQuiz && (
+                <button type="button" className="al-ev" onClick={openQuiz}><IconDoc />{t('Avaliação')}</button>
+            )}
         </div>
     );
 
-    const viewer = attachment != null && lesson.attachments[attachment] && isPdf(lesson.attachments[attachment]) ? lesson.attachments[attachment] : null;
+    const viewer =attachment != null && lesson.attachments[attachment] && isPdf(lesson.attachments[attachment]) ? lesson.attachments[attachment] : null;
 
     // Cada painel numa função, para ir para o lugar que o aluno escolher (as chaves evitam recarregar na mesma coluna)
     const sections = {
@@ -391,8 +414,8 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                         <span className="al-orb" aria-hidden="true" />
                         <p>{t('O teste final com o avatar fica disponível em breve.')}</p>
                     </div>
-                ) : alex ? (
-                    <AlexLessonPanel alex={alex} open={avatarOn} onStart={pauseVideo} />
+                ) : askAlex ? (
+                    <AlexLessonPanel alex={askAlex} open={avatarOn} onStart={pauseVideo} />
                 ) : avatarUrl ? (
                     // Só sites de avatar aceites (o servidor filtra); sandbox: não navega a página da plataforma nem abre janelas sozinho
                     askStarted && <iframe src={avatarUrl} title={t('Perguntar ao avatar')} allow="microphone; camera; autoplay; display-capture"
@@ -436,11 +459,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                         {checksDone ? t('Ver as perguntas rápidas') : t('Perguntas rápidas')}
                     </button>
                 )}
-                {lesson.type === 'quiz' && lesson.quiz ? (
-                    <div className="al-m-scroll"><div className="al-card flush">
-                        <QuizRunner key={lesson.ulid} lessonUlid={lesson.ulid} quiz={lesson.quiz} canSave={canSave} />
-                    </div></div>
-                ) : viewer ? (
+                {viewer ? (
                     <>
                         <div className="al-fv">
                             <button type="button" className="al-tb-b" onClick={() => setAttachment(null)}><IconLeft />{t('Ficheiros')}</button>
@@ -450,18 +469,18 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                         <iframe className="al-pdf al-pdf-in" src={`${viewer.url}#view=FitH`} title={viewer.name} />
                     </>
                 ) : (
-                    <div className="al-m-scroll"><div className="al-card">
+                    <div className="al-m-scroll">{(!hasQuiz || hasMaterial) && <div className="al-card">
                         <h2>{lesson.title}</h2>
-                        {lesson.type === 'text' && (lesson.body ?? '').split(/\n{2,}/).map((p, i) => <p key={i}>{p}</p>)}
-                        {lesson.type === 'avatar' && (
+                        {/* Notas do formador (parte "Notas" da aula) */}
+                        {lesson.body && lesson.body.split(/\n{2,}/).map((p, i) => <p key={i}>{p}</p>)}
+                        {/* Link de avatar antigo (aulas de avatar de antes do Alex) */}
+                        {lesson.url && !askAlex && (
                             <div className="al-avatar-card">
                                 <span className="al-orb !w-24" aria-hidden="true" />
-                                {lesson.url
-                                    ? <a href={lesson.url} target="_blank" rel="noopener noreferrer" className="al-pill">{t('Abrir avatar ↗')}</a>
-                                    : <p>{t('O link do avatar ainda não foi configurado.')}</p>}
+                                <a href={lesson.url} target="_blank" rel="noopener noreferrer" className="al-pill">{t('Abrir avatar ↗')}</a>
                             </div>
                         )}
-                        {lesson.type !== 'text' && lesson.type !== 'avatar' && !lesson.attachments.length && (
+                        {!hasMaterial && (
                             <p>{t('Esta aula não tem material de apoio.')}</p>
                         )}
                         {lesson.attachments.length > 0 && (
@@ -482,7 +501,14 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                                 </ul>
                             </div>
                         )}
-                    </div></div>
+                    </div>}
+                    {/* Avaliação da aula: questionário (abre também no botão Avaliação) */}
+                    {hasQuiz && (
+                        <div id="al-quiz" className={`al-card flush ${hasMaterial ? 'mt-4' : ''}`}>
+                            <QuizRunner key={lesson.ulid} lessonUlid={lesson.ulid} quiz={lesson.quiz} canSave={canSave} />
+                        </div>
+                    )}
+                    </div>
                 )}
             </section>
         ],
@@ -571,13 +597,10 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                                 <h2>{t('Vai começar a avaliação.')}</h2>
                                 <p>{t('O teste final é feito com o avatar. Podes usar o microfone para responder às perguntas ou escrever a tua resposta.')}</p>
                                 {alexEvaluation?.done ? (
-                                    <p>{alexEvaluation.module ? t('Já fizeste a avaliação deste módulo com o Alex, ou usaste todas as tentativas.') : t('Já fizeste a avaliação final deste curso com o Alex, ou usaste todas as tentativas.')}</p>
+                                    <p>{alexEvaluation.module ? t('Já fizeste a avaliação deste módulo com o Alex.') : t('Já fizeste a avaliação final deste curso com o Alex.')}</p>
                                 ) : (
                                     <>
                                         <p>{t('Tens :min minutos. O tempo que falta aparece no botão Terminar.', { min: evaluationMin })}</p>
-                                        {alexEvaluation?.attempts > 0 && (
-                                            <p>{t('Sair antes do fim também conta como tentativa: tens no máximo :n.', { n: alexEvaluation.attempts })}</p>
-                                        )}
                                         <MicCheck />
                                         <div className="bs">{t('Boa sorte!')}</div>
                                         <button type="button" className="al-pill" onClick={startEvaluation}>{t('Continuar')}</button>

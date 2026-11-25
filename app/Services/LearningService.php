@@ -88,7 +88,7 @@ class LearningService
 
     public function isVideo(Lesson $lesson): bool
     {
-        return in_array($lesson->content_type, ['video_link', 'video_upload'], true);
+        return $lesson->hasPart('video');
     }
 
     /** Duração a usar no limite dos 90%: a reportada pelo leitor ou, sem ela, a indicada pelo formador. */
@@ -209,7 +209,9 @@ class LearningService
     /** Vídeo: fica concluída quando o aluno viu 90%. Devolve true se concluiu agora. */
     public function completeVideoIfReady(User $user, Lesson $lesson): bool
     {
-        if (! $this->isVideo($lesson)) {
+        // Com questionário, é ele que conclui a aula (ao passar). A avaliação com o avatar não prende a aula: a nota
+        // vem da plataforma dos avatares, que ainda não está ligada (2026-11-25)
+        if (! $this->isVideo($lesson) || $lesson->evaluationKind() === 'quiz') {
             return false;
         }
         $p = LessonProgress::where('user_id', $user->id)->where('lesson_id', $lesson->id)->first();
