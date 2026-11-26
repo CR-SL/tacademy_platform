@@ -12,6 +12,8 @@ import { useConfirm } from '@/Components/ui';
 import EditorGuide from '@/Components/CourseBuilder/EditorGuide';
 import ReadyBox, { readyItems } from '@/Components/CourseBuilder/ReadyBox';
 import { guideFor, guideSeen, markGuideSeen } from '@/Components/CourseBuilder/guides';
+import TemplatePicker from '@/Components/CourseBuilder/TemplatePicker';
+import { MODELS, courseFromModel } from '@/Components/CourseBuilder/templates';
 
 import { t } from '@/i18n';
 
@@ -43,6 +45,9 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
     setAvatarHosts(avatarHosts); // antes de qualquer verificação do avatar (lista do que falta, campo do link)
     const [c, setC] = useState(() => course ?? blankCourse());
     const [step, setStep] = useState(0);
+    // Curso novo: primeiro escolhe-se um modelo (2026-11-26); o modelo usado aparece no Programa até à 1.ª gravação
+    const [picking, setPicking] = useState(!course);
+    const [modelName, setModelName] = useState(null);
     const [openKey, setOpenKey] = useState(() => (course ? null : blankFirstLesson(c)));
     const [save, setSave] = useState(course ? 'saved' : 'new'); // new | pending | saving | saved | error
     const [saveError, setSaveError] = useState('');
@@ -198,10 +203,10 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
     // Guia: cada passo abre o seu na primeira visita; "Ver o guia" mostra o do passo aberto
     const [guide, setGuide] = useState(null); // passo cujo guia está aberto
     useEffect(() => {
-        if (guideSeen(step)) return undefined;
+        if (picking || guideSeen(step)) return undefined;
         const id = setTimeout(() => setGuide(step), 300); // depois de o passo aparecer
         return () => clearTimeout(id);
-    }, [step]);
+    }, [step, picking]);
     const closeGuide = useCallback(() => {
         setGuide((g) => { if (g != null) markGuideSeen(g); return null; });
     }, []);
@@ -258,6 +263,25 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
     }[save];
     const statusLabel = activeUploads.count > 0 && save !== 'error' ? t('A carregar ficheiro… não feches a página.') : saveLabel;
 
+    const startFromModel = (modelId, modules, lessons) => {
+        const next = courseFromModel(modelId, modules, lessons, { canAlex: canAlex || canManageAlex });
+        setC(next);
+        setOpenKey(next.modules[0]?.lessons[0]?.key ?? null);
+        setModelName(modelId ? { id: modelId, modules, lessons } : null);
+        setPicking(false);
+        goTo(modelId ? 1 : 0); // com modelo, abre no Programa já montado
+    };
+
+    if (picking) {
+        return (
+            <StudentLayout>
+                <Head title={t('Criar curso')} />
+                <TemplatePicker onStart={startFromModel} />
+            </StudentLayout>
+        );
+    }
+    const usedModel = modelName && save === 'new' ? MODELS.find((m) => m.id === modelName.id) : null;
+
     return (
         <StudentLayout>
             <Head title={c.title ? t('Editar · :title', { title: c.title }) : t('Criar curso')} />
@@ -305,6 +329,12 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                         <p role="alert" className="mb-3 flex items-start gap-3 bg-live/10 px-4 py-2.5 text-sm text-live-ink">
                             <span className="flex-1">{uploadError}</span>
                             <button type="button" onClick={() => setUploadError('')} className="font-display text-[13px] font-semibold hover:text-ink">{t('Fechar')}</button>
+                        </p>
+                    )}
+                    {usedModel && step === 1 && (
+                        <p className="mb-3 flex flex-wrap items-center gap-3 bg-accent/15 px-4 py-3 text-[13.5px]">
+                            <span className="flex-1">{t('Programa montado com o modelo :name: :m módulos, :l aulas cada.', { name: t(usedModel.name), m: modelName.modules, l: modelName.lessons })}</span>
+                            <button type="button" onClick={() => setPicking(true)} className="font-display text-[13px] font-bold text-accent-ink hover:text-ink">{t('← Escolher outro modelo')}</button>
                         </p>
                     )}
                     {save === 'error' && (
