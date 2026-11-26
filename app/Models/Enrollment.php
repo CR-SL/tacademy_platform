@@ -22,7 +22,6 @@ class Enrollment extends Model
         'company_id',
         'personal',
         'source',
-        'payment_id',
         'status',
         'enrolled_at',
         'completed_at',

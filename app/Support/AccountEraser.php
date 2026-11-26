@@ -47,9 +47,6 @@ class AccountEraser
             Enrollment::where('user_id', $id)->delete();
             Certificate::where('user_id', $id)->delete();
             CourseView::where('user_id', $id)->update(['user_id' => null]);
-            foreach (['user_badges', 'reviews', 'notifications'] as $table) {
-                DB::table($table)->where('user_id', $id)->delete();
-            }
             DB::table('sessions')->where('user_id', $id)->delete();
             DB::table('password_reset_tokens')->where('email', $email)->delete();
 
