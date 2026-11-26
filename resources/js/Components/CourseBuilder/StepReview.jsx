@@ -6,7 +6,7 @@ import { checklist, lessonCount, totalMinutes } from './model';
 import { t } from '@/i18n';
 
 // Passo 5 · Rever e publicar: o cartão do catálogo e o que ainda falta.
-export default function StepReview({ c, categories, shortMax, goTo, onPublish, onUnpublish, publishing, error, onPreview }) {
+export default function StepReview({ c, categories, shortMax, goTo, onPublish, onUnpublish, publishing, error, onPreview, hasChanges, onPublishChanges }) {
     // Sem permissão para publicar (Administração › Permissões), o curso fica em rascunho até alguém o publicar
     const { can } = usePage().props;
     const canPublish = can?.['cursos.publicar'] || can?.['cursos.todos'];
@@ -20,7 +20,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
         <Panel
             title={published ? t('Curso publicado') : t('Rever e publicar')}
             sub={published
-                ? t('Este curso está no catálogo. As alterações que fizeres ficam visíveis para os alunos logo que são guardadas.')
+                ? t('Este curso está no catálogo. As alterações só chegam aos alunos quando carregares em Publicar alterações.')
                 : t('Assim fica o cartão no catálogo. Ao publicar, o curso fica logo visível para os alunos.')}
         >
             <div className="grid items-start gap-7 md:grid-cols-[300px_1fr]">
@@ -87,9 +87,16 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                             </a>
                         )}
                         {published ? (
-                            <button type="button" onClick={onUnpublish} className="ui-btn ui-btn-soft">
-                                {t('Passar a rascunho')}
-                            </button>
+                            <>
+                                {hasChanges && (
+                                    <button type="button" onClick={onPublishChanges} disabled={publishing} className="ui-btn ui-btn-accent">
+                                        {t('Publicar alterações')}
+                                    </button>
+                                )}
+                                <button type="button" onClick={onUnpublish} className="ui-btn ui-btn-soft">
+                                    {t('Passar a rascunho')}
+                                </button>
+                            </>
                         ) : !canPublish ? (
                             <p className="text-[13.5px] text-muted">{t('O teu perfil não publica cursos. Quando estiver pronto, pede a um admin para o publicar.')}</p>
                         ) : (

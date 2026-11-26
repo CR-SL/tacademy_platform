@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import StudentLayout from '@/Layouts/StudentLayout';
 import StepInfo from '@/Components/CourseBuilder/StepInfo';
@@ -61,6 +61,13 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
     const timer = useRef(null);
     const ulid = useRef(course?.ulid ?? null);
     latest.current = c;
+    // Curso publicado (2026-11-26): nada se grava sozinho; as alterações só chegam aos alunos com "Publicar alterações".
+    // Até lá ficam guardadas neste browser (backupKey), para não se perderem se a página fechar.
+    const live = c.status === 'published';
+    const liveRef = useRef(live);
+    liveRef.current = live;
+    const savedCopy = useRef(course ?? null); // o curso tal como está no servidor (para "Descartar alterações")
+    const backupKey = `ta-editor-alteracoes-${course?.ulid ?? 'novo'}`;
 
     const update = useCallback((fn) => {
         dirty.current = true;
@@ -90,7 +97,7 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                     window.history.replaceState(window.history.state, '', `/formador/cursos/${ulid.current}/editar`);
                 }
                 // ids dos módulos, aulas e perguntas novos (sem marcar como alteração)
-                setC((prev) => ({
+                const withIds = (prev) => ({
                     ...prev,
                     ulid: ulid.current,
                     slug,
@@ -104,9 +111,14 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                             checks: (l.checks ?? []).map((c) => ({ ...c, id: c.id ?? checks[c.key] ?? null })),
                         })),
                     })),
-                }));
+                });
+                savedCopy.current = withIds(data);
+                setC(withIds);
+                if (liveRef.current) {
+                    try { localStorage.removeItem(backupKey); } catch { /* ignora */ }
+                }
                 setSaveError('');
-                setSave(dirty.current ? 'pending' : 'saved');
+                setSave(dirty.current ? (liveRef.current ? 'changes' : 'pending') : 'saved');
                 return true;
             } catch (e) {
                 dirty.current = true;
@@ -125,14 +137,35 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
 
     useEffect(() => {
         if (!dirty.current) return;
+        if (liveRef.current) {
+            // Publicado: guarda só neste browser e espera por "Publicar alterações"
+            setSave('changes');
+            try { localStorage.setItem(backupKey, JSON.stringify({ at: Date.now(), c })); } catch { /* sem espaço: fica só na página */ }
+            return;
+        }
         setSave('pending');
         clearTimeout(timer.current);
         timer.current = setTimeout(flush, SAVE_DELAY);
-    }, [c, flush]);
+    }, [c, flush]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Nova tentativa automática se a gravação falhar por falta de ligação
+    // Alterações de um curso publicado que ficaram por publicar neste browser (página fechada antes de publicar)
+    const [backup, setBackup] = useState(() => {
+        if (course?.status !== 'published') return null;
+        try { return JSON.parse(localStorage.getItem(`ta-editor-alteracoes-${course.ulid}`) ?? 'null'); } catch { return null; }
+    });
+    const recoverBackup = () => {
+        dirty.current = true;
+        setC(backup.c);
+        setBackup(null);
+    };
+    const dropBackup = () => {
+        try { localStorage.removeItem(backupKey); } catch { /* ignora */ }
+        setBackup(null);
+    };
+
+    // Nova tentativa automática se a gravação falhar por falta de ligação (num curso publicado, só no botão)
     useEffect(() => {
-        if (save !== 'error') return;
+        if (save !== 'error' || liveRef.current) return;
         const tx = setTimeout(flush, 5000);
         return () => clearTimeout(tx);
     }, [save, flush]);
@@ -170,12 +203,25 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                 }).then((yes) => {
                     if (!yes) return;
                     leaving.current = true;
-                    flush().then(() => router.visit(visit.url));
+                    (liveRef.current ? Promise.resolve() : flush()).then(() => router.visit(visit.url));
                 });
                 return;
             }
             if (!(dirty.current || inFlight.current)) return;
             e.preventDefault();
+            // Curso publicado: sair não publica nada; as alterações ficam guardadas neste browser
+            if (liveRef.current && dirty.current) {
+                confirmRef.current?.({
+                    title: t('Sair sem publicar as alterações?'),
+                    body: t('Os alunos continuam a ver o curso como estava. As alterações ficam guardadas neste computador e podes publicá-las quando voltares.'),
+                    action: t('Sair sem publicar'),
+                }).then((yes) => {
+                    if (!yes) return;
+                    leaving.current = true;
+                    router.visit(visit.url);
+                });
+                return;
+            }
             flush().then((ok) => ok && router.visit(visit.url));
         });
         return () => { window.removeEventListener('beforeunload', warn); off(); };
@@ -232,6 +278,11 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
     };
 
     const publish = async () => {
+        if (!(await confirm({
+            title: t('Publicar o curso?'),
+            body: t('Fica logo visível no catálogo e os alunos podem inscrever-se.'),
+            action: t('Publicar'),
+        }))) return;
         setPublishError('');
         setPublishing(true);
         const ok = await flush();
@@ -246,19 +297,59 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
     confirmRef.current = confirm;
     const unpublish = async () => {
         if (!(await confirm({ title: t('Passar o curso a rascunho?'), body: t('Sai do catálogo até voltar a publicar.'), action: t('Passar a rascunho') }))) return;
-        await flush();
+        // Num curso publicado, as alterações por publicar não vão para o catálogo: gravam-se depois, já em rascunho
+        if (!liveRef.current) await flush();
         router.post(`/formador/cursos/${ulid.current}/rascunho`, {}, {
             preserveScroll: true,
             onSuccess: () => setC((prev) => ({ ...prev, status: 'draft' })),
         });
     };
 
+    // Curso publicado: as alterações só chegam aos alunos aqui, depois de confirmar
+    const publishChanges = async () => {
+        if (!(await confirm({
+            title: t('Publicar as alterações?'),
+            body: t('Os alunos passam a ver o curso com estas alterações.'),
+            action: t('Publicar alterações'),
+        }))) return;
+        setPublishing(true);
+        const ok = await flush();
+        setPublishing(false);
+        if (ok) flashDone(t('Alterações publicadas. Os alunos já as veem.'));
+    };
+    const discardChanges = async () => {
+        if (!(await confirm({
+            title: t('Descartar as alterações?'),
+            body: t('O curso volta a ficar como está publicado. As alterações que não publicaste perdem-se.'),
+            action: t('Descartar'),
+            danger: true,
+        }))) return;
+        dirty.current = false;
+        clearTimeout(timer.current);
+        if (savedCopy.current) setC(structuredClone(savedCopy.current));
+        try { localStorage.removeItem(backupKey); } catch { /* ignora */ }
+        setSaveError('');
+        setSave('saved');
+    };
+    const [done, setDone] = useState('');
+    const doneTimer = useRef(null);
+    const flashDone = (msg) => {
+        setDone(msg);
+        clearTimeout(doneTimer.current);
+        doneTimer.current = setTimeout(() => setDone(''), 5000);
+    };
+    useEffect(() => () => clearTimeout(doneTimer.current), []);
+    const { can } = usePage().props;
+    const canPublish = !!(can?.['cursos.publicar'] || can?.['cursos.todos']);
+    const allReady = checklist(c, shortMax).every((x) => x[2]);
+
     const doneStep = (i) => checklist(c, shortMax).filter((x) => x[1] === i).every((x) => x[2]);
     const saveLabel = {
         new: t('Começa a preencher. Fica guardado sozinho.'),
         pending: t('Alterações por guardar…'),
-        saving: t('A guardar…'),
-        saved: c.status === 'published' ? t('Guardado · publicado') : t('Rascunho guardado'),
+        saving: live ? t('A publicar…') : t('A guardar…'),
+        saved: live ? t('Publicado · sem alterações por publicar') : t('Rascunho guardado'),
+        changes: t('Alterações por publicar. Os alunos ainda veem a versão anterior.'),
         error: saveError,
     }[save];
     const statusLabel = activeUploads.count > 0 && save !== 'error' ? t('A carregar ficheiro… não feches a página.') : saveLabel;
@@ -317,6 +408,32 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                         <i className={`h-2 w-2 flex-none rounded-full ${save === 'error' ? 'bg-live' : save === 'saved' ? 'bg-success' : save === 'new' ? 'bg-track' : 'bg-accent'}`} />
                         <span className={save === 'error' ? 'text-live-ink' : ''}>{statusLabel}</span>
                     </div>
+                    {/* Publicar: nada chega aos alunos sem carregar aqui (2026-11-26) */}
+                    <div className="flex flex-none items-center gap-2 lg:mt-3 lg:flex-col lg:items-stretch">
+                        {live ? (
+                            <>
+                                <button type="button" onClick={publishChanges} disabled={save !== 'changes' && save !== 'error' || publishing}
+                                    className="ui-btn ui-btn-accent justify-center whitespace-nowrap disabled:opacity-40">
+                                    {publishing ? t('A publicar…') : t('Publicar alterações')}
+                                </button>
+                                {(save === 'changes' || save === 'error') && (
+                                    <button type="button" onClick={discardChanges} className="whitespace-nowrap px-2 py-1 font-display text-[13px] font-semibold text-muted hover:text-live-ink">
+                                        {t('Descartar alterações')}
+                                    </button>
+                                )}
+                            </>
+                        ) : canPublish ? (
+                            <button type="button" onClick={publish} disabled={!allReady || publishing || !ulid.current}
+                                title={allReady ? undefined : t('Completa os pontos em falta')}
+                                className="ui-btn ui-btn-accent justify-center whitespace-nowrap disabled:opacity-40">
+                                {publishing ? t('A publicar…') : t('Publicar curso')}
+                            </button>
+                        ) : (
+                            <p className="hidden text-[12.5px] text-muted lg:block">{t('O teu perfil não publica cursos. Quando estiver pronto, pede a um admin para o publicar.')}</p>
+                        )}
+                        {done && <p role="status" className="text-[12.5px] font-semibold text-success-ink">{done}</p>}
+                        {publishError && <p role="alert" className="text-[12.5px] text-live-ink">{publishError}</p>}
+                    </div>
                     <ReadyBox items={ready} onDo={doItem} />
                     <button type="button" onClick={() => setGuide(step)}
                         className="flex-none self-center whitespace-nowrap px-3 py-2 font-display text-[13px] font-semibold text-muted hover:text-ink lg:mt-2 lg:self-start lg:px-0">
@@ -337,6 +454,13 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                             <button type="button" onClick={() => setPicking(true)} className="font-display text-[13px] font-bold text-accent-ink hover:text-ink">{t('← Escolher outro modelo')}</button>
                         </p>
                     )}
+                    {backup && (
+                        <p className="mb-3 flex flex-wrap items-center gap-3 bg-accent/15 px-4 py-3 text-[13.5px]">
+                            <span className="flex-1">{t('Tens alterações por publicar guardadas neste computador (:date). Os alunos ainda não as veem.', { date: new Date(backup.at).toLocaleString() })}</span>
+                            <button type="button" onClick={recoverBackup} className="font-display text-[13px] font-bold text-accent-ink hover:text-ink">{t('Recuperar')}</button>
+                            <button type="button" onClick={dropBackup} className="font-display text-[13px] font-semibold text-muted hover:text-live-ink">{t('Descartar')}</button>
+                        </p>
+                    )}
                     {save === 'error' && (
                         <p role="alert" className="mb-3 bg-live/10 px-4 py-2.5 text-sm text-live-ink">{saveError}</p>
                     )}
@@ -355,6 +479,8 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                             publishing={publishing}
                             error={publishError}
                             onPreview={onPreview}
+                            hasChanges={save === 'changes' || (live && save === 'error')}
+                            onPublishChanges={publishChanges}
                         />
                     )}
 
