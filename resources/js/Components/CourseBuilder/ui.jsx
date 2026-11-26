@@ -5,9 +5,9 @@ import { Field, inputCls } from '@/Components/ui';
 // O Field é o comum da plataforma (Components/ui); fica reexportado para os passos do editor
 export { Field, inputCls };
 
-export function Panel({ title, sub, children }) {
+export function Panel({ title, sub, children, ...rest }) {
     return (
-        <section className="bg-surface p-5 sm:p-7">
+        <section className="bg-surface p-5 sm:p-7" {...rest}>
             {title && <h2 className="font-display text-[26px] font-bold leading-tight tracking-[-0.01em]">{title}</h2>}
             {sub && <p className="mb-6 mt-1.5 text-muted">{sub}</p>}
             {children}

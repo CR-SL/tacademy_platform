@@ -27,7 +27,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
     return (
         <div className="space-y-4">
             <Panel title={t('Informação do curso')} sub={t('É o que os alunos vêem no catálogo e na página do curso.')}>
-                <Field label={t('Título do curso')} id="f-title" required className="mb-5">
+                <Field label={t('Título do curso')} id="f-title" required className="mb-5" data-guide="info-title">
                     <input
                         id="f-title"
                         className={inputCls}
@@ -39,7 +39,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                 </Field>
 
                 <div className="grid gap-x-5 sm:grid-cols-2">
-                    <Field label={t('Área')} id="f-area" required className="mb-5">
+                    <Field label={t('Área')} id="f-area" required className="mb-5" data-guide="info-area">
                         <select
                             id="f-area"
                             className={inputCls}
@@ -55,7 +55,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                     </Field>
                 </div>
 
-                <Field label={t('Imagem de capa')} required className="mb-5">
+                <Field label={t('Imagem de capa')} required className="mb-5" data-guide="info-cover">
                     <div className="grid gap-5 sm:grid-cols-[200px_1fr]">
                         <div
                             className="relative flex aspect-[4/5] items-center justify-center overflow-hidden p-4 text-center text-[13px] text-muted"
@@ -99,7 +99,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                     </div>
                 </Field>
 
-                <Field label={t('Descrição curta')} id="f-short" required hint={t('Uma frase que resume o curso. Aparece no cartão do catálogo.')} className="mb-5">
+                <Field data-guide="info-short" label={t('Descrição curta')} id="f-short" required hint={t('Uma frase que resume o curso. Aparece no cartão do catálogo.')} className="mb-5">
                     <textarea
                         id="f-short"
                         rows={2}
@@ -125,7 +125,7 @@ export default function StepInfo({ c, update, categories, library, shortMax, upl
                 </Field>
             </Panel>
 
-            <Panel title={t('Para quem é')} sub={t('Ajuda o aluno a perceber se o curso é para ele.')}>
+            <Panel data-guide="info-audience" title={t('Para quem é')} sub={t('Ajuda o aluno a perceber se o curso é para ele.')}>
                 <Field label={t('O que vais aprender')} className="mb-5">
                     <div className="flex flex-col gap-2">
                         {c.learning_outcomes.map((tx, i) => (

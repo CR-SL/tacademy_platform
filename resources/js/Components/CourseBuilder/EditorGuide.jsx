@@ -5,7 +5,10 @@ import { t } from '@/i18n';
 
 // Guia do editor de cursos (opção D, 2026-11-25): balões passo a passo por cima do que explicam.
 // steps: [{ target: valor de data-guide, title, body, before?: () => void }]
-export default function EditorGuide({ steps, onClose }) {
+export default function EditorGuide({ steps: all, onClose }) {
+    // Só os passos do que está à vista (ex.: "Alex por módulo" só aparece com o avatar ligado); os que preparam
+    // o ecrã (before) ficam sempre
+    const [steps] = useState(() => all.filter((s) => s.before || document.querySelector(`[data-guide="${s.target}"]`)));
     const [i, setI] = useState(0);
     const [box, setBox] = useState(null);
     const next = useRef(null);

@@ -46,7 +46,7 @@ export const IconClose = (props) => (
  */
 // O único campo de formulário da plataforma (antes havia 3 versões: esta, a do editor de cursos e a da equipa).
 // `required` põe o asterisco; sem `id` (grupo de vários controlos) a etiqueta não aponta para um campo.
-export function Field({ id, label, hint, error, required, children, className = '' }) {
+export function Field({ id, label, hint, error, required, children, className = '', ...rest }) {
     const describedBy = error ? `${id}-err` : hint ? `${id}-hint` : undefined;
     const items = Children.toArray(children);
     const child = items.length === 1 ? items[0] : null;
@@ -58,7 +58,7 @@ export function Field({ id, label, hint, error, required, children, className = 
         : children;
     const text = <>{label}{required && <span className="text-accent-ink" aria-hidden="true"> *</span>}</>;
     return (
-        <div className={`flex flex-col gap-1.5 ${className}`}>
+        <div className={`flex flex-col gap-1.5 ${className}`} {...rest}>
             {label && (id ? <label htmlFor={id} className="ui-label">{text}</label> : <span className="ui-label">{text}</span>)}
             {input}
             {hint && !error && <span id={id ? `${id}-hint` : undefined} className="ui-hint">{hint}</span>}

@@ -6,7 +6,7 @@ import { checklist, lessonCount, totalMinutes } from './model';
 import { t } from '@/i18n';
 
 // Passo 5 · Rever e publicar: o cartão do catálogo e o que ainda falta.
-export default function StepReview({ c, categories, shortMax, goTo, onPublish, onUnpublish, publishing, error }) {
+export default function StepReview({ c, categories, shortMax, goTo, onPublish, onUnpublish, publishing, error, onPreview }) {
     // Sem permissão para publicar (Administração › Permissões), o curso fica em rascunho até alguém o publicar
     const { can } = usePage().props;
     const canPublish = can?.['cursos.publicar'] || can?.['cursos.todos'];
@@ -24,7 +24,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                 : t('Assim fica o cartão no catálogo. Ao publicar, o curso fica logo visível para os alunos.')}
         >
             <div className="grid items-start gap-7 md:grid-cols-[300px_1fr]">
-                <div className="relative aspect-[4/5] max-w-[300px] overflow-hidden bg-carbon text-white">
+                <div data-guide="review-card" className="relative aspect-[4/5] max-w-[300px] overflow-hidden bg-carbon text-white">
                     {c.thumbnail_url && <img src={c.thumbnail_url} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent from-35% to-black/85" />
                     <span className="absolute right-3.5 top-3.5 rounded-full bg-accent px-3 py-1 font-display text-[13px] font-bold text-on-accent">
@@ -56,7 +56,7 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
                     <span className="font-display text-[13px] font-semibold uppercase tracking-[0.04em]">
                         {published ? t('Verificação') : t('Antes de publicar')}
                     </span>
-                    <ul className="mb-5 mt-1">
+                    <ul data-guide="review-list" className="mb-5 mt-1">
                         {items.map(([text, step, ok]) => (
                             <li key={text} className={`flex items-center gap-2.5 border-b border-line py-2.5 ${ok ? '' : 'text-muted'}`}>
                                 <i className={`flex h-5 w-5 flex-none items-center justify-center text-xs font-bold not-italic ${ok ? 'bg-success/10 text-success-ink' : 'bg-live/10 text-live-ink'}`}>
@@ -74,12 +74,13 @@ export default function StepReview({ c, categories, shortMax, goTo, onPublish, o
 
                     {error && <p role="alert" className="mb-3 text-sm text-live-ink">{error}</p>}
 
-                    <div className="flex flex-wrap gap-2.5">
+                    <div data-guide="review-actions" className="flex flex-wrap gap-2.5">
                         {c.ulid && c.slug && (
                             <a
                                 href={`/plataforma/cursos/${c.slug}`}
                                 target="_blank"
                                 rel="noopener"
+                                onClick={onPreview}
                                 className="ui-btn ui-btn-line"
                             >
                                 {t('Pré-visualizar como aluno')}

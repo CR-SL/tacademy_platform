@@ -10,7 +10,7 @@ export default function StepAvatar({ c, update, canAlex, canManageAlex }) {
 
     return (
         <div className="space-y-4">
-            <Panel title={t('Avatar')} sub={t('O aluno fala com o Alex, um avatar com vídeo e voz, no Início, nas Avaliações e durante as aulas deste curso.')}>
+            <Panel data-guide="avatar" title={t('Avatar')} sub={t('O aluno fala com o Alex, um avatar com vídeo e voz, no Início, nas Avaliações e durante as aulas deste curso.')}>
                 {locked ? (
                     <p className="border-l-[3px] border-live bg-live/10 px-4 py-3 text-sm">
                         <b className="block font-display font-semibold">{t('Avatar desligado pela equipa T.Academy')}</b>
@@ -45,7 +45,7 @@ export default function StepAvatar({ c, update, canAlex, canManageAlex }) {
             </Panel>
 
             {canAlex && !locked && c.alex_enabled && c.modules.length > 0 && (
-                <Panel title={t('Alex por módulo')} sub={t('Cada módulo pode ter o seu Alex no Tavus, com a avaliação desse módulo. Nas aulas do módulo, as dúvidas e a avaliação usam o PAL do módulo. Vazio = o PAL do curso.')}>
+                <Panel data-guide="avatar-modules" title={t('Alex por módulo')} sub={t('Cada módulo pode ter o seu Alex no Tavus, com a avaliação desse módulo. Nas aulas do módulo, as dúvidas e a avaliação usam o PAL do módulo. Vazio = o PAL do curso.')}>
                     <div className="divide-y divide-line">
                         {c.modules.map((m, i) => (
                             <div key={m.key} className="grid gap-x-4 py-3 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] sm:items-end">

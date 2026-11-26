@@ -10,7 +10,7 @@ export default function StepPrice({ c, update }) {
 
     return (
         <div className="space-y-4">
-            <Panel title={t('Preço')} sub={t('Valor final pago pelo aluno, com IVA incluído.')}>
+            <Panel data-guide="price" title={t('Preço')} sub={t('Valor final pago pelo aluno, com IVA incluído.')}>
                 <div className="mb-4">
                     <Seg label={t('Tipo de preço')} options={[[false, t('Pago')], [true, t('Gratuito')]]} value={c.is_free} onChange={(v) => update((d) => { d.is_free = v; })} />
                 </div>
@@ -37,7 +37,7 @@ export default function StepPrice({ c, update }) {
                 )}
             </Panel>
 
-            <Panel title={t('Acesso e conclusão')} sub={t('Durante quanto tempo o aluno tem acesso e o que conta para terminar o curso.')}>
+            <Panel data-guide="access" title={t('Acesso e conclusão')} sub={t('Durante quanto tempo o aluno tem acesso e o que conta para terminar o curso.')}>
                 <Field label={t('Validade do acesso')} className="mb-5">
                     <Seg
                         label={t('Validade do acesso')}
@@ -71,7 +71,7 @@ export default function StepPrice({ c, update }) {
                         {t('O certificado só é emitido depois de confirmares a presença do aluno, em “Os meus cursos” › Alunos.')}
                     </Toggle>
                 )}
-                <Field label={t('Aula de amostra grátis')} id="f-sample" className="mt-2" hint={t('Quem ainda não comprou pode ver esta aula para experimentar.')}>
+                <Field data-guide="sample" label={t('Aula de amostra grátis')} id="f-sample" className="mt-2" hint={t('Quem ainda não comprou pode ver esta aula para experimentar.')}>
                     <select id="f-sample" className={inputCls} value={c.sample_lesson_key} onChange={(e) => update((d) => { d.sample_lesson_key = e.target.value; })}>
                         <option value="">{t('Nenhuma')}</option>
                         {lessons.map(([k, tx]) => <option key={k} value={k}>{tx}</option>)}

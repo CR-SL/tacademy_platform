@@ -9,6 +9,9 @@ import StepReview from '@/Components/CourseBuilder/StepReview';
 import { blankCourse, checklist } from '@/Components/CourseBuilder/model';
 import { setAvatarHosts } from '@/Components/CourseBuilder/format';
 import { useConfirm } from '@/Components/ui';
+import EditorGuide from '@/Components/CourseBuilder/EditorGuide';
+import ReadyBox, { readyItems } from '@/Components/CourseBuilder/ReadyBox';
+import { guideFor, guideSeen, markGuideSeen } from '@/Components/CourseBuilder/guides';
 
 import { t } from '@/i18n';
 
@@ -192,6 +195,37 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
         window.scrollTo({ top: 0 });
     };
 
+    // Guia: cada passo abre o seu na primeira visita; "Ver o guia" mostra o do passo aberto
+    const [guide, setGuide] = useState(null); // passo cujo guia está aberto
+    useEffect(() => {
+        if (guideSeen(step)) return undefined;
+        const id = setTimeout(() => setGuide(step), 300); // depois de o passo aparecer
+        return () => clearTimeout(id);
+    }, [step]);
+    const closeGuide = useCallback(() => {
+        setGuide((g) => { if (g != null) markGuideSeen(g); return null; });
+    }, []);
+    const firstLesson = c.modules.flatMap((m) => m.lessons)[0]?.key;
+    const openFirstLesson = () => { if (firstLesson) setOpenKey((k) => k ?? firstLesson); };
+
+    // "Ver como aluno" fica feito quando o formador abre a pré-visualização (guardado neste browser)
+    const previewKey = `ta-visto-aluno-${c.slug ?? 'novo'}`;
+    const [previewed, setPreviewed] = useState(() => { try { return !!localStorage.getItem(previewKey); } catch { return false; } });
+    const onPreview = () => {
+        setPreviewed(true);
+        try { localStorage.setItem(previewKey, '1'); } catch { /* ignora */ }
+    };
+    const ready = readyItems(c, shortMax, previewed);
+    const doItem = (item) => {
+        setGuide(null);
+        goTo(item.step);
+        if (item.lesson) {
+            setOpenKey(item.lesson);
+            // A aula abre depois de o passo aparecer: vai até ela
+            setTimeout(() => document.querySelector('[aria-expanded="true"][aria-label]')?.scrollIntoView({ block: 'center' }), 120);
+        }
+    };
+
     const publish = async () => {
         setPublishError('');
         setPublishing(true);
@@ -229,7 +263,7 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
             <Head title={c.title ? t('Editar · :title', { title: c.title }) : t('Criar curso')} />
 
             <div className="grid items-start gap-7 lg:grid-cols-[260px_1fr]">
-                <aside className="flex gap-1 overflow-x-auto bg-surface p-3 lg:sticky lg:top-[90px] lg:flex-col lg:p-[18px]">
+                <aside className="flex gap-1 overflow-x-auto bg-surface p-3 lg:sticky lg:top-[90px] lg:max-h-[calc(100vh-110px)] lg:flex-col lg:overflow-y-auto lg:p-[18px]">
                     <Link href="/formador/cursos" className="mb-3 hidden items-center gap-1.5 font-display text-[13px] font-semibold text-muted hover:text-ink lg:inline-flex">
                         {t('← Os meus cursos')}
                     </Link>
@@ -259,6 +293,11 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                         <i className={`h-2 w-2 flex-none rounded-full ${save === 'error' ? 'bg-live' : save === 'saved' ? 'bg-success' : save === 'new' ? 'bg-track' : 'bg-accent'}`} />
                         <span className={save === 'error' ? 'text-live-ink' : ''}>{statusLabel}</span>
                     </div>
+                    <ReadyBox items={ready} onDo={doItem} />
+                    <button type="button" onClick={() => setGuide(step)}
+                        className="flex-none self-center whitespace-nowrap px-3 py-2 font-display text-[13px] font-semibold text-muted hover:text-ink lg:mt-2 lg:self-start lg:px-0">
+                        {t('↺ Ver o guia deste passo')}
+                    </button>
                 </aside>
 
                 <section className="min-w-0">
@@ -285,6 +324,7 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                             onUnpublish={unpublish}
                             publishing={publishing}
                             error={publishError}
+                            onPreview={onPreview}
                         />
                     )}
 
@@ -303,6 +343,7 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                 </section>
             </div>
             {confirmDialog}
+            {guide != null && guide === step && <EditorGuide key={step} steps={guideFor(step, { openFirstLesson })} onClose={closeGuide} />}
         </StudentLayout>
     );
 }

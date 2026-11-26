@@ -4,7 +4,6 @@ import { useConfirm } from '@/Components/ui';
 import { AddLink, Field, IconButton, inputCls, Panel, Seg } from './ui';
 import { formatBytes, formatMinutes, isHttpUrl, isUploadedVideo, linkInfo } from './format';
 import { blankLessonData, lessonMissing, newKey, totalMinutes } from './model';
-import EditorGuide from './EditorGuide';
 
 import { t } from '@/i18n';
 
@@ -27,31 +26,11 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey, ca
     const lessons = c.modules.reduce((a, m) => a + m.lessons.length, 0);
     const move = (arr, i, d) => { const j = i + d; if (j >= 0 && j < arr.length) [arr[i], arr[j]] = [arr[j], arr[i]]; };
     const [confirm, confirmDialog] = useConfirm();
-    const [guide, setGuide] = useState(false);
 
     // O que falta em cada aula (o guia mostra-o por cima do programa)
     const all = c.modules.flatMap((m, mi) => m.lessons.map((l, li) => ({ n: `${mi + 1}.${li + 1}`, l, miss: lessonMissing(l) })));
     const ready = all.filter((x) => !x.miss.length).length;
     const todo = all.filter((x) => x.miss.length);
-
-    // O guia abre sozinho na primeira vez; depois, no botão "Ver o guia"
-    useEffect(() => {
-        let seen = true;
-        try { seen = !!localStorage.getItem('ta-guia-editor'); } catch { /* sem armazenamento: não abre sozinho */ }
-        if (!seen) setGuide(true);
-    }, []);
-    const closeGuide = () => {
-        setGuide(false);
-        try { localStorage.setItem('ta-guia-editor', '1'); } catch { /* ignora */ }
-    };
-    // Os passos 2 e 3 mostram partes de uma aula aberta
-    const firstKey = c.modules.flatMap((m) => m.lessons)[0]?.key;
-    const guideSteps = [
-        { target: 'lesson-row', title: t('Cada linha é uma aula'), body: t('Carrega na aula para a abrir. À direita vês o que falta para ficar completa.') },
-        { target: 'parts', title: t('Escolhe o que a aula tem'), body: t('Liga o vídeo, o material didático, as notas ou o avatar. Só aparecem os campos do que ligares.'), before: () => { if (!openKey && firstKey) setOpenKey(firstKey); } },
-        { target: 'evaluation', title: t('Escolhe a avaliação'), body: t('Um questionário (3 tentativas) ou uma conversa de avaliação com o avatar. Também podes não avaliar.'), before: () => { if (!openKey && firstKey) setOpenKey(firstKey); } },
-        { target: 'ready', title: t('Acompanha o que falta'), body: t('Aqui vês quantas aulas estão prontas e o que falta em cada uma. Carrega numa para a abrir.') },
-    ];
 
     return (
         <Panel title={t('Programa')} sub={t('Organiza o curso em módulos e aulas. Em cada aula, liga só o que ela precisa.')}>
@@ -59,10 +38,6 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey, ca
                 <span><b className="mr-1 font-display text-base text-ink">{c.modules.length}</b>{t('Módulos')}</span>
                 <span><b className="mr-1 font-display text-base text-ink">{lessons}</b>{t('Aulas')}</span>
                 <span><b className="mr-1 font-display text-base text-ink">{formatMinutes(totalMinutes(c))}</b>{t('Duração total')}</span>
-                <button type="button" onClick={() => setGuide(true)}
-                    className="ml-auto px-3 py-2 font-display text-[13px] font-semibold normal-case tracking-normal text-ink shadow-[inset_0_0_0_1px_var(--color-line)] hover:bg-page">
-                    {t('↺ Ver o guia')}
-                </button>
             </div>
 
             {all.length > 0 && (
@@ -184,7 +159,6 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey, ca
                 </button>
             )}
             {confirmDialog}
-            {guide && <EditorGuide steps={guideSteps} onClose={closeGuide} />}
         </Panel>
     );
 }
