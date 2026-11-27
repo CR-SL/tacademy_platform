@@ -27,7 +27,9 @@ return [
         'pal_id' => env('TAVUS_PAL_ID', 'p18d6e1b675e'),
         'face_id' => env('TAVUS_FACE_ID', 'rdea4449f835'),
         'minutes' => (int) env('TAVUS_ALEX_MINUTES', 15),
-        'per_day' => (int) env('TAVUS_ALEX_PER_DAY', 3),
+        'per_day' => (int) env('TAVUS_ALEX_PER_DAY', 3), // já não se usa (antes de 2026-11-27: conversas grátis por dia)
+        // Minutos de avatar incluídos em cada curso, por aluno: dúvidas e roleplays (2026-11-27)
+        'course_minutes' => (int) env('TAVUS_COURSE_MINUTES', 30),
         // Avaliação com o Alex (botão Avaliação da aula): 15 minutos, à parte das conversas do dia
         'evaluation_minutes' => (int) env('TAVUS_EVALUATION_MINUTES', 15),
         'evaluation_pass' => 70,

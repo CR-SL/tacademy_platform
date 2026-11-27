@@ -82,8 +82,8 @@ class LearningService
 
     public function canOpen(array $access, Course $course, Lesson $lesson): bool
     {
-        return in_array($access['mode'], ['preview', 'enrolled'], true)
-            || $lesson->id === $course->sample_lesson_id;
+        // Só quem está inscrito (e a equipa, em pré-visualização). A aula de amostra grátis saiu a 2026-11-26.
+        return in_array($access['mode'], ['preview', 'enrolled'], true);
     }
 
     public function isVideo(Lesson $lesson): bool
@@ -248,35 +248,50 @@ class LearningService
         });
     }
 
-    private function recordAttempt(User $user, Lesson $lesson, array $answers): QuizAttempt
+    /** Avaliação final do curso com perguntas (as mesmas regras de um teste, sem aula). */
+    public function submitFinal(User $user, Course $course, array $answers): QuizAttempt
     {
-        $quiz = $lesson->quiz()->with('questions.options')->firstOrFail();
+        return DB::transaction(function () use ($user, $course, $answers) {
+            $this->lockLearner($user);
+
+            return $this->recordAttempt($user, null, $answers, $course->finalQuiz()->with('questions.options')->firstOrFail(), $course);
+        });
+    }
+
+    private function recordAttempt(User $user, ?Lesson $lesson, array $answers, ?Quiz $quiz = null, ?Course $course = null): QuizAttempt
+    {
+        $quiz ??= $lesson->quiz()->with('questions.options')->firstOrFail();
         $attempts = QuizAttempt::where('user_id', $user->id)->where('quiz_id', $quiz->id)->get();
-        if ($attempts->contains('passed', true)) {
+        // Exercício (sem nota): pode repetir à vontade
+        if ($quiz->graded && $attempts->contains('passed', true)) {
             throw ValidationException::withMessages(['quiz' => __('Já passaste neste teste.')]);
         }
-        if ($attempts->count() >= $this->maxAttempts($quiz)) {
+        if ($quiz->graded && $attempts->count() >= $this->maxAttempts($quiz)) {
             throw ValidationException::withMessages(['quiz' => __('Já usaste todas as tentativas.')]);
         }
 
         $clean = [];
-        $right = 0;
+        $right = [];
         foreach ($quiz->questions as $q) {
             $chosen = (int) ($answers[$q->id] ?? 0);
             if (! $q->options->contains('id', $chosen)) {
                 throw ValidationException::withMessages(['quiz' => __('Responde a todas as perguntas.')]);
             }
             $clean[$q->id] = $chosen;
-            if ($q->options->firstWhere('id', $chosen)->is_correct) $right++;
+            $right[$q->id] = (bool) $q->options->firstWhere('id', $chosen)->is_correct;
         }
-        $score = $quiz->questions->count() ? (int) round($right / $quiz->questions->count() * 100) : 0;
-        $passed = $score >= ($quiz->passing_score ?: 70);
+        // 0 a 100: os 100% repartidos por igual entre as perguntas, ou pelos pesos (Quiz::scoreOf)
+        $score = $quiz->scoreOf($right);
+        // Exercício: sem nota, fica feito ao entregar
+        $passed = ! $quiz->graded || $score >= ($quiz->passing_score ?: 70);
 
         $attempt = QuizAttempt::create([
             'user_id' => $user->id, 'quiz_id' => $quiz->id, 'score' => $score, 'passed' => $passed,
             'answers' => $clean, 'attempted_at' => now(),
         ]);
-        if ($passed) {
+        if (! $lesson) {
+            $this->afterProgress($user, $course); // avaliação final: a nota pode dar o certificado
+        } elseif ($passed) {
             $this->markCompleted($user, $lesson);
         } else {
             LessonProgress::firstOrCreate(['user_id' => $user->id, 'lesson_id' => $lesson->id], ['status' => 'in_progress']);
@@ -342,14 +357,36 @@ class LearningService
         if ($closed) Activity::log('curso.concluido', $course, related: $user);
     }
 
+    /**
+     * Nota do curso (0 a 100, ou null sem nada com nota). Média da melhor tentativa de cada teste com nota; com
+     * avaliação final por perguntas, entra com o seu peso (final_weight %) e os testes com o resto (2026-11-27).
+     * A avaliação final com avatar ainda não tem nota (vem da plataforma dos avatares): até lá contam só os testes.
+     */
+    public function courseScore(User $user, Course $course, Collection $lessons): ?int
+    {
+        $testIds = Quiz::whereIn('lesson_id', $lessons->pluck('id'))->where('graded', true)->pluck('id');
+        $final = $course->finalMode() === 'questions' ? $course->finalQuiz()->value('id') : null;
+        $best = QuizAttempt::where('user_id', $user->id)->whereIn('quiz_id', $testIds->push($final)->filter())
+            ->selectRaw('quiz_id, MAX(score) as best')->groupBy('quiz_id')->pluck('best', 'quiz_id');
+        $testIds = $testIds->reject(fn ($id) => $id === $final);
+        $tests = $testIds->isEmpty() ? null : $testIds->sum(fn ($id) => (int) ($best[$id] ?? 0)) / $testIds->count();
+        if (! $final) {
+            return $tests === null ? null : (int) round($tests);
+        }
+        $finalScore = (int) ($best[$final] ?? 0);
+        if ($tests === null) {
+            return $finalScore;
+        }
+        $w = max(0, min(100, (int) $course->final_weight));
+
+        return (int) round($tests * (100 - $w) / 100 + $finalScore * $w / 100);
+    }
+
     /** Critérios do certificado e onde o aluno está. A nota é a média da melhor tentativa de cada teste. */
     public function certificateStatus(User $user, Course $course, Collection $lessons, Collection $done): array
     {
         $progress = $lessons->count() ? (int) floor($done->count() / $lessons->count() * 100) : 0;
-        $quizIds = Quiz::whereIn('lesson_id', $lessons->pluck('id'))->pluck('id');
-        $best = QuizAttempt::where('user_id', $user->id)->whereIn('quiz_id', $quizIds)
-            ->selectRaw('quiz_id, MAX(score) as best')->groupBy('quiz_id')->pluck('best', 'quiz_id');
-        $score = $quizIds->isEmpty() ? null : (int) round($quizIds->sum(fn ($id) => (int) ($best[$id] ?? 0)) / $quizIds->count());
+        $score = $this->courseScore($user, $course, $lessons);
         $cert = Certificate::where('user_id', $user->id)->where('course_id', $course->id)->where('status', 'valid')->first();
         // Presença: só conta quando o formador a exige no curso; confirma-a em "Os meus cursos" › Alunos
         $attended = $course->requires_attendance

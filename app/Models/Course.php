@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model
@@ -40,6 +41,12 @@ class Course extends Model
         'certificate_min_score',
         'requires_attendance',
         'alex_enabled',
+        'final_mode',
+        'final_pass',
+        'final_minutes',
+        'final_prompt',
+        'final_pal_id',
+        'final_weight',
         'alex_pal_id',
         'alex_face_id',
         'alex_blocked',
@@ -61,6 +68,9 @@ class Course extends Model
             'certificate_enabled' => 'boolean',
             'certificate_min_progress' => 'integer',
             'certificate_min_score' => 'integer',
+            'final_pass' => 'integer',
+            'final_minutes' => 'integer',
+            'final_weight' => 'integer',
         ];
     }
 
@@ -72,6 +82,18 @@ class Course extends Model
     public function instructor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'instructor_id');
+    }
+
+    /** Perguntas da avaliação final (quando final_mode = questions). */
+    public function finalQuiz(): HasOne
+    {
+        return $this->hasOne(Quiz::class)->whereNull('lesson_id');
+    }
+
+    /** questions | avatar | none */
+    public function finalMode(): string
+    {
+        return in_array($this->final_mode, ['questions', 'avatar', 'none'], true) ? $this->final_mode : 'none';
     }
 
     public function modules(): HasMany

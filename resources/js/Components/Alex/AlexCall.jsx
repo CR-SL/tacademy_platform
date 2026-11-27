@@ -193,7 +193,7 @@ export function AlexCallView({ onClose }) {
                     </>
                 ) : (
                     <>
-                        <span className="ax-left">{s.status === 'ended' && s.left > 0 ? t('Hoje ainda podes falar :n vezes com o Alex.', { n: s.left }) : ''}</span>
+                        <span className="ax-left">{s.status === 'ended' && s.left > 0 ? t('Ainda tens :n minutos de avatar incluídos no curso.', { n: s.left }) : ''}</span>
                         <span className="ax-sp" />
                         {onClose && <button type="button" className="ui-btn ui-btn-soft" onClick={onClose}>{t('Fechar')}</button>}
                     </>
@@ -214,8 +214,9 @@ export function AlexStart({ alex, block = true }) {
     if (isActive(s)) {
         return <button type="button" className={`ui-btn ui-btn-line ${block ? 'ui-btn-block' : ''}`} disabled>{t('Conversa a decorrer')}</button>;
     }
+    // Minutos incluídos no curso (2026-11-27): acabados, 1 crédito por conversa
     if (left <= 0 && credits <= 0) {
-        return <AlexBuy alex={alex} lead={alex.free ? t('Já usaste as :n conversas grátis de hoje. Compra créditos para continuar a falar com o Alex.', { n: alex.perDay }) : t('Não tens créditos. Compra créditos para continuar a falar com o Alex.')} />;
+        return <AlexBuy alex={alex} lead={alex.free ? t('Já usaste os :n minutos de avatar incluídos no curso. Compra créditos para continuar a falar com o Alex.', { n: alex.included ?? 30 }) : t('Não tens créditos. Compra créditos para continuar a falar com o Alex.')} />;
     }
     return (
         <>
@@ -223,9 +224,9 @@ export function AlexStart({ alex, block = true }) {
                 onClick={() => startAlex({ place: alex.place, lesson: alex.lesson })}>{t('Falar com o Alex')}</button>
             <p className="ax-hint">
                 {left > 0
-                    ? t('Até :m minutos por conversa. Hoje ainda tens :n grátis.', { m: alex.minutes, n: left })
+                    ? t('Ainda tens :n de :total minutos de avatar incluídos no curso.', { n: left, total: alex.included ?? 30 })
                     : alex.free
-                        ? t('Já usaste as conversas grátis de hoje. Esta gasta 1 crédito (tens :n).', { n: credits })
+                        ? t('Já usaste os minutos incluídos no curso. Esta conversa gasta 1 crédito (tens :n).', { n: credits })
                         : t('Tens :n créditos. Cada conversa gasta 1 (até :m minutos).', { n: credits, m: alex.minutes })}
                 {left > 0 && credits > 0 ? ` ${t('Tens também :n créditos.', { n: credits })}` : ''}
             </p>

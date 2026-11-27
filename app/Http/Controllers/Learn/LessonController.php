@@ -78,6 +78,8 @@ class LessonController extends Controller
             'prev' => $prev ? ['ulid' => $prev->ulid, 'title' => $prev->title] : null,
             'next' => $next ? ['ulid' => $next->ulid, 'title' => $next->title, 'open' => $this->learning->canOpen($access, $course, $next)] : null,
             'avatarUrl' => $avatar?->avatar_ref,
+            // Avaliação final do curso (botão Avaliação): o modo e, com perguntas, o questionário
+            'finalEvaluation' => $this->finalPayload($course, $user),
             'notes' => LessonNote::where('user_id', $user->id)->where('lesson_id', $lesson->id)
                 ->orderBy('position_seconds')->orderBy('id')->get()->map(fn ($n) => $this->notePayload($n))->values(),
         ]);
@@ -147,6 +149,41 @@ class LessonController extends Controller
         return back()->with('status', $attempt->passed ? $this->doneMessage($request->user(), $course, __('Passaste no teste!')) : __('Tentativa registada. Revê as respostas.'));
     }
 
+    private function finalPayload(Course $course, User $user): array
+    {
+        $mode = $course->finalMode();
+        $quiz = $mode === 'questions' ? $course->finalQuiz()->with('questions.options')->first() : null;
+
+        return [
+            'mode' => $quiz || $mode !== 'questions' ? $mode : 'none',
+            'quiz' => $quiz ? $this->quizPayload($quiz, $user) : null,
+        ];
+    }
+
+    /** Exercício prático: o aluno marca-o como feito. */
+    public function done(Request $request, Lesson $lesson): JsonResponse
+    {
+        $this->guard($request->user(), $lesson);
+        abort_unless($lesson->kindName() === 'exercicio' && $lesson->evaluationKind() === 'none', 404);
+        $this->learning->completeOnOpen($request->user(), $lesson);
+        if ($this->newCertificate($request->user(), $lesson->module->course)) {
+            $request->session()->flash('status', $this->doneMessage($request->user(), $lesson->module->course));
+        }
+
+        return response()->json(['completed' => true]);
+    }
+
+    /** Avaliação final do curso com perguntas. */
+    public function finalQuiz(Request $request, Course $course): RedirectResponse
+    {
+        abort_unless($this->learning->access($request->user(), $course)['mode'] === 'enrolled', 403, __('Inscreve-te no curso para guardar o progresso.'));
+        abort_unless($course->finalMode() === 'questions', 404);
+        $data = $request->validate(['answers' => ['required', 'array']]);
+        $attempt = $this->learning->submitFinal($request->user(), $course, $data['answers']);
+
+        return back()->with('status', $attempt->passed ? $this->doneMessage($request->user(), $course, __('Passaste na avaliação final!')) : __('Tentativa registada. Revê as respostas.'));
+    }
+
     /** Só quem está inscrito (dentro da validade) pode registar progresso. */
     private function guard(User $user, Lesson $lesson): array
     {
@@ -160,8 +197,12 @@ class LessonController extends Controller
     /** Conclui ao abrir as aulas sem nada para ver até ao fim; o vídeo só se já cumpre as condições. */
     private function finishOnOpen(User $user, Lesson $lesson): bool
     {
-        // Com questionário, a aula conclui-se ao passar. A avaliação com o avatar não prende a aula (ver LearningService)
+        // Com questionário (teste ou exercício com perguntas), conclui-se ao entregar/passar.
         if ($lesson->evaluationKind() === 'quiz') {
+            return false;
+        }
+        // Teste com avatar, roleplay e exercício prático têm o seu fim (conversa terminada, "Marcar como feito")
+        if ($lesson->usesAvatar() || $lesson->kindName() === 'exercicio') {
             return false;
         }
         if ($this->learning->isVideo($lesson) && $this->videoSource($lesson->content_url)) {
@@ -208,18 +249,34 @@ class LessonController extends Controller
         $answers = $p?->check_answers ?? [];
         $parts = $lesson->partList();
         $evaluation = $lesson->evaluationKind();
+        $kind = $lesson->kindName();
+        // O avatar de ajuda é do curso (fase 2): está em todas as atividades de um curso com o avatar ligado
+        $sent = array_values(array_unique(array_merge(
+            array_diff($parts, ['avatar']),
+            $lesson->module?->course?->alex_enabled ? ['avatar'] : [],
+        )));
+        // Teste com avatar ou roleplay: faz-se na caixa do avatar
+        $activity = $lesson->usesAvatar() ? ($kind === 'roleplay' ? 'roleplay' : 'teste') : null;
 
         $payload = [
             'ulid' => $lesson->ulid,
             'title' => $lesson->title,
             'type' => $lesson->content_type,
-            'parts' => $parts,
+            'kind' => $kind,
+            'graded' => $kind === 'roleplay' ? (bool) $lesson->graded : $kind === 'teste',
+            'role' => $kind === 'roleplay' ? $lesson->roleplay_role : null,
+            'activity' => $activity,
+            // Avatar da atividade por link (em vez do Tavus): abre num separador
+            'activityLink' => $activity && CourseBuilder::validAvatarUrl($lesson->avatar_ref) ? $lesson->avatar_ref : null,
+            'parts' => $sent,
             'evaluation' => $evaluation,
             'minutes' => (int) round($lesson->duration_seconds / 60),
             // Link de avatar antigo (aulas do tipo avatar de antes do Alex): só dos sites aceites
             'url' => in_array('avatar', $parts, true) && CourseBuilder::validAvatarUrl($lesson->avatar_ref) ? $lesson->avatar_ref : null,
             'video' => in_array('video', $parts, true) ? $this->videoSource($lesson->content_url) : null,
-            'body' => in_array('notas', $parts, true) ? $lesson->body : null,
+            // O texto da aula (notas), o que o aluno faz no exercício prático ou a situação do roleplay
+            'body' => in_array('notas', $parts, true) || in_array($kind, ['exercicio', 'roleplay'], true) ? $lesson->body : null,
+            'done' => $p?->status === 'completed',
             'attachments' => $lesson->attachments()->get()->map(fn ($a) => ['name' => $a->name, 'url' => $a->url(), 'size' => $a->size])->values(),
             'checks' => $lesson->checks()->get()->map(function (LessonCheck $c) use ($answers) {
                 $answered = array_key_exists((string) $c->id, $answers);
@@ -236,37 +293,48 @@ class LessonController extends Controller
             'quiz' => null,
         ];
 
-        if ($evaluation === 'quiz' && ($quiz =$lesson->quiz()->with('questions.options')->first())) {
-            $attempts = QuizAttempt::where('user_id', $user->id)->where('quiz_id', $quiz->id)->orderBy('attempted_at')->orderBy('id')->get();
-            $max = $this->learning->maxAttempts($quiz);
-            $passed = $attempts->contains('passed', true);
-            // As respostas certas só se mostram quando o teste fica fechado (passou ou esgotou as tentativas)
-            $reveal = $passed || $attempts->count() >= $max;
-            $correct = $quiz->questions->mapWithKeys(fn ($q) => [$q->id => $q->options->firstWhere('is_correct', true)?->id]);
-
-            $payload['quiz'] = [
-                'passing' => $quiz->passing_score ?: 70,
-                'max' => $max,
-                'passed' => $passed,
-                'questions' => $quiz->questions->map(fn ($q) => [
-                    'id' => $q->id,
-                    'question' => $q->question,
-                    // Opções vazias (o editor guarda-as enquanto o formador escreve) não aparecem ao aluno
-                    'options' => $q->options->filter(fn ($o) => trim($o->option_text) !== '')
-                        ->map(fn ($o) => ['id' => $o->id, 'text' => $o->option_text])->values(),
-                    'correct' => $reveal ? $correct[$q->id] : null,
-                ])->values(),
-                'attempts' => $attempts->map(fn ($a) => [
-                    'score' => $a->score,
-                    'passed' => $a->passed,
-                    'date' => $a->attempted_at?->format('d/m/Y H:i'),
-                    'answers' => $a->answers ?? [],
-                    'results' => collect($a->answers ?? [])->map(fn ($opt, $qid) => (int) $opt === (int) ($correct[$qid] ?? 0))->all(),
-                ])->values(),
-            ];
+        if ($evaluation === 'quiz' && ($quiz = $lesson->quiz()->with('questions.options')->first())) {
+            $payload['quiz'] = $this->quizPayload($quiz, $user);
         }
 
         return $payload;
+    }
+
+    /** Perguntas, tentativas e valor de cada pergunta de um questionário (teste, exercício ou avaliação final). */
+    private function quizPayload(\App\Models\Quiz $quiz, User $user): array
+    {
+        $attempts = QuizAttempt::where('user_id', $user->id)->where('quiz_id', $quiz->id)->orderBy('attempted_at')->orderBy('id')->get();
+        $max = $this->learning->maxAttempts($quiz);
+        $passed = $attempts->contains('passed', true);
+        // As respostas certas só se mostram quando o teste fica fechado (passou ou esgotou as tentativas);
+        // no exercício (sem nota), logo depois de entregar
+        $reveal = $passed || $attempts->count() >= $max;
+        $correct = $quiz->questions->mapWithKeys(fn ($q) => [$q->id => $q->options->firstWhere('is_correct', true)?->id]);
+        // Quanto vale cada pergunta (0-100): por igual, ou pelos pesos
+        $total = $quiz->weighted ? max(1, $quiz->questions->sum(fn ($q) => max(0, (int) $q->points))) : max(1, $quiz->questions->count());
+
+        return [
+            'graded' => (bool) $quiz->graded,
+            'passing' => $quiz->passing_score ?: 70,
+            'max' => $max,
+            'passed' => $passed,
+            'questions' => $quiz->questions->map(fn ($q) => [
+                'id' => $q->id,
+                'question' => $q->question,
+                'value' => round(($quiz->weighted ? max(0, (int) $q->points) : 1) / $total * 100, 1),
+                // Opções vazias (o editor guarda-as enquanto o formador escreve) não aparecem ao aluno
+                'options' => $q->options->filter(fn ($o) => trim($o->option_text) !== '')
+                    ->map(fn ($o) => ['id' => $o->id, 'text' => $o->option_text])->values(),
+                'correct' => $reveal ? $correct[$q->id] : null,
+            ])->values(),
+            'attempts' => $attempts->map(fn ($a) => [
+                'score' => $a->score,
+                'passed' => $a->passed,
+                'date' => $a->attempted_at?->format('d/m/Y H:i'),
+                'answers' => $a->answers ?? [],
+                'results' => collect($a->answers ?? [])->map(fn ($opt, $qid) => (int) $opt === (int) ($correct[$qid] ?? 0))->all(),
+            ])->values(),
+        ];
     }
 
     /**

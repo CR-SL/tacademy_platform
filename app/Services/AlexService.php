@@ -27,7 +27,14 @@ use RuntimeException;
 class AlexService
 {
     // avaliacao: a avaliação final do curso, no botão Avaliação da aula (à parte das conversas do dia, sem créditos)
-    public const PLACES = ['inicio', 'avaliacoes', 'aula', 'avaliacao'];
+    // teste: teste com avatar de uma atividade; roleplay: roleplay de uma atividade (fase 2, 2026-11-27)
+    public const PLACES = ['inicio', 'avaliacoes', 'aula', 'avaliacao', 'teste', 'roleplay'];
+
+    /** Lugares de uma aula: precisam da aula e de o aluno estar inscrito (ou da pré-visualização da equipa). */
+    public const LESSON_PLACES = ['aula', 'avaliacao', 'teste', 'roleplay'];
+
+    /** Minutos máximos da conversa que está a começar (os incluídos que ainda há), ou null. */
+    private ?int $cap = null;
 
     public function __construct(
         private TavusClient $tavus,
@@ -61,10 +68,18 @@ class AlexService
         }
 
         $lesson = null;
+        $help = false;
         if ($place === 'aula') {
             $course = $request->route('course');
             $lesson = $request->route('lesson');
-            if (! $course instanceof Course || ! $lesson instanceof Lesson || ! $this->canUseInCourse($user, $course)) {
+            if (! $course instanceof Course || ! $lesson instanceof Lesson) {
+                return null;
+            }
+            // O avatar de ajuda (curso com o avatar ligado); o teste com avatar, o roleplay e a avaliação final
+            // com avatar funcionam mesmo sem ele (fase 2)
+            $help = $this->canUseInCourse($user, $course);
+            $lesson->setRelation('module', $lesson->module?->setRelation('course', $course));
+            if (! $help && ! ($this->enrolledOrPreview($user, $course) && ($lesson->usesAvatar() || $course->finalMode() === 'avatar'))) {
                 return null;
             }
         } elseif (! $this->hasAccess($user)) {
@@ -74,15 +89,19 @@ class AlexService
         return [
             'place' => $place,
             'lesson' => $lesson?->ulid,
-            'left' => $this->leftToday($user),
+            // Minutos incluídos que ainda tem no curso (o da aula; no Início, o mais recente com avatar)
+            'left' => $this->minutesLeft($user, $this->meteredCourse($user, $place === 'aula' ? $request->route('course') : null)),
+            'included' => $this->courseMinutes(),
             'credits' => (int) $user->alex_credits,
             'free' => $this->hasFreeTalks($user),
             'perDay' => $this->perDay(),
             'minutes' => $this->minutes(),
-            'evaluation' => $place === 'aula' ? [
-                'minutes' => $this->evaluationMinutes(),
+            'help' => $place === 'aula' ? $help : true,
+            // Avaliação final do curso com o avatar (botão Avaliação)
+            'evaluation' => $place === 'aula' && $request->route('course')->finalMode() === 'avatar' ? [
+                'minutes' => $this->minutesFor('avaliacao', $request->route('course'), $lesson),
                 'done' => $this->evaluationDone($user, $request->route('course'), $lesson),
-                'module' => (bool) $lesson?->module?->alex_pal_id, // a avaliação é a do módulo (PAL próprio)
+                'module' => false,
             ] : null,
             ...$this->shop($user),
         ];
@@ -122,6 +141,25 @@ class AlexService
     public function hasFreeTalks(User $user): bool
     {
         return $user->isAdmin() || $this->alexCourses($user)->isNotEmpty();
+    }
+
+    /** Inscrito no curso (ou a equipa em pré-visualização). */
+    public function enrolledOrPreview(User $user, Course $course): bool
+    {
+        return in_array($this->learning->access($user, $course)['mode'], ['enrolled', 'preview'], true);
+    }
+
+    /** Minutos de cada conversa: a avaliação final e os testes têm os seus; o roleplay, os do formador. */
+    public function minutesFor(string $place, ?Course $course, ?Lesson $lesson): int
+    {
+        $lessonMin = (int) round(((int) $lesson?->duration_seconds) / 60);
+
+        return max(1, match ($place) {
+            'avaliacao' => (int) ($course?->final_minutes ?: $this->evaluationMinutes()),
+            'teste' => $lessonMin ?: $this->evaluationMinutes(),
+            'roleplay' => $lessonMin ?: $this->minutes(),
+            default => $this->minutes(),
+        });
     }
 
     public function canUseInCourse(User $user, Course $course): bool
@@ -166,19 +204,42 @@ class AlexService
     }
 
     /** Conversas grátis que ainda há hoje (0 para quem não tem um curso com o avatar). */
-    public function leftToday(User $user): int
+    /** Lugares que gastam os minutos incluídos no curso: as dúvidas (avatar de ajuda) e os roleplays. */
+    public const METERED = ['inicio', 'avaliacoes', 'aula', 'roleplay'];
+
+    /** Minutos de avatar incluídos em cada curso, por aluno (2026-11-27; mais tarde vêm da plataforma dos avatares). */
+    public function courseMinutes(): int
     {
-        if (! $this->hasFreeTalks($user)) {
+        return max(0, (int) config('services.tavus.course_minutes', 30));
+    }
+
+    /**
+     * Minutos incluídos que o aluno ainda tem neste curso. Contam as conversas grátis (sem crédito) que não falharam,
+     * pelo tempo que duraram (as que ainda estão abertas, até agora). Sem curso: 0.
+     */
+    public function minutesLeft(User $user, ?Course $course): int
+    {
+        if (! $course) {
             return 0;
         }
-        $used = AlexConversation::where('user_id', $user->id)
-            ->where('created_at', '>=', now()->startOfDay())
-            ->where('status', '!=', 'failed')
-            ->where('paid_credit', false)
-            ->where('place', '!=', 'avaliacao') // a avaliação final não gasta as conversas do dia
-            ->count();
+        $seconds = AlexConversation::where('user_id', $user->id)->where('course_id', $course->id)
+            ->whereIn('place', self::METERED)->where('status', '!=', 'failed')->where('paid_credit', false)
+            ->get(['created_at', 'ended_at'])
+            ->sum(fn ($c) => max(0, (int) $c->created_at->diffInSeconds($c->ended_at ?? now(), true)));
 
-        return max(0, $this->perDay() - $used);
+        return max(0, $this->courseMinutes() - (int) ceil($seconds / 60));
+    }
+
+    /** O curso de onde saem os minutos: o da aula; no Início e nas Avaliações, o curso com avatar mais recente. */
+    public function meteredCourse(User $user, ?Course $course = null): ?Course
+    {
+        return $course ?? $this->alexCourses($user)->first();
+    }
+
+    /** Compatibilidade: o que ainda tem para falar (minutos incluídos no curso mais recente com avatar). */
+    public function leftToday(User $user): int
+    {
+        return $this->minutesLeft($user, $this->meteredCourse($user));
     }
 
     // ---------------------------------------------------------------- conversas
@@ -195,10 +256,17 @@ class AlexService
     {
         $lesson = null;
         $course = null;
-        if ($place === 'aula' || $place === 'avaliacao') {
+        $this->cap = null;
+        if (in_array($place, self::LESSON_PLACES, true)) {
             $lesson = Lesson::with('module.course')->where('ulid', $lessonUlid)->first();
             $course = $lesson?->module?->course;
-            if (! $course || ! $this->canUseInCourse($user, $course)) {
+            $allowed = $course && match ($place) {
+                'aula' => $this->canUseInCourse($user, $course),
+                'avaliacao' => $course->finalMode() === 'avatar' && $this->enrolledOrPreview($user, $course),
+                'teste' => $lesson->kindName() === 'teste' && $lesson->evaluationKind() === 'avatar' && $this->enrolledOrPreview($user, $course),
+                'roleplay' => $lesson->kindName() === 'roleplay' && $this->enrolledOrPreview($user, $course),
+            };
+            if (! $allowed) {
                 throw new AuthorizationException;
             }
             if ($place === 'avaliacao' && $this->evaluationDone($user, $course, $lesson)) {
@@ -224,10 +292,15 @@ class AlexService
             }
 
             // Primeiro as conversas grátis do dia; depois 1 crédito por conversa
-            $paid = $place !== 'avaliacao' && $this->leftToday($user) <= 0;
+            // As dúvidas e os roleplays gastam os minutos incluídos no curso; acabados, 1 crédito por conversa.
+            // Os testes com avatar e a avaliação final não gastam nada.
+            $left = in_array($place, self::METERED, true) ? $this->minutesLeft($user, $course) : null;
+            $paid = $left !== null && $left <= 0;
             if ($paid && User::whereKey($user->id)->where('alex_credits', '>', 0)->decrement('alex_credits') === 0) {
-                throw new AlexLimitReached($this->perDay());
+                throw new AlexLimitReached(0);
             }
+            // Uma conversa grátis não passa dos minutos que ainda há
+            $this->cap = $left !== null && ! $paid ? max(1, min($this->minutesFor($place, $course, $lesson), $left)) : null;
 
             return [AlexConversation::create([
                 'user_id' => $user->id,
@@ -255,8 +328,8 @@ class AlexService
             'id' => $conversation->ulid,
             'url' => $room['conversation_url'],
             'token' => $room['meeting_token'],
-            'endsAt' => $conversation->created_at->copy()->addMinutes($place === 'avaliacao' ? $this->evaluationMinutes() : $this->minutes())->toIso8601String(),
-            'left' => $this->leftToday($user),
+            'endsAt' => $conversation->created_at->copy()->addMinutes($this->cap ?? $this->minutesFor($place, $course, $lesson))->toIso8601String(),
+            'left' => $this->minutesLeft($user, $course),
             'credits' => (int) $user->fresh()->alex_credits,
         ];
     }
@@ -275,6 +348,20 @@ class AlexService
             }
         }
         $conversation->update(['status' => 'ended', 'end_reason' => $reason, 'ended_at' => now()]);
+        $this->finishActivity($conversation);
+    }
+
+    /** Teste com avatar ou roleplay que chegou a começar: a atividade fica feita para o aluno. */
+    private function finishActivity(AlexConversation $conversation): void
+    {
+        if (! in_array($conversation->place, ['teste', 'roleplay'], true) || ! $conversation->tavus_id) {
+            return;
+        }
+        $lesson = Lesson::with('module.course')->find($conversation->lesson_id);
+        $user = $conversation->user ?? User::find($conversation->user_id);
+        if ($lesson && $user && $this->learning->access($user, $lesson->module->course)['mode'] === 'enrolled') {
+            $this->learning->completeOnOpen($user, $lesson);
+        }
     }
 
     // ---------------------------------------------------------------- avisos do Tavus (webhook)
@@ -304,7 +391,7 @@ class AlexService
                 'status' => $conversation->status === 'failed' ? 'failed' : 'ended',
                 'end_reason' => $conversation->end_reason ?? Str::limit((string) ($props['shutdown_reason'] ?? 'fim'), 110),
                 'ended_at' => $conversation->ended_at ?? now(),
-            ]),
+            ]) && $conversation->status === 'ended' && $this->finishActivity($conversation) === null,
             'application.transcription_ready' => $conversation->update(['transcript' => $props['transcript'] ?? null]),
             default => null,
         };
@@ -317,8 +404,13 @@ class AlexService
         // O Alex do módulo da aula, se tiver um (dúvidas e avaliação desse módulo); senão o do curso; senão o Alex
         // geral (config). O rosto acompanha o PAL escolhido.
         // Antes de tudo, o PAL que o formador pôs na própria aula (avatar da aula ou avaliador da aula, 2026-11-25)
-        $lessonPal = $place === 'avaliacao' ? $lesson?->evaluation_pal_id : ($place === 'aula' ? $lesson?->alex_pal_id : null);
-        $module = $lesson?->module?->alex_pal_id ? $lesson->module : null;
+        $lessonPal = match ($place) {
+            'avaliacao' => $course?->final_pal_id, // o avaliador da avaliação final (passo 4 do editor)
+            'teste', 'roleplay' => $lesson?->evaluation_pal_id,
+            default => null,
+        };
+        // A avaliação final é do curso: não usa o PAL do módulo da aula onde o aluno está
+        $module = $place !== 'avaliacao' && $lesson?->module?->alex_pal_id ? $lesson->module : null;
         $ownPal = $lessonPal ?: ($module?->alex_pal_id ?: $course?->alex_pal_id);
         $face = match (true) {
             (bool) $lessonPal => null, // o rosto do PAL da aula
@@ -329,8 +421,10 @@ class AlexService
             'pal_id' => $ownPal ?: config('services.tavus.pal_id'),
             'conversation_name' => Str::limit('T.Academy · '.$user->name.' · '.$place, 100, ''),
             'conversational_context' => match (true) {
-                $place === 'avaliacao' && $module => Str::limit($this->moduleEvaluationContext($user, $course, $module).$this->evaluationBrief($lesson), 4500),
-                $place === 'avaliacao' => Str::limit($this->evaluationContext($user, $course).$this->evaluationBrief($lesson), 10000),
+                $place === 'avaliacao' => Str::limit($this->evaluationContext($user, $course).$this->brief($course?->final_prompt), 10000),
+                $place === 'teste' && $module && ! $lessonPal => Str::limit($this->moduleEvaluationContext($user, $course, $module).$this->evaluationBrief($lesson), 4500),
+                $place === 'teste' => Str::limit($this->testContext($user, $course, $lesson), 4500),
+                $place === 'roleplay' => Str::limit($this->roleplayContext($user, $course, $lesson), 4500),
                 default => Str::limit($this->context($user, $place, $course, $lesson), 3500),
             },
             'custom_greeting' => $this->greeting($user, $place, $lesson),
@@ -339,7 +433,7 @@ class AlexService
             // Sala privada: só entra quem recebe o token desta conversa
             'require_auth' => true,
             'properties' => [
-                'max_call_duration' => ($place === 'avaliacao' ? $this->evaluationMinutes() : $this->minutes()) * 60,
+                'max_call_duration' => ($this->cap ?? $this->minutesFor($place, $course, $lesson)) * 60,
                 'participant_left_timeout' => 30,
                 'participant_absent_timeout' => 120,
                 'languages' => ['pt'],
@@ -349,7 +443,9 @@ class AlexService
             $payload['face_id'] = $face;
         }
         // Avaliação de um módulo com PAL próprio: o PAL já tem a abertura e as perguntas; a saudação dele fica
-        if ($place === 'avaliacao' && ($module || $lessonPal)) {
+        // Avaliação ou teste com PAL próprio (o PAL já tem a abertura e as perguntas) e o roleplay (o avatar começa
+        // já na personagem): sem a saudação do Alex
+        if ($place === 'roleplay' || (in_array($place, ['avaliacao', 'teste'], true) && ($module || $lessonPal))) {
             unset($payload['custom_greeting']);
         }
         // Os avisos do Tavus só chegam a um endereço público (produção)
@@ -370,12 +466,45 @@ class AlexService
             // O Alex trata o aluno por você (2026-11-25)
             'avaliacao' => "Olá {$first}! Sou o Alex e vou fazer a sua avaliação final do curso. Vou fazer-lhe algumas perguntas, uma de cada vez. Podemos começar?",
             'avaliacoes' => "Olá {$first}! Sou o Alex. Quer rever algum teste comigo?",
+            'teste' => "Olá {$first}! Sou o Alex e vou fazer-lhe o teste \"{$lesson?->title}\". Vou apresentar-lhe alguns casos práticos, um de cada vez. Podemos começar?",
             'aula' => "Olá {$first}! Está na aula {$lesson?->title}. Tem alguma dúvida?",
             default => "Olá {$first}! Sou o Alex. Em que o posso ajudar hoje?",
         };
     }
 
     /** Avaliação de um módulo com PAL próprio: as perguntas e as regras estão no PAL; aqui só quem é e que módulo. */
+    private function brief(?string $text): string
+    {
+        $text = trim((string) $text);
+
+        return $text === '' ? '' : "\nO formador pede que avalies sobretudo isto: ".Str::limit($text, 900);
+    }
+
+    /** Teste com avatar de uma atividade: casos práticos, um de cada vez; a nota vem da plataforma dos avatares. */
+    private function testContext(User $user, ?Course $course, Lesson $lesson): string
+    {
+        $cases = trim((string) $lesson->evaluation_prompt);
+
+        return implode("\n", array_filter([
+            "O aluno chama-se {$this->safeName($user)}. Fala em português de Portugal e trata-o por você.",
+            "Esta conversa é o TESTE \"{$lesson->title}\" do curso \"{$course?->title}\" (módulo \"{$lesson->module?->title}\"), na plataforma T.Academy.",
+            'Apresenta casos práticos, um de cada vez, e espera pela resposta do aluno antes de passar ao seguinte. Não dês as respostas nem pistas.',
+            $cases !== '' ? 'Os casos que o formador quer que apresentes: '.Str::limit($cases, 1500) : null,
+            'No fim, diz-lhe como correu, sem dar uma nota.',
+        ]));
+    }
+
+    /** Roleplay: o avatar faz a personagem que o formador definiu; o aluno treina uma situação real. */
+    private function roleplayContext(User $user, ?Course $course, Lesson $lesson): string
+    {
+        return implode("\n", array_filter([
+            "Isto é um ROLEPLAY de treino do curso \"{$course?->title}\", na plataforma T.Academy. O aluno chama-se {$this->safeName($user)} e fala português de Portugal.",
+            'O teu papel: '.Str::limit((string) $lesson->roleplay_role, 250).'. Mantém-te sempre na personagem, desde a primeira frase. Não digas que és um avatar nem o Alex.',
+            'A situação (o aluno leu-a antes de começar): '.Str::limit((string) $lesson->body, 1500),
+            trim((string) $lesson->evaluation_prompt) !== '' ? 'Instruções do formador para ti: '.Str::limit((string) $lesson->evaluation_prompt, 1500) : null,
+        ]));
+    }
+
     /** O que o formador pediu para avaliar nesta aula (editor › Avaliação da aula › Com o avatar). */
     private function evaluationBrief(?Lesson $lesson): string
     {

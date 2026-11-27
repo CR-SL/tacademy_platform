@@ -108,10 +108,10 @@ class LearningTest extends TestCase
 
     public function test_students_who_are_not_enrolled_see_the_other_lessons_locked(): void
     {
-        // Quem não tem o curso vai para a caixa do catálogo, que mostra a aula de amostra
+        // Quem não tem o curso vai para a caixa do catálogo; não há aula de amostra (saiu a 2026-11-26)
         $u = $this->user();
         $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertRedirect('/plataforma/cursos?curso=curso-de-teste');
-        $this->actingAs($u)->get('/plataforma/cursos')->assertInertia(fn ($p) => $p->where('courses.0.sample', $this->l[1]->ulid));
+        $this->actingAs($u)->get('/plataforma/cursos')->assertInertia(fn ($p) => $p->where('courses.0.sample', null));
     }
 
     public function test_a_video_is_completed_at_90_percent_watched_without_answering_the_quick_questions(): void
@@ -279,13 +279,14 @@ class LearningTest extends TestCase
         $this->assertSame('completed', Enrollment::where('user_id', $u->id)->value('status'));
     }
 
-    public function test_non_enrolled_students_see_only_the_sample_lesson_and_cannot_save(): void
+    public function test_non_enrolled_students_cannot_open_any_lesson(): void
     {
+        // Só quem está inscrito abre as aulas, nem a que antes era a amostra grátis (2026-11-26)
         $u = $this->user();
         $this->actingAs($u)->get('/plataforma/cursos/curso-de-teste')->assertRedirect('/plataforma/cursos?curso=curso-de-teste');
-        $this->actingAs($u)->get($this->lessonUrl(1))->assertOk()->assertInertia(fn ($p) => $p->where('mode', 'sample'));
+        $this->actingAs($u)->get($this->lessonUrl(1))->assertRedirect();
         $this->actingAs($u)->get($this->lessonUrl(0))->assertRedirect();
-        $this->assertSame(0, LessonProgress::where('user_id', $u->id)->count()); // abrir a amostra não guarda progresso
+        $this->assertSame(0, LessonProgress::where('user_id', $u->id)->count());
     }
 
     public function test_staff_preview_opens_every_lesson_without_saving(): void

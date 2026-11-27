@@ -94,13 +94,13 @@ class MediaTest extends TestCase
         $this->actingAs($this->user('formador'))->get('/storage/'.self::VIDEO)->assertNotFound();
     }
 
-    public function test_the_instructor_and_the_sample_lesson_open(): void
+    public function test_the_instructor_opens_but_not_who_is_not_enrolled(): void
     {
         $this->actingAs($this->formador)->get('/storage/'.self::VIDEO)->assertOk();
 
-        // Aula de amostra: qualquer pessoa com conta
+        // Sem aula de amostra (2026-11-26): mesmo a antiga amostra não abre a quem não está inscrito
         $this->course->update(['sample_lesson_id' => $this->lesson->id]);
-        $this->actingAs($this->user())->get('/storage/'.self::VIDEO)->assertOk();
+        $this->actingAs($this->user())->get('/storage/'.self::VIDEO)->assertNotFound();
     }
 
     public function test_a_file_just_uploaded_in_the_editor_opens_only_for_its_uploader(): void

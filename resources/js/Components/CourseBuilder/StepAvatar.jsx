@@ -10,7 +10,7 @@ export default function StepAvatar({ c, update, canAlex, canManageAlex }) {
 
     return (
         <div className="space-y-4">
-            <Panel data-guide="avatar" title={t('Avatar')} sub={t('O aluno fala com o Alex, um avatar com vídeo e voz, no Início, nas Avaliações e durante as aulas deste curso.')}>
+            <Panel data-guide="avatar" title={t('Avatar de ajuda')} sub={t('Ligado, quem comprou o curso tira dúvidas com este avatar no Início e em todas as aulas do curso. Desligado, o curso não tem avatar de apoio, mas pode ter na mesma testes com avatar, roleplays e a avaliação final com avatar.')}>
                 {locked ? (
                     <p className="border-l-[3px] border-live bg-live/10 px-4 py-3 text-sm">
                         <b className="block font-display font-semibold">{t('Avatar desligado pela equipa T.Academy')}</b>
@@ -19,8 +19,8 @@ export default function StepAvatar({ c, update, canAlex, canManageAlex }) {
                     </p>
                 ) : canAlex ? (
                     <>
-                        <Toggle checked={c.alex_enabled} onChange={(v) => update((d) => { d.alex_enabled = v; })} title={c.alex_enabled ? t('Avatar ativo') : t('Avatar inativo')}>
-                            {t('Até 15 minutos por conversa e 3 conversas por dia por aluno. Cada conversa gasta minutos no Tavus.')}
+                        <Toggle checked={c.alex_enabled} onChange={(v) => update((d) => { d.alex_enabled = v; })} title={c.alex_enabled ? t('Avatar de ajuda ligado') : t('Avatar de ajuda desligado')}>
+                            {t('Cada aluno tem 30 minutos de avatar incluídos no curso, para as dúvidas e os roleplays. Depois disso, compra créditos no botão do avatar.')}
                         </Toggle>
                         {c.alex_enabled && (
                             <div className="grid gap-x-4 pl-[52px] sm:grid-cols-2">
@@ -45,7 +45,7 @@ export default function StepAvatar({ c, update, canAlex, canManageAlex }) {
             </Panel>
 
             {canAlex && !locked && c.alex_enabled && c.modules.length > 0 && (
-                <Panel data-guide="avatar-modules" title={t('Alex por módulo')} sub={t('Cada módulo pode ter o seu Alex no Tavus, com a avaliação desse módulo. Nas aulas do módulo, as dúvidas e a avaliação usam o PAL do módulo. Vazio = o PAL do curso.')}>
+                <Panel data-guide="avatar-modules" title={t('Avatar por módulo')} sub={t('Cada módulo pode ter o seu avatar de ajuda no Tavus. Nas atividades do módulo, as dúvidas usam o PAL do módulo. Vazio = o PAL do curso.')}>
                     <div className="divide-y divide-line">
                         {c.modules.map((m, i) => (
                             <div key={m.key} className="grid gap-x-4 py-3 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] sm:items-end">

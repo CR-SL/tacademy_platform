@@ -1,4 +1,4 @@
-import { lessonMissing } from './model';
+import { lessonMissing, questionsReady } from './model';
 
 import { t } from '@/i18n';
 
@@ -14,25 +14,29 @@ export function readyItems(c, shortMax, previewed) {
             id: 'info', step: 0, label: t('Nome, área e capa do curso'),
             ok: !!c.title.trim() && !!c.category_id && !!c.level && !!c.thumbnail_url && !!c.short_description.trim() && c.short_description.length <= shortMax,
         },
-        { id: 'modules', step: 1, label: t('Criar os módulos'), ok: lessons.length > 0 && c.modules.every((m) => m.title.trim()) },
+        { id: 'modules', step: 1, label: t('Módulos e atividades'), ok: lessons.length > 0 && c.modules.every((m) => m.title.trim()) },
     ];
     // As aulas que faltam (as 2 primeiras); sem nenhuma em falta, uma linha feita
-    if (lessons.length && !todo.length) items.push({ id: 'lessons', step: 1, label: t('Completar as aulas'), ok: true });
+    if (lessons.length && !todo.length) items.push({ id: 'lessons', step: 1, label: t('Completar as atividades'), ok: true });
     todo.slice(0, 2).forEach((x) => items.push({
         id: `l-${x.l.key}`, step: 1, lesson: x.l.key, ok: false,
-        label: t(':what da aula :n', { what: cap(x.miss[0]), n: x.n }),
+        label: t(':what · atividade :n', { what: cap(x.miss[0]), n: x.n }),
     }));
-    if (todo.length > 2) items.push({ id: 'more', step: 1, lesson: todo[2].l.key, ok: false, label: t('Mais :n aulas por completar', { n: todo.length - 2 }) });
-    items.push({ id: 'price', step: 3, label: t('Preço e acesso'), ok: c.is_free || Number(c.price) > 0 });
-    items.push({ id: 'preview', step: 4, label: t('Ver como aluno'), ok: previewed });
+    if (todo.length > 2) items.push({ id: 'more', step: 1, lesson: todo[2].l.key, ok: false, label: t('Mais :n atividades por completar', { n: todo.length - 2 }) });
+    // Avaliação final (passo 4): com perguntas, têm de estar prontas
+    if (c.final_mode === 'questions') items.push({ id: 'final', step: 3, label: t('Perguntas da avaliação final'), ok: questionsReady(c.final_quiz) });
+    items.push({ id: 'price', step: 4, label: t('Preço e acesso'), ok: c.is_free || Number(c.price) > 0 });
+    // Opcional (2026-11-26): não conta para a percentagem nem impede o curso de ficar pronto
+    items.push({ id: 'preview', step: 5, label: t('Ver como aluno'), ok: previewed, optional: true });
     return items;
 }
 
 export default function ReadyBox({ items, onDo }) {
-    const done = items.filter((i) => i.ok).length;
-    const pct = items.length ? Math.round((done / items.length) * 100) : 0;
-    const left = items.length - done;
-    const next = items.find((i) => !i.ok);
+    const counted = items.filter((i) => !i.optional);
+    const done = counted.filter((i) => i.ok).length;
+    const pct = counted.length ? Math.round((done / counted.length) * 100) : 0;
+    const left = counted.length - done;
+    const next = counted.find((i) => !i.ok);
     const r = 24;
     const len = 2 * Math.PI * r;
 
@@ -61,6 +65,7 @@ export default function ReadyBox({ items, onDo }) {
                             }`}>{i.ok ? '✓' : ''}</span>
                             <span className={`min-w-0 flex-1 ${i.ok ? 'text-muted line-through' : current ? 'font-semibold' : ''}`}>
                                 {i.label}
+                                {i.optional && <small className="ml-1 text-[11.5px] font-normal text-muted">{t('(opcional)')}</small>}
                                 {i.ok && <span className="sr-only">{t(' (feito)')}</span>}
                             </span>
                             {!i.ok && (

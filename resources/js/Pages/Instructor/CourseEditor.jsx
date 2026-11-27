@@ -5,6 +5,7 @@ import StepInfo from '@/Components/CourseBuilder/StepInfo';
 import StepProgram, { activeUploads } from '@/Components/CourseBuilder/StepProgram';
 import StepAvatar from '@/Components/CourseBuilder/StepAvatar';
 import StepPrice from '@/Components/CourseBuilder/StepPrice';
+import StepFinal from '@/Components/CourseBuilder/StepFinal';
 import StepReview from '@/Components/CourseBuilder/StepReview';
 import { blankCourse, checklist } from '@/Components/CourseBuilder/model';
 import { setAvatarHosts } from '@/Components/CourseBuilder/format';
@@ -19,8 +20,9 @@ import { t } from '@/i18n';
 
 const STEPS = [
     ['Informação', 'Título, área, capa'],
-    ['Programa', 'Módulos e aulas'],
-    ['Avatar', 'Formador IA'],
+    ['Programa', 'Módulos e atividades'],
+    ['Avatar de ajuda', 'Dúvidas e minutos'],
+    ['Avaliação final', 'Perguntas ou avatar · nota'],
     ['Preço e acesso', 'Preço, certificado'],
     ['Rever e publicar', 'Pré-visualizar'],
 ];
@@ -467,7 +469,8 @@ export default function CourseEditor({ course, categories, library, shortMax, ca
                     {step === 0 && <StepInfo c={c} update={update} categories={categories} library={library} shortMax={shortMax} upload={upload} />}
                     {step === 1 && <StepProgram c={c} update={update} upload={upload} openKey={openKey} setOpenKey={setOpenKey} canAlex={canManageAlex || (canAlex && !c.alex_blocked)} />}
                     {step === 2 && <StepAvatar c={c} update={update} canAlex={canAlex} canManageAlex={canManageAlex} />}
-                    {step === 3 && <StepPrice c={c} update={update} />}
+                    {step === 3 && <StepFinal c={c} update={update} canAlex={canManageAlex || (canAlex && !c.alex_blocked)} />}
+                    {step === 4 && <StepPrice c={c} update={update} />}
                     {step === LAST && (
                         <StepReview
                             c={c}

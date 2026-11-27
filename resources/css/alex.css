@@ -74,3 +74,15 @@
     .ax-bar { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
 }
 @media (prefers-reduced-motion: reduce) { .ax-dot { animation: none; } }
+
+/* Teste com avatar e roleplay na caixa do avatar da aula (fase 2, 2026-11-27) */
+.ax-activity { flex: 1; min-height: 0; overflow: auto; display: flex; background: var(--color-carbon); color: var(--color-on-carbon); }
+.ax-activity-in { margin: auto; width: 100%; max-width: 560px; padding: 56px 24px 28px; display: grid; gap: 12px; }
+.ax-activity small { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); }
+.ax-activity h2 { margin: 0; font: 700 22px/1.2 'Manrope Variable', Manrope, sans-serif; }
+.ax-facts { display: flex; flex-wrap: wrap; gap: 6px; }
+.ax-facts span { padding: 4px 10px; font-size: 12.5px; font-weight: 600; background: rgba(255, 255, 255, .1); }
+.ax-facts .ok { background: var(--color-success); color: #fff; }
+.ax-brief { margin: 0; padding: 12px 14px; background: rgba(255, 255, 255, .07); font-size: 14px; line-height: 1.5; white-space: pre-line; }
+.ax-brief b { display: block; margin-bottom: 3px; font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: rgba(255, 255, 255, .65); }
+.ax-activity .ui-btn { justify-self: start; }

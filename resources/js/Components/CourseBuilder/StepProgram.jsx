@@ -1,9 +1,10 @@
 import { usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { useConfirm } from '@/Components/ui';
-import { AddLink, Field, IconButton, inputCls, Panel, Seg } from './ui';
+import { AddLink, Field, IconButton, inputCls, Panel } from './ui';
 import { formatBytes, formatMinutes, isHttpUrl, isUploadedVideo, linkInfo } from './format';
-import { blankLessonData, lessonMissing, newKey, totalMinutes } from './model';
+import { blankActivity, blankLessonData, lessonMissing, newKey, totalMinutes } from './model';
+import { ExerciseEditor, RoleplayEditor, TestEditor } from './Activities';
 
 import { t } from '@/i18n';
 
@@ -12,14 +13,17 @@ export const PARTS = [
     ['video', 'Vídeo', 'Carregar ou colar link', { short: '▶', cls: 'bg-ink text-on-ink' }],
     ['material', 'Material didático', 'PDF, fichas, esquemas', { short: 'PDF', cls: 'bg-surface2' }],
     ['notas', 'Notas', 'Texto que o aluno lê', { short: 'Aa', cls: 'bg-surface2' }],
-    ['avatar', 'Avatar', 'O Alex tira dúvidas', { short: 'IA', cls: 'bg-accent text-on-accent' }],
 ];
-const EVALUATIONS = [['none', 'Sem avaliação'], ['quiz', 'Questionário'], ['avatar', 'Com o avatar']];
-const QUIZ_ICON = { short: '?', cls: 'bg-surface2' };
+// Tipos de atividade de cada módulo (fase 2, 2026-11-27)
+export const KINDS = {
+    aula: { label: 'Aula', short: '▶', cls: 'bg-ink text-on-ink' },
+    teste: { label: 'Teste', short: '?', cls: 'bg-[#FFE9A8] text-[#5A4000]' },
+    exercicio: { label: 'Exercício', short: 'Ex', cls: 'bg-surface2' },
+    roleplay: { label: 'Roleplay', short: 'RP', cls: 'bg-[#2B2B2B] text-accent' },
+};
 
 export const blankLesson = blankLessonData;
 // key/id/option_ids: o servidor atualiza pelo id, para não estragar as tentativas dos alunos
-const blankQuestion = () => ({ key: newKey(), id: null, question: '', options: ['', ''], option_ids: [null, null], correct: 0 });
 
 // Passo 2 · Programa: módulos e aulas, por ordem.
 export default function StepProgram({ c, update, upload, openKey, setOpenKey, canAlex = true }) {
@@ -33,7 +37,7 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey, ca
     const todo = all.filter((x) => x.miss.length);
 
     return (
-        <Panel title={t('Programa')} sub={t('Organiza o curso em módulos e aulas. Em cada aula, liga só o que ela precisa.')}>
+        <Panel title={t('Programa')} sub={t('Cada módulo é uma lista de atividades (aulas, testes, exercícios e roleplays), pela ordem que o aluno as faz.')}>
             <div className="mb-4 flex flex-wrap items-center gap-5 font-mono text-xs uppercase tracking-[0.06em] text-muted">
                 <span><b className="mr-1 font-display text-base text-ink">{c.modules.length}</b>{t('Módulos')}</span>
                 <span><b className="mr-1 font-display text-base text-ink">{lessons}</b>{t('Aulas')}</span>
@@ -134,17 +138,23 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey, ca
                                 guide={mi === 0 && li === 0}
                             />
                         ))}
-                        <button
-                            type="button"
-                            className="self-start px-3 py-2 font-display text-xs font-bold uppercase tracking-[0.04em] shadow-[inset_0_0_0_1px_var(--color-line)] hover:bg-page"
-                            onClick={() => {
-                                const l = blankLesson();
-                                update((d) => { d.modules[mi].lessons.push(l); });
-                                setOpenKey(l.key);
-                            }}
-                        >
-                            {t('+ Aula')}
-                        </button>
+                        <div className="flex flex-wrap gap-1.5" data-guide={mi === 0 ? 'add-activity' : undefined}>
+                            {Object.entries(KINDS).map(([k, kx]) => (
+                                <button
+                                    key={k}
+                                    type="button"
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 font-display text-xs font-bold uppercase tracking-[0.04em] shadow-[inset_0_0_0_1px_var(--color-line)] hover:bg-page"
+                                    onClick={() => {
+                                        const l = blankActivity(k);
+                                        update((d) => { d.modules[mi].lessons.push(l); });
+                                        setOpenKey(l.key);
+                                    }}
+                                >
+                                    <i aria-hidden="true" className={`grid h-[18px] w-[18px] place-items-center rounded-full text-[9px] not-italic ${kx.cls}`}>{kx.short}</i>
+                                    {t('+ :kind', { kind: t(kx.label) })}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             ))}
@@ -165,12 +175,16 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey, ca
 
 function LessonRow({ l, index, count, open, onToggle, set, onMove, onDelete, upload, confirm, c, canAlex, guide }) {
     const parts = l.parts ?? [];
-    const icon = l.evaluation === 'quiz' && !parts.length ? QUIZ_ICON : (PARTS.find(([k]) => parts.includes(k))?.[3] ?? QUIZ_ICON);
+    const kind = KINDS[l.kind] ? l.kind : 'aula';
+    const icon = KINDS[kind];
     const miss = lessonMissing(l);
-    const summary = [
-        ...PARTS.filter(([k]) => parts.includes(k)).map(([, label]) => t(label)),
-        l.evaluation === 'quiz' ? t('Questionário') : l.evaluation === 'avatar' ? t('Avaliação com o avatar') : null,
-    ].filter(Boolean).join(' · ') || t('Nada escolhido');
+    const n = (l.quiz ?? []).length;
+    const summary = {
+        aula: PARTS.filter(([k]) => parts.includes(k)).map(([, label]) => t(label)).join(' · ') || t('Nada escolhido'),
+        teste: l.evaluation === 'avatar' ? t('Teste com avatar') : t('Teste escrito · :n perguntas', { n }),
+        exercicio: l.evaluation === 'quiz' ? t('Exercício · :n perguntas · sem nota', { n }) : t('Exercício prático · sem nota'),
+        roleplay: [t('Roleplay'), l.roleplay_role, l.graded ? t('com nota') : t('sem nota')].filter(Boolean).join(' · '),
+    }[kind];
 
     return (
         <div className="border border-line bg-surface">
@@ -180,7 +194,7 @@ function LessonRow({ l, index, count, open, onToggle, set, onMove, onDelete, upl
                     {icon.short}
                 </button>
                 <button type="button" onClick={onToggle} className="min-w-0 text-left">
-                    <span className={`block truncate ${l.title ? 'font-medium' : 'italic text-muted'}`}>{l.title || t('Aula sem título')}</span>
+                    <span className={`block truncate ${l.title ? 'font-medium' : 'italic text-muted'}`}>{l.title || t(':kind sem título', { kind: t(icon.label) })}</span>
                     <small className="block text-xs text-muted">{summary}{l.minutes ? t(' · :minutes min', { minutes: l.minutes }) : ''}
                         {activeUploads.lessons[l.key] > 0 && <b className="font-semibold text-accent-ink">{t(' · a carregar ficheiro…')}</b>}</small>
                 </button>
@@ -228,7 +242,6 @@ const filled = {
     video: (l) => !!l.url.trim() || (l.checks ?? []).length > 0,
     material: (l) => l.attachments.length > 0,
     notas: (l) => !!l.body.trim(),
-    avatar: (l) => !!(l.alex_pal_id ?? '').trim(),
 };
 
 function LessonEditor({ l, set, upload, confirm, c, canAlex }) {
@@ -251,24 +264,10 @@ function LessonEditor({ l, set, upload, confirm, c, canAlex }) {
             set((x) => { x.parts = PARTS.map(([p]) => p).filter((p) => p === k || (x.parts ?? []).includes(p)); });
         }
     };
-    const setEvaluation = async (k) => {
-        if (k === l.evaluation) return;
-        if (l.evaluation === 'quiz' && l.quiz.some((q) => q.question.trim()) && !(await confirm({
-            title: t('Trocar o questionário?'),
-            body: t('As perguntas do questionário são apagadas quando o curso for guardado.'),
-            action: t('Trocar'),
-            danger: true,
-        }))) return;
-        set((x) => {
-            x.evaluation = k;
-            if (k === 'quiz' && !x.quiz.length) x.quiz.push(blankQuestion());
-        });
-    };
-
     return (
         <div className="border-t border-line px-3.5 pb-4 sm:pl-[66px]">
             <div className="mt-3 grid gap-x-4 sm:grid-cols-[1fr_150px]">
-                <Field label={t('Título da aula')} id={`${id}-t`} required className="mb-5">
+                <Field label={t('Título')} id={`${id}-t`} required className="mb-5">
                     <input id={`${id}-t`} className={inputCls} value={l.title} maxLength={200} placeholder={t('Ex.: Introdução ao sistema')}
                         onChange={(e) => set((x) => { x.title = e.target.value; })} />
                 </Field>
@@ -278,11 +277,15 @@ function LessonEditor({ l, set, upload, confirm, c, canAlex }) {
                 </Field>
             </div>
 
+            {l.kind === 'teste' && <TestEditor l={l} set={set} canAlex={canAlex} id={id} />}
+            {l.kind === 'exercicio' && <ExerciseEditor l={l} set={set} id={id} attachments={<Attachments l={l} set={set} upload={upload} />} />}
+            {l.kind === 'roleplay' && <RoleplayEditor l={l} set={set} canAlex={canAlex} id={id} />}
+            {(l.kind ?? 'aula') === 'aula' && <>
             <span className="mb-1.5 block font-display text-[13px] font-semibold uppercase tracking-[0.04em]">
                 {t('O que tem esta aula?')}
                 <span className="ml-1 font-sans text-xs font-normal normal-case tracking-normal text-muted">{t('Liga só o que precisas. Podes ligar várias.')}</span>
             </span>
-            <div data-guide="parts" className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4" role="group" aria-label={t('O que tem esta aula')}>
+            <div data-guide="parts" className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3" role="group" aria-label={t('O que tem esta aula')}>
                 {PARTS.map(([k, label, hint]) => {
                     const on = parts.includes(k);
                     return (
@@ -344,72 +347,7 @@ function LessonEditor({ l, set, upload, confirm, c, canAlex }) {
                 </Block>
             )}
 
-            {parts.includes('avatar') && (
-                <Block title={t('Avatar nesta aula')} onRemove={() => togglePart('avatar')}
-                    hint={t('O aluno carrega no botão do Alex e tira dúvidas sobre esta aula. Só precisas do PAL ID se esta aula tiver um avatar diferente.')}>
-                    {!c.alex_enabled && (
-                        <p className="mb-2 bg-accent/15 px-3 py-2 text-[13px]">{t('O avatar só aparece aos alunos quando estiver ligado no passo 3 · Avatar.')}</p>
-                    )}
-                    <PalInput id={`${id}-pal`} label={t('PAL ID desta aula (opcional)')} value={l.alex_pal_id ?? ''} disabled={!canAlex}
-                        onChange={(v) => set((x) => { x.alex_pal_id = v; })} />
-                    <Inherit own={!!(l.alex_pal_id ?? '').trim()} />
-                </Block>
-            )}
-
-            <div data-guide="evaluation" className="mt-5 border-t border-dashed border-line pt-4">
-                <span className="mb-2 block font-display text-[13px] font-semibold uppercase tracking-[0.04em]">{t('Avaliação da aula')}</span>
-                <Seg label={t('Tipo de avaliação')} value={l.evaluation ?? 'none'} onChange={setEvaluation}
-                    options={EVALUATIONS.map(([k, label]) => [k, t(label)])} />
-                {(l.evaluation ?? 'none') === 'none' && <div className="mt-2"><Hint>{t('Sem avaliação, a aula conta como feita quando o aluno a vê.')}</Hint></div>}
-                {l.evaluation === 'quiz' && (
-                    <div className="mt-3">
-                        <Hint>{t('O aluno tem 3 tentativas. A aula fica concluída quando passar no questionário.')}</Hint>
-                        <QuizEditor l={l} set={set} />
-                    </div>
-                )}
-                {l.evaluation === 'avatar' && (
-                    <div className="mt-3 border-l-[3px] border-accent bg-page px-3.5 pb-3.5 pt-3">
-                        <Hint>{t('O Alex conversa com o aluno e avalia o que ele sabe. A nota chega da plataforma dos avatares.')}</Hint>
-                        {!c.alex_enabled && (
-                            <p className="mb-2 bg-accent/15 px-3 py-2 text-[13px]">{t('A avaliação com o avatar só aparece aos alunos quando o avatar estiver ligado no passo 3 · Avatar.')}</p>
-                        )}
-                        <div className="mb-3 grid gap-2 sm:grid-cols-3">
-                            {[[t('15 min'), t('por conversa')], [t('Sem limite'), t('de tentativas')], [t('Por você'), t('trata o aluno')]].map(([b, s]) => (
-                                <div key={b} className="bg-surface p-2.5 text-[12.5px] text-muted"><b className="block font-display text-[15px] text-ink">{b}</b>{s}</div>
-                            ))}
-                        </div>
-                        <Field label={t('O que o Alex deve avaliar (opcional)')} id={`${id}-ep`} className="mb-3">
-                            <textarea id={`${id}-ep`} rows={3} maxLength={2000} className={inputCls} value={l.evaluation_prompt ?? ''}
-                                placeholder={t('Ex.: pede ao aluno para explicar como se verifica a pressão do circuito.')}
-                                onChange={(e) => set((x) => { x.evaluation_prompt = e.target.value; })} />
-                        </Field>
-                        <PalInput id={`${id}-epal`} label={t('PAL ID do avaliador (opcional: vazio = o Alex do módulo ou do curso)')} value={l.evaluation_pal_id ?? ''} disabled={!canAlex}
-                            onChange={(v) => set((x) => { x.evaluation_pal_id = v; })} />
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function PalInput({ id, label, value, onChange, disabled }) {
-    const bad = value && !/^[A-Za-z0-9_-]+$/.test(value);
-    return (
-        <Field label={label} id={id} hint={disabled ? t('Só quem gere o avatar pode mudar o PAL ID.') : undefined}>
-            <input id={id} className={`${inputCls} font-mono`} value={value} maxLength={64} placeholder="p18d6e1b675e" autoComplete="off" spellCheck={false} disabled={disabled}
-                onChange={(e) => onChange(e.target.value.trim())} />
-            {bad && <span className="text-[13px] text-live-ink">{t('O PAL ID só tem letras, números, - e _.')}</span>}
-        </Field>
-    );
-}
-
-// Que avatar fala nesta aula: o da aula, se tiver PAL; senão o do módulo ou o do curso
-function Inherit({ own }) {
-    return (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12.5px] text-muted">
-            {t('Fala:')}
-            <span className={`border px-2 py-0.5 ${own ? 'border-ink font-bold text-ink' : 'border-line'}`}>{t('o desta aula')}</span>
-            <span className={`border px-2 py-0.5 ${own ? 'border-line' : 'border-ink font-bold text-ink'}`}>{t('o do módulo ou do curso')}</span>
+            </>}
         </div>
     );
 }
@@ -460,44 +398,6 @@ function ChecksEditor({ l, set }) {
                 </button>
             </div>
         </div>
-    );
-}
-
-function QuizEditor({ l, set }) {
-    return (
-        <Field label={t('Perguntas')} required hint={t('Marca a resposta certa em cada pergunta. Mínimo 2 opções.')} className="mb-5">
-            {l.quiz.map((q, qi) => (
-                <div key={qi} className="mb-2 bg-page p-3.5">
-                    <div className="flex gap-2">
-                        <input className={inputCls} value={q.question} maxLength={500} placeholder={t('Pergunta :v1', { v1: qi + 1 })} aria-label={t('Pergunta :v1', { v1: qi + 1 })}
-                            onChange={(e) => set((x) => { x.quiz[qi].question = e.target.value; })} />
-                        <IconButton label={t('Remover pergunta')} danger onClick={() => set((x) => { x.quiz.splice(qi, 1); })}>✕</IconButton>
-                    </div>
-                    {q.options.map((o, oi) => (
-                        <div key={oi} className="mt-1.5 flex items-center gap-2">
-                            <input className={inputCls} value={o} maxLength={300} placeholder={t('Opção :v1', { v1: oi + 1 })} aria-label={t('Pergunta :v1, opção :v2', { v1: qi + 1, v2: oi + 1 })}
-                                onChange={(e) => set((x) => { x.quiz[qi].options[oi] = e.target.value; })} />
-                            <label className="flex items-center gap-1 whitespace-nowrap text-xs text-muted">
-                                <input type="radio" name={`c-${l.key}-${qi}`} checked={q.correct === oi} className="text-accent focus:ring-ink"
-                                    onChange={() => set((x) => { x.quiz[qi].correct = oi; })} />
-                                {t('certa')}
-                            </label>
-                            {q.options.length > 2 && (
-                                <IconButton label={t('Remover opção')} danger onClick={() => set((x) => {
-                                    const qq = x.quiz[qi];
-                                    qq.options.splice(oi, 1);
-                                    qq.option_ids?.splice(oi, 1);
-                                    if (qq.correct >= qq.options.length || qq.correct === oi) qq.correct = 0;
-                                    else if (qq.correct > oi) qq.correct -= 1;
-                                })}>✕</IconButton>
-                            )}
-                        </div>
-                    ))}
-                    {q.options.length < 8 && <AddLink onClick={() => set((x) => { x.quiz[qi].options.push(''); x.quiz[qi].option_ids?.push(null); })}>{t('+ Opção')}</AddLink>}
-                </div>
-            ))}
-            <AddLink onClick={() => set((x) => { x.quiz.push(blankQuestion()); })}>{t('+ Adicionar pergunta')}</AddLink>
-        </Field>
     );
 }
 

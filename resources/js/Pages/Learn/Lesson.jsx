@@ -11,7 +11,7 @@ import MicCheck from '@/Components/Learn/MicCheck';
 import { ModulesRail, ModuleSheet, ModulesStrip } from '@/Components/Learn/LessonModules';
 import { IconCheck, IconDoc, IconDown, IconDownload, IconHelp, IconLeft, IconPen, IconRight, IconSide, IconSwap, IconUser, IconVideo, IconX } from '@/Components/Learn/LessonIcons';
 import { FlashToast, Toast, useFocusTrap } from '@/Components/ui';
-import AlexLessonPanel, { AlexEvaluationPanel, endEvaluationCall, startEvaluationCall } from '@/Components/Alex/AlexLessonPanel';
+import AlexLessonPanel, { AlexActivityPanel, AlexEvaluationPanel, endEvaluationCall, startEvaluationCall } from '@/Components/Alex/AlexLessonPanel';
 import { PlatformNav } from '@/Layouts/StudentLayout';
 import '../../../css/lesson.css';
 
@@ -103,14 +103,18 @@ const clampSplit = (v) => Math.max(MIN_PANEL, Math.min(100 - MIN_PANEL, v));
 
 // Página da aula: painéis que se ligam e desligam na barra de baixo, com divisórias para os redimensionar.
 // A aula conclui-se sozinha: o vídeo aos 90%; documento, texto e avatar ao abrir; o teste ao passar.
-export default function Lesson({ course, mode, program, lesson, progress, prev, next, avatarUrl, notes }) {
+export default function Lesson({ course, mode, program, lesson, progress, prev, next, avatarUrl, notes, finalEvaluation = { mode: 'none', quiz: null } }) {
     const mobile = useMobile();
     const { alex: alexProp } = usePage().props; // o Alex neste curso (curso com o Alex), ou null
     // O que o formador ligou nesta aula (2026-11-25): vídeo, material, notas, avatar; e a avaliação
     const parts = lesson.parts ?? [];
     const evalKind = lesson.evaluation ?? (lesson.type === 'quiz' ? 'quiz' : 'none');
-    const alex = alexProp && (parts.includes('avatar') || evalKind === 'avatar') ? alexProp : null;
-    const askAlex = alexProp && parts.includes('avatar') ? alexProp : null; // tirar dúvidas com o Alex nesta aula
+    // O avatar de ajuda (curso com o avatar ligado): tirar dúvidas nesta aula
+    const askAlex = alexProp?.help && parts.includes('avatar') ? alexProp : null;
+    // Teste com avatar ou roleplay (fase 2): faz-se na caixa do avatar, que abre logo
+    const activity = lesson.activity ?? null;
+    const avatarHere = parts.includes('avatar') || !!activity;
+    const finalMode = finalEvaluation?.mode ?? 'none';
     const canSave = mode === 'enrolled';
     const done = progress.status === 'completed';
     const videoLesson = lesson.parts ? parts.includes('video') : isVideoType(lesson.type);
@@ -124,6 +128,12 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     const [checks, setChecks] = useState(lesson.checks);
 
     const hasChecks = hasPlayer && checks.length > 0;
+    // Página adaptável (2026-11-26): só aparecem os painéis do que a aula tem
+    const bodyText = activity ? null : lesson.body;
+    const materialWorth = !!bodyText || lesson.attachments.length > 0 || (evalKind === 'quiz' && !!lesson.quiz)
+        || (!!lesson.url && !askAlex) || (hasPlayer && lesson.checks.length > 0);
+    const avatarOnly = !!activity || (avatarHere && !hasPlayer && !materialWorth); // atividade com avatar ou aula só com o avatar: abre logo o avatar
+    const nothing = !hasPlayer && !materialWorth && !avatarHere; // sem conteúdo: ficam as notas do aluno
     // Sem os minutos do formador o vídeo não conclui a aula (o servidor recusa): fica o aviso em baixo
     const videoReady = !hasPlayer || done || (!progress.noDuration && watched >= needed);
     const checksDone = checks.every((c) => c.chosen != null);
@@ -132,12 +142,13 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     // Abrem como o aluno os deixou na aula anterior (sem nenhum aberto, o vídeo abre)
     const [showVideo, setShowVideo] = useState(() => hasPlayer && (memory.video || !(memory.material || memory.notes || (askAlex && memory.ask))));
     const [showMaterial, setShowMaterial] = useState(() => {
+        if (!materialWorth) return false;
         if (!hasPlayer) return true;
         return !mobile && memory.material;
     });
-    const [showNotes, setShowNotes] = useState(() => (mobile ? hasPlayer : memory.notes));
+    const [showNotes, setShowNotes] = useState(() => nothing || (!avatarOnly && (mobile ? hasPlayer : memory.notes)));
     const [showChecks, setShowChecks] = useState(false);
-    const [ask, setAsk] = useState(() => !!askAlex && !mobile && memory.ask);
+    const [ask, setAsk] = useState(() => avatarOnly || (!!askAlex && !mobile && memory.ask));
     const [askStarted, setAskStarted] = useState(false);
     const [evaluation, setEvaluation] = useState(null); // null | 'intro' | 'run'
     const beforeEvaluation = useRef(null);
@@ -168,7 +179,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
         Object.assign(memory, { notes: showNotes, rail, splitX, splitR, splitL, splitRow, splitM, place });
         // Numa aula sem vídeo o conteúdo está no Material (abre sempre): o vídeo e o Material ficam como estavam
         if (hasPlayer) Object.assign(memory, { video: showVideo, material: showMaterial });
-        if (askAlex) memory.ask = ask;
+        if (askAlex && !avatarOnly) memory.ask = ask; // a aula só de avatar não muda o que as outras abrem
     }, [showMaterial, showNotes, rail, splitX, splitR, splitL, splitRow, splitM, place, showVideo, ask, evaluation]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // No telemóvel só cabe um painel em baixo: material ou notas
@@ -253,7 +264,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
         setShowVideo(false); setShowMaterial(false); setShowNotes(false); setShowChecks(false); setAsk(false); setRail(false); setSheet(null);
         setEndsAt(Date.now() + evaluationMin * 60 * 1000);
         setEvaluation('run');
-        if (alexEvaluation) startEvaluationCall(alex.lesson); // o Alex faz a avaliação final
+        if (alexEvaluation) startEvaluationCall(alexProp.lesson); // o Alex faz a avaliação final
     };
     const endEvaluation = () => {
         if (alexEvaluation) endEvaluationCall();
@@ -281,7 +292,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     }, []);
 
     const running = evaluation === 'run';
-    const alexEvaluation = evalKind === 'avatar' ? (alex?.evaluation ?? null) : null; // curso com o Alex: é ele que faz a avaliação final
+    const alexEvaluation = alexProp?.evaluation ?? null; // curso com o Alex: é ele que faz a avaliação final (botão Avaliação)
     const evaluationMin = alexEvaluation?.minutes ?? EVALUATION_MIN;
     const videoOn = hasPlayer && showVideo;
     const avatarOn = ask || running;
@@ -318,7 +329,9 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     // Barra de cima de cada painel: escolher o que mostrar e fechar
     const panelBar = (slot, icon, dark = false) => {
         const shown = on;
-        const options = [['video', <IconVideo key="i" />, t('Vídeo')], ['material', <IconDoc key="i" />, t('Material')], ['notes', <IconPen key="i" />, t('Notas')], ['ask', <IconUser key="i" />, t('Avatar')]];
+        // Só o que esta aula tem (as notas do aluno estão sempre)
+        const options = [['video', <IconVideo key="i" />, t('Vídeo')], ['material', <IconDoc key="i" />, t('Material')], ['notes', <IconPen key="i" />, t('Notas')], ['ask', <IconUser key="i" />, t('Avatar')]]
+            .filter(([k]) => (k === 'video' ? hasPlayer : k === 'material' ? materialWorth : k === 'ask' ? (avatarHere || !!avatarUrl) : true));
         const open = (k) => {
             if (k === 'video') setShowVideo(true);
             if (k === 'material' && !showMaterial) toggleMaterial();
@@ -371,7 +384,21 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     };
 
     const hasQuiz = evalKind === 'quiz' && !!lesson.quiz;
-    const hasMaterial = !!lesson.body || lesson.attachments.length > 0 || (!!lesson.url && !askAlex);
+    const hasMaterial = !!bodyText || lesson.attachments.length > 0 || (!!lesson.url && !askAlex);
+    const practical = lesson.kind === 'exercicio' && !hasQuiz; // exercício prático: "Marcar como feito"
+    const [markedDone, setMarkedDone] = useState(false);
+    const markDone = () => window.axios.post(`/plataforma/aulas/${lesson.ulid}/feito`).then(() => { setMarkedDone(true); refresh(); });
+    // Avaliação final com perguntas: abre na caixa do Material
+    const [finalOpen, setFinalOpen] = useState(false);
+    useEffect(() => { setFinalOpen(false); }, [lesson.ulid]);
+    const openFinal = () => {
+        if (running) return;
+        setShowChecks(false);
+        setAttachment(null);
+        if (mobile) setShowNotes(false);
+        setShowMaterial(true);
+        setFinalOpen(true);
+    };
     // Botão Avaliação de uma aula com questionário: abre o Material e vai até ao questionário
     const openQuiz = () => {
         if (running) return;
@@ -384,17 +411,20 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
 
     const tools = (
         <div className="al-tools" role="group" aria-label={t('O que mostrar')}>
-            <button type="button" className="al-sw" data-tip={t('Vídeo')} aria-label={t('Vídeo')} aria-pressed={videoOn} disabled={!hasPlayer} onClick={toggleVideo}><IconVideo /></button>
-            <button type="button" className="al-sw" data-tip={t('Material')} aria-label={t('Material')} aria-pressed={showMaterial} onClick={toggleMaterial}><IconDoc /></button>
+            {/* Só os botões do que esta aula tem (2026-11-26); as notas do aluno estão sempre */}
+            {hasPlayer && <button type="button" className="al-sw" data-tip={t('Vídeo')} aria-label={t('Vídeo')} aria-pressed={videoOn} onClick={toggleVideo}><IconVideo /></button>}
+            {(materialWorth || finalOpen) && <button type="button" className="al-sw" data-tip={t('Material')} aria-label={t('Material')} aria-pressed={showMaterial} onClick={toggleMaterial}><IconDoc /></button>}
             <button type="button" className="al-sw" data-tip={t('Notas')} aria-label={t('Notas')} aria-pressed={showNotes} onClick={toggleNotes}><IconPen /></button>
-            {askAlex && <button type="button" className="al-sw" data-tip={t('Alex')} aria-label={t('Falar com o Alex')} aria-pressed={avatarOn} disabled={running} onClick={toggleAsk}><IconUser /></button>}
-            {evalKind !== 'none' && <span className="div" />}
-            {/* Avaliação da aula: com o avatar abre o aviso e a conversa; o questionário abre no Material */}
-            {evalKind === 'avatar' && (
-                <button type="button" className={`al-ev ${evaluation ? 'on' : ''}`} onClick={() => { if (!running) { setEvaluation(evaluation ? null : 'intro'); setSheet(null); } }}><IconUser />{t('Avaliação')}</button>
+            {avatarHere && <button type="button" className="al-sw" data-tip={t('Alex')} aria-label={t('Falar com o Alex')} aria-pressed={avatarOn} disabled={running} onClick={toggleAsk}><IconUser /></button>}
+            <span className="div" />
+            {/* Teste da aula (questionário): abre no Material */}
+            {hasQuiz && <button type="button" className="al-ev" onClick={() => { setFinalOpen(false); openQuiz(); }}><IconDoc />{lesson.kind === 'exercicio' ? t('Exercício') : t('Teste')}</button>}
+            {/* Avaliação: só a avaliação final do curso; o aluno vai lá quando quiser (decisão de 2026-11-26) */}
+            {finalMode === 'questions' && finalEvaluation.quiz && (
+                <button type="button" className={`al-ev ${finalOpen ? 'on' : ''}`} onClick={() => (finalOpen ? setFinalOpen(false) : openFinal())}><IconDoc />{t('Avaliação')}</button>
             )}
-            {evalKind === 'quiz' && hasQuiz && (
-                <button type="button" className="al-ev" onClick={openQuiz}><IconDoc />{t('Avaliação')}</button>
+            {finalMode === 'avatar' && (
+                <button type="button" className={`al-ev ${evaluation ? 'on' : ''}`} onClick={() => { if (!running) { setEvaluation(evaluation ? null : 'intro'); setSheet(null); } }}><IconUser />{t('Avaliação')}</button>
             )}
         </div>
     );
@@ -414,8 +444,17 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                         <span className="al-orb" aria-hidden="true" />
                         <p>{t('O teste final com o avatar fica disponível em breve.')}</p>
                     </div>
+                ) : activity ? (
+                    <AlexActivityPanel place={activity} lesson={{ ...lesson, done }} minutes={lesson.minutes} link={lesson.activityLink}
+                        canStart={!!alexProp && canSave} onStart={pauseVideo} alex={alexProp} />
                 ) : askAlex ? (
                     <AlexLessonPanel alex={askAlex} open={avatarOn} onStart={pauseVideo} />
+                ) : avatarHere ? (
+                    // A aula tem avatar, mas este aluno ainda não o pode usar: diz porquê em vez de uma caixa vazia
+                    <div className="al-a-stage">
+                        <span className="al-orb" aria-hidden="true" />
+                        <p>{t('O avatar desta aula ainda não está disponível. Fala com o formador do curso.')}</p>
+                    </div>
                 ) : avatarUrl ? (
                     // Só sites de avatar aceites (o servidor filtra); sandbox: não navega a página da plataforma nem abre janelas sozinho
                     askStarted && <iframe src={avatarUrl} title={t('Perguntar ao avatar')} allow="microphone; camera; autoplay; display-capture"
@@ -459,7 +498,15 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                         {checksDone ? t('Ver as perguntas rápidas') : t('Perguntas rápidas')}
                     </button>
                 )}
-                {viewer ? (
+                {finalOpen && finalEvaluation.quiz ? (
+                    <div className="al-m-scroll">
+                        <div className="al-card flush">
+                            <button type="button" className="al-pill mb-3" onClick={() => setFinalOpen(false)}><IconLeft />{t('Voltar à aula')}</button>
+                            <QuizRunner key="final" quiz={finalEvaluation.quiz} canSave={canSave} title={t('Avaliação final do curso')}
+                                postUrl={`/plataforma/cursos/${course.slug}/avaliacao-final`} />
+                        </div>
+                    </div>
+                ) : viewer ? (
                     <>
                         <div className="al-fv">
                             <button type="button" className="al-tb-b" onClick={() => setAttachment(null)}><IconLeft />{t('Ficheiros')}</button>
@@ -472,7 +519,9 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                     <div className="al-m-scroll">{(!hasQuiz || hasMaterial) && <div className="al-card">
                         <h2>{lesson.title}</h2>
                         {/* Notas do formador (parte "Notas" da aula) */}
-                        {lesson.body && lesson.body.split(/\n{2,}/).map((p, i) => <p key={i}>{p}</p>)}
+                        {/* No exercício prático, o que o aluno tem de fazer */}
+                        {practical && <small className="mb-1 block text-xs font-semibold uppercase tracking-[0.05em] text-muted">{t('O que tens de fazer')}</small>}
+                        {bodyText && bodyText.split(/\n{2,}/).map((p, i) => <p key={i}>{p}</p>)}
                         {/* Link de avatar antigo (aulas de avatar de antes do Alex) */}
                         {lesson.url && !askAlex && (
                             <div className="al-avatar-card">
@@ -482,6 +531,11 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                         )}
                         {!hasMaterial && (
                             <p>{t('Esta aula não tem material de apoio.')}</p>
+                        )}
+                        {practical && canSave && (
+                            done || markedDone
+                                ? <p className="mt-3 font-display font-bold text-success-ink">{t('✓ Exercício feito')}</p>
+                                : <button type="button" className="al-pill mt-3" onClick={markDone}>{t('Marcar como feito')}</button>
                         )}
                         {lesson.attachments.length > 0 && (
                             <div className="al-files">

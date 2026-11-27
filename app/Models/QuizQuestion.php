@@ -9,7 +9,7 @@ class QuizQuestion extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['quiz_id', 'question', 'order_index'];
+    protected $fillable = ['quiz_id', 'question', 'points', 'order_index'];
 
     public function options(): HasMany
     {

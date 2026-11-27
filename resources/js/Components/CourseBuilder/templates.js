@@ -1,50 +1,35 @@
 // Modelos para começar um curso (2026-11-26, exemplo em landing-concepts/criar-curso-modelos.html).
-// Cada modelo diz o que cada aula tem e onde fica a avaliação; o editor abre com o programa montado.
-import { blankCourse, blankLessonData, newKey } from './model';
+// Fase 2 (2026-11-27): cada modelo monta atividades (aulas, testes, roleplays) e escolhe a avaliação final.
+import { blankActivity, blankCourse, newKey } from './model';
 
 import { t } from '@/i18n';
 
-// where: 'module-quiz' = questionário na última aula de cada módulo; 'module-avatar-final' = Alex na última aula de
-// cada módulo e um módulo "Teste final" com questionário; 'lesson-avatar' = o Alex avalia cada aula
+// after: o que vem depois das aulas de cada módulo ('quiz' = teste escrito, 'avatar' = teste com avatar,
+// 'roleplay' = um roleplay por aula). final: a avaliação final do curso.
 export const MODELS = [
-    { id: 'video', icon: '▶', name: 'Curso em vídeo', for: 'Formação técnica com aulas em vídeo.', parts: ['video', 'material', 'notas'], where: 'module-quiz', evaluation: 'Questionário no fim de cada módulo', example: 'Ex.: Diagnóstico de sistemas OBD-II', tag: 'Mais usado' },
-    { id: 'recert', icon: 'IA', name: 'Recertificação com o Alex', for: 'Como o curso AVAC: o Alex tira dúvidas e avalia cada módulo.', parts: ['video', 'material', 'avatar'], where: 'module-avatar-final', evaluation: 'Alex no fim de cada módulo + teste final', example: 'Ex.: Recertificação AVAC Automóvel', alex: true },
-    { id: 'docs', icon: 'PDF', name: 'Leitura e documentos', for: 'Normas, procedimentos e fichas técnicas, sem vídeo.', parts: ['material', 'notas'], where: 'module-quiz', evaluation: 'Questionário no fim de cada módulo', example: 'Ex.: Regras de segurança na oficina' },
-    { id: 'pratica', icon: 'Aa', name: 'Prática com o Alex', for: 'Situações reais: o aluno lê o caso e treina a conversa com o Alex.', parts: ['notas', 'avatar'], where: 'lesson-avatar', evaluation: 'Alex avalia cada aula', example: 'Ex.: Atendimento e fidelização de clientes', alex: true },
+    { id: 'video', icon: '▶', name: 'Curso em vídeo', for: 'Formação técnica com aulas em vídeo.', parts: ['video', 'material', 'notas'], after: 'quiz', final: 'none', evaluation: 'Teste no fim de cada módulo', example: 'Ex.: Diagnóstico de sistemas OBD-II', tag: 'Mais usado' },
+    { id: 'recert', icon: 'IA', name: 'Recertificação com o Alex', for: 'Como o curso AVAC: o Alex tira dúvidas e testa cada módulo; avaliação final com perguntas.', parts: ['video', 'material'], after: 'avatar', final: 'questions', evaluation: 'Teste com o Alex no fim de cada módulo + avaliação final', example: 'Ex.: Recertificação AVAC Automóvel', alex: true },
+    { id: 'docs', icon: 'PDF', name: 'Leitura e documentos', for: 'Normas, procedimentos e fichas técnicas, sem vídeo.', parts: ['material', 'notas'], after: 'quiz', final: 'none', evaluation: 'Teste no fim de cada módulo', example: 'Ex.: Regras de segurança na oficina' },
+    { id: 'pratica', icon: 'RP', name: 'Prática com o Alex', for: 'Situações reais: o aluno lê o caso e treina a conversa num roleplay com o avatar.', parts: ['notas'], after: 'roleplay', final: 'avatar', evaluation: 'Um roleplay por aula + avaliação final com o avatar', example: 'Ex.: Atendimento e fidelização de clientes', alex: true },
 ];
 
-export const PART_LABELS = { video: 'Vídeo', material: 'Material', notas: 'Notas', avatar: 'Alex' };
+export const PART_LABELS = { video: 'Vídeo', material: 'Material', notas: 'Notas' };
+export const KIND_LABELS = { aula: 'Aula', teste: 'Teste', exercicio: 'Exercício', roleplay: 'Roleplay' };
 
-const blankQuestion = () => ({ key: newKey(), id: null, question: '', options: ['', ''], option_ids: [null, null], correct: 0 });
-
-function lesson(parts, evaluation, title = '') {
-    return {
-        ...blankLessonData(),
-        title,
-        type: parts.includes('video') ? 'video_link' : evaluation === 'quiz' ? 'quiz' : 'text',
-        parts: [...parts],
-        evaluation,
-        quiz: evaluation === 'quiz' ? [blankQuestion()] : [],
-    };
-}
-
-// O programa do modelo: [{ final, lessons: [{ parts, evaluation }] }] (também para a pré-visualização do ecrã)
+// O programa do modelo (também para a pré-visualização do ecrã): [{ lessons: [{ kind, parts, evaluation }] }]
 export function outline(model, modules, lessons) {
-    if (!model) return [{ final: false, lessons: [{ parts: ['video'], evaluation: 'none' }] }];
+    if (!model) return [{ lessons: [{ kind: 'aula', parts: ['video'], evaluation: 'none' }] }];
     const out = [];
     for (let i = 0; i < modules; i++) {
         const ls = [];
         for (let j = 0; j < lessons; j++) {
-            const last = j === lessons - 1;
-            let evaluation = 'none';
-            if (model.where === 'lesson-avatar') evaluation = 'avatar';
-            if (last && model.where === 'module-quiz') evaluation = 'quiz';
-            if (last && model.where === 'module-avatar-final') evaluation = 'avatar';
-            ls.push({ parts: model.parts, evaluation });
+            ls.push({ kind: 'aula', parts: model.parts, evaluation: 'none' });
+            if (model.after === 'roleplay') ls.push({ kind: 'roleplay', parts: [], evaluation: 'avatar' });
         }
-        out.push({ final: false, lessons: ls });
+        if (model.after === 'quiz') ls.push({ kind: 'teste', parts: [], evaluation: 'quiz' });
+        if (model.after === 'avatar') ls.push({ kind: 'teste', parts: [], evaluation: 'avatar' });
+        out.push({ lessons: ls });
     }
-    if (model.where === 'module-avatar-final') out.push({ final: true, lessons: [{ parts: [], evaluation: 'quiz' }] });
     return out;
 }
 
@@ -54,10 +39,17 @@ export function courseFromModel(modelId, modules, lessons, { canAlex = false } =
     const model = MODELS.find((m) => m.id === modelId);
     if (!model) return c;
     c.modules = outline(model, modules, lessons).map((m) => ({
-        key: newKey(), id: null, title: m.final ? t('Teste final') : '', description: '',
-        lessons: m.lessons.map((l) => lesson(l.parts, l.evaluation, m.final ? t('Teste final') : '')),
+        key: newKey(), id: null, title: '', description: '',
+        lessons: m.lessons.map((x) => {
+            const l = blankActivity(x.kind);
+            if (x.kind === 'aula') l.parts = [...x.parts];
+            if (x.kind === 'teste') l.evaluation = x.evaluation;
+            return l;
+        }),
     }));
-    // O Alex do curso só se liga sozinho para quem pode (o servidor ignora-o para os outros)
+    c.final_mode = model.final;
+    if (model.final === 'questions') c.final_quiz = [{ key: newKey(), id: null, question: '', points: 1, options: ['', ''], option_ids: [null, null], correct: 0 }];
+    // O avatar de ajuda só se liga sozinho para quem pode (o servidor ignora-o para os outros)
     if (model.alex && canAlex) c.alex_enabled = true;
     return c;
 }

@@ -476,6 +476,30 @@ class CourseBuilderController extends Controller
             'modules.*.lessons.*.title' => ['nullable', 'string', 'max:200'],
             'modules.*.lessons.*.type' => ['nullable', Rule::in($types)],
             // O que a aula tem e a avaliação (2026-11-25); sem `parts`, as partes vêm do tipo (editor antigo)
+            // Fase 2 (2026-11-27): tipo de atividade, roleplay, pesos das perguntas e a avaliação final
+            'modules.*.lessons.*.kind' => ['nullable', Rule::in(Lesson::KINDS)],
+            'modules.*.lessons.*.roleplay_role' => ['nullable', 'string', 'max:255'],
+            'modules.*.lessons.*.graded' => ['nullable', 'boolean'],
+            'modules.*.lessons.*.avatar_link' => ['nullable', 'string', 'max:500'],
+            'modules.*.lessons.*.weighted' => ['nullable', 'boolean'],
+            'modules.*.lessons.*.quiz.*.points' => ['nullable', 'integer', 'between:1,100'],
+            'final_mode' => ['nullable', Rule::in(['questions', 'avatar', 'none'])],
+            'final_pass' => ['nullable', 'integer', 'between:0,100'],
+            'final_minutes' => ['nullable', 'integer', 'between:1,120'],
+            'final_prompt' => ['nullable', 'string', 'max:2000'],
+            'final_pal_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'final_weight' => ['nullable', 'integer', 'between:0,100'],
+            'final_weighted' => ['nullable', 'boolean'],
+            'final_quiz' => ['array', 'max:100'],
+            'final_quiz.*.key' => ['nullable', 'string', 'max:40'],
+            'final_quiz.*.id' => ['nullable', 'integer'],
+            'final_quiz.*.question' => ['nullable', 'string', 'max:500'],
+            'final_quiz.*.points' => ['nullable', 'integer', 'between:1,100'],
+            'final_quiz.*.option_ids' => ['nullable', 'array', 'max:8'],
+            'final_quiz.*.option_ids.*' => ['nullable', 'integer'],
+            'final_quiz.*.options' => ['array', 'max:8'],
+            'final_quiz.*.options.*' => ['nullable', 'string', 'max:300'],
+            'final_quiz.*.correct' => ['integer', 'min:0'],
             'modules.*.lessons.*.parts' => ['sometimes', 'array', 'max:4'],
             'modules.*.lessons.*.parts.*' => [Rule::in(Lesson::PARTS)],
             'modules.*.lessons.*.evaluation' => ['nullable', Rule::in(Lesson::EVALUATIONS)],
@@ -514,7 +538,7 @@ class CourseBuilderController extends Controller
             $course = $request->route('course');
             unset($data['alex_blocked']);
             if (! $user->canDo('cursos.alex') || ($course instanceof Course && $course->alex_blocked)) {
-                unset($data['alex_enabled'], $data['alex_pal_id'], $data['alex_face_id']);
+                unset($data['alex_enabled'], $data['alex_pal_id'], $data['alex_face_id'], $data['final_pal_id']);
             }
         }
 

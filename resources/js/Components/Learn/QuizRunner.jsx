@@ -5,7 +5,10 @@ import { t } from '@/i18n';
 
 // Teste: até N tentativas. Depois de entregar, vê-se a nota e quais acertou/errou (sem poder alterar).
 // As respostas certas só aparecem quando o teste fica fechado (passou ou esgotou as tentativas).
-export default function QuizRunner({ lessonUlid, quiz, canSave }) {
+// postUrl: a avaliação final do curso entrega noutro endereço. quiz.graded = false: exercício (sem nota, repete-se).
+export default function QuizRunner({ lessonUlid, quiz, canSave, postUrl = null, title = null }) {
+    const graded = quiz.graded !== false;
+    const pct = (v) => (v == null ? '' : `${String(v).replace('.', ',')}%`);
     const last = quiz.attempts[quiz.attempts.length - 1];
     const [retrying, setRetrying] = useState(!last);
     const [answers, setAnswers] = useState({});
@@ -17,15 +20,18 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
 
     const submit = () => {
         setBusy(true);
-        router.post(`/plataforma/aulas/${lessonUlid}/quiz`, { answers }, {
+        router.post(postUrl ?? `/plataforma/aulas/${lessonUlid}/quiz`, { answers }, {
             preserveScroll: false,
             onSuccess: () => { setRetrying(false); setAnswers({}); window.scrollTo({ top: 0 }); },
             onFinish: () => setBusy(false),
         });
     };
 
-    const meta = (
+    const meta = !graded ? (
+        <div className="mb-5 text-sm text-muted">{title && <h2 className="mb-1 font-display text-lg font-bold text-ink">{title}</h2>}{t('Exercício para praticar: sem nota, podes repetir quando quiseres.')}</div>
+    ) : (
         <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted">
+            {title && <h2 className="w-full font-display text-lg font-bold text-ink">{title}</h2>}
             <span>{t('Nota mínima')}{' '}<b className="font-display text-ink">{quiz.passing}%</b></span>
             <span>{t('Tentativas')}{' '}<b className="font-display text-ink">{used} / {quiz.max}</b></span>
             <span className="flex gap-1" aria-hidden="true">{Array.from({ length: quiz.max }, (_, i) => <i key={i} className={`h-1.5 w-6 ${i < used ? 'bg-ink' : 'bg-track'}`} />)}</span>
@@ -37,16 +43,20 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
         return (
             <div className="p-5 sm:p-7">
                 {meta}
+                {graded ? (
                 <div className={`mb-5 flex flex-wrap items-center gap-4 p-5 ${last.passed ? 'bg-success/10' : 'bg-live/10'}`}>
                     <span className={`font-display text-[40px] font-bold leading-none ${last.passed ? 'text-success-ink' : 'text-live-ink'}`}>{last.score}%</span>
                     <div>
-                        <p className="font-display text-lg font-bold">{last.passed ? t('Passaste no teste!') : t('Ainda não chegaste à nota mínima')}</p>
+                        <p className="font-display text-lg font-bold">{last.passed ? (postUrl ? t('Passaste na avaliação final!') : t('Passaste no teste!')) : t('Ainda não chegaste à nota mínima')}</p>
                         <p className="text-sm text-muted">
                             {t('Tentativa :used de :max.', { used, max: quiz.max })}{' '}
-                            {last.passed ? t('A aula ficou concluída.') : left > 0 ? t('Tens mais :left tentativa:v2.', { left, v2: left > 1 ? 's' : '' }) : t('Já usaste todas as tentativas. Fala com o formador.')}
+                            {last.passed ? (postUrl ? '' : t('A aula ficou concluída.')) : left > 0 ? t('Tens mais :left tentativa:v2.', { left, v2: left > 1 ? 's' : '' }) : t('Já usaste todas as tentativas. Fala com o formador.')}
                         </p>
                     </div>
                 </div>
+                ) : (
+                    <p className="mb-5 bg-success/10 p-4 font-display font-bold text-success-ink">{t('Exercício feito. Vê abaixo as respostas certas.')}</p>
+                )}
                 {quiz.questions.map((q, qi) => {
                     const chosen = last.answers[q.id];
                     const ok = last.results[q.id];
@@ -55,6 +65,7 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
                             <p className="mb-2 flex gap-2 font-display font-semibold">
                                 <span className={ok ? 'text-success-ink' : 'text-live-ink'}><span aria-hidden="true">{ok ? '✓' : '✗'}</span><span className="sr-only">{ok ? t('Certa') : t('Errada')}</span></span>
                                 {qi + 1}. {q.question}
+                                {graded && q.value != null && <small className="ml-auto whitespace-nowrap font-sans text-xs font-normal text-muted">{t('vale :v', { v: pct(q.value) })}</small>}
                             </p>
                             {q.options.map((o) => {
                                 const mine = Number(chosen) === o.id;
@@ -73,10 +84,10 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
                     );
                 })}
                 <p className="mt-2 text-[13px] text-muted">
-                    {t('As respostas e a nota ficam registadas e não podem ser alteradas.')}
-                    {!quiz.passed && left > 0 && t(' As respostas certas aparecem quando passares ou esgotares as tentativas.')}
+                    {graded && t('As respostas e a nota ficam registadas e não podem ser alteradas.')}
+                    {graded && !quiz.passed && left > 0 && t(' As respostas certas aparecem quando passares ou esgotares as tentativas.')}
                 </p>
-                {!quiz.passed && left > 0 && canSave && (
+                {((graded && !quiz.passed && left > 0) || !graded) && canSave && (
                     <button type="button" onClick={() => setRetrying(true)} className="ui-btn mt-4">
                         {t('Tentar outra vez')}
                     </button>
@@ -90,7 +101,7 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
             {meta}
             {quiz.questions.map((q, qi) => (
                 <fieldset key={q.id} className="border-t border-line py-4 first:border-t-0">
-                    <legend className="mb-2 font-display font-semibold">{qi + 1}. {q.question}</legend>
+                    <legend className="mb-2 flex w-full gap-2 font-display font-semibold"><span>{qi + 1}. {q.question}</span>{graded && q.value != null && <small className="ml-auto whitespace-nowrap font-sans text-xs font-normal text-muted">{t('vale :v', { v: pct(q.value) })}</small>}</legend>
                     {q.options.map((o) => (
                         <label key={o.id} className={`mb-1.5 flex cursor-pointer items-center gap-2.5 border-[1.5px] px-3 py-2.5 text-[15px] ${
                             answers[q.id] === o.id ? 'border-accent bg-accent/10' : 'border-transparent bg-page hover:border-line'
@@ -108,7 +119,7 @@ export default function QuizRunner({ lessonUlid, quiz, canSave }) {
                         className="ui-btn ui-btn-accent">
                         {busy ? t('A entregar…') : t('Entregar respostas')}
                     </button>
-                    <span className="text-[13px] text-muted">{all ? t('Depois de entregar não podes mudar as respostas.') : t('Responde a todas as perguntas para entregar.')}</span>
+                    <span className="text-[13px] text-muted">{!all ? t('Responde a todas as perguntas para entregar.') : graded ? t('Depois de entregar não podes mudar as respostas.') : t('Sem nota: vês logo as respostas certas.')}</span>
                 </div>
             ) : (
                 <p className="mt-3 text-[13px] text-muted">{t('Pré-visualização: as respostas não são entregues.')}</p>

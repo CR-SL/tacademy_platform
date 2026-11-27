@@ -16,21 +16,25 @@ export function guideFor(step, { openFirstLesson }) {
             ];
         case 1:
             return [
-                { target: 'lesson-row', title: t('Cada linha é uma aula'), body: t('Carrega na aula para a abrir. À direita vês o que falta para ficar completa.') },
-                { target: 'parts', title: t('Escolhe o que a aula tem'), body: t('Liga o vídeo, o material didático, as notas ou o avatar. Só aparecem os campos do que ligares.'), before: openFirstLesson },
-                { target: 'evaluation', title: t('Escolhe a avaliação'), body: t('Um questionário (3 tentativas) ou uma conversa de avaliação com o avatar. Também podes não avaliar.'), before: openFirstLesson },
+                { target: 'lesson-row', title: t('Cada linha é uma atividade'), body: t('Carrega numa atividade para a abrir. À direita vês o que falta para ficar completa.') },
+                { target: 'add-activity', title: t('Junta atividades ao módulo'), body: t('Aulas (vídeo, material, notas), testes (escritos ou com avatar), exercícios sem nota e roleplays com um avatar.') },
+                { target: 'parts', title: t('Numa aula, escolhe o que ela tem'), body: t('Liga o vídeo, o material didático ou as notas. Só aparecem os campos do que ligares.'), before: openFirstLesson },
                 { target: 'ready', title: t('Acompanha o que falta'), body: t('Aqui vês quantas aulas estão prontas e o que falta em cada uma. Carrega numa para a abrir.') },
             ];
         case 2:
             return [
-                { target: 'avatar', title: t('Liga o Alex'), body: t('Com o avatar ligado, o aluno fala com o Alex nas aulas que têm o Avatar ligado no Programa.') },
+                { target: 'avatar', title: t('O avatar de ajuda'), body: t('Ligado, quem comprou o curso tira dúvidas com este avatar no Início e em todas as aulas do curso. Tem 30 minutos incluídos.') },
                 { target: 'avatar-modules', title: t('Um Alex por módulo'), body: t('Cada módulo pode ter o seu PAL ID, com a avaliação desse módulo. Vazio = o Alex do curso.') },
             ];
         case 3:
             return [
+                { target: 'final-mode', title: t('Escolhe a avaliação final'), body: t('Um conjunto de perguntas, uma avaliação com o avatar, ou nenhuma. O aluno faz quando quiser, no botão Avaliação.') },
+                { target: 'final-grade', title: t('A nota final do curso'), body: t('Junta a média dos testes e a avaliação final, com o peso que escolheres. Os exercícios não contam.') },
+            ];
+        case 4:
+            return [
                 { target: 'price', title: t('Define o preço'), body: t('Valor final pago pelo aluno, com IVA. Também podes deixar o curso gratuito.') },
                 { target: 'access', title: t('Acesso e certificado'), body: t('Escolhe durante quanto tempo o aluno tem acesso, o prazo para concluir e o que conta para o certificado.') },
-                { target: 'sample', title: t('Aula de amostra'), body: t('Escolhe uma aula que qualquer pessoa pode ver antes de comprar. Ajuda a vender o curso.') },
             ];
         default:
             return [

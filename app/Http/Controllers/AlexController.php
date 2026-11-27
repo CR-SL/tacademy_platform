@@ -25,7 +25,7 @@ class AlexController extends Controller
     {
         $data = $request->validate([
             'place' => ['required', Rule::in(AlexService::PLACES)],
-            'lesson' => ['required_if:place,aula', 'nullable', 'string', 'max:30'],
+            'lesson' => ['required_if:place,aula,teste,roleplay,avaliacao', 'nullable', 'string', 'max:30'],
         ]);
 
         try {
@@ -35,7 +35,7 @@ class AlexController extends Controller
         } catch (AlexEvaluationDone) {
             return response()->json(['message' => __('Já fizeste esta avaliação com o Alex.')], 409);
         } catch (AlexLimitReached $e) {
-            return response()->json(['message' => __('Não tens conversas disponíveis. Compra créditos para continuar a falar com o Alex.'), 'left' => 0, 'credits' => 0], 429);
+            return response()->json(['message' => __('Já usaste os minutos de avatar incluídos no curso. Compra créditos para continuar.'), 'left' => 0, 'credits' => 0], 429);
         } catch (RuntimeException) {
             return response()->json(['message' => __('O Alex não está disponível agora. Tenta daqui a pouco.')], 503);
         }
@@ -78,7 +78,7 @@ class AlexController extends Controller
         abort_unless($conversation->user_id === $request->user()->id, 403);
         $this->alex->end($conversation);
 
-        return response()->json(['ok' => true, 'left' => $this->alex->leftToday($request->user())]);
+        return response()->json(['ok' => true, 'left' => $this->alex->minutesLeft($request->user(), $conversation->course_id ? \App\Models\Course::find($conversation->course_id) : null)]);
     }
 
     /** Avisos do Tavus (fim da sala, transcrição), assinados com o segredo da conversa. */

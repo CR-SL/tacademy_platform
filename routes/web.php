@@ -99,10 +99,12 @@ Route::middleware(['auth', 'verified', 'throttle:600,1'])->prefix('storage/'.Cou
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/plataforma/cursos/{course:slug}', LearnCourseController::class)->name('learn.course');
     Route::get('/plataforma/cursos/{course:slug}/aulas/{lesson}', [LessonController::class, 'show'])->name('learn.lesson');
+    Route::post('/plataforma/cursos/{course:slug}/avaliacao-final', [LessonController::class, 'finalQuiz'])->middleware('throttle:30,1')->name('learn.final');
     Route::middleware('throttle:120,1')->prefix('plataforma/aulas/{lesson}')->name('learn.')->group(function () {
         Route::post('/progresso', [LessonController::class, 'progress'])->name('progress');
         Route::post('/perguntas/{check}', [LessonController::class, 'check'])->name('check');
         Route::post('/quiz', [LessonController::class, 'quiz'])->name('quiz');
+        Route::post('/feito', [LessonController::class, 'done'])->name('done'); // exercício prático
         Route::post('/notas', [LessonController::class, 'storeNote'])->name('notes.store');
         Route::delete('/notas/{note}', [LessonController::class, 'destroyNote'])->name('notes.destroy');
     });

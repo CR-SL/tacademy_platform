@@ -6,7 +6,6 @@ const DEADLINES = [[null, 'Sem prazo'], [30, '30 dias'], [60, '60 dias'], [90, '
 
 // Passo 4 · Preço e acesso.
 export default function StepPrice({ c, update }) {
-    const lessons = c.modules.flatMap((m, mi) => m.lessons.map((l, li) => [l.key, `${mi + 1}.${li + 1} ${l.title || t('Aula sem título')}`]));
 
     return (
         <div className="space-y-4">
@@ -71,12 +70,6 @@ export default function StepPrice({ c, update }) {
                         {t('O certificado só é emitido depois de confirmares a presença do aluno, em “Os meus cursos” › Alunos.')}
                     </Toggle>
                 )}
-                <Field data-guide="sample" label={t('Aula de amostra grátis')} id="f-sample" className="mt-2" hint={t('Quem ainda não comprou pode ver esta aula para experimentar.')}>
-                    <select id="f-sample" className={inputCls} value={c.sample_lesson_key} onChange={(e) => update((d) => { d.sample_lesson_key = e.target.value; })}>
-                        <option value="">{t('Nenhuma')}</option>
-                        {lessons.map(([k, tx]) => <option key={k} value={k}>{tx}</option>)}
-                    </select>
-                </Field>
             </Panel>
         </div>
     );

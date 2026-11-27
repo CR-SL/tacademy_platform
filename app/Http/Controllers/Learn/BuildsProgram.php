@@ -59,7 +59,7 @@ trait BuildsProgram
                         default => 'locked',
                     },
                     'current' => $l->id === $currentId,
-                    'sample' => $l->id === $course->sample_lesson_id,
+                    'sample' => false, // sem aula de amostra (2026-11-26)
                     'position' => $done->contains($l->id) ? null : ($started[$l->id] ?? null),
                 ])->values(),
             ];

@@ -1,11 +1,11 @@
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
-import { MODELS, PART_LABELS, outline } from './templates';
+import { KIND_LABELS, MODELS, PART_LABELS, outline } from './templates';
 
 import { t } from '@/i18n';
 
-const ICON = { video: '▶', material: 'PDF', notas: 'Aa', avatar: 'IA' };
-const EVAL = { quiz: 'Questionário', avatar: 'Avaliação com o Alex' };
+const ICON = { aula: '▶', teste: '?', exercicio: 'Ex', roleplay: 'RP' };
+const FINAL = { questions: 'Avaliação final com perguntas', avatar: 'Avaliação final com o avatar' };
 
 function Stepper({ label, value, onChange }) {
     return (
@@ -74,7 +74,7 @@ export default function TemplatePicker({ onStart }) {
                     <h2 className="font-display text-[17px] font-bold">{model ? t(model.name) : t('Em branco')}</h2>
                     <small className="mb-3.5 block text-[12.5px] text-muted">
                         {model
-                            ? t(':n aulas · :alex', { n: count, alex: model.alex ? t('com o Alex') : t('sem avatar') })
+                            ? t(':n atividades · :alex', { n: count, alex: model.alex ? t('com o Alex') : t('sem avatar') })
                             : t('1 módulo · 1 aula')}
                     </small>
                     {model ? (
@@ -85,22 +85,25 @@ export default function TemplatePicker({ onStart }) {
                                 {prog.map((m, mi) => (
                                     <div key={mi}>
                                         <div className="flex gap-2 bg-page px-3 py-2 font-display text-[12.5px] font-bold">
-                                            <span className="text-accent-ink">{m.final ? '★' : String(mi + 1).padStart(2, '0')}</span>
-                                            {m.final ? t('Teste final') : t('Módulo :n', { n: mi + 1 })}
+                                            <span className="text-accent-ink">{String(mi + 1).padStart(2, '0')}</span>
+                                            {t('Módulo :n', { n: mi + 1 })}
                                         </div>
                                         {m.lessons.map((l, li) => (
                                             <div key={li} className="flex items-center gap-2 border-t border-line px-3 py-1.5 text-[12.5px]">
-                                                <span aria-hidden="true" className={`grid h-[22px] w-[22px] flex-none place-items-center rounded-full text-[9px] font-extrabold ${l.parts.length ? 'bg-ink text-on-ink' : 'bg-accent text-on-accent'}`}>
-                                                    {l.parts.length ? ICON[l.parts[0]] : '?'}
+                                                <span aria-hidden="true" className={`grid h-[22px] w-[22px] flex-none place-items-center rounded-full text-[9px] font-extrabold ${l.kind === 'aula' ? 'bg-ink text-on-ink' : 'bg-accent text-on-accent'}`}>
+                                                    {ICON[l.kind]}
                                                 </span>
-                                                {m.final ? t('Teste final') : t('Aula :n', { n: `${mi + 1}.${li + 1}` })}
+                                                {t(KIND_LABELS[l.kind])}
                                                 <em className="ml-auto truncate pl-2 text-[11.5px] not-italic text-muted">
-                                                    {[...l.parts.map((p) => t(PART_LABELS[p])), l.evaluation !== 'none' && t(EVAL[l.evaluation])].filter(Boolean).join(' · ')}
+                                                    {l.kind === 'aula' ? l.parts.map((p) => t(PART_LABELS[p])).join(' · ') : l.kind === 'teste' ? (l.evaluation === 'avatar' ? t('com o avatar') : t('escrito')) : t('com o avatar')}
                                                 </em>
                                             </div>
                                         ))}
                                     </div>
                                 ))}
+                                {model.final !== 'none' && (
+                                    <div className="flex gap-2 bg-page px-3 py-2 font-display text-[12.5px] font-bold"><span className="text-success-ink">★</span>{t(FINAL[model.final])}</div>
+                                )}
                             </div>
                         </>
                     ) : (

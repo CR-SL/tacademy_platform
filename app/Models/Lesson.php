@@ -15,6 +15,9 @@ class Lesson extends Model
 
     protected $fillable = [
         'module_id',
+        'kind',
+        'roleplay_role',
+        'graded',
         'title',
         'content_type',
         'parts',
@@ -35,12 +38,27 @@ class Lesson extends Model
 
     public const EVALUATIONS = ['none', 'quiz', 'avatar'];
 
+    /** Tipos de atividade de um módulo (fase 2, 2026-11-27). */
+    public const KINDS = ['aula', 'exercicio', 'teste', 'roleplay'];
+
+    public function kindName(): string
+    {
+        return in_array($this->kind, self::KINDS, true) ? $this->kind : 'aula';
+    }
+
+    /** Atividade com avatar (teste com avatar ou roleplay): faz-se na caixa do avatar. */
+    public function usesAvatar(): bool
+    {
+        return $this->kindName() === 'roleplay' || ($this->kindName() === 'teste' && $this->evaluationKind() === 'avatar');
+    }
+
     protected function casts(): array
     {
         return [
             'is_downloadable' => 'boolean',
             'duration_seconds' => 'integer',
             'parts' => 'array',
+            'graded' => 'boolean',
         ];
     }
 

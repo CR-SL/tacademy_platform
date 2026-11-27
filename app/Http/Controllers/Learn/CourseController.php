@@ -40,7 +40,6 @@ class CourseController extends Controller
         $done = $access['mode'] === 'enrolled' ? $this->learning->completedIds($user, $lessons) : collect();
         $next = $lessons->first(fn ($l) => ! $done->contains($l->id) && $this->learning->canOpen($access, $course, $l))
             ?? $lessons->first();
-        $sample = $lessons->firstWhere('id', $course->sample_lesson_id);
         $enrollment = $access['mode'] === 'enrolled' ? $access['enrollment']?->setRelation('course', $course) : null;
         $course->loadMissing(['category', 'instructor']);
 
@@ -78,7 +77,7 @@ class CourseController extends Controller
             ],
             'program' => $this->program($course, $lessons, $done, $access, null, $access['mode'] === 'enrolled' ? $this->startedVideos($user, $lessons) : null),
             'next' => $next ? ['ulid' => $next->ulid, 'title' => $next->title, 'started' => $done->isNotEmpty(), 'finished' => $lessons->isNotEmpty() && $done->count() === $lessons->count()] : null,
-            'sample' => $sample && $access['mode'] === 'none' ? ['ulid' => $sample->ulid, 'title' => $sample->title] : null,
+            'sample' => null, // sem aula de amostra (2026-11-26)
             'certificate' => $this->learning->certificateStatus($user, $course, $lessons, $done),
             'savedLayout' => $area->layout($user, 'curso'),
         ]);

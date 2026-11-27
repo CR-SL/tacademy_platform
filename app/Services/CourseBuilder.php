@@ -56,7 +56,7 @@ class CourseBuilder
     /** Curso no formato do editor (React). */
     public function toEditor(Course $course): array
     {
-        $course->load(['modules.lessons.attachments', 'modules.lessons.checks', 'modules.lessons.quiz.questions.options']);
+        $course->load(['modules.lessons.attachments', 'modules.lessons.checks', 'modules.lessons.quiz.questions.options', 'finalQuiz.questions.options']);
 
         return [
             'ulid' => $course->ulid,
@@ -84,7 +84,15 @@ class CourseBuilder
             'certificate_enabled' => $course->certificate_enabled,
             'certificate_min_progress' => $course->certificate_min_progress,
             'certificate_min_score' => $course->certificate_min_score,
-            'sample_lesson_key' => $course->sample_lesson_id ? 'l'.$course->sample_lesson_id : '',
+            // Avaliação final do curso (fase 2, 2026-11-27)
+            'final_mode' => $course->finalMode(),
+            'final_pass' => (int) ($course->final_pass ?: 70),
+            'final_minutes' => (int) ($course->final_minutes ?: 15),
+            'final_prompt' => $course->final_prompt ?? '',
+            'final_pal_id' => $course->final_pal_id ?? '',
+            'final_weight' => (int) $course->final_weight,
+            'final_weighted' => (bool) $course->finalQuiz?->weighted,
+            'final_quiz' => $course->finalQuiz ? $this->questionsToEditor($course->finalQuiz) : [],
             'modules' => $course->modules->map(fn (Module $m) => [
                 'key' => 'm'.$m->id,
                 'id' => $m->id,
@@ -97,7 +105,13 @@ class CourseBuilder
                     'id' => $l->id,
                     'title' => $l->title,
                     'type' => $l->content_type,
-                    'parts' => $l->setRelation('module', $m->setRelation('course', $course))->partList(),
+                    'kind' => $l->kindName(),
+                    // O avatar deixou de ser uma parte da aula (é o avatar de ajuda do curso)
+                    'parts' => array_values(array_diff($l->setRelation('module', $m->setRelation('course', $course))->partList(), ['avatar'])),
+                    'roleplay_role' => $l->roleplay_role ?? '',
+                    'graded' => (bool) $l->graded,
+                    'avatar_link' => $l->avatar_ref ?? '',
+                    'weighted' => (bool) $l->quiz?->weighted,
                     'evaluation' => $l->evaluationKind(),
                     'evaluation_prompt' => $l->evaluation_prompt ?? '',
                     'alex_pal_id' => $l->alex_pal_id ?? '',
@@ -109,16 +123,7 @@ class CourseBuilder
                     'attachments' => $l->attachments->map(fn (LessonAttachment $a) => [
                         'name' => $a->name, 'path' => $a->path, 'size' => $a->size, 'url' => $a->url(),
                     ])->values()->all(),
-                    'quiz' => $l->quiz
-                        ? $l->quiz->questions->map(fn ($q) => [
-                            'key' => 'q'.$q->id,
-                            'id' => $q->id,
-                            'question' => $q->question,
-                            'option_ids' => $q->options->pluck('id')->all(),
-                            'options' => $q->options->pluck('option_text')->all(),
-                            'correct' => max(0, $q->options->search(fn ($o) => $o->is_correct)),
-                        ])->values()->all()
-                        : [],
+                    'quiz' => $l->quiz ? $this->questionsToEditor($l->quiz) : [],
                     'checks' => $l->checks->map(fn ($c) => [
                         'key' => 'c'.$c->id, 'id' => $c->id,
                         'question' => $c->question, 'options' => $c->options, 'correct' => $c->correct, 'explanation' => $c->explanation ?? '',
@@ -126,6 +131,20 @@ class CourseBuilder
                 ])->values()->all(),
             ])->values()->all(),
         ];
+    }
+
+    /** Perguntas de um questionário no formato do editor (com o peso de cada uma). */
+    private function questionsToEditor(\App\Models\Quiz $quiz): array
+    {
+        return $quiz->questions->map(fn ($q) => [
+            'key' => 'q'.$q->id,
+            'id' => $q->id,
+            'question' => $q->question,
+            'points' => (int) ($q->points ?: 1),
+            'option_ids' => $q->options->pluck('id')->all(),
+            'options' => $q->options->pluck('option_text')->all(),
+            'correct' => max(0, $q->options->search(fn ($o) => $o->is_correct)),
+        ])->values()->all();
     }
 
     /**
@@ -210,37 +229,51 @@ class CourseBuilder
                 foreach (array_values($m['lessons'] ?? []) as $li => $l) {
                     $lesson = isset($l['id']) && $existingLessons->has($l['id']) ? $existingLessons[$l['id']] : new Lesson;
                     // Editor aberto antes das partes (só com o tipo): as partes vêm do tipo, como na migração
-                    if (! array_key_exists('parts', $l)) {
+                    if (! array_key_exists('parts', $l) && ! array_key_exists('kind', $l)) {
                         $old = (new Lesson(['content_type' => $l['type'] ?? 'video_link']))->setRelation('module', null);
                         $l['parts'] = $old->partList();
                         $l['evaluation'] = $old->evaluationKind();
                     }
-                    $parts = array_values(array_intersect(Lesson::PARTS, (array) ($l['parts'] ?? [])));
-                    $evaluation = in_array($l['evaluation'] ?? 'none', Lesson::EVALUATIONS, true) ? $l['evaluation'] : 'none';
+                    // Editor aberto antes da fase 2 (sem o tipo): o teste sozinho é um Teste; o resto é uma Aula
+                    if (! array_key_exists('kind', $l)) {
+                        $l['kind'] = ($l['evaluation'] ?? 'none') !== 'none' && ! array_diff((array) $l['parts'], ['avatar']) ? 'teste' : 'aula';
+                    }
+                    // Tipo de atividade (fase 2): o que cada uma guarda está em Lesson (ver a migração de 2026-11-27)
+                    $kind = in_array($l['kind'] ?? 'aula', Lesson::KINDS, true) ? ($l['kind'] ?? 'aula') : 'aula';
+                    $parts = $kind === 'aula' ? array_values(array_intersect(['video', 'material', 'notas'], (array) ($l['parts'] ?? []))) : [];
+                    $evaluation = match ($kind) {
+                        'teste' => ($l['evaluation'] ?? 'quiz') === 'avatar' ? 'avatar' : 'quiz',
+                        'exercicio' => ($l['evaluation'] ?? 'none') === 'quiz' ? 'quiz' : 'none',
+                        'roleplay' => 'avatar',
+                        default => 'none',
+                    };
+                    $withAvatar = $evaluation === 'avatar'; // teste com avatar ou roleplay
                     $hasVideo = in_array('video', $parts, true);
                     $url = trim($l['url'] ?? '');
+                    $link = trim($l['avatar_link'] ?? '');
                     $lesson->fill([
                         'module_id' => $module->id,
+                        'kind' => $kind,
                         'title' => trim($l['title'] ?? ''),
                         'parts' => $parts,
                         'evaluation' => $evaluation,
-                        'evaluation_prompt' => $evaluation === 'avatar' ? (trim($l['evaluation_prompt'] ?? '') ?: null) : null,
+                        // Casos do teste com avatar / instruções do roleplay (o aluno não vê)
+                        'evaluation_prompt' => $withAvatar ? (trim($l['evaluation_prompt'] ?? '') ?: null) : null,
+                        'roleplay_role' => $kind === 'roleplay' ? (trim($l['roleplay_role'] ?? '') ?: null) : null,
+                        'graded' => $kind === 'roleplay' ? (bool) ($l['graded'] ?? false) : true,
                         'content_type' => Lesson::mainType($parts, $evaluation, $lesson->content_type),
                         'content_url' => $hasVideo ? ($url ?: null) : null,
-                        'body' => in_array('notas', $parts, true) ? ($l['body'] ?? null) : null,
+                        // Notas da aula, o que o aluno faz no exercício prático, ou a situação do roleplay
+                        'body' => in_array('notas', $parts, true) || $kind === 'roleplay' || ($kind === 'exercicio' && $evaluation === 'none') ? ($l['body'] ?? null) : null,
+                        // Avatar por link (teste com avatar ou roleplay); só https dos sites aceites
+                        'avatar_ref' => $withAvatar && self::validAvatarUrl($link) ? $link : null,
+                        'alex_pal_id' => null, // o avatar de ajuda é do curso
                         'duration_seconds' => (int) ($l['minutes'] ?? 0) * 60,
                         'order_index' => $li,
                     ]);
-                    // O link de avatar antigo (aulas do tipo avatar) sai quando a aula deixa de ter o avatar
-                    if (! in_array('avatar', $parts, true)) {
-                        $lesson->avatar_ref = null;
-                    }
-                    // PAL do avatar desta aula: só quem pode mudar o Alex do curso (como o PAL dos módulos)
+                    // PAL do avatar desta atividade: só quem pode mudar o avatar do curso (como o PAL dos módulos)
                     if (array_key_exists('alex_enabled', $data)) {
-                        $lesson->fill([
-                            'alex_pal_id' => in_array('avatar', $parts, true) ? (($l['alex_pal_id'] ?? null) ?: null) : null,
-                            'evaluation_pal_id' => $evaluation === 'avatar' ? (($l['evaluation_pal_id'] ?? null) ?: null) : null,
-                        ]);
+                        $lesson->evaluation_pal_id = $withAvatar ? (($l['evaluation_pal_id'] ?? null) ?: null) : null;
                     }
                     $lesson->save();
                     $keptLessons[] = $lesson->id;
@@ -248,7 +281,7 @@ class CourseBuilder
                     $minutes += (int) ($l['minutes'] ?? 0);
 
                     $this->syncAttachments($lesson, $l['attachments'] ?? []);
-                    $maps['questions'] += $this->syncQuiz($lesson, $evaluation === 'quiz' ? ($l['quiz'] ?? []) : null);
+                    $maps['questions'] += $this->syncQuiz($lesson, $evaluation === 'quiz' ? ($l['quiz'] ?? []) : null, (bool) ($l['weighted'] ?? false), $kind !== 'exercicio');
                     $maps['checks'] += $this->syncChecks($lesson, $hasVideo ? ($l['checks'] ?? []) : []);
                 }
             }
@@ -265,10 +298,11 @@ class CourseBuilder
             $unused = $oldVideos->diff(Lesson::whereNotNull('content_url')->pluck('content_url')->map(fn ($u) => self::uploadedVideo($u))->filter());
             DB::afterCommit(fn () => $unused->each(fn ($path) => CourseFiles::delete($path)));
 
-            $sample = $data['sample_lesson_key'] ?? '';
+            $this->saveFinal($course, $data, $maps);
+
             $course->forceFill([
                 'duration_minutes' => $minutes,
-                'sample_lesson_id' => $sample ? ($maps['lessons'][$sample] ?? null) : null,
+                'sample_lesson_id' => null, // a aula de amostra grátis saiu (2026-11-26)
             ])->save();
 
             // Um curso publicado não fica mais incompleto no catálogo: se esta gravação deixar a faltar alguma
@@ -313,7 +347,11 @@ class CourseBuilder
         if ($lessons->contains(fn ($l) => $l->hasPart('video') && (int) $l->duration_seconds <= 0)) {
             $problems[] = [__('Minutos em todas as aulas de vídeo'), 1];
         }
-        if (! $course->is_free && (float) $course->price <= 0) $problems[] = [__('Preço definido'), 2];
+        // Avaliação final com perguntas: tem de ter perguntas prontas (passo 4)
+        if ($course->finalMode() === 'questions' && ! self::quizReady($course->finalQuiz()->with('questions.options')->first())) {
+            $problems[] = [__('Perguntas da avaliação final'), 3];
+        }
+        if (! $course->is_free && (float) $course->price <= 0) $problems[] = [__('Preço definido'), 4];
 
         return $problems;
     }
@@ -336,14 +374,24 @@ class CourseBuilder
             if (! $checks[$part]()) return false;
         }
         if ($evaluation === 'quiz') {
-            // Cada pergunta: texto, 2 opções com texto e a opção certa com texto (senão ninguém a podia acertar)
-            return $l->quiz && $l->quiz->questions->isNotEmpty() && $l->quiz->questions->every(
-                fn ($q) => trim($q->question) && $q->options->filter(fn ($o) => trim($o->option_text))->count() >= 2
-                    && $q->options->contains(fn ($o) => $o->is_correct && trim($o->option_text) !== '')
-            );
+            return self::quizReady($l->quiz);
         }
 
-        return $parts !== [] || $evaluation !== 'none'; // uma aula vazia não está completa
+        return match ($l->kindName()) {
+            'teste' => true, // teste com avatar: o avatar e os casos são opcionais
+            'roleplay' => trim((string) $l->body) !== '' && trim((string) $l->roleplay_role) !== '', // situação e papel
+            'exercicio' => trim(strip_tags((string) $l->body)) !== '', // o que o aluno tem de fazer
+            default => $parts !== [], // uma aula vazia não está completa
+        };
+    }
+
+    /** Cada pergunta: texto, 2 opções com texto e a opção certa com texto (senão ninguém a podia acertar). */
+    public static function quizReady(?\App\Models\Quiz $quiz): bool
+    {
+        return $quiz && $quiz->questions->isNotEmpty() && $quiz->questions->every(
+            fn ($q) => trim($q->question) && $q->options->filter(fn ($o) => trim($o->option_text))->count() >= 2
+                && $q->options->contains(fn ($o) => $o->is_correct && trim($o->option_text) !== '')
+        );
     }
 
     public static function validUrl(?string $url): bool
@@ -468,28 +516,57 @@ class CourseBuilder
      * (quiz_attempts.answers = {question_id: option_id}) apontam para esses ids.
      * Devolve [key => ['id' => id da pergunta, 'option_ids' => [...]]].
      */
-    private function syncQuiz(Lesson $lesson, ?array $questions): array
+    private function syncQuiz(Lesson $lesson, ?array $questions, bool $weighted = false, bool $graded = true): array
     {
-        $quiz = $lesson->quiz()->first();
+        return $this->syncQuestions($lesson->quiz(), $lesson->title ?: 'Teste', $questions, $weighted, $graded, $lesson->title);
+    }
+
+    /** Avaliação final do curso: modo, nota mínima, duração, o que o avatar avalia, peso e as perguntas. */
+    private function saveFinal(Course $course, array $data, array &$maps): void
+    {
+        if (! array_key_exists('final_mode', $data)) return; // editor aberto antes da fase 2
+        $mode = in_array($data['final_mode'], ['questions', 'avatar', 'none'], true) ? $data['final_mode'] : 'none';
+        $course->fill([
+            'final_mode' => $mode,
+            'final_pass' => max(0, min(100, (int) ($data['final_pass'] ?? 70))),
+            'final_minutes' => max(1, min(120, (int) ($data['final_minutes'] ?? 15))),
+            'final_prompt' => $mode === 'avatar' ? (trim($data['final_prompt'] ?? '') ?: null) : null,
+            'final_weight' => max(0, min(100, (int) ($data['final_weight'] ?? 50))),
+        ]);
+        if (array_key_exists('alex_enabled', $data)) {
+            $course->final_pal_id = $mode === 'avatar' ? (($data['final_pal_id'] ?? null) ?: null) : null;
+        }
+        $course->save();
+        // As perguntas ficam guardadas mesmo noutro modo, se já houver tentativas (as notas dos alunos não se perdem)
+        $maps['questions'] += $this->syncQuestions(
+            $course->finalQuiz(), 'Avaliação final', $mode === 'questions' ? ($data['final_quiz'] ?? []) : null,
+            (bool) ($data['final_weighted'] ?? false), true, null, ['course_id' => $course->id, 'passing_score' => $course->final_pass],
+        );
+    }
+
+    private function syncQuestions($relation, string $title, ?array $questions, bool $weighted, bool $graded, ?string $lessonTitle, array $extra = []): array
+    {
+        $quiz = $relation->first();
         if ($questions === null) {
             if (! $quiz) return [];
             // Apagar o quiz apagava também as tentativas, e com elas as notas do certificado
             if (QuizAttempt::where('quiz_id', $quiz->id)->exists()) {
-                throw ValidationException::withMessages(['modules' => __('A aula ":title" é um teste que já tem tentativas de alunos. Não podes mudar o tipo desta aula.', ['title' => $lesson->title ?: __('Teste')])]);
+                if ($lessonTitle === null) return []; // avaliação final: fica guardada
+                throw ValidationException::withMessages(['modules' => __('A aula ":title" é um teste que já tem tentativas de alunos. Não podes mudar o tipo desta aula.', ['title' => $lessonTitle ?: __('Teste')])]);
             }
             $quiz->delete();
 
             return [];
         }
-        $quiz ??= $lesson->quiz()->create(['title' => $lesson->title ?: 'Teste']);
-        $quiz->update(['title' => $lesson->title ?: 'Teste']);
+        $quiz ??= $relation->create(['title' => $title] + $extra);
+        $quiz->update(['title' => $title, 'weighted' => $weighted, 'graded' => $graded] + $extra);
 
         $existing = $quiz->questions()->with('options')->get()->keyBy('id');
         $kept = [];
         $map = [];
         foreach (array_values($questions) as $qi => $q) {
             $question = isset($q['id']) && $existing->has($q['id']) ? $existing[$q['id']] : $quiz->questions()->make();
-            $question->fill(['question' => trim($q['question'] ?? ''), 'order_index' => $qi])->save();
+            $question->fill(['question' => trim($q['question'] ?? ''), 'points' => max(1, min(100, (int) ($q['points'] ?? 1))), 'order_index' => $qi])->save();
             $kept[] = $question->id;
 
             // Opções: pelo id que o editor envia; sem ids (editor aberto antes desta versão), pela posição
