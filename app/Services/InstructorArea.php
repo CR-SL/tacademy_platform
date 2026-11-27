@@ -46,8 +46,9 @@ class InstructorArea
      */
     public function assessments(User $user): Collection
     {
-        $quizzes = Quiz::with('lesson.module.course')
-            ->whereHas('lesson.module.course', fn ($q) => $q->where('instructor_id', $user->id))
+        $quizzes = Quiz::with(['lesson.module.course', 'course'])->where('graded', true)
+            ->where(fn ($w) => $w->whereHas('lesson.module.course', fn ($q) => $q->where('instructor_id', $user->id))
+                ->orWhereHas('course', fn ($q) => $q->where('instructor_id', $user->id)))
             ->get()->keyBy('id');
         if ($quizzes->isEmpty()) {
             return collect();
@@ -58,7 +59,7 @@ class InstructorArea
         return $attempts->groupBy(fn ($a) => $a->user_id.'-'.$a->quiz_id)->map(function ($list) use ($quizzes, $names) {
             $first = $list->first();
             $quiz = $quizzes[$first->quiz_id];
-            $course = $quiz->lesson?->module?->course;
+            $course = $quiz->lesson?->module?->course ?? $quiz->course; // a avaliação final não tem aula
             $last = $list->last();
             $passed = $list->contains('passed', true);
             $max = $this->learning->maxAttempts($quiz);

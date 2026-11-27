@@ -10,7 +10,7 @@ class Quiz extends Model
 {
     public const UPDATED_AT = null;
 
-    protected $fillable = ['lesson_id', 'course_id', 'title', 'passing_score', 'trigger_at_seconds', 'max_attempts', 'weighted', 'graded'];
+    protected $fillable = ['lesson_id', 'course_id', 'title', 'passing_score', 'max_attempts', 'weighted', 'graded'];
 
     protected function casts(): array
     {

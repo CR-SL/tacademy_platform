@@ -25,16 +25,14 @@ class Lesson extends Model
         'evaluation_prompt',
         'content_url',
         'avatar_ref',
-        'alex_pal_id',
         'evaluation_pal_id',
         'body',
         'duration_seconds',
         'order_index',
-        'is_downloadable',
     ];
 
     /** O que uma aula pode ter (o formador liga cada um no editor) e as avaliações possíveis. */
-    public const PARTS = ['video', 'material', 'notas', 'avatar'];
+    public const PARTS = ['video', 'material', 'notas'];
 
     public const EVALUATIONS = ['none', 'quiz', 'avatar'];
 
@@ -55,7 +53,6 @@ class Lesson extends Model
     protected function casts(): array
     {
         return [
-            'is_downloadable' => 'boolean',
             'duration_seconds' => 'integer',
             'parts' => 'array',
             'graded' => 'boolean',
@@ -63,8 +60,8 @@ class Lesson extends Model
     }
 
     /**
-     * Partes ligadas nesta aula. Aulas sem partes gravadas (criadas antes de 2026-11-25, por seeders ou no
-     * backoffice) usam o tipo antigo; nos cursos com o Alex o avatar está em todas, como antes.
+     * Partes ligadas nesta aula. Aulas sem partes gravadas (criadas por seeders) usam o tipo antigo.
+     * O avatar de ajuda é do curso (alex_enabled), não uma parte da aula.
      */
     public function partList(): array
     {
@@ -75,12 +72,8 @@ class Lesson extends Model
             'video_link', 'video_upload' => ['video'],
             'document' => ['material'],
             'text' => ['notas'],
-            'avatar' => ['avatar'],
             default => [],
         };
-        if ($this->content_type !== 'avatar' && $this->module?->course?->alex_enabled) {
-            $parts[] = 'avatar';
-        }
 
         return $parts;
     }
@@ -104,7 +97,7 @@ class Lesson extends Model
         return match (true) {
             $evaluation === 'quiz' => 'quiz',
             in_array('video', $parts, true) => $previous === 'video_upload' ? 'video_upload' : 'video_link',
-            in_array('avatar', $parts, true), $evaluation === 'avatar' => 'avatar',
+            $evaluation === 'avatar' => 'avatar',
             in_array('material', $parts, true) => 'document',
             in_array('notas', $parts, true) => 'text',
             $previous === 'live' => 'live',

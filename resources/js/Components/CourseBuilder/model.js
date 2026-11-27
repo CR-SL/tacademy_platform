@@ -33,7 +33,6 @@ export function blankCourse() {
         certificate_enabled: true,
         certificate_min_progress: 100,
         certificate_min_score: 70,
-        sample_lesson_key: '',
         final_mode: 'none',
         final_pass: 70,
         final_minutes: 15,

@@ -4,11 +4,11 @@ namespace App\Services;
 
 use RuntimeException;
 
-/** O aluno já usou as conversas com o Alex de hoje. */
+/** Acabaram os minutos de avatar incluídos no curso e o aluno não tem créditos. */
 class AlexLimitReached extends RuntimeException
 {
-    public function __construct(public readonly int $perDay)
+    public function __construct()
     {
-        parent::__construct("Limite de {$perDay} conversas por dia.");
+        parent::__construct('Acabaram os minutos de avatar incluídos no curso e não há créditos.');
     }
 }

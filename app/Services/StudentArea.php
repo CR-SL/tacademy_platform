@@ -214,7 +214,8 @@ class StudentArea
         $lessons = $this->enrollments($user)
             ->reject(fn ($e) => $this->isExpired($e))
             ->flatMap(fn ($e) => $this->courseLessons($e->course)->map(fn ($l) => [$l, $e->course]));
-        $quizzes = Quiz::withCount('questions')->whereIn('lesson_id', $lessons->map(fn ($x) => $x[0]->id))->get()->keyBy('lesson_id');
+        // Só os testes com nota (os exercícios não são testes)
+        $quizzes = Quiz::withCount('questions')->where('graded', true)->whereIn('lesson_id', $lessons->map(fn ($x) => $x[0]->id))->get()->keyBy('lesson_id');
         $attempts = QuizAttempt::where('user_id', $user->id)->whereIn('quiz_id', $quizzes->pluck('id'))->get()->groupBy('quiz_id');
 
         return $lessons->map(function ($pair) use ($quizzes, $attempts) {
@@ -237,34 +238,63 @@ class StudentArea
                 'cta' => $mine->isEmpty() ? __('Fazer o teste') : __('Tentar outra vez'),
                 'url' => $this->lessonUrl($course, $lesson),
             ];
+        })->filter()->values()->merge($this->pendingFinals($user))->all();
+    }
+
+    /** Avaliações finais com perguntas por fazer (fase 2, 2026-11-27): abrem na primeira aula do curso. */
+    private function pendingFinals(User $user): array
+    {
+        return $this->enrollments($user)->reject(fn ($e) => $this->isExpired($e))->map(function ($e) use ($user) {
+            $course = $e->course;
+            $quiz = $course->finalMode() === 'questions' ? $course->finalQuiz()->withCount('questions')->first() : null;
+            $first = $this->courseLessons($course)->first();
+            if (! $quiz || ! $first) {
+                return null;
+            }
+            $mine = QuizAttempt::where('user_id', $user->id)->where('quiz_id', $quiz->id)->get();
+            $max = $this->learning->maxAttempts($quiz);
+            if ($mine->contains('passed', true) || $mine->count() >= $max) {
+                return null;
+            }
+
+            return [
+                'kind' => 'Avaliação final',
+                'title' => __('Avaliação final do curso'),
+                'course' => $course->title,
+                'text' => __(':questions perguntas · nota mínima :min% · :used de :max tentativas usadas', ['questions' => $quiz->questions_count, 'min' => $quiz->passing_score ?: 70, 'used' => $mine->count(), 'max' => $max]),
+                'cta' => $mine->isEmpty() ? __('Fazer a avaliação') : __('Tentar outra vez'),
+                'url' => $this->lessonUrl($course, $first),
+            ];
         })->filter()->values()->all();
     }
 
     /** Tentativas dos testes, da mais recente para a mais antiga, com as perguntas a rever. */
     public function results(User $user, ?int $limit = null): array
     {
-        $attempts = QuizAttempt::with(['quiz.questions.options', 'quiz.lesson.module.course'])
+        $attempts = QuizAttempt::with(['quiz.questions.options', 'quiz.lesson.module.course', 'quiz.course'])
             ->where('user_id', $user->id)
             ->orderBy('attempted_at')
             ->orderBy('id')
             ->get()
-            ->filter(fn ($a) => $a->quiz?->lesson?->module?->course);
+            // Os testes e a avaliação final (sem os exercícios, que não têm nota)
+            ->filter(fn ($a) => $a->quiz?->graded !== false && ($a->quiz?->lesson?->module?->course || $a->quiz?->course));
 
         $counter = [];
         $rows = $attempts->map(function (QuizAttempt $a) use (&$counter) {
             $counter[$a->quiz_id] = ($counter[$a->quiz_id] ?? 0) + 1;
             $quiz = $a->quiz;
-            $lesson = $quiz->lesson;
-            $course = $lesson->module->course;
+            $lesson = $quiz->lesson; // null na avaliação final
+            $course = $lesson?->module?->course ?? $quiz->course;
+            $lesson ??= $this->courseLessons($course->loadMissing('modules.lessons'))->first();
             $answers = $a->answers ?? [];
             $right = $quiz->questions->filter(fn ($q) => $q->options->firstWhere('id', (int) ($answers[$q->id] ?? 0))?->is_correct);
 
             return [
                 'id' => $a->id,
-                'title' => $quiz->title ?: $lesson->title,
+                'title' => $quiz->lesson_id ? ($quiz->title ?: $lesson?->title) : __('Avaliação final do curso'),
                 'course' => $course->title,
                 'courseId' => $course->instructor_id ? $course->id : null,
-                'module' => $lesson->module->title,
+                'module' => $quiz->lesson_id ? $lesson->module->title : __('Avaliação final'),
                 'date' => $a->attempted_at?->translatedFormat('j M'),
                 'score' => $a->score,
                 'passed' => $a->passed,
@@ -275,7 +305,7 @@ class StudentArea
                 'right' => $right->count(),
                 'total' => $quiz->questions->count(),
                 'review' => $quiz->questions->reject(fn ($q) => $right->contains('id', $q->id))->pluck('question')->values(),
-                'url' => $this->lessonUrl($course, $lesson),
+                'url' => $lesson ? $this->lessonUrl($course, $lesson) : null,
             ];
         })->reverse()->values();
 

@@ -43,7 +43,6 @@ class AlexTest extends TestCase
             'services.tavus.pal_id' => 'p-alex',
             'services.tavus.face_id' => 'r-face',
             'services.tavus.minutes' => 15,
-            'services.tavus.per_day' => 3,
             'services.tavus.course_minutes' => 30,
         ]);
         $this->diag = $this->course('Diagnóstico Automóvel', 'diagnostico-automovel');

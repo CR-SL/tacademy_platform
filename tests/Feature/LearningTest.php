@@ -46,7 +46,6 @@ class LearningTest extends TestCase
             $qq = $quiz->questions()->create(['question' => $q, 'order_index' => $i]);
             foreach ($opts as $oi => $t) $qq->options()->create(['option_text' => $t, 'is_correct' => $oi === $c]);
         }
-        $this->course->update(['sample_lesson_id' => $this->l[1]->id]);
     }
 
     private function user(string $role = 'aluno'): User

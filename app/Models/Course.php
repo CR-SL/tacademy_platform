@@ -50,7 +50,6 @@ class Course extends Model
         'alex_pal_id',
         'alex_face_id',
         'alex_blocked',
-        'sample_lesson_id',
     ];
 
     protected function casts(): array

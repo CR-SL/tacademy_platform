@@ -109,7 +109,7 @@ class DemoCourseSeeder extends Seeder
                 }
             }
 
-            $course->forceFill(['duration_minutes' => $minutes, 'sample_lesson_id' => $first?->id])->save();
+            $course->forceFill(['duration_minutes' => $minutes])->save();
         });
     }
 

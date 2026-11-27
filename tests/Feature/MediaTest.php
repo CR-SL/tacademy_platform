@@ -98,8 +98,7 @@ class MediaTest extends TestCase
     {
         $this->actingAs($this->formador)->get('/storage/'.self::VIDEO)->assertOk();
 
-        // Sem aula de amostra (2026-11-26): mesmo a antiga amostra não abre a quem não está inscrito
-        $this->course->update(['sample_lesson_id' => $this->lesson->id]);
+        // Sem aula de amostra (2026-11-26): quem não está inscrito não abre o vídeo
         $this->actingAs($this->user())->get('/storage/'.self::VIDEO)->assertNotFound();
     }
 

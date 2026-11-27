@@ -259,6 +259,7 @@ class TeamService
         $bestScores = DB::table('quiz_attempts')
             ->join('quizzes', 'quizzes.id', '=', 'quiz_attempts.quiz_id')
             ->whereIn('quizzes.lesson_id', $allLessons)
+            ->where('quizzes.graded', true) // os exercícios não têm nota
             ->whereIn('quiz_attempts.user_id', $userIds)
             ->groupBy('quiz_attempts.user_id', 'quiz_attempts.quiz_id', 'quizzes.lesson_id')
             ->selectRaw('quiz_attempts.user_id as user_id, quizzes.lesson_id as lesson_id, MAX(quiz_attempts.score) as best')

@@ -146,7 +146,7 @@ class ActivityRecorder
                 Activity::log($e->attended_at ? 'curso.presenca_confirmada' : 'curso.presenca_retirada', $e->course, related: $e->user);
             }
         });
-        QuizAttempt::created(fn (QuizAttempt $a) => Activity::log('teste.feito', $a->quiz?->lesson?->module?->course, [
+        QuizAttempt::created(fn (QuizAttempt $a) => Activity::log('teste.feito', $a->quiz?->lesson?->module?->course ?? $a->quiz?->course, [
             'teste' => $a->quiz?->title ?: $a->quiz?->lesson?->title, 'nota' => $a->score, 'passou' => (bool) $a->passed,
         ], related: User::find($a->user_id)));
         Certificate::created(fn (Certificate $c) => Activity::log('certificado.emitido', $c, ['curso' => $c->course?->title], related: $c->user));

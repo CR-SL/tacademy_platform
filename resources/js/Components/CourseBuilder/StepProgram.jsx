@@ -128,7 +128,6 @@ export default function StepProgram({ c, update, upload, openKey, setOpenKey, ca
                                     if (!(await confirm({ title: t('Apagar a aula “:v1”?', { v1: l.title || t('sem título') }), action: t('Apagar a aula'), danger: true }))) return;
                                     update((d) => {
                                         d.modules[mi].lessons.splice(li, 1);
-                                        if (d.sample_lesson_key === l.key) d.sample_lesson_key = '';
                                     });
                                 }}
                                 upload={upload}

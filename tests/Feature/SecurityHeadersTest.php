@@ -89,15 +89,15 @@ class SecurityHeadersTest extends TestCase
         $course = Course::create(['ulid' => (string) Str::ulid(), 'category_id' => $cat->id, 'title' => 'C', 'slug' => 'c',
             'level' => 'iniciante', 'status' => 'published', 'price' => 10]);
         $m = Module::create(['course_id' => $course->id, 'title' => 'M', 'order_index' => 0]);
-        $avatar = Lesson::create(['module_id' => $m->id, 'title' => 'Avatar', 'content_type' => 'avatar',
-            'avatar_ref' => 'https://entrar-tacademy.pt/sessao', 'duration_seconds' => 60, 'order_index' => 0]);
+        $avatar = Lesson::create(['module_id' => $m->id, 'kind' => 'roleplay', 'evaluation' => 'avatar', 'title' => 'Roleplay', 'content_type' => 'avatar',
+            'roleplay_role' => 'Cliente', 'body' => 'Situação', 'avatar_ref' => 'https://entrar-tacademy.pt/sessao', 'duration_seconds' => 60, 'order_index' => 0]);
         $u = User::factory()->create(['role_id' => Role::where('name', 'aluno')->value('id')]);
         Enrollment::create(['user_id' => $u->id, 'course_id' => $course->id, 'source' => 'manual', 'enrolled_at' => now()]);
 
         $this->actingAs($u)->get("/plataforma/cursos/c/aulas/{$avatar->ulid}")->assertOk()
-            ->assertInertia(fn ($p) => $p->where('avatarUrl', null)->where('lesson.url', null));
+            ->assertInertia(fn ($p) => $p->where('lesson.activityLink', null));
         $avatar->update(['avatar_ref' => 'https://tavus.daily.co/c123']);
         $this->actingAs($u)->get("/plataforma/cursos/c/aulas/{$avatar->ulid}")->assertOk()
-            ->assertInertia(fn ($p) => $p->where('avatarUrl', 'https://tavus.daily.co/c123'));
+            ->assertInertia(fn ($p) => $p->where('lesson.activityLink', 'https://tavus.daily.co/c123'));
     }
 }

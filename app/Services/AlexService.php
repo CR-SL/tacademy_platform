@@ -95,7 +95,6 @@ class AlexService
             'included' => $this->courseMinutes(),
             'credits' => (int) $user->alex_credits,
             'free' => $this->hasFreeTalks($user),
-            'perDay' => $this->perDay(),
             'minutes' => $this->minutes(),
             'help' => $place === 'aula' ? $help : true,
             // Avaliação final do curso com o avatar (botão Avaliação)
@@ -180,10 +179,6 @@ class AlexService
             ->values();
     }
 
-    public function perDay(): int
-    {
-        return max(1, (int) config('services.tavus.per_day', 3));
-    }
 
     public function minutes(): int
     {
@@ -238,11 +233,7 @@ class AlexService
         return $course ?? $this->alexCourses($user)->first();
     }
 
-    /** Compatibilidade: o que ainda tem para falar (minutos incluídos no curso mais recente com avatar). */
-    public function leftToday(User $user): int
-    {
-        return $this->minutesLeft($user, $this->meteredCourse($user));
-    }
+
 
     // ---------------------------------------------------------------- conversas
 
@@ -299,7 +290,7 @@ class AlexService
             $left = in_array($place, self::METERED, true) ? $this->minutesLeft($user, $course) : null;
             $paid = $left !== null && $left <= 0;
             if ($paid && User::whereKey($user->id)->where('alex_credits', '>', 0)->decrement('alex_credits') === 0) {
-                throw new AlexLimitReached(0);
+                throw new AlexLimitReached;
             }
             // Uma conversa grátis não passa dos minutos que ainda há
             $this->cap = $left !== null && ! $paid ? max(1, min($this->minutesFor($place, $course, $lesson), $left)) : null;
@@ -553,7 +544,7 @@ class AlexService
         }
 
         // Só as perguntas (sem as opções nem a marca da certa): servem de guia para os temas da avaliação
-        $questions = Quiz::with('questions')->whereIn('lesson_id', $this->learning->lessons($course)->pluck('id'))->get()
+        $questions = Quiz::with('questions')->where('graded', true)->whereIn('lesson_id', $this->learning->lessons($course)->pluck('id'))->get()
             ->flatMap(fn ($q) => $q->questions)
             ->map(fn ($q) => "- {$q->question}")
             ->take(40)->implode("\n");

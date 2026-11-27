@@ -52,8 +52,6 @@ class LessonController extends Controller
         $prev = $lessons->get($i - 1);
         $next = $lessons->get($i + 1);
         $duration = $this->learning->videoDuration($lesson, $p);
-        // Só links de avatar dos sites aceites (auditoria, ponto 8): outro link não abre dentro da aula
-        $avatar = $lessons->first(fn ($l) => $l->content_type === 'avatar' && CourseBuilder::validAvatarUrl($l->avatar_ref));
 
         return Inertia::render('Learn/Lesson', [
             'course' => [
@@ -77,7 +75,6 @@ class LessonController extends Controller
             ],
             'prev' => $prev ? ['ulid' => $prev->ulid, 'title' => $prev->title] : null,
             'next' => $next ? ['ulid' => $next->ulid, 'title' => $next->title, 'open' => $this->learning->canOpen($access, $course, $next)] : null,
-            'avatarUrl' => $avatar?->avatar_ref,
             // Avaliação final do curso (botão Avaliação): o modo e, com perguntas, o questionário
             'finalEvaluation' => $this->finalPayload($course, $user),
             // Botão Avaliação (2026-11-27): o próximo teste com avatar por fazer; depois, a avaliação final com avatar
@@ -301,8 +298,6 @@ class LessonController extends Controller
             'parts' => $sent,
             'evaluation' => $evaluation,
             'minutes' => (int) round($lesson->duration_seconds / 60),
-            // Link de avatar antigo (aulas do tipo avatar de antes do Alex): só dos sites aceites
-            'url' => in_array('avatar', $parts, true) && CourseBuilder::validAvatarUrl($lesson->avatar_ref) ? $lesson->avatar_ref : null,
             'video' => in_array('video', $parts, true) ? $this->videoSource($lesson->content_url) : null,
             // O texto da aula (notas), o que o aluno faz no exercício prático ou a situação do roleplay
             'body' => in_array('notas', $parts, true) || in_array($kind, ['exercicio', 'roleplay'], true) ? $lesson->body : null,

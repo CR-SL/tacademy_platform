@@ -57,7 +57,6 @@ class CourseBuilderTest extends TestCase
             'certificate_enabled' => true,
             'certificate_min_progress' => 100,
             'certificate_min_score' => 70,
-            'sample_lesson_key' => 'nB',
             'modules' => [[
                 'key' => 'nA', 'id' => null, 'title' => 'Como funciona', 'description' => '',
                 'lessons' => [
@@ -103,7 +102,6 @@ class CourseBuilderTest extends TestCase
         // Editor antigo (só com o tipo): as partes vêm do tipo e o questionário sozinho é um Teste (fase 2)
         $this->assertSame(['notas'], $course->lessons()->where('content_type', 'text')->first()->parts);
         $this->assertSame('teste', $course->lessons()->where('content_type', 'quiz')->value('kind'));
-        $this->assertNull($course->sample_lesson_id); // a aula de amostra saiu (2026-11-26)
 
         // Perguntas rápidas do vídeo: as vazias são ignoradas e as opções vazias retiradas
         $checks = $course->lessons()->where('content_type', 'video_link')->first()->checks;

@@ -103,7 +103,7 @@ const clampSplit = (v) => Math.max(MIN_PANEL, Math.min(100 - MIN_PANEL, v));
 
 // Página da aula: painéis que se ligam e desligam na barra de baixo, com divisórias para os redimensionar.
 // A aula conclui-se sozinha: o vídeo aos 90%; documento, texto e avatar ao abrir; o teste ao passar.
-export default function Lesson({ course, mode, program, lesson, progress, prev, next, avatarUrl, notes, finalEvaluation = { mode: 'none', quiz: null }, avatarTest = null, avatarTests = [] }) {
+export default function Lesson({ course, mode, program, lesson, progress, prev, next, notes, finalEvaluation = { mode: 'none', quiz: null }, avatarTest = null, avatarTests = [] }) {
     const mobile = useMobile();
     const { alex: alexProp } = usePage().props; // o Alex neste curso (curso com o Alex), ou null
     // O que o formador ligou nesta aula (2026-11-25): vídeo, material, notas, avatar; e a avaliação
@@ -131,7 +131,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     // Página adaptável (2026-11-26): só aparecem os painéis do que a aula tem
     const bodyText = activity ? null : lesson.body;
     const materialWorth = !!bodyText || lesson.attachments.length > 0 || (evalKind === 'quiz' && !!lesson.quiz)
-        || (!!lesson.url && !askAlex) || (hasPlayer && lesson.checks.length > 0);
+        || (hasPlayer && lesson.checks.length > 0);
     const avatarOnly = !!activity || (avatarHere && !hasPlayer && !materialWorth); // atividade com avatar ou aula só com o avatar: abre logo o avatar
     const nothing = !hasPlayer && !materialWorth && !avatarHere; // sem conteúdo: ficam as notas do aluno
     // Sem os minutos do formador o vídeo não conclui a aula (o servidor recusa): fica o aviso em baixo
@@ -149,7 +149,6 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     const [showNotes, setShowNotes] = useState(() => nothing || (!avatarOnly && (mobile ? hasPlayer : memory.notes)));
     const [showChecks, setShowChecks] = useState(false);
     const [ask, setAsk] = useState(() => avatarOnly || (!!askAlex && !mobile && memory.ask));
-    const [askStarted, setAskStarted] = useState(false);
     const [evaluation, setEvaluation] = useState(null); // null | 'intro' | 'run'
     const beforeEvaluation = useRef(null);
     const introBox = useRef(null);
@@ -239,7 +238,6 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     };
     const openAsk = () => {
         setAsk(true);
-        setAskStarted(true);
         pauseVideo(); // o vídeo fica em pausa enquanto o aluno fala com o avatar
     };
     // O Alex (cursos com o Alex): abre e fecha o painel do avatar a partir da barra de baixo
@@ -339,7 +337,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
         const shown = on;
         // Só o que esta aula tem (as notas do aluno estão sempre)
         const options = [['video', <IconVideo key="i" />, t('Vídeo')], ['material', <IconDoc key="i" />, t('Material')], ['notes', <IconPen key="i" />, t('Notas')], ['ask', <IconUser key="i" />, t('Avatar')]]
-            .filter(([k]) => (k === 'video' ? hasPlayer : k === 'material' ? materialWorth : k === 'ask' ? (avatarHere || !!avatarUrl) : true));
+            .filter(([k]) => (k === 'video' ? hasPlayer : k === 'material' ? materialWorth : k === 'ask' ? avatarHere : true));
         const open = (k) => {
             if (k === 'video') setShowVideo(true);
             if (k === 'material' && !showMaterial) toggleMaterial();
@@ -392,7 +390,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     };
 
     const hasQuiz = evalKind === 'quiz' && !!lesson.quiz;
-    const hasMaterial = !!bodyText || lesson.attachments.length > 0 || (!!lesson.url && !askAlex);
+    const hasMaterial = !!bodyText || lesson.attachments.length > 0;
     const practical = lesson.kind === 'exercicio' && !hasQuiz; // exercício prático: "Marcar como feito"
     const [markedDone, setMarkedDone] = useState(false);
     const markDone = () => window.axios.post(`/plataforma/aulas/${lesson.ulid}/feito`).then(() => { setMarkedDone(true); refresh(); });
@@ -462,10 +460,6 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                         <span className="al-orb" aria-hidden="true" />
                         <p>{t('O avatar desta aula ainda não está disponível. Fala com o formador do curso.')}</p>
                     </div>
-                ) : avatarUrl ? (
-                    // Só sites de avatar aceites (o servidor filtra); sandbox: não navega a página da plataforma nem abre janelas sozinho
-                    askStarted && <iframe src={avatarUrl} title={t('Perguntar ao avatar')} allow="microphone; camera; autoplay; display-capture"
-                        sandbox="allow-scripts allow-same-origin allow-forms" referrerPolicy="no-referrer" />
                 ) : (
                     <div className="al-a-stage">
                         <span className="al-orb" aria-hidden="true" />
@@ -529,13 +523,6 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                         {/* No exercício prático, o que o aluno tem de fazer */}
                         {practical && <small className="mb-1 block text-xs font-semibold uppercase tracking-[0.05em] text-muted">{t('O que tens de fazer')}</small>}
                         {bodyText && bodyText.split(/\n{2,}/).map((p, i) => <p key={i}>{p}</p>)}
-                        {/* Link de avatar antigo (aulas de avatar de antes do Alex) */}
-                        {lesson.url && !askAlex && (
-                            <div className="al-avatar-card">
-                                <span className="al-orb !w-24" aria-hidden="true" />
-                                <a href={lesson.url} target="_blank" rel="noopener noreferrer" className="al-pill">{t('Abrir avatar ↗')}</a>
-                            </div>
-                        )}
                         {!hasMaterial && (
                             <p>{t('Esta aula não tem material de apoio.')}</p>
                         )}

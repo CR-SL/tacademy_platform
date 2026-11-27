@@ -114,7 +114,6 @@ class CourseBuilder
                     'weighted' => (bool) $l->quiz?->weighted,
                     'evaluation' => $l->evaluationKind(),
                     'evaluation_prompt' => $l->evaluation_prompt ?? '',
-                    'alex_pal_id' => $l->alex_pal_id ?? '',
                     'evaluation_pal_id' => $l->evaluation_pal_id ?? '',
                     // Só o vídeo: o avatar já não usa este campo (antes partilhavam-no e o link do vídeo aparecia no avatar)
                     'url' => $l->content_url ?? '',
@@ -240,7 +239,7 @@ class CourseBuilder
                     }
                     // Tipo de atividade (fase 2): o que cada uma guarda está em Lesson (ver a migração de 2026-11-27)
                     $kind = in_array($l['kind'] ?? 'aula', Lesson::KINDS, true) ? ($l['kind'] ?? 'aula') : 'aula';
-                    $parts = $kind === 'aula' ? array_values(array_intersect(['video', 'material', 'notas'], (array) ($l['parts'] ?? []))) : [];
+                    $parts = $kind === 'aula' ? array_values(array_intersect(Lesson::PARTS, (array) ($l['parts'] ?? []))) : [];
                     $evaluation = match ($kind) {
                         'teste' => ($l['evaluation'] ?? 'quiz') === 'avatar' ? 'avatar' : 'quiz',
                         'exercicio' => ($l['evaluation'] ?? 'none') === 'quiz' ? 'quiz' : 'none',
@@ -267,7 +266,6 @@ class CourseBuilder
                         'body' => in_array('notas', $parts, true) || $kind === 'roleplay' || ($kind === 'exercicio' && $evaluation === 'none') ? ($l['body'] ?? null) : null,
                         // Avatar por link (teste com avatar ou roleplay); só https dos sites aceites
                         'avatar_ref' => $withAvatar && self::validAvatarUrl($link) ? $link : null,
-                        'alex_pal_id' => null, // o avatar de ajuda é do curso
                         'duration_seconds' => (int) ($l['minutes'] ?? 0) * 60,
                         'order_index' => $li,
                     ]);
@@ -302,7 +300,6 @@ class CourseBuilder
 
             $course->forceFill([
                 'duration_minutes' => $minutes,
-                'sample_lesson_id' => null, // a aula de amostra grátis saiu (2026-11-26)
             ])->save();
 
             // Um curso publicado não fica mais incompleto no catálogo: se esta gravação deixar a faltar alguma
