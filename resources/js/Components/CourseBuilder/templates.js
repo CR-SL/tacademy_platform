@@ -50,6 +50,6 @@ export function courseFromModel(modelId, modules, lessons, { canAlex = false } =
     c.final_mode = model.final;
     if (model.final === 'questions') c.final_quiz = [{ key: newKey(), id: null, question: '', points: 1, options: ['', ''], option_ids: [null, null], correct: 0 }];
     // O avatar de ajuda só se liga sozinho para quem pode (o servidor ignora-o para os outros)
-    if (model.alex && canAlex) c.alex_enabled = true;
+    if (model.alex && canAlex) { c.alex_enabled = true; c.alex_name = 'Alex'; }
     return c;
 }

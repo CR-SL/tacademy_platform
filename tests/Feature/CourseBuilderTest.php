@@ -281,7 +281,7 @@ class CourseBuilderTest extends TestCase
         $data['modules'][0]['lessons'][] = ['key' => 'nT', 'kind' => 'teste', 'title' => 'Teste com o Alex', 'evaluation' => 'avatar',
             'evaluation_prompt' => 'Apresenta 3 casos de avarias.', 'evaluation_pal_id' => 'p18d6e1b675e'] + $base;
         $data['modules'][0]['lessons'][] = ['key' => 'nR', 'kind' => 'roleplay', 'title' => 'Cliente insatisfeito', 'roleplay_role' => 'Cliente irritado',
-            'body' => 'O cliente reclama da fatura.', 'evaluation_prompt' => 'Começa irritado.', 'avatar_link' => 'https://tavus.daily.co/s1', 'graded' => true] + $base;
+            'body' => 'O cliente reclama da fatura.', 'evaluation_prompt' => 'Começa irritado.', 'evaluation_pal_id' => 'p-cliente', 'graded' => true] + $base;
         $data['modules'][0]['lessons'][] = ['key' => 'nE', 'kind' => 'exercicio', 'title' => 'Exercício', 'evaluation' => 'none', 'body' => 'Identifica o compressor.'] + $base;
         $this->actingAs($formador)->putJson("/formador/cursos/{$course->ulid}", $data)->assertOk();
 
@@ -297,7 +297,7 @@ class CourseBuilderTest extends TestCase
 
         $rp = $byTitle['Cliente insatisfeito'];
         $this->assertSame(['roleplay', 'Cliente irritado', 'O cliente reclama da fatura.'], [$rp->kind, $rp->roleplay_role, $rp->body]);
-        $this->assertSame('https://tavus.daily.co/s1', $rp->avatar_ref); // o avatar do roleplay por link
+        $this->assertSame('p-cliente', $rp->evaluation_pal_id); // o avatar do roleplay (persona do Tavus)
         $this->assertTrue($rp->graded);
         $this->assertTrue(app(CourseBuilder::class)->lessonComplete($rp->load('attachments', 'quiz')));
 
@@ -308,7 +308,7 @@ class CourseBuilderTest extends TestCase
         $state = collect($this->editorState($course)['modules'][0]['lessons'])->keyBy('title');
         $this->assertSame('roleplay', $state['Cliente insatisfeito']['kind']);
         $this->assertSame('Cliente irritado', $state['Cliente insatisfeito']['roleplay_role']);
-        $this->assertSame('https://tavus.daily.co/s1', $state['Cliente insatisfeito']['avatar_link']);
+        $this->assertSame('p-cliente', $state['Cliente insatisfeito']['evaluation_pal_id']);
     }
 
     public function test_the_final_evaluation_and_question_weights_are_saved(): void
@@ -391,6 +391,21 @@ class CourseBuilderTest extends TestCase
         $this->assertContains('Minutos em todas as aulas de vídeo', array_column($problems, 0));
         $this->actingAs($formador)->post("/formador/cursos/{$course->ulid}/publicar")->assertSessionHasErrors('publish');
         $this->assertSame('draft', $course->fresh()->status);
+    }
+
+    public function test_the_help_avatar_needs_its_pal_id_to_publish(): void
+    {
+        // Avatar de ajuda ligado: a persona no Tavus que tira as dúvidas é obrigatória (2026-11-27)
+        $formador = $this->user('formador');
+        $this->actingAs($formador)->postJson('/formador/cursos', $this->payload());
+        $course = Course::firstOrFail();
+        $course->update(['alex_enabled' => true, 'alex_name' => null, 'alex_pal_id' => null]);
+
+        $this->assertContains('Nome e PAL ID do avatar de ajuda', array_column(app(\App\Services\CourseBuilder::class)->publishProblems($course->fresh()), 0));
+        $course->update(['alex_pal_id' => 'p-ajuda']); // falta o nome
+        $this->assertContains('Nome e PAL ID do avatar de ajuda', array_column(app(\App\Services\CourseBuilder::class)->publishProblems($course->fresh()), 0));
+        $course->update(['alex_name' => 'Sofia']);
+        $this->assertNotContains('Nome e PAL ID do avatar de ajuda', array_column(app(\App\Services\CourseBuilder::class)->publishProblems($course->fresh()), 0));
     }
 
     public function test_a_published_course_appears_in_the_public_catalog(): void

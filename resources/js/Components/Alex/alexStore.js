@@ -4,7 +4,7 @@
 import { useSyncExternalStore } from 'react';
 import { t } from '@/i18n';
 
-const idle = { status: 'idle', error: null, conv: null, place: null, alexVideo: null, alexAudio: null, selfVideo: null, mic: true, cam: false, left: null, credits: null, docked: 0 };
+const idle = { status: 'idle', error: null, conv: null, place: null, name: null, alexVideo: null, alexAudio: null, selfVideo: null, mic: true, cam: false, left: null, credits: null, docked: 0 };
 let state = { ...idle };
 const listeners = new Set();
 let call = null;
@@ -33,11 +33,11 @@ const xsrf = () => decodeURIComponent((document.cookie.match(/XSRF-TOKEN=([^;]+)
 // (sem isto, a conversa entrava na sala segundos depois de o aluno a ter terminado, com o microfone aberto)
 let attempt = 0;
 
-export async function startAlex({ place, lesson = null }) {
+export async function startAlex({ place, lesson = null, name = null }) {
     if (isActive(state)) return;
     const mine = ++attempt;
     const cancelled = () => mine !== attempt;
-    set({ ...idle, docked: state.docked, status: 'starting', place });
+    set({ ...idle, docked: state.docked, status: 'starting', place, name });
 
     let conv;
     try {
@@ -46,7 +46,7 @@ export async function startAlex({ place, lesson = null }) {
     } catch (e) {
         if (cancelled()) return;
         const res = e.response;
-        set({ status: 'error', error: res?.data?.message || t('O Alex não está disponível agora. Tenta daqui a pouco.'), left: res?.data?.left ?? state.left, credits: res?.data?.credits ?? state.credits });
+        set({ status: 'error', error: res?.data?.message || t('O avatar não está disponível agora. Tenta daqui a pouco.'), left: res?.data?.left ?? state.left, credits: res?.data?.credits ?? state.credits });
         return;
     }
     // Terminou enquanto a sala era criada: fecha-a já no servidor e não entra
@@ -64,15 +64,15 @@ export async function startAlex({ place, lesson = null }) {
             .on('track-started', sync).on('track-stopped', sync)
             .on('joined-meeting', () => { if (cancelled()) return; set({ status: 'waiting' }); sync(); })
             .on('left-meeting', () => finish())
-            .on('camera-error', () => fail(t('Precisamos do microfone para falares com o Alex. Autoriza-o no browser e tenta outra vez.')))
-            .on('error', () => fail(t('A ligação ao Alex caiu. Tenta outra vez.')));
+            .on('camera-error', () => fail(t('Precisamos do microfone para falares com o avatar. Autoriza-o no browser e tenta outra vez.')))
+            .on('error', () => fail(t('A ligação ao avatar caiu. Tenta outra vez.')));
         const joining = call;
         await joining.join({ url: conv.url, token: conv.token || undefined, startVideoOff: true, startAudioOff: false });
         // Terminou enquanto entrava na sala: sai já (o finish do endAlex pode ter corrido antes de haver chamada)
         if (cancelled() && joining === call) teardown();
     } catch {
         if (cancelled()) return;
-        fail(t('Não foi possível ligar ao Alex. Verifica o microfone e a ligação à internet.'));
+        fail(t('Não foi possível ligar ao avatar. Verifica o microfone e a ligação à internet.'));
     }
 }
 

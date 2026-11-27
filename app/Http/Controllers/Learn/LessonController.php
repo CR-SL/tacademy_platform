@@ -293,8 +293,6 @@ class LessonController extends Controller
             'graded' => $kind === 'roleplay' ? (bool) $lesson->graded : $kind === 'teste',
             'role' => $kind === 'roleplay' ? $lesson->roleplay_role : null,
             'activity' => $activity,
-            // Avatar da atividade por link (em vez do Tavus): abre num separador
-            'activityLink' => $activity && CourseBuilder::validAvatarUrl($lesson->avatar_ref) ? $lesson->avatar_ref : null,
             'parts' => $sent,
             'evaluation' => $evaluation,
             'minutes' => (int) round($lesson->duration_seconds / 60),

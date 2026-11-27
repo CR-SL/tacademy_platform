@@ -91,7 +91,9 @@ class AlexTest extends TestCase
         $u = $this->student($this->diag, $this->other);
 
         $this->actingAs($u)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.place', 'inicio')->where('alex.left', 30)->where('alex.included', 30)->where('alex.minutes', 15));
-        $this->actingAs($u)->get('/plataforma/avaliacoes')->assertInertia(fn ($p) => $p->where('alex.place', 'avaliacoes'));
+        // As Avaliações já não têm a caixa do avatar; o Início diz de que curso é
+        $this->actingAs($u)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.name', 'Alex')->where('alex.course', $this->diag->title));
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'avaliacoes'])->assertStatus(422);
         $lesson = $this->lessonOf($this->diag);
         $this->actingAs($u)->get("/plataforma/cursos/{$this->diag->slug}/aulas/{$lesson->ulid}")
             ->assertInertia(fn ($p) => $p->where('alex.place', 'aula')->where('alex.lesson', $lesson->ulid));
@@ -99,15 +101,37 @@ class AlexTest extends TestCase
         // Noutros cursos e noutras páginas não aparece
         $other = $this->lessonOf($this->other);
         $this->actingAs($u)->get("/plataforma/cursos/{$this->other->slug}/aulas/{$other->ulid}")->assertInertia(fn ($p) => $p->where('alex', null));
-        $this->actingAs($u)->get('/plataforma/meus-cursos')->assertInertia(fn ($p) => $p->where('alex', ['place' => null]));
+        $this->actingAs($u)->get('/plataforma/meus-cursos')->assertInertia(fn ($p) => $p->where('alex.place', 'inicio')->where('alex.course', $this->diag->title));
+    }
+
+    public function test_outside_lessons_the_avatar_is_the_one_of_the_course_the_student_was_in_last(): void
+    {
+        // Dois cursos com avatares diferentes: fala o do curso onde o aluno mexeu por último numa aula
+        $this->diag->update(['alex_name' => 'Alex', 'alex_pal_id' => 'p-diag']);
+        $this->other->update(['alex_enabled' => true, 'alex_name' => 'Sofia', 'alex_pal_id' => 'p-oficina']);
+        $u = $this->student($this->diag, $this->other);
+        $at = fn (Course $c, $when) => \App\Models\LessonProgress::updateOrCreate(['user_id' => $u->id, 'lesson_id' => $this->lessonOf($c)->id], ['status' => 'in_progress'])
+            ->forceFill(['updated_at' => $when])->saveQuietly();
+
+        $at($this->other, now()->subDay());
+        $at($this->diag, now());
+        foreach (['/dashboard', '/plataforma/meus-cursos', '/plataforma/documentos'] as $page) {
+            $this->actingAs($u)->get($page)->assertInertia(fn ($p) => $p->where('alex.place', 'inicio')->where('alex.name', 'Alex'));
+        }
+
+        $at($this->other, now()->addMinute());
+        $this->actingAs($u)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.name', 'Sofia')->where('alex.course', $this->other->title));
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertCreated();
+        $this->assertSame($this->other->id, AlexConversation::latest('id')->value('course_id'));
     }
 
     public function test_students_without_the_course_or_without_a_key_do_not_get_the_alex(): void
     {
-        // Sem curso com o avatar e sem créditos: a caixa do Alex mostra a compra de créditos, sem conversa
+        // Sem um curso com o avatar não há avatar (nem com créditos: ainda não há um avatar geral da plataforma)
         $outsider = $this->student($this->other);
-        $this->actingAs($outsider)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.place', null)->where('alex.buy', true)->has('alex.packs', 3));
-        $this->actingAs($outsider)->get('/plataforma/meus-cursos')->assertInertia(fn ($p) => $p->where('alex.buy', true));
+        $outsider->forceFill(['alex_credits' => 3])->save();
+        $this->actingAs($outsider)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex', null));
+        $this->actingAs($outsider)->get('/plataforma/meus-cursos')->assertInertia(fn ($p) => $p->where('alex', null));
         $this->actingAs($outsider)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertForbidden();
         $lesson = $this->lessonOf($this->diag);
         $this->actingAs($outsider)->postJson('/plataforma/alex/conversas', ['place' => 'aula', 'lesson' => $lesson->ulid])->assertForbidden();
@@ -210,31 +234,29 @@ class AlexTest extends TestCase
             ->assertInertia(fn ($p) => $p->where('alex.evaluation.done', false));
     }
 
-    public function test_a_module_with_its_own_pal_uses_it_for_questions_and_its_own_assessment(): void
+    public function test_help_uses_the_course_avatar_and_each_test_its_own_persona(): void
     {
         $u = $this->student($this->diag);
         $m1 = $this->diag->modules()->first();
-        $m1->update(['alex_pal_id' => 'p-mod1', 'alex_face_id' => null]);
         $m2 = Module::create(['course_id' => $this->diag->id, 'title' => 'Módulo 2', 'order_index' => 1]);
         $l2 = Lesson::create(['module_id' => $m2->id, 'title' => 'Compressores', 'content_type' => 'text', 'body' => 'Olá', 'duration_seconds' => 60, 'order_index' => 0]);
         $l1 = $this->lessonOf($this->diag);
         $sent = fn () => collect(Http::recorded())->map(fn ($p) => $p[0])->filter(fn ($r) => $r->url() === 'https://tavus.test/v2/conversations')->last()->data();
 
-        // Dúvidas na aula do módulo 1: PAL do módulo, sem o rosto geral, e o aviso de que não é a avaliação
+        // Dúvidas numa aula: o avatar de ajuda do curso (já não há PAL por módulo)
         $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'aula', 'lesson' => $l1->ulid])->assertCreated();
-        $d = $sent();
-        $this->assertSame('p-mod1', $d['pal_id']);
-        $this->assertArrayNotHasKey('face_id', $d);
-        $this->assertStringContainsString('só para tirar dúvidas', $d['conversational_context']);
+        $this->assertSame('p-alex', $sent()['pal_id']);
 
-        // Teste com avatar do módulo 1 (uma atividade do módulo): PAL do módulo, sem saudação (é a do PAL), e não gasta as conversas do dia
-        $test = Lesson::create(['module_id' => $m1->id, 'kind' => 'teste', 'evaluation' => 'avatar', 'title' => 'Teste com o Alex', 'content_type' => 'avatar', 'evaluation_prompt' => 'Casos de avarias no compressor.', 'order_index' => 9]);
+        // Teste com avatar do módulo 1: a persona do teste, sem saudação (é a do PAL), e não gasta as conversas do dia
+        $test = Lesson::create(['module_id' => $m1->id, 'kind' => 'teste', 'evaluation' => 'avatar', 'title' => 'Teste com o Alex', 'content_type' => 'avatar', 'evaluation_prompt' => 'Casos de avarias no compressor.', 'evaluation_pal_id' => 'p-teste1', 'order_index' => 9]);
         $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'teste', 'lesson' => $test->ulid])->assertCreated()->assertJsonPath('left', 30);
         $d = $sent();
-        $this->assertSame('p-mod1', $d['pal_id']);
+        $this->assertSame('p-teste1', $d['pal_id']);
+        $this->assertArrayNotHasKey('face_id', $d);
         $this->assertArrayNotHasKey('custom_greeting', $d);
-        $this->assertStringContainsString('AVALIAÇÃO do módulo "Módulo 4 · AVAC"', $d['conversational_context']);
-        $this->assertStringContainsString('Casos de avarias no compressor.', $d['conversational_context']);
+        // Opção 1: o guião está na persona; a plataforma diz quem é o aluno e que comece, mais a instrução extra
+        $this->assertStringContainsString('Começa já o teste tal como está definido na tua persona.', $d['conversational_context']);
+        $this->assertStringContainsString('Instrução do formador para esta vez: Casos de avarias no compressor.', $d['conversational_context']);
 
         // O teste com avatar fica feito quando a conversa termina (a nota virá da plataforma dos avatares)
         $this->actingAs($u)->postJson('/plataforma/alex/conversas/'.AlexConversation::latest('id')->value('ulid').'/terminar')->assertOk();
@@ -243,7 +265,7 @@ class AlexTest extends TestCase
         // Uma aula normal não abre um teste com avatar
         $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'teste', 'lesson' => $l1->ulid])->assertForbidden();
 
-        // A avaliação final é do curso, em qualquer aula: o Alex do curso, nunca o PAL do módulo
+        // A avaliação final sem persona própria: o avatar do curso, em qualquer aula
         $this->actingAs($u)->get("/plataforma/cursos/{$this->diag->slug}/aulas/{$l1->ulid}")
             ->assertInertia(fn ($p) => $p->where('alex.evaluation.done', false)->where('alex.evaluation.module', false));
         $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'avaliacao', 'lesson' => $l1->ulid])->assertCreated();
@@ -278,7 +300,7 @@ class AlexTest extends TestCase
         $u = $this->student($this->diag);
         $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertCreated();
         // A segunda fecha a primeira no Tavus
-        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'avaliacoes'])->assertCreated();
+        $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertCreated();
         Http::assertSent(fn (HttpRequest $r) => $r->url() === 'https://tavus.test/v2/conversations/c1/end');
         $this->assertSame('ended', AlexConversation::where('tavus_id', 'c1')->value('status'));
 
@@ -322,7 +344,7 @@ class AlexTest extends TestCase
 
     public function test_credits_are_bought_authorized_and_spent_one_per_conversation(): void
     {
-        $outsider = $this->student($this->other);
+        $outsider = $this->student($this->diag);
         $gestor = User::factory()->create(['role_id' => Role::where('name', 'gestor_cursos')->value('id')]);
 
         // Compra: fica um pedido "A aguardar pagamento" à espera do gestor; uma de cada vez; só pacotes à venda
@@ -332,7 +354,7 @@ class AlexTest extends TestCase
         $request = ContactRequest::where('kind', 'creditos')->sole();
         $this->assertSame([5, 'aguardar_pagamento'], [$request->credits, $request->status]);
         $this->assertSame(0, $outsider->fresh()->alex_credits);
-        $this->actingAs($outsider)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.buy', true)->where('alex.pending', 5));
+        $this->actingAs($outsider)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.pending', 5));
 
         // O gestor autoriza: os créditos entram e o Alex passa a falar no Início
         // Sem a referência do pagamento não se autoriza; com ela, os créditos entram e o Alex passa a falar no Início
@@ -341,11 +363,7 @@ class AlexTest extends TestCase
         $this->actingAs($gestor)->post("/gestao/pedidos/{$request->id}/autorizar", ['payment_ref' => 'MB Way 12/11'])->assertRedirect();
         $this->assertSame(5, $outsider->refresh()->alex_credits);
         $this->assertSame('concluido', $request->fresh()->status);
-        $this->actingAs($outsider)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.place', 'inicio')->where('alex.credits', 5)->where('alex.left', 0)->where('alex.free', false));
-
-        // Cada conversa gasta 1 crédito
-        $this->actingAs($outsider)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertCreated()->assertJsonPath('credits', 4);
-        $this->assertTrue(AlexConversation::first()->paid_credit);
+        $this->actingAs($outsider)->get('/dashboard')->assertInertia(fn ($p) => $p->where('alex.place', 'inicio')->where('alex.credits', 5)->where('alex.left', 30));
     }
 
     public function test_after_the_included_minutes_a_course_student_can_use_credits(): void
@@ -379,8 +397,11 @@ class AlexTest extends TestCase
     {
         Http::swap(new HttpFactory);
         Http::fake(['tavus.test/*' => Http::response(['message' => 'boom'], 500)]);
-        $u = $this->student($this->other);
+        // Um aluno do curso com o avatar que já gastou os minutos incluídos: a conversa gastaria 1 crédito
+        $u = $this->student($this->diag);
         $u->forceFill(['alex_credits' => 2])->save();
+        $old = AlexConversation::create(['user_id' => $u->id, 'course_id' => $this->diag->id, 'place' => 'inicio', 'paid_credit' => false, 'status' => 'ended', 'ended_at' => now()]);
+        $old->forceFill(['created_at' => now()->subMinutes(40)])->save();
 
         $this->actingAs($u)->postJson('/plataforma/alex/conversas', ['place' => 'inicio'])->assertStatus(503);
         $this->assertSame(2, $u->fresh()->alex_credits);

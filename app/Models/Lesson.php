@@ -24,7 +24,6 @@ class Lesson extends Model
         'evaluation',
         'evaluation_prompt',
         'content_url',
-        'avatar_ref',
         'evaluation_pal_id',
         'body',
         'duration_seconds',

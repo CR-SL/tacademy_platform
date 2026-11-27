@@ -421,7 +421,6 @@ class CourseBuilderController extends Controller
                     '/images/cursos/geometria-suspensao.jpg', '/images/cursos/pintura.jpg', '/images/cursos/travagem-abs.jpg'],
             ))),
             'shortMax' => CourseBuilder::SHORT_MAX,
-            'avatarHosts' => config('tacademy.avatar_hosts'),
             // Avatar (Alex): o formador liga-o nos seus cursos; o admin e o gestor de cursos também o bloqueiam
             'canAlex' => (bool) (request()->user()?->canDo('cursos.alex') || request()->user()?->canDo('cursos.alex.gerir')),
             'canManageAlex' => (bool) request()->user()?->canDo('cursos.alex.gerir'),
@@ -456,6 +455,7 @@ class CourseBuilderController extends Controller
             }],
             'requires_attendance' => ['boolean'],
             'alex_enabled' => ['boolean'],
+            'alex_name' => ['nullable', 'string', 'max:40'],
             'alex_pal_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
             'alex_face_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
             'alex_blocked' => ['boolean'],
@@ -467,8 +467,6 @@ class CourseBuilderController extends Controller
             'modules.*.id' => ['nullable', 'integer'],
             'modules.*.title' => ['nullable', 'string', 'max:200'],
             'modules.*.description' => ['nullable', 'string', 'max:1000'],
-            'modules.*.alex_pal_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
-            'modules.*.alex_face_id' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
             'modules.*.lessons' => ['array', 'max:100'],
             'modules.*.lessons.*.key' => ['required', 'string', 'max:40'],
             'modules.*.lessons.*.id' => ['nullable', 'integer'],
@@ -479,7 +477,6 @@ class CourseBuilderController extends Controller
             'modules.*.lessons.*.kind' => ['nullable', Rule::in(Lesson::KINDS)],
             'modules.*.lessons.*.roleplay_role' => ['nullable', 'string', 'max:255'],
             'modules.*.lessons.*.graded' => ['nullable', 'boolean'],
-            'modules.*.lessons.*.avatar_link' => ['nullable', 'string', 'max:500'],
             'modules.*.lessons.*.weighted' => ['nullable', 'boolean'],
             'modules.*.lessons.*.quiz.*.points' => ['nullable', 'integer', 'between:1,100'],
             'final_mode' => ['nullable', Rule::in(['questions', 'avatar', 'none'])],
@@ -536,7 +533,7 @@ class CourseBuilderController extends Controller
             $course = $request->route('course');
             unset($data['alex_blocked']);
             if (! $user->canDo('cursos.alex') || ($course instanceof Course && $course->alex_blocked)) {
-                unset($data['alex_enabled'], $data['alex_pal_id'], $data['alex_face_id'], $data['final_pal_id']);
+                unset($data['alex_enabled'], $data['alex_name'], $data['alex_pal_id'], $data['alex_face_id'], $data['final_pal_id']);
             }
         }
 

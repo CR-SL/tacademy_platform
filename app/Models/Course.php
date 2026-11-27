@@ -47,6 +47,7 @@ class Course extends Model
         'final_prompt',
         'final_pal_id',
         'final_weight',
+        'alex_name',
         'alex_pal_id',
         'alex_face_id',
         'alex_blocked',

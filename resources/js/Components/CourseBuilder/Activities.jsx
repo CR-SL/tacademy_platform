@@ -97,33 +97,26 @@ export function QuestionsEditor({ owner, set, listKey = 'quiz', weightKey = 'wei
     );
 }
 
-// Que avatar usa esta atividade: o Alex do curso, uma persona do Tavus (PAL ID) ou um link
-function AvatarSource({ l, set, canAlex, id }) {
-    const source = l.avatar_source ?? (l.avatar_link ? 'link' : l.evaluation_pal_id ? 'pal' : 'alex');
-    const pick = (k) => set((x) => {
-        x.avatar_source = k;
-        if (k !== 'pal') x.evaluation_pal_id = '';
-        if (k !== 'link') x.avatar_link = '';
-    });
+// A persona do Tavus que faz esta atividade (opção 1, 2026-11-27): o guião (casos, regras, como avalia) e os documentos
+// estão na persona; a plataforma diz só quem é o aluno e "começa". O Alex do curso fica só para tirar dúvidas.
+export function PersonaField({ value, onChange, canAlex, id, what }) {
     return (
         <div className="mb-4">
-            <span className="mb-1.5 block font-display text-[13px] font-semibold uppercase tracking-[0.04em]">{t('Avatar')}</span>
-            <Seg label={t('Avatar')} value={source} onChange={pick}
-                options={[['alex', t('Alex do curso')], ['pal', t('PAL ID')], ['link', t('Link')]]} />
-            {source === 'pal' && (
-                <div className="mt-2"><PalInput id={`${id}-pal`} label={t('PAL ID (persona do Tavus)')} value={l.evaluation_pal_id ?? ''} disabled={!canAlex}
-                    onChange={(v) => set((x) => { x.evaluation_pal_id = v; })} /></div>
-            )}
-            {source === 'link' && (
-                <div className="mt-2"><Field label={t('Link do avatar')} id={`${id}-lnk`} hint={t('Um link https da plataforma do avatar.')}>
-                    <input id={`${id}-lnk`} className={inputCls} value={l.avatar_link ?? ''} maxLength={500} placeholder="https://…"
-                        onChange={(e) => set((x) => { x.avatar_link = e.target.value; })} />
-                </Field></div>
-            )}
+            <PalInput id={`${id}-pal`} label={t('PAL ID da persona no Tavus')} value={value ?? ''} disabled={!canAlex} onChange={onChange} />
+            <p className="mt-1.5 text-[12.5px] text-muted">{t('O guião :what (o que faz, os casos, como avalia) e os documentos ficam na persona, no Tavus. A plataforma só lhe diz quem é o aluno e que comece.', { what })}</p>
         </div>
     );
 }
 
+export function ExtraInstruction({ value, onChange, id, placeholder }) {
+    return (
+        <Field label={t('Instrução extra para a persona (opcional)')} id={`${id}-extra`} className="mb-3"
+            hint={t('Só se precisares de mudar algo nesta atividade. O aluno não vê.')}>
+            <textarea id={`${id}-extra`} rows={2} maxLength={2000} className={inputCls} value={value ?? ''} placeholder={placeholder}
+                onChange={(e) => onChange(e.target.value)} />
+        </Field>
+    );
+}
 export function TestEditor({ l, set, canAlex, id }) {
     return (
         <div>
@@ -134,12 +127,10 @@ export function TestEditor({ l, set, canAlex, id }) {
             {l.evaluation === 'avatar' ? (
                 <div className="mt-3">
                     <Hint>{t('O avatar apresenta casos práticos e o aluno responde a falar. A nota (0 a 100%) vem da plataforma dos avatares.')}</Hint>
-                    <AvatarSource l={l} set={set} canAlex={canAlex} id={id} />
-                    <Field label={t('Casos que o avatar deve apresentar')} id={`${id}-cases`} className="mb-3">
-                        <textarea id={`${id}-cases`} rows={4} maxLength={2000} className={inputCls} value={l.evaluation_prompt ?? ''}
-                            placeholder={t('Ex.: apresenta 3 casos de clientes com avarias no ar condicionado e pede o diagnóstico.')}
-                            onChange={(e) => set((x) => { x.evaluation_prompt = e.target.value; })} />
-                    </Field>
+                    <PersonaField id={id} canAlex={canAlex} what={t('do teste')} value={l.evaluation_pal_id}
+                        onChange={(v) => set((x) => { x.evaluation_pal_id = v; })} />
+                    <ExtraInstruction id={id} value={l.evaluation_prompt} placeholder={t('Ex.: nesta turma, foca-te mais no diagnóstico de fugas.')}
+                        onChange={(v) => set((x) => { x.evaluation_prompt = v; })} />
                 </div>
             ) : (
                 <div className="mt-3">
@@ -178,9 +169,10 @@ export function ExerciseEditor({ l, set, id, attachments }) {
 export function RoleplayEditor({ l, set, canAlex, id }) {
     return (
         <div>
-            <Hint>{t('O aluno conversa com o avatar numa situação real. As instruções são enviadas ao avatar no início da conversa: é assim que ele sabe o que vai fazer. Gasta os minutos de avatar do curso.')}</Hint>
-            <AvatarSource l={l} set={set} canAlex={canAlex} id={id} />
-            <Field label={t('Papel do avatar')} id={`${id}-role`} required className="mb-3">
+            <Hint>{t('O aluno conversa com o avatar numa situação real. Gasta os minutos de avatar do curso.')}</Hint>
+            <PersonaField id={id} canAlex={canAlex} what={t('do roleplay')} value={l.evaluation_pal_id}
+                onChange={(v) => set((x) => { x.evaluation_pal_id = v; })} />
+            <Field label={t('Papel do avatar (o aluno vê)')} id={`${id}-role`} required className="mb-3">
                 <input id={`${id}-role`} className={inputCls} value={l.roleplay_role ?? ''} maxLength={255}
                     placeholder={t('Ex.: cliente que acha a fatura do ar condicionado cara')}
                     onChange={(e) => set((x) => { x.roleplay_role = e.target.value; })} />
@@ -190,11 +182,8 @@ export function RoleplayEditor({ l, set, canAlex, id }) {
                     placeholder={t('Ex.: és o rececionista da oficina. O cliente chega irritado com o valor da recarga…')}
                     onChange={(e) => set((x) => { x.body = e.target.value; })} />
             </Field>
-            <Field label={t('Instruções para o avatar (o aluno não vê)')} id={`${id}-ai`} className="mb-3">
-                <textarea id={`${id}-ai`} rows={4} maxLength={2000} className={inputCls} value={l.evaluation_prompt ?? ''}
-                    placeholder={t('Ex.: começa irritado; acalma-te se o aluno explicar o trabalho com clareza; termina quando houver acordo.')}
-                    onChange={(e) => set((x) => { x.evaluation_prompt = e.target.value; })} />
-            </Field>
+            <ExtraInstruction id={id} value={l.evaluation_prompt} placeholder={t('Ex.: nesta versão, o cliente é mais calmo.')}
+                onChange={(v) => set((x) => { x.evaluation_prompt = v; })} />
             <label className="flex items-center gap-2 text-[13.5px]">
                 <input type="checkbox" checked={!!l.graded} className="text-accent focus:ring-ink" onChange={(e) => set((x) => { x.graded = e.target.checked; })} />
                 {t('Tem nota (a nota vem da plataforma dos avatares)')}

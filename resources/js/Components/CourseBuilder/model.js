@@ -27,6 +27,7 @@ export function blankCourse() {
         deadline_days: null,
         requires_attendance: false,
         alex_enabled: false,
+        alex_name: '',
         alex_pal_id: '',
         alex_face_id: '',
         alex_blocked: false,
@@ -54,7 +55,7 @@ export const lessonCount = (c) => c.modules.reduce((a, m) => a + m.lessons.lengt
 // Atividade nova (fase 2, 2026-11-27): aula, teste, exercício ou roleplay
 export const blankLessonData = () => ({
     key: newKey(), id: null, kind: 'aula', title: '', type: 'video_link', parts: ['video'], evaluation: 'none', evaluation_prompt: '',
-    evaluation_pal_id: '', avatar_link: '', roleplay_role: '', graded: false, weighted: false,
+    evaluation_pal_id: '', roleplay_role: '', graded: false, weighted: false,
     url: '', minutes: '', body: '', attachments: [], quiz: [], checks: [],
 });
 
@@ -89,6 +90,10 @@ export function lessonMissing(l) {
     }
     if ((kind === 'teste' || kind === 'exercicio') && l.evaluation === 'quiz' && !questionsReady(l.quiz)) miss.push(t('perguntas'));
     if (kind === 'exercicio' && l.evaluation !== 'quiz' && !l.body.trim()) miss.push(t('o que o aluno tem de fazer'));
+    // Teste com avatar e roleplay: a persona do Tavus, onde está o guião (opção 1)
+    if ((kind === 'teste' && l.evaluation === 'avatar') || kind === 'roleplay') {
+        if (!(l.evaluation_pal_id ?? '').trim()) miss.push(t('PAL ID'));
+    }
     if (kind === 'roleplay') {
         if (!(l.roleplay_role ?? '').trim()) miss.push(t('papel do avatar'));
         if (!l.body.trim()) miss.push(t('situação'));
@@ -110,7 +115,9 @@ export function checklist(c, shortMax) {
         [t('Todas as aulas completas (título + link/conteúdo)'), 1, lessons.every(lessonComplete)],
         // Igual ao servidor: sem os minutos, o vídeo não conclui a aula
         [t('Minutos em todas as aulas de vídeo'), 1, lessons.every((l) => !(l.parts ?? []).includes('video') || Number(l.minutes) > 0)],
+        [t('Nome e PAL ID do avatar de ajuda'), 2, !c.alex_enabled || (!!(c.alex_pal_id ?? '').trim() && !!(c.alex_name ?? '').trim())],
         [t('Perguntas da avaliação final'), 3, c.final_mode !== 'questions' || questionsReady(c.final_quiz)],
+        [t('PAL ID da avaliação final'), 3, c.final_mode !== 'avatar' || !!(c.final_pal_id ?? '').trim()],
         [t('Preço definido'), 4, c.is_free || Number(c.price) > 0],
     ];
 }

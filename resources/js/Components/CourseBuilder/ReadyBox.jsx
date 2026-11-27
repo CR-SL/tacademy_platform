@@ -23,8 +23,11 @@ export function readyItems(c, shortMax, previewed) {
         label: t(':what · atividade :n', { what: cap(x.miss[0]), n: x.n }),
     }));
     if (todo.length > 2) items.push({ id: 'more', step: 1, lesson: todo[2].l.key, ok: false, label: t('Mais :n atividades por completar', { n: todo.length - 2 }) });
+    // Avatar de ajuda ligado (passo 3): a persona do Tavus que tira as dúvidas
+    if (c.alex_enabled) items.push({ id: 'help', step: 2, label: t('Nome e PAL ID do avatar de ajuda'), ok: !!(c.alex_pal_id ?? '').trim() && !!(c.alex_name ?? '').trim() });
     // Avaliação final (passo 4): com perguntas, têm de estar prontas
     if (c.final_mode === 'questions') items.push({ id: 'final', step: 3, label: t('Perguntas da avaliação final'), ok: questionsReady(c.final_quiz) });
+    if (c.final_mode === 'avatar') items.push({ id: 'final', step: 3, label: t('PAL ID da avaliação final'), ok: !!(c.final_pal_id ?? '').trim() });
     items.push({ id: 'price', step: 4, label: t('Preço e acesso'), ok: c.is_free || Number(c.price) > 0 });
     // Opcional (2026-11-26): não conta para a percentagem nem impede o curso de ficar pronto
     items.push({ id: 'preview', step: 5, label: t('Ver como aluno'), ok: previewed, optional: true });

@@ -13,7 +13,7 @@ const IconMicOff = () => <S><path d="M15 10V6a3 3 0 0 0-5.7-1.3M9 9v2a3 3 0 0 0 
 const IconCam = () => <S><rect x="3" y="6" width="13" height="12" rx="2" /><path d="M16 10l5-3v10l-5-3z" /></S>;
 const IconCamOff = () => <S><path d="M16 16v1a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2M11 6h4a1 1 0 0 1 1 1v3l5-3v10M3 3l18 18" /></S>;
 
-const PLACE = { inicio: 'Início', avaliacoes: 'Avaliações', aula: 'Aula' };
+const PLACE = { inicio: 'Dúvidas sobre o curso', aula: 'Aula' };
 
 // A janela do Alex: o aluno move-a pelo cabeçalho e muda-lhe o tamanho pelo canto de cima à esquerda.
 // A posição conta a partir do canto de baixo à direita (r, b). Fica guardada neste browser e nunca sai do ecrã.
@@ -98,7 +98,7 @@ function ResizeCorner({ box, onChange }) {
     };
     return (
         <button type="button" className="ax-rs" onPointerDown={down} onKeyDown={key} onDoubleClick={() => onChange((v) => ({ ...v, w: DEFAULT_BOX.w, h: DEFAULT_BOX.h }))}
-            aria-label={t('Redimensionar a janela do Alex. Usa as setas do teclado.')} title={t('Arrastar para redimensionar. Duplo clique repõe o tamanho.')}>
+            aria-label={t('Redimensionar a janela do avatar. Usa as setas do teclado.')} title={t('Arrastar para redimensionar. Duplo clique repõe o tamanho.')}>
             <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1 11V1h10M1 6h5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
         </button>
     );
@@ -121,7 +121,7 @@ function MoveHeader({ box, onChange, children }) {
     return (
         <header className="ax-head" onPointerDown={down} onDoubleClick={reset}>
             {children}
-            <button type="button" className="ax-grip" onKeyDown={key} aria-label={t('Mover a janela do Alex. Usa as setas do teclado.')}
+            <button type="button" className="ax-grip" onKeyDown={key} aria-label={t('Mover a janela do avatar. Usa as setas do teclado.')}
                 title={t('Arrastar para mover. Duplo clique repõe o lugar.')}>
                 <svg viewBox="0 0 12 12" aria-hidden="true">{[[3, 3], [9, 3], [3, 6], [9, 6], [3, 9], [9, 9]].map(([x, y]) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.2" fill="currentColor" />)}</svg>
             </button>
@@ -161,7 +161,7 @@ export function AlexCallView({ onClose }) {
     const busy = isActive(s);
     const note = {
         starting: t('A preparar a conversa…'),
-        waiting: t('O Alex está a chegar…'),
+        waiting: t('O avatar está a chegar…'),
         ended: t('Conversa terminada.'),
         error: s.error,
     }[s.status];
@@ -216,12 +216,12 @@ export function AlexStart({ alex, block = true }) {
     }
     // Minutos incluídos no curso (2026-11-27): acabados, 1 crédito por conversa
     if (left <= 0 && credits <= 0) {
-        return <AlexBuy alex={alex} lead={alex.free ? t('Já usaste os :n minutos de avatar incluídos no curso. Compra créditos para continuar a falar com o Alex.', { n: alex.included ?? 30 }) : t('Não tens créditos. Compra créditos para continuar a falar com o Alex.')} />;
+        return <AlexBuy alex={alex} lead={alex.free ? t('Já usaste os :n minutos de avatar incluídos no curso. Compra créditos para continuar a falar com o avatar.', { n: alex.included ?? 30 }) : t('Não tens créditos. Compra créditos para continuar a falar com o avatar.')} />;
     }
     return (
         <>
             <button type="button" className={`ui-btn ui-btn-accent ${block ? 'ui-btn-block' : ''}`}
-                onClick={() => startAlex({ place: alex.place, lesson: alex.lesson })}>{t('Falar com o Alex')}</button>
+                onClick={() => startAlex({ place: alex.place, lesson: alex.lesson, name: alex.name })}>{t('Falar com :name', { name: alex.name || 'Alex' })}</button>
             <p className="ax-hint">
                 {left > 0
                     ? t('Ainda tens :n de :total minutos de avatar incluídos no curso.', { n: left, total: alex.included ?? 30 })
@@ -291,12 +291,12 @@ export default function AlexHost() {
         <>
             <audio ref={audio} autoPlay />
             {floating && createPortal(
-                <section className="ax-win" role="dialog" aria-label={t('Conversa com o Alex')}
+                <section className="ax-win" role="dialog" aria-label={t('Conversa com o avatar')}
                     style={{ '--ax-w': `${box.w}px`, '--ax-h': `${box.h}px`, '--ax-r': `${box.r}px`, '--ax-b': `${box.b}px` }}>
                     <ResizeCorner box={box} onChange={setBox} />
                     <MoveHeader box={box} onChange={setBox}>
                         <img src="/images/alex.png" alt="" />
-                        <span><b>{t('Alex')}</b><small>{s.place ? t(PLACE[s.place]) : ''}</small></span>
+                        <span><b>{s.name || (['teste', 'roleplay', 'avaliacao'].includes(s.place) ? t('Avatar') : 'Alex')}</b><small>{s.place ? t(PLACE[s.place]) : ''}</small></span>
                     </MoveHeader>
                     <AlexCallView onClose={dismissAlex} />
                 </section>,

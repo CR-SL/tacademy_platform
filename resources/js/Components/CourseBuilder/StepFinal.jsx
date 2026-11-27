@@ -1,5 +1,5 @@
 import { Field, inputCls, Panel, Seg } from './ui';
-import { Hint, PalInput, QuestionsEditor, blankQuestion } from './Activities';
+import { ExtraInstruction, Hint, PersonaField, QuestionsEditor, blankQuestion } from './Activities';
 
 import { t } from '@/i18n';
 
@@ -28,14 +28,11 @@ export default function StepFinal({ c, update, canAlex }) {
                 {mode === 'avatar' && (
                     <div className="mt-4">
                         <Hint>{t('O avatar faz perguntas sobre todo o curso. A nota (0 a 100%) vem da plataforma dos avatares. Não gasta os minutos do curso.')}</Hint>
-                        <Field label={t('O que o avatar deve avaliar (opcional)')} id="f-final-prompt" className="mb-3">
-                            <textarea id="f-final-prompt" rows={3} maxLength={2000} className={inputCls} value={c.final_prompt ?? ''}
-                                placeholder={t('Ex.: perguntas sobre todos os módulos, uma de cada vez.')}
-                                onChange={(e) => update((d) => { d.final_prompt = e.target.value; })} />
-                        </Field>
-                        <div className="grid gap-x-4 sm:grid-cols-[1fr_160px]">
-                            <PalInput id="f-final-pal" label={t('PAL ID do avaliador (opcional: vazio = o avatar do curso)')} value={c.final_pal_id ?? ''} disabled={!canAlex}
-                                onChange={(v) => update((d) => { d.final_pal_id = v; })} />
+                        <PersonaField id="f-final" canAlex={canAlex} what={t('da avaliação final')} value={c.final_pal_id}
+                            onChange={(v) => update((d) => { d.final_pal_id = v; })} />
+                        <ExtraInstruction id="f-final" value={c.final_prompt} placeholder={t('Ex.: dá mais peso ao módulo de diagnóstico.')}
+                            onChange={(v) => update((d) => { d.final_prompt = v; })} />
+                        <div className="grid gap-x-4 sm:grid-cols-[160px]">
                             <Field label={t('Duração (min)')} id="f-final-min">
                                 <input id="f-final-min" type="number" min="1" max="120" className={inputCls} value={c.final_minutes ?? 15}
                                     onChange={(e) => update((d) => { d.final_minutes = Math.max(1, Math.min(120, parseInt(e.target.value, 10) || 1)); })} />

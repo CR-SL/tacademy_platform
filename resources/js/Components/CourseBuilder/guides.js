@@ -24,7 +24,6 @@ export function guideFor(step, { openFirstLesson }) {
         case 2:
             return [
                 { target: 'avatar', title: t('O avatar de ajuda'), body: t('Ligado, quem comprou o curso tira dúvidas com este avatar no Início e em todas as aulas do curso. Tem 30 minutos incluídos.') },
-                { target: 'avatar-modules', title: t('Um Alex por módulo'), body: t('Cada módulo pode ter o seu PAL ID, com a avaliação desse módulo. Vazio = o Alex do curso.') },
             ];
         case 3:
             return [

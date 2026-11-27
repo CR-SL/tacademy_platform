@@ -65,10 +65,10 @@ export default function AlexLessonPanel({ alex, open, onStart }) {
 /**
  * Teste com avatar ou roleplay de uma atividade (fase 2, 2026-11-27), na caixa do avatar da aula: primeiro a
  * apresentação (situação, papel do avatar, duração) e o botão para começar; depois a conversa fica aqui.
- * place: 'teste' | 'roleplay'. link: avatar por link (abre num separador, em vez do Tavus).
+ * place: 'teste' | 'roleplay'. (Sem avatar por link desde 2026-11-27.)
  */
 // onBegin: o teste com avatar começa pela página amarela da aula (como a avaliação), em vez de aqui
-export function AlexActivityPanel({ place, lesson, minutes, canStart, link, onStart, alex = null, onBegin = null, tests = [], slug = null }) {
+export function AlexActivityPanel({ place, lesson, minutes, canStart, onStart, alex = null, onBegin = null, tests = [], slug = null }) {
     const s = useAlexCall();
     // O roleplay gasta os minutos incluídos no curso; acabados, 1 crédito (o teste com avatar não gasta)
     const left = s.left ?? alex?.left ?? 0;
@@ -96,7 +96,7 @@ export function AlexActivityPanel({ place, lesson, minutes, canStart, link, onSt
         startAlex({ place, lesson: lesson.ulid });
     };
     if (place === 'teste') {
-        return <AvatarTestBox lesson={lesson} tests={tests} slug={slug} canStart={canStart} link={link} onBegin={onBegin ?? start} busy={isActive(s)} />;
+        return <AvatarTestBox lesson={lesson} tests={tests} slug={slug} canStart={canStart} onBegin={onBegin ?? start} busy={isActive(s)} />;
     }
     return (
         <div className="ax-activity">
@@ -112,9 +112,7 @@ export function AlexActivityPanel({ place, lesson, minutes, canStart, link, onSt
                 {place === 'roleplay' && lesson.role && <p className="ax-brief"><b>{t('O avatar faz de')}</b>{lesson.role}</p>}
                 {place === 'roleplay' && lesson.body && <p className="ax-brief"><b>{t('A situação')}</b>{lesson.body}</p>}
                 {place === 'teste' && <p className="ax-brief"><b>{t('Como funciona')}</b>{t('O avatar apresenta casos práticos, um de cada vez. Responde a falar, como farias na oficina.')}</p>}
-                {link ? (
-                    <a href={link} target="_blank" rel="noopener noreferrer" className="ui-btn ui-btn-accent">{t('Abrir o avatar ↗')}</a>
-                ) : canStart && metered && left <= 0 && credits <= 0 ? (
+                {canStart && metered && left <= 0 && credits <= 0 ? (
                     <AlexBuy alex={alex} lead={t('Já usaste os :n minutos de avatar incluídos no curso. Compra créditos para fazer o roleplay.', { n: alex.included ?? 30 })} />
                 ) : canStart ? (
                     <>
@@ -139,7 +137,7 @@ export function AlexActivityPanel({ place, lesson, minutes, canStart, link, onSt
  * Caixa do teste com avatar (opção B + C, 2026-11-27): onde o aluno está nos testes com o Alex do curso
  * (feitos, este, os que faltam) e, em pequeno, como funciona; o botão abre a página amarela.
  */
-function AvatarTestBox({ lesson, tests, slug, canStart, link, onBegin, busy }) {
+function AvatarTestBox({ lesson, tests, slug, canStart, onBegin, busy }) {
     const list = tests.length ? tests : [{ ulid: lesson.ulid, title: lesson.title, module: null, minutes: lesson.minutes, done: lesson.done }];
     const at = Math.max(0, list.findIndex((x) => x.ulid === lesson.ulid));
     const doneCount = list.filter((x) => x.done).length;
@@ -148,7 +146,7 @@ function AvatarTestBox({ lesson, tests, slug, canStart, link, onBegin, busy }) {
     return (
         <div className="ax-tests">
             <div className="ax-tests-in">
-                <small className="ax-tag">{t('Testes com o Alex')}</small>
+                <small className="ax-tag">{t('Testes com avatar')}</small>
                 <div className="ax-tests-top">
                     <h2>{t('Teste :n de :total', { n: at + 1, total: list.length })}</h2>
                     <span>{doneCount === 1 ? t('1 feito') : t(':n feitos', { n: doneCount })}</span>
@@ -177,16 +175,14 @@ function AvatarTestBox({ lesson, tests, slug, canStart, link, onBegin, busy }) {
                     })}
                 </ol>
                 <ol className="ax-steps" aria-label={t('Como funciona')}>
-                    <li>{t('O Alex apresenta casos práticos, um de cada vez.')}</li>
+                    <li>{t('O avatar apresenta casos práticos, um de cada vez.')}</li>
                     <li>{t('Respondes a falar, como farias com um cliente (também podes escrever).')}</li>
                     <li>{t('O teste fica feito quando terminas a conversa.')}</li>
                 </ol>
             </div>
             <div className="ax-tests-foot">
                 <span className="ax-mini" aria-hidden="true" />
-                {link ? (
-                    <a href={link} target="_blank" rel="noopener noreferrer" className="ui-btn ui-btn-accent">{t('Abrir o avatar ↗')}</a>
-                ) : canStart ? (
+                {canStart ? (
                     <button type="button" className="ui-btn ui-btn-accent" onClick={onBegin} disabled={busy}>
                         {here?.done ? t('Fazer outra vez') : t('Começar o teste :n →', { n: at + 1 })}
                     </button>

@@ -71,33 +71,4 @@ class SecurityHeadersTest extends TestCase
         ]]))->assertNoContent();
         Log::shouldHaveReceived('warning')->withArgs(fn ($msg, $ctx) => $msg === 'CSP' && $ctx['blocked'] === 'https://evil.example/a.js');
     }
-
-    public function test_only_tavus_links_are_accepted_for_the_avatar(): void
-    {
-        $this->assertTrue(CourseBuilder::validAvatarUrl('https://tavus.daily.co/c123'));
-        $this->assertTrue(CourseBuilder::validAvatarUrl('https://app.tavus.io/x'));
-        $this->assertTrue(CourseBuilder::validAvatarUrl('https://avatar.tacademy.pt/sala/1')); // a plataforma de avatares da T.Academy
-        $this->assertFalse(CourseBuilder::validAvatarUrl('https://tacademy.pt/x')); // o resto do domínio não
-        $this->assertFalse(CourseBuilder::validAvatarUrl('http://tavus.daily.co/c123')); // sem https
-        $this->assertFalse(CourseBuilder::validAvatarUrl('https://entrar-tacademy.pt/sessao'));
-        $this->assertFalse(CourseBuilder::validAvatarUrl('https://daily.co.evil.pt/x'));
-        $this->assertFalse(CourseBuilder::validAvatarUrl('https://eviltavus.io/x'));
-
-        // Um link de outro site não abre dentro da aula
-        foreach (['aluno', 'formador'] as $r) Role::firstOrCreate(['name' => $r]);
-        $cat = Category::create(['slug' => 'mecanica', 'name' => 'Mecânica', 'color_hex' => '#F8B101']);
-        $course = Course::create(['ulid' => (string) Str::ulid(), 'category_id' => $cat->id, 'title' => 'C', 'slug' => 'c',
-            'level' => 'iniciante', 'status' => 'published', 'price' => 10]);
-        $m = Module::create(['course_id' => $course->id, 'title' => 'M', 'order_index' => 0]);
-        $avatar = Lesson::create(['module_id' => $m->id, 'kind' => 'roleplay', 'evaluation' => 'avatar', 'title' => 'Roleplay', 'content_type' => 'avatar',
-            'roleplay_role' => 'Cliente', 'body' => 'Situação', 'avatar_ref' => 'https://entrar-tacademy.pt/sessao', 'duration_seconds' => 60, 'order_index' => 0]);
-        $u = User::factory()->create(['role_id' => Role::where('name', 'aluno')->value('id')]);
-        Enrollment::create(['user_id' => $u->id, 'course_id' => $course->id, 'source' => 'manual', 'enrolled_at' => now()]);
-
-        $this->actingAs($u)->get("/plataforma/cursos/c/aulas/{$avatar->ulid}")->assertOk()
-            ->assertInertia(fn ($p) => $p->where('lesson.activityLink', null));
-        $avatar->update(['avatar_ref' => 'https://tavus.daily.co/c123']);
-        $this->actingAs($u)->get("/plataforma/cursos/c/aulas/{$avatar->ulid}")->assertOk()
-            ->assertInertia(fn ($p) => $p->where('lesson.activityLink', 'https://tavus.daily.co/c123'));
-    }
 }

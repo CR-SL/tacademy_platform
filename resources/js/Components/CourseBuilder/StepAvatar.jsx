@@ -2,7 +2,8 @@ import { Field, inputCls, Panel, Toggle } from './ui';
 
 import { t } from '@/i18n';
 
-// Passo 3 · Avatar (Alex, o formador IA do Tavus).
+// Passo 3 · Avatar de ajuda: a persona do Tavus que tira dúvidas sobre a matéria do curso (o nome e a cara são da persona;
+// o Alex é só um exemplo). Um por curso: os testes e roleplays têm a sua persona no Programa (2026-11-27).
 // O formador liga-o e desliga-o nos seus cursos; o admin e o gestor de cursos (canManageAlex) também
 // o podem bloquear, e então o formador já não o liga.
 export default function StepAvatar({ c, update, canAlex, canManageAlex }) {
@@ -24,7 +25,11 @@ export default function StepAvatar({ c, update, canAlex, canManageAlex }) {
                         </Toggle>
                         {c.alex_enabled && (
                             <div className="grid gap-x-4 pl-[52px] sm:grid-cols-2">
-                                <Field label={t('PAL ID')} id="f-alex-pal" hint={t('O Alex deste curso no Tavus. Vazio = o Alex geral da T.Academy.')}>
+                                <Field label={t('Nome do avatar')} id="f-alex-name" required className="sm:col-span-2 sm:max-w-[calc(50%-8px)]" hint={t('O nome que o aluno vê no botão e na conversa. Ex.: Alex.')}>
+                                    <input id="f-alex-name" className={inputCls} value={c.alex_name ?? ''} maxLength={40} placeholder="Alex" autoComplete="off"
+                                        onChange={(e) => update((d) => { d.alex_name = e.target.value; })} />
+                                </Field>
+                                <Field label={t('PAL ID do avatar de ajuda')} id="f-alex-pal" required hint={t('A persona no Tavus que tira as dúvidas sobre a matéria do curso.')}>
                                     <input id="f-alex-pal" className={`${inputCls} font-mono`} value={c.alex_pal_id} maxLength={64} placeholder="p18d6e1b675e" autoComplete="off" spellCheck={false}
                                         onChange={(e) => update((d) => { d.alex_pal_id = e.target.value.trim(); })} />
                                 </Field>
@@ -43,26 +48,6 @@ export default function StepAvatar({ c, update, canAlex, canManageAlex }) {
                     </p>
                 )}
             </Panel>
-
-            {canAlex && !locked && c.alex_enabled && c.modules.length > 0 && (
-                <Panel data-guide="avatar-modules" title={t('Avatar por módulo')} sub={t('Cada módulo pode ter o seu avatar de ajuda no Tavus. Nas atividades do módulo, as dúvidas usam o PAL do módulo. Vazio = o PAL do curso.')}>
-                    <div className="divide-y divide-line">
-                        {c.modules.map((m, i) => (
-                            <div key={m.key} className="grid gap-x-4 py-3 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] sm:items-end">
-                                <p className="pb-2 text-sm"><span className="font-mono text-muted">{String(i + 1).padStart(2, '0')}</span> {m.title || t('Módulo sem título')}</p>
-                                <Field label={t('PAL ID')} id={`f-mpal-${m.key}`}>
-                                    <input id={`f-mpal-${m.key}`} className={`${inputCls} font-mono`} value={m.alex_pal_id ?? ''} maxLength={64} placeholder={c.alex_pal_id || t('PAL do curso')} autoComplete="off" spellCheck={false}
-                                        onChange={(e) => update((d) => { d.modules[i].alex_pal_id = e.target.value.trim(); })} />
-                                </Field>
-                                <Field label={t('FACE ID')} id={`f-mface-${m.key}`}>
-                                    <input id={`f-mface-${m.key}`} className={`${inputCls} font-mono`} value={m.alex_face_id ?? ''} maxLength={64} placeholder={t('Rosto do PAL')} autoComplete="off" spellCheck={false}
-                                        onChange={(e) => update((d) => { d.modules[i].alex_face_id = e.target.value.trim(); })} />
-                                </Field>
-                            </div>
-                        ))}
-                    </div>
-                </Panel>
-            )}
 
             {canManageAlex && (
                 <Panel title={t('Controlo da equipa')} sub={t('Só o admin e o gestor de cursos veem esta parte.')}>

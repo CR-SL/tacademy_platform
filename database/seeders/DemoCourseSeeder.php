@@ -76,7 +76,6 @@ class DemoCourseSeeder extends Seeder
                         'title' => $lTitle,
                         'content_type' => $type,
                         'content_url' => $type === 'video_link' ? self::VIDEO : null,
-                        'avatar_ref' => $type === 'avatar' ? self::AVATAR : null,
                         'body' => $type === 'text' ? $l[3] : null,
                         'duration_seconds' => $min * 60,
                         'order_index' => $li,

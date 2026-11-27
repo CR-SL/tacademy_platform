@@ -8,7 +8,6 @@ import StepPrice from '@/Components/CourseBuilder/StepPrice';
 import StepFinal from '@/Components/CourseBuilder/StepFinal';
 import StepReview from '@/Components/CourseBuilder/StepReview';
 import { blankCourse, checklist } from '@/Components/CourseBuilder/model';
-import { setAvatarHosts } from '@/Components/CourseBuilder/format';
 import { useConfirm } from '@/Components/ui';
 import EditorGuide from '@/Components/CourseBuilder/EditorGuide';
 import ReadyBox, { readyItems } from '@/Components/CourseBuilder/ReadyBox';
@@ -43,8 +42,7 @@ function withQuestionIds(q, saved) {
 }
 
 // Editor de cursos dos formadores: assistente em 5 passos que se guarda sozinho.
-export default function CourseEditor({ course, categories, library, shortMax, canAlex, canManageAlex, avatarHosts }) {
-    setAvatarHosts(avatarHosts); // antes de qualquer verificação do avatar (lista do que falta, campo do link)
+export default function CourseEditor({ course, categories, library, shortMax, canAlex, canManageAlex }) {
     const [c, setC] = useState(() => course ?? blankCourse());
     const [step, setStep] = useState(0);
     // Curso novo: primeiro escolhe-se um modelo (2026-11-26); o modelo usado aparece no Programa até à 1.ª gravação

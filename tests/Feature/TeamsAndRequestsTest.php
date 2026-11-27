@@ -159,6 +159,12 @@ class TeamsAndRequestsTest extends TestCase
         $req = ContactRequest::where('kind', 'alteracao')->firstOrFail();
         $this->assertSame($company->id, $req->company_id);
         $this->assertSame([['name' => 'Hugo Barros', 'email' => 'hugo@moura.pt']], $req->people);
+
+        // Na Equipa, a caixa do avatar fala com o avatar de dúvidas do curso que o team leader está a fazer
+        config(['services.tavus.api_key' => 'test-key']);
+        $this->actingAs($leader)->get('/equipa')->assertInertia(fn ($p) => $p->where('alex', null));
+        $team->update(['alex_enabled' => true, 'alex_name' => 'Sofia', 'alex_pal_id' => 'p-obd']);
+        $this->actingAs($leader)->get('/equipa')->assertInertia(fn ($p) => $p->where('alex.place', 'inicio')->where('alex.name', 'Sofia'));
     }
 
     public function test_staff_update_members_and_people_who_leave_lose_team_access(): void

@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { AlexBuy, AlexStart } from '@/Components/Alex/AlexCall';
+import { AlexStart } from '@/Components/Alex/AlexCall';
 import { useEffect, useRef, useState } from 'react';
 import { formatEuro, formatMinutes, levelLabels, plural } from '@/Components/CourseBuilder/format';
 import { alexDef, Bar, EmptyPanel } from '@/Components/Panels/PanelBoard';
@@ -303,15 +303,15 @@ export function Welcome({ firstName, starter }) {
                 <p className="text-[14px] text-muted">{t('Vens de uma empresa? Os cursos que ela te atribuir aparecem aqui.')}</p>
             </div>
 
-            {/* O Alex logo no primeiro uso: o aluno fica a saber que pode falar com o avatar (cursos com IA ou créditos) */}
-            {(alex?.place || alex?.buy) && (
+            {/* O avatar de dúvidas do curso logo no primeiro uso: o aluno fica a saber que pode falar com ele */}
+            {alex?.place && (
                 <section aria-labelledby="w-alex" className="w-alex mt-10">
-                    <img src="/images/alex.png" alt={t('Alex, o tutor do curso, numa oficina')} />
+                    <img src="/images/alex.png" alt="" />
                     <div className="w-alex-c">
-                        <span className="pn-lab">{t('Formador IA')}</span>
-                        <h2 id="w-alex" className="pn-disp text-[24px] leading-[1.1]">{t('Conhece o Alex')}</h2>
-                        <p className="max-w-[52ch] text-[14.5px] text-text">{t('Um avatar com vídeo e voz que te tira dúvidas sobre os cursos, a qualquer hora. Vem incluído nos cursos com IA e também podes falar com ele com créditos.')}</p>
-                        {alex.place ? <AlexStart alex={alex} block={false} /> : <AlexBuy alex={alex} />}
+                        <span className="pn-lab">{t('Avatar do curso')}</span>
+                        <h2 id="w-alex" className="pn-disp text-[24px] leading-[1.1]">{t('Conhece :name', { name: alex.name })}</h2>
+                        <p className="max-w-[52ch] text-[14.5px] text-text">{t('Um avatar com vídeo e voz que te tira dúvidas sobre o curso “:course”, a qualquer hora.', { course: alex.course })}</p>
+                        <AlexStart alex={alex} block={false} />
                     </div>
                 </section>
             )}

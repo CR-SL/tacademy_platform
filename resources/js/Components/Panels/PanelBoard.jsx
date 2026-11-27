@@ -4,7 +4,7 @@ import { IconArrow, IconBack, IconCorner, IconFold, IconGrip, IconPanels, IconX 
 import { Bar as UiBar, Toast } from '@/Components/ui';
 
 import { t } from '@/i18n';
-import { AlexBuy, AlexStart } from '@/Components/Alex/AlexCall';
+import { AlexStart } from '@/Components/Alex/AlexCall';
 
 export function Bar({ value }) {
     return <UiBar value={value} className="mt-[5px]" />;
@@ -157,29 +157,29 @@ export function Crumb({ label, children }) {
     );
 }
 
-// O Alex (formador IA): fala com quem tem um curso com o avatar (conversas grátis por dia) ou créditos.
-// - nesta página pode falar: o botão começa a conversa;
-// - pode falar, mas noutras páginas: diz onde;
-// - aluno sem curso com o avatar e sem créditos: a caixa fica, com a compra de créditos;
-// - os outros (sem Alex): leva ao catálogo.
+// O avatar de dúvidas do curso do aluno (ainda não há um avatar geral da plataforma, 2026-11-27):
+// - no Início, em Os meus cursos, nos Documentos e na Equipa: o botão começa a conversa com o avatar do curso onde o aluno esteve por último;
+// - noutras páginas: diz onde se fala com ele;
+// - sem um curso com o avatar: leva ao catálogo.
 export function AlexPanel() {
     const { alex } = usePage().props;
     return (
         <>
-            <img className="pn-alex-p" src="/images/alex.png" alt={t('Alex, o tutor do curso, numa oficina')} />
+            <img className="pn-alex-p" src="/images/alex.png" alt="" />
             <div className="pn-alex-c">
                 {alex?.place ? (
-                    <AlexStart alex={alex} />
-                ) : alex?.buy ? (
-                    <AlexBuy alex={alex} lead={t('Fala com o Alex nos cursos com IA ou com créditos de avatar.')} />
+                    <>
+                        <p className="pn-alex-note">{t(':name tira-te dúvidas sobre o curso “:course”.', { name: alex.name, course: alex.course })}</p>
+                        <AlexStart alex={alex} />
+                    </>
                 ) : alex ? (
                     <>
-                        <p className="pn-alex-note">{t('Fala com o Alex no Início, nas Avaliações ou nas aulas do teu curso com formador IA.')}</p>
+                        <p className="pn-alex-note">{t('Fala com :name no Início, em Os meus cursos ou nas aulas do teu curso.', { name: alex.name })}</p>
                         <Link href="/dashboard" className="ui-btn ui-btn-line">{t('Ir para o Início')}</Link>
                     </>
                 ) : (
                     <>
-                        <p className="pn-alex-note">{t('O Alex está disponível nos cursos com formador IA.')}</p>
+                        <p className="pn-alex-note">{t('Os cursos com avatar trazem um avatar que te tira dúvidas sobre a matéria.')}</p>
                         <Link href="/plataforma/cursos" className="ui-btn ui-btn-line">{t('Ver o catálogo')}</Link>
                     </>
                 )}
@@ -189,7 +189,7 @@ export function AlexPanel() {
 }
 
 export const alexDef = (y, h) => ({
-    title: t('Alex'), x: 19, y, w: 5, h, float: 'dark', summary: t('Formador IA'), compact: true, body: <AlexPanel />,
+    title: t('Avatar do curso'), x: 19, y, w: 5, h, float: 'dark', summary: t('Dúvidas sobre o curso'), compact: true, body: <AlexPanel />,
 });
 
 export function EmptyPanel({ title, text, href, cta }) {

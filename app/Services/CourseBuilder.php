@@ -80,6 +80,7 @@ class CourseBuilder
             'alex_enabled' => (bool) $course->alex_enabled,
             'alex_pal_id' => $course->alex_pal_id ?? '',
             'alex_face_id' => $course->alex_face_id ?? '',
+            'alex_name' => $course->alex_name ?? '',
             'alex_blocked' => (bool) $course->alex_blocked,
             'certificate_enabled' => $course->certificate_enabled,
             'certificate_min_progress' => $course->certificate_min_progress,
@@ -98,8 +99,6 @@ class CourseBuilder
                 'id' => $m->id,
                 'title' => $m->title,
                 'description' => $m->description ?? '',
-                'alex_pal_id' => $m->alex_pal_id ?? '',
-                'alex_face_id' => $m->alex_face_id ?? '',
                 'lessons' => $m->lessons->map(fn (Lesson $l) => [
                     'key' => 'l'.$l->id,
                     'id' => $l->id,
@@ -110,7 +109,6 @@ class CourseBuilder
                     'parts' => array_values(array_diff($l->setRelation('module', $m->setRelation('course', $course))->partList(), ['avatar'])),
                     'roleplay_role' => $l->roleplay_role ?? '',
                     'graded' => (bool) $l->graded,
-                    'avatar_link' => $l->avatar_ref ?? '',
                     'weighted' => (bool) $l->quiz?->weighted,
                     'evaluation' => $l->evaluationKind(),
                     'evaluation_prompt' => $l->evaluation_prompt ?? '',
@@ -186,6 +184,7 @@ class CourseBuilder
             if (array_key_exists('alex_enabled', $data)) {
                 $course->fill([
                     'alex_enabled' => (bool) $data['alex_enabled'],
+                    'alex_name' => trim((string) ($data['alex_name'] ?? '')) ?: null,
                     'alex_pal_id' => ($data['alex_pal_id'] ?? null) ?: null,
                     'alex_face_id' => ($data['alex_face_id'] ?? null) ?: null,
                 ]);
@@ -216,10 +215,6 @@ class CourseBuilder
                     ? $existingModules[$m['id']]
                     : new Module(['course_id' => $course->id]);
                 $module->fill(['title' => trim($m['title'] ?? ''), 'description' => $m['description'] ?? null, 'order_index' => $mi]);
-                // O Alex do módulo: só quem pode mudar o Alex do curso (o controlador tira os campos aos outros)
-                if (array_key_exists('alex_enabled', $data)) {
-                    $module->fill(['alex_pal_id' => ($m['alex_pal_id'] ?? null) ?: null, 'alex_face_id' => ($m['alex_face_id'] ?? null) ?: null]);
-                }
                 $module->course_id = $course->id;
                 $module->save();
                 $keptModules[] = $module->id;
@@ -249,7 +244,6 @@ class CourseBuilder
                     $withAvatar = $evaluation === 'avatar'; // teste com avatar ou roleplay
                     $hasVideo = in_array('video', $parts, true);
                     $url = trim($l['url'] ?? '');
-                    $link = trim($l['avatar_link'] ?? '');
                     $lesson->fill([
                         'module_id' => $module->id,
                         'kind' => $kind,
@@ -264,12 +258,10 @@ class CourseBuilder
                         'content_url' => $hasVideo ? ($url ?: null) : null,
                         // Notas da aula, o que o aluno faz no exercício prático, ou a situação do roleplay
                         'body' => in_array('notas', $parts, true) || $kind === 'roleplay' || ($kind === 'exercicio' && $evaluation === 'none') ? ($l['body'] ?? null) : null,
-                        // Avatar por link (teste com avatar ou roleplay); só https dos sites aceites
-                        'avatar_ref' => $withAvatar && self::validAvatarUrl($link) ? $link : null,
                         'duration_seconds' => (int) ($l['minutes'] ?? 0) * 60,
                         'order_index' => $li,
                     ]);
-                    // PAL do avatar desta atividade: só quem pode mudar o avatar do curso (como o PAL dos módulos)
+                    // PAL do avatar desta atividade: só quem pode mudar o avatar do curso
                     if (array_key_exists('alex_enabled', $data)) {
                         $lesson->evaluation_pal_id = $withAvatar ? (($l['evaluation_pal_id'] ?? null) ?: null) : null;
                     }
@@ -348,6 +340,13 @@ class CourseBuilder
         if ($course->finalMode() === 'questions' && ! self::quizReady($course->finalQuiz()->with('questions.options')->first())) {
             $problems[] = [__('Perguntas da avaliação final'), 3];
         }
+        // Avatar de ajuda ligado: o nome e a persona que tira as dúvidas (passo 3)
+        if ($course->alex_enabled && (! trim((string) $course->alex_pal_id) || ! trim((string) $course->alex_name))) {
+            $problems[] = [__('Nome e PAL ID do avatar de ajuda'), 2];
+        }
+        if ($course->finalMode() === 'avatar' && ! trim((string) $course->final_pal_id)) {
+            $problems[] = [__('PAL ID da avaliação final'), 3];
+        }
         if (! $course->is_free && (float) $course->price <= 0) $problems[] = [__('Preço definido'), 4];
 
         return $problems;
@@ -375,8 +374,9 @@ class CourseBuilder
         }
 
         return match ($l->kindName()) {
-            'teste' => true, // teste com avatar: o avatar e os casos são opcionais
-            'roleplay' => trim((string) $l->body) !== '' && trim((string) $l->roleplay_role) !== '', // situação e papel
+            // Teste com avatar e roleplay: a persona do Tavus (PAL ID), onde está o guião (opção 1, 2026-11-27)
+            'teste' => trim((string) $l->evaluation_pal_id) !== '',
+            'roleplay' => trim((string) $l->evaluation_pal_id) !== '' && trim((string) $l->body) !== '' && trim((string) $l->roleplay_role) !== '',
             'exercicio' => trim(strip_tags((string) $l->body)) !== '', // o que o aluno tem de fazer
             default => $parts !== [], // uma aula vazia não está completa
         };
@@ -394,23 +394,6 @@ class CourseBuilder
     public static function validUrl(?string $url): bool
     {
         return (bool) filter_var($url, FILTER_VALIDATE_URL) && preg_match('#^https?://#i', $url);
-    }
-
-    /** Link de avatar: https e num dos sites aceites (config tacademy.avatar_hosts, também os subdomínios). */
-    public static function validAvatarUrl(?string $url): bool
-    {
-        if (! self::validUrl($url) || ! str_starts_with(strtolower((string) $url), 'https://')) {
-            return false;
-        }
-        $host = strtolower((string) parse_url((string) $url, PHP_URL_HOST));
-        foreach (config('tacademy.avatar_hosts', []) as $allowed) {
-            $allowed = strtolower($allowed);
-            if ($host === $allowed || str_ends_with($host, '.'.$allowed)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /** Caminho no disco public de um vídeo carregado pelo formador (/storage/cursos/videos/…), ou null. */

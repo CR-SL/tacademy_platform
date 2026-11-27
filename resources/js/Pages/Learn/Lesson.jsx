@@ -421,7 +421,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
             {hasPlayer && <button type="button" className="al-sw" data-tip={t('Vídeo')} aria-label={t('Vídeo')} aria-pressed={videoOn} onClick={toggleVideo}><IconVideo /></button>}
             {(materialWorth || finalOpen) && <button type="button" className="al-sw" data-tip={t('Material')} aria-label={t('Material')} aria-pressed={showMaterial} onClick={toggleMaterial}><IconDoc /></button>}
             <button type="button" className="al-sw" data-tip={t('Notas')} aria-label={t('Notas')} aria-pressed={showNotes} onClick={toggleNotes}><IconPen /></button>
-            {avatarHere && <button type="button" className="al-sw" data-tip={t('Alex')} aria-label={t('Falar com o Alex')} aria-pressed={avatarOn} disabled={running} onClick={toggleAsk}><IconUser /></button>}
+            {avatarHere && <button type="button" className="al-sw" data-tip={askAlex?.name || 'Alex'} aria-label={t('Falar com :name', { name: askAlex?.name || 'Alex' })} aria-pressed={avatarOn} disabled={running} onClick={toggleAsk}><IconUser /></button>}
             <span className="div" />
             {/* Teste da aula (questionário): abre no Material */}
             {hasQuiz && <button type="button" className="al-ev" onClick={() => { setFinalOpen(false); openQuiz(); }}><IconDoc />{lesson.kind === 'exercicio' ? t('Exercício') : t('Teste')}</button>}
@@ -449,7 +449,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                         <p>{t('O teste final com o avatar fica disponível em breve.')}</p>
                     </div>
                 ) : activity ? (
-                    <AlexActivityPanel place={activity} lesson={{ ...lesson, done }} minutes={lesson.minutes} link={lesson.activityLink}
+                    <AlexActivityPanel place={activity} lesson={{ ...lesson, done }} minutes={lesson.minutes}
                         onBegin={activity === 'teste' ? () => openIntro(thisTest) : null} tests={avatarTests} slug={course.slug}
                         canStart={!!alexProp && canSave} onStart={pauseVideo} alex={alexProp} />
                 ) : askAlex ? (
@@ -650,7 +650,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                                 {!alexProp ? (
                                     <p>{t('O avatar ainda não está disponível. Fala com o formador do curso.')}</p>
                                 ) : evalTarget?.place !== 'teste' && alexEvaluation?.done ? (
-                                    <p>{alexEvaluation.module ? t('Já fizeste a avaliação deste módulo com o Alex.') : t('Já fizeste a avaliação final deste curso com o Alex.')}</p>
+                                    <p>{alexEvaluation.module ? t('Já fizeste a avaliação deste módulo com o avatar.') : t('Já fizeste a avaliação final deste curso com o avatar.')}</p>
                                 ) : (
                                     <>
                                         <p>{t('Tens :min minutos. O tempo que falta aparece no botão Terminar.', { min: evaluationMin })}</p>

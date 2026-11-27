@@ -25,20 +25,6 @@ export function formatBytes(b = 0) {
 
 export const isHttpUrl = (u) => /^https?:\/\/[^\s/$.?#][^\s]*\.[^\s]+$/i.test((u ?? '').trim());
 
-// Sites aceites no link do avatar (config tacademy.avatar_hosts, enviados pelo editor; também os subdomínios)
-let avatarHosts = ['daily.co', 'tavus.io', 'avatar.tacademy.pt'];
-export const setAvatarHosts = (hosts) => { if (Array.isArray(hosts) && hosts.length) avatarHosts = hosts; };
-export const avatarHostList = () => avatarHosts;
-export function isAvatarUrl(u) {
-    const v = (u ?? '').trim();
-    if (!/^https:\/\//i.test(v) || !isHttpUrl(v)) return false;
-    try {
-        const host = new URL(v).hostname.toLowerCase();
-        return avatarHosts.some((h) => host === h || host.endsWith('.' + h));
-    } catch {
-        return false;
-    }
-}
 
 // Vídeo carregado pelo formador (leitor próprio)
 export const isUploadedVideo = (u) => /^\/storage\/cursos\/videos\/[\w-]+\.(mp4|webm)$/i.test((u ?? '').trim());
