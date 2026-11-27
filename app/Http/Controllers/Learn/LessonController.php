@@ -80,6 +80,16 @@ class LessonController extends Controller
             'avatarUrl' => $avatar?->avatar_ref,
             // Avaliação final do curso (botão Avaliação): o modo e, com perguntas, o questionário
             'finalEvaluation' => $this->finalPayload($course, $user),
+            // Botão Avaliação (2026-11-27): o próximo teste com avatar por fazer; depois, a avaliação final com avatar
+            'avatarTest' => $this->nextAvatarTest($lessons, $done, $lesson, $i),
+            // Todos os testes com avatar do curso (a caixa do teste mostra onde o aluno está)
+            'avatarTests' => $lessons->filter(fn ($l) => $l->kindName() === 'teste' && $l->evaluationKind() === 'avatar')->values()->map(fn ($l) => [
+                'ulid' => $l->ulid,
+                'title' => $l->title,
+                'module' => $l->module?->title,
+                'minutes' => (int) round($l->duration_seconds / 60) ?: max(1, (int) config('services.tavus.evaluation_minutes', 15)),
+                'done' => $done->contains($l->id),
+            ]),
             'notes' => LessonNote::where('user_id', $user->id)->where('lesson_id', $lesson->id)
                 ->orderBy('position_seconds')->orderBy('id')->get()->map(fn ($n) => $this->notePayload($n))->values(),
         ]);
@@ -153,11 +163,31 @@ class LessonController extends Controller
     {
         $mode = $course->finalMode();
         $quiz = $mode === 'questions' ? $course->finalQuiz()->with('questions.options')->first() : null;
+        $payload = $quiz ? $this->quizPayload($quiz, $user) : null;
 
         return [
             'mode' => $quiz || $mode !== 'questions' ? $mode : 'none',
-            'quiz' => $quiz ? $this->quizPayload($quiz, $user) : null,
+            'quiz' => $payload,
+            'done' => (bool) ($payload['passed'] ?? false),
         ];
+    }
+
+    /**
+     * O teste com avatar que o botão Avaliação abre: o primeiro por fazer do módulo onde o aluno está; senão o próximo
+     * no programa; senão o primeiro que falte. Null quando já fez todos (o botão passa à avaliação final com avatar).
+     */
+    private function nextAvatarTest(\Illuminate\Support\Collection $lessons, \Illuminate\Support\Collection $done, Lesson $current, int|false $i): ?array
+    {
+        $pending = $lessons->values()->filter(fn ($l) => $l->kindName() === 'teste' && $l->evaluationKind() === 'avatar' && ! $done->contains($l->id));
+        $pick = $pending->first(fn ($l) => $l->module_id === $current->module_id)
+            ?? $pending->first(fn ($l, $k) => $i !== false && $k >= $i)
+            ?? $pending->first();
+
+        return $pick ? [
+            'ulid' => $pick->ulid,
+            'title' => $pick->title,
+            'minutes' => (int) round($pick->duration_seconds / 60) ?: max(1, (int) config('services.tavus.evaluation_minutes', 15)),
+        ] : null;
     }
 
     /** Exercício prático: o aluno marca-o como feito. */

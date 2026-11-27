@@ -86,3 +86,26 @@
 .ax-brief { margin: 0; padding: 12px 14px; background: rgba(255, 255, 255, .07); font-size: 14px; line-height: 1.5; white-space: pre-line; }
 .ax-brief b { display: block; margin-bottom: 3px; font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: rgba(255, 255, 255, .65); }
 .ax-activity .ui-btn { justify-self: start; }
+
+/* Caixa do teste com avatar (B + C, 2026-11-27): progresso nos testes do curso e, em pequeno, como funciona */
+.ax-tests { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; overflow: auto; background: var(--color-carbon); color: var(--color-on-carbon); }
+.ax-tests-in { flex: 0 1 auto; min-height: 0; padding: 52px 22px 12px; display: grid; gap: 12px; align-content: start; max-width: 620px; width: 100%; margin: 0 auto; scrollbar-width: thin; }
+.ax-tag { font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-accent); }
+.ax-tests-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.ax-tests-top h2 { margin: 0; font: 700 22px/1.2 'Manrope Variable', Manrope, sans-serif; }
+.ax-tests-top span { font-size: 13px; color: rgba(255, 255, 255, .6); }
+.ax-track { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.ax-t { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 12px; background: rgba(255, 255, 255, .05); font-size: 13.5px; color: inherit; text-decoration: none; }
+a.ax-t:hover { background: rgba(255, 255, 255, .09); }
+.ax-t .n { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 12px; background: rgba(255, 255, 255, .1); }
+.ax-t .tl { min-width: 0; }
+.ax-t small { display: block; font-size: 12px; color: rgba(255, 255, 255, .6); }
+.ax-t.done .n { background: var(--color-success); color: #fff; }
+.ax-t.cur { background: rgba(248, 177, 1, .12); box-shadow: inset 3px 0 0 var(--color-accent); }
+.ax-t.cur .n { background: var(--color-accent); color: var(--color-on-accent); }
+.ax-t .now { padding: 3px 8px; font-size: 11.5px; font-weight: 700; color: var(--color-accent); background: rgba(248, 177, 1, .18); }
+.ax-steps { list-style: decimal; margin: 4px 0 0; padding: 10px 12px 10px 30px; display: grid; gap: 3px; font-size: 12.5px; line-height: 1.45; color: rgba(255, 255, 255, .7); background: rgba(255, 255, 255, .04); }
+.ax-steps li::marker { color: var(--color-accent); font-weight: 800; }
+.ax-tests-foot { flex: none; display: flex; align-items: center; gap: 12px; padding: 6px 22px 22px; max-width: 620px; width: 100%; margin: 0 auto; }
+.ax-tests-foot .ui-btn { flex: 1; justify-content: center; }
+.ax-mini { flex: none; width: 44px; height: 44px; border-radius: 50%; background: url('/images/alex.png') center 20% / cover; box-shadow: 0 0 0 2px var(--color-accent); }

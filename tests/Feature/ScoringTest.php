@@ -149,4 +149,22 @@ class ScoringTest extends TestCase
         $lessons = app(LearningService::class)->lessons($this->course->fresh());
         $this->assertSame(100, app(LearningService::class)->courseScore($u, $this->course->fresh(), $lessons));
     }
+    public function test_the_assessment_button_opens_the_next_avatar_test_of_the_module(): void
+    {
+        $u = $this->enrolled();
+        $m2 = Module::create(['course_id' => $this->course->id, 'title' => 'M2', 'order_index' => 1]);
+        $aula1 = Lesson::create(['module_id' => $this->module->id, 'kind' => 'aula', 'parts' => ['notas'], 'title' => 'Aula 1', 'content_type' => 'text', 'body' => 'x', 'order_index' => 0]);
+        $t1 = Lesson::create(['module_id' => $this->module->id, 'kind' => 'teste', 'evaluation' => 'avatar', 'title' => 'Teste M1', 'content_type' => 'avatar', 'order_index' => 1]);
+        $aula2 = Lesson::create(['module_id' => $m2->id, 'kind' => 'aula', 'parts' => ['notas'], 'title' => 'Aula 2', 'content_type' => 'text', 'body' => 'x', 'order_index' => 0]);
+        $t2 = Lesson::create(['module_id' => $m2->id, 'kind' => 'teste', 'evaluation' => 'avatar', 'title' => 'Teste M2', 'content_type' => 'avatar', 'order_index' => 1]);
+
+        // Em cada módulo, o teste com avatar desse módulo
+        $this->actingAs($u)->get("/plataforma/cursos/curso/aulas/{$aula1->ulid}")->assertInertia(fn ($p) => $p->where('avatarTest.ulid', $t1->ulid));
+        $this->actingAs($u)->get("/plataforma/cursos/curso/aulas/{$aula2->ulid}")->assertInertia(fn ($p) => $p->where('avatarTest.ulid', $t2->ulid));
+        // Feito o do módulo 1, o botão passa ao seguinte; feitos todos, não há teste (passa à avaliação final com avatar)
+        \App\Models\LessonProgress::create(['user_id' => $u->id, 'lesson_id' => $t1->id, 'status' => 'completed', 'progress_percent' => 100, 'completed_at' => now()]);
+        $this->actingAs($u)->get("/plataforma/cursos/curso/aulas/{$aula1->ulid}")->assertInertia(fn ($p) => $p->where('avatarTest.ulid', $t2->ulid));
+        \App\Models\LessonProgress::create(['user_id' => $u->id, 'lesson_id' => $t2->id, 'status' => 'completed', 'progress_percent' => 100, 'completed_at' => now()]);
+        $this->actingAs($u)->get("/plataforma/cursos/curso/aulas/{$aula1->ulid}")->assertInertia(fn ($p) => $p->where('avatarTest', null));
+    }
 }

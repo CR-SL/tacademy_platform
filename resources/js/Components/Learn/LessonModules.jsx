@@ -9,7 +9,8 @@ const modPct = (m) => Math.round(m.lessons.filter((l) => l.status === 'done').le
 const lessonPct = (l, currentPct) => (l.status === 'done' ? 100 : l.current ? currentPct : 0);
 
 // Computador: lista dos módulos que abre ao lado do palco. Abre um módulo de cada vez; fechada, é só a linha do progresso do curso.
-export function ModulesRail({ open, slug, program, percent, currentPct }) {
+// final: avaliação final do curso com perguntas, no fim da lista ({ done, onOpen, on }) — decisão de 2026-11-27
+export function ModulesRail({ open, slug, program, percent, currentPct, final = null }) {
     const current = program.findIndex((m) => m.lessons.some((l) => l.current));
     const [shown, setShown] = useState(current);
 
@@ -48,13 +49,21 @@ export function ModulesRail({ open, slug, program, percent, currentPct }) {
                         </div>
                     );
                 })}
+                {final && (
+                    <div className={`al-mod ${final.on ? 'on' : ''}`}>
+                        <button type="button" className="al-mod-b" onClick={final.onOpen}>
+                            <span>★</span><span className="tt">{t('Avaliação final')}</span>
+                            {final.done && <span className="ck"><IconCheck /></span>}
+                        </button>
+                    </div>
+                )}
             </div>
         </aside>
     );
 }
 
 // Telemóvel: faixa com os módulos na barra de baixo
-export function ModulesStrip({ program, sheet, onPick }) {
+export function ModulesStrip({ program, sheet, onPick, final = null }) {
     const box = useRef(null);
     const current = program.findIndex((m) => m.lessons.some((l) => l.current));
     useEffect(() => {
@@ -70,6 +79,11 @@ export function ModulesStrip({ program, sheet, onPick }) {
                     <i style={{ width: `${modPct(m)}%` }} /><span>{mi + 1}. {m.title}</span>
                 </button>
             ))}
+            {final && (
+                <button type="button" className={`al-cell ${final.on ? 'on' : ''}`} onClick={final.onOpen}>
+                    <i style={{ width: final.done ? '100%' : '0%' }} /><span>★ {t('Avaliação final')}</span>
+                </button>
+            )}
         </div>
     );
 }

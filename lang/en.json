@@ -2022,5 +2022,21 @@
     "Já usaste os :n minutos de avatar incluídos no curso. Compra créditos para continuar a falar com o Alex.": "You have used the :n avatar minutes included in the course. Buy credits to keep talking to Alex.",
     "Ainda tens :n de :total minutos de avatar incluídos no curso.": "You still have :n of :total avatar minutes included in the course.",
     "Já usaste os minutos incluídos no curso. Esta conversa gasta 1 crédito (tens :n).": "You have used the minutes included in the course. This conversation uses 1 credit (you have :n).",
-    "Já usaste os minutos de avatar incluídos no curso. Compra créditos para continuar.": "You have used the avatar minutes included in the course. Buy credits to continue."
+    "Já usaste os minutos de avatar incluídos no curso. Compra créditos para continuar.": "You have used the avatar minutes included in the course. Buy credits to continue.",
+    "Vai começar o teste": "The test is about to start",
+    "Vai começar o teste: :title": "The test is about to start: :title",
+    "Vai começar a avaliação final.": "The final assessment is about to start.",
+    "O teste é feito com o avatar: vai apresentar-te casos práticos. Podes usar o microfone para responder ou escrever a tua resposta.": "The test is done with the avatar: it will present practical cases. You can use the microphone to answer or type your answer.",
+    "O avatar ainda não está disponível. Fala com o formador do curso.": "The avatar is not available yet. Talk to the course instructor.",
+    "Testes com o Alex": "Tests with Alex",
+    "Teste :n de :total": "Test :n of :total",
+    "1 feito": "1 done",
+    ":n feitos": ":n done",
+    "Feito": "Done",
+    "Agora": "Now",
+    "O Alex apresenta casos práticos, um de cada vez.": "Alex presents practical cases, one at a time.",
+    "Respondes a falar, como farias com um cliente (também podes escrever).": "You answer by speaking, as you would with a customer (you can also type).",
+    "O teste fica feito quando terminas a conversa.": "The test is done when you end the conversation.",
+    "Fazer outra vez": "Do it again",
+    "Começar o teste :n →": "Start test :n →"
 }

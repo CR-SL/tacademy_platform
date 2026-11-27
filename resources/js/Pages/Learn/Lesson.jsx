@@ -103,7 +103,7 @@ const clampSplit = (v) => Math.max(MIN_PANEL, Math.min(100 - MIN_PANEL, v));
 
 // Página da aula: painéis que se ligam e desligam na barra de baixo, com divisórias para os redimensionar.
 // A aula conclui-se sozinha: o vídeo aos 90%; documento, texto e avatar ao abrir; o teste ao passar.
-export default function Lesson({ course, mode, program, lesson, progress, prev, next, avatarUrl, notes, finalEvaluation = { mode: 'none', quiz: null } }) {
+export default function Lesson({ course, mode, program, lesson, progress, prev, next, avatarUrl, notes, finalEvaluation = { mode: 'none', quiz: null }, avatarTest = null, avatarTests = [] }) {
     const mobile = useMobile();
     const { alex: alexProp } = usePage().props; // o Alex neste curso (curso com o Alex), ou null
     // O que o formador ligou nesta aula (2026-11-25): vídeo, material, notas, avatar; e a avaliação
@@ -264,10 +264,11 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
         setShowVideo(false); setShowMaterial(false); setShowNotes(false); setShowChecks(false); setAsk(false); setRail(false); setSheet(null);
         setEndsAt(Date.now() + evaluationMin * 60 * 1000);
         setEvaluation('run');
-        if (alexEvaluation) startEvaluationCall(alexProp.lesson); // o Alex faz a avaliação final
+        if (alexProp && evalTarget) startEvaluationCall(evalTarget.ulid, evalTarget.place); // o teste com avatar ou a avaliação final
     };
     const endEvaluation = () => {
-        if (alexEvaluation) endEvaluationCall();
+        // Depois de terminar, o programa e o próximo teste com avatar atualizam-se (o teste fica feito)
+        if (alexProp) endEvaluationCall().then(() => router.reload({ only: ['program', 'course', 'progress', 'avatarTest', 'flash'] }));
         const p = beforeEvaluation.current;
         if (p) {
             if (p.place.video !== place.video) { resumeAt.current = player.current?.time() ?? null; player.current?.flush(); }
@@ -292,8 +293,15 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
     }, []);
 
     const running = evaluation === 'run';
-    const alexEvaluation = alexProp?.evaluation ?? null; // curso com o Alex: é ele que faz a avaliação final (botão Avaliação)
-    const evaluationMin = alexEvaluation?.minutes ?? EVALUATION_MIN;
+    const alexEvaluation = alexProp?.evaluation ?? null; // avaliação final com o avatar
+    // Teste com avatar aberto nesta página (atividade da lista) ou, no botão, o próximo por fazer
+    const thisTest = activity === 'teste' ? { place: 'teste', ulid: lesson.ulid, title: lesson.title, minutes: lesson.minutes || EVALUATION_MIN } : null;
+    const [evalTarget, setEvalTarget] = useState(null); // { place: 'teste' | 'avaliacao', ulid, title, minutes }
+    const buttonTarget = avatarTest ? { place: 'teste', ...avatarTest }
+        : finalMode === 'avatar' ? { place: 'avaliacao', ulid: lesson.ulid, title: t('Avaliação final'), minutes: alexEvaluation?.minutes ?? EVALUATION_MIN }
+        : null;
+    const openIntro = (target) => { if (running) return; setEvalTarget(target); setEvaluation('intro'); setSheet(null); };
+    const evaluationMin = evalTarget?.minutes ?? alexEvaluation?.minutes ?? EVALUATION_MIN;
     const videoOn = hasPlayer && showVideo;
     const avatarOn = ask || running;
     const materialOn = showMaterial && !showChecks;
@@ -419,12 +427,10 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
             <span className="div" />
             {/* Teste da aula (questionário): abre no Material */}
             {hasQuiz && <button type="button" className="al-ev" onClick={() => { setFinalOpen(false); openQuiz(); }}><IconDoc />{lesson.kind === 'exercicio' ? t('Exercício') : t('Teste')}</button>}
-            {/* Avaliação: só a avaliação final do curso; o aluno vai lá quando quiser (decisão de 2026-11-26) */}
-            {finalMode === 'questions' && finalEvaluation.quiz && (
-                <button type="button" className={`al-ev ${finalOpen ? 'on' : ''}`} onClick={() => (finalOpen ? setFinalOpen(false) : openFinal())}><IconDoc />{t('Avaliação')}</button>
-            )}
-            {finalMode === 'avatar' && (
-                <button type="button" className={`al-ev ${evaluation ? 'on' : ''}`} onClick={() => { if (!running) { setEvaluation(evaluation ? null : 'intro'); setSheet(null); } }}><IconUser />{t('Avaliação')}</button>
+            {/* Avaliação (2026-11-27): o próximo teste com avatar por fazer e, depois, a avaliação final com avatar.
+                O que tem perguntas (testes, avaliação final) está na lista de módulos. */}
+            {buttonTarget && (
+                <button type="button" className={`al-ev ${evaluation ? 'on' : ''}`} onClick={() => (evaluation === 'intro' ? setEvaluation(null) : openIntro(buttonTarget))}><IconUser />{t('Avaliação')}</button>
             )}
         </div>
     );
@@ -437,7 +443,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
             <section key="ask" className={`al-panel al-a ${avatarOn ? '' : 'off'}`} aria-label={t('Avatar')} style={{ flexGrow: grow }}>
                 {panelBar('ask', <IconUser />, true)}
                 {running && <EvaluationEnd endsAt={endsAt} onEnd={endEvaluation} />}
-                {running && alexEvaluation ? (
+                {running && alexProp ? (
                     <AlexEvaluationPanel onClose={endEvaluation} />
                 ) : running ? (
                     <div className="al-a-stage">
@@ -446,6 +452,7 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                     </div>
                 ) : activity ? (
                     <AlexActivityPanel place={activity} lesson={{ ...lesson, done }} minutes={lesson.minutes} link={lesson.activityLink}
+                        onBegin={activity === 'teste' ? () => openIntro(thisTest) : null} tests={avatarTests} slug={course.slug}
                         canStart={!!alexProp && canSave} onStart={pauseVideo} alex={alexProp} />
                 ) : askAlex ? (
                     <AlexLessonPanel alex={askAlex} open={avatarOn} onStart={pauseVideo} />
@@ -614,7 +621,8 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
             ) : <span />}
 
             <div className="al-body">
-                {!mobile && <ModulesRail open={rail} slug={course.slug} program={program} percent={course.percent} currentPct={currentPct} />}
+                {!mobile && <ModulesRail open={rail} slug={course.slug} program={program} percent={course.percent} currentPct={currentPct}
+                    final={finalMode === 'questions' && finalEvaluation.quiz ? { done: finalEvaluation.done, on: finalOpen, onOpen: openFinal } : null} />}
 
                 <main className="al-stage" ref={stage}>
                     <div className={`al-col left ${hasLeft ? '' : 'none'} ${hasRight ? '' : 'full'}`} style={{ flexGrow: leftGrow }}>
@@ -645,12 +653,16 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                     {!hasLeft && !hasRight && !evaluation && <p className="al-empty">{t('Liga um painel na barra de baixo para continuar.')}</p>}
 
                     {evaluation === 'intro' && (
-                        <div ref={introBox} className="al-intro" role="dialog" aria-modal="true" aria-label={t('Vai começar a avaliação')}>
+                        <div ref={introBox} className="al-intro" role="dialog" aria-modal="true" aria-label={evalTarget?.place === 'teste' ? t('Vai começar o teste') : t('Vai começar a avaliação')}>
                             <button type="button" className="al-tb-b x" aria-label={t('Fechar')} onClick={() => setEvaluation(null)}><IconX /></button>
                             <div>
-                                <h2>{t('Vai começar a avaliação.')}</h2>
-                                <p>{t('O teste final é feito com o avatar. Podes usar o microfone para responder às perguntas ou escrever a tua resposta.')}</p>
-                                {alexEvaluation?.done ? (
+                                <h2>{evalTarget?.place === 'teste' ? t('Vai começar o teste: :title', { title: evalTarget.title }) : t('Vai começar a avaliação final.')}</h2>
+                                <p>{evalTarget?.place === 'teste'
+                                    ? t('O teste é feito com o avatar: vai apresentar-te casos práticos. Podes usar o microfone para responder ou escrever a tua resposta.')
+                                    : t('O teste final é feito com o avatar. Podes usar o microfone para responder às perguntas ou escrever a tua resposta.')}</p>
+                                {!alexProp ? (
+                                    <p>{t('O avatar ainda não está disponível. Fala com o formador do curso.')}</p>
+                                ) : evalTarget?.place !== 'teste' && alexEvaluation?.done ? (
                                     <p>{alexEvaluation.module ? t('Já fizeste a avaliação deste módulo com o Alex.') : t('Já fizeste a avaliação final deste curso com o Alex.')}</p>
                                 ) : (
                                     <>
@@ -682,7 +694,8 @@ export default function Lesson({ course, mode, program, lesson, progress, prev, 
                             ? <Link className="al-nav-m" href={lessonUrl(next.ulid)} aria-label={t('Aula seguinte')}><IconRight /><span>{numOf(next.ulid)}</span></Link>
                             : <button type="button" className="al-nav-m" disabled aria-label={t('Aula seguinte')}><IconRight /><span>{next ? numOf(next.ulid) : ''}</span></button>}
                     </div>
-                    <ModulesStrip program={program} sheet={sheet} onPick={setSheet} />
+                    <ModulesStrip program={program} sheet={sheet} onPick={setSheet}
+                        final={finalMode === 'questions' && finalEvaluation.quiz ? { done: finalEvaluation.done, on: finalOpen, onOpen: () => { setSheet(null); openFinal(); } } : null} />
                 </footer>
             ) : (
                 <footer className="al-foot">

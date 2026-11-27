@@ -79,7 +79,8 @@ class AlexService
             // com avatar funcionam mesmo sem ele (fase 2)
             $help = $this->canUseInCourse($user, $course);
             $lesson->setRelation('module', $lesson->module?->setRelation('course', $course));
-            if (! $help && ! ($this->enrolledOrPreview($user, $course) && ($lesson->usesAvatar() || $course->finalMode() === 'avatar'))) {
+            $avatarTests = Lesson::whereIn('module_id', $course->modules()->pluck('id'))->where('kind', 'teste')->where('evaluation', 'avatar')->exists();
+            if (! $help && ! ($this->enrolledOrPreview($user, $course) && ($lesson->usesAvatar() || $avatarTests || $course->finalMode() === 'avatar'))) {
                 return null;
             }
         } elseif (! $this->hasAccess($user)) {
@@ -227,7 +228,8 @@ class AlexService
             ->get(['created_at', 'ended_at'])
             ->sum(fn ($c) => max(0, (int) $c->created_at->diffInSeconds($c->ended_at ?? now(), true)));
 
-        return max(0, $this->courseMinutes() - (int) ceil($seconds / 60));
+        // Minutos completos: uns segundos de ligação não gastam um minuto inteiro
+        return max(0, $this->courseMinutes() - intdiv((int) $seconds, 60));
     }
 
     /** O curso de onde saem os minutos: o da aula; no Início e nas Avaliações, o curso com avatar mais recente. */
