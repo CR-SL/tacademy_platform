@@ -28,6 +28,9 @@
 .ax-stage { position: relative; flex: 1; min-height: 0; aspect-ratio: 4 / 5; background: var(--color-carbon); overflow: hidden; }
 .ax-win .ax-stage { flex: 1; aspect-ratio: auto; }
 .ax-alex { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+/* O vídeo do Tavus é horizontal (16:9) e a caixa é alta e estreita: com cover só se via a cabeça, muito ampliada.
+   Mostra-se o enquadramento inteiro, com o carvão à volta. A foto de espera continua em cover. */
+video.ax-alex { object-fit: contain; object-position: center; }
 .ax-poster { opacity: .55; filter: grayscale(.2); }
 .ax-self { position: absolute; right: 10px; bottom: 10px; width: 28%; aspect-ratio: 3 / 4; object-fit: cover; background: var(--color-carbon); box-shadow: 0 0 0 2px rgba(255, 255, 255, .85); }
 .ax-self.mirror { transform: scaleX(-1); }
