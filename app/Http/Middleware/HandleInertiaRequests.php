@@ -20,6 +20,13 @@ class HandleInertiaRequests extends Middleware
      */
     public function version(Request $request): ?string
     {
+        // A versão muda a cada build (o manifest do Vite muda). O Inertia, de origem, usa o ASSET_URL quando existe, e
+        // no Railway esse valor é sempre o mesmo: uma página aberta antes de um deploy pedia ficheiros que já não
+        // existem e mostrava a página de erro até ao refresh. Com o manifest, o Inertia recarrega a página sozinho.
+        if (is_file($manifest = public_path('build/manifest.json'))) {
+            return hash_file('xxh128', $manifest);
+        }
+
         return parent::version($request);
     }
 
