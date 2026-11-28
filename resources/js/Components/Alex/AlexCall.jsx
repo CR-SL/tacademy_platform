@@ -207,7 +207,8 @@ export function AlexCallView({ onClose }) {
  * Botão para começar (Início, Avaliações e painel da aula). Primeiro as conversas grátis do dia (cursos com o
  * avatar); depois 1 crédito por conversa; sem nenhuma das duas, a compra de créditos.
  */
-export function AlexStart({ alex, block = true }) {
+// hint: a linha dos minutos que faltam por baixo do botão (as caixas do avatar das páginas não a mostram, 2026-11-28)
+export function AlexStart({ alex, block = true, hint = true }) {
     const s = useAlexCall();
     const left = s.left ?? alex.left ?? 0;
     const credits = s.credits ?? alex.credits ?? 0;
@@ -222,16 +223,32 @@ export function AlexStart({ alex, block = true }) {
         <>
             <button type="button" className={`ui-btn ui-btn-accent ${block ? 'ui-btn-block' : ''}`}
                 onClick={() => startAlex({ place: alex.place, lesson: alex.lesson, name: alex.name })}>{t('Falar com :name', { name: alex.name || 'Alex' })}</button>
-            <p className="ax-hint">
+            {hint && <p className="ax-hint">
                 {left > 0
                     ? t('Ainda tens :n de :total minutos de avatar incluídos no curso.', { n: left, total: alex.included ?? 30 })
                     : alex.free
                         ? t('Já usaste os minutos incluídos no curso. Esta conversa gasta 1 crédito (tens :n).', { n: credits })
                         : t('Tens :n créditos. Cada conversa gasta 1 (até :m minutos).', { n: credits, m: alex.minutes })}
                 {left > 0 && credits > 0 ? ` ${t('Tens também :n créditos.', { n: credits })}` : ''}
-            </p>
+            </p>}
         </>
     );
+}
+
+// Conversas de avaliação, testes e roleplays: essas ficam sempre na aula, nunca nas caixas das páginas
+const LESSON_ONLY = ['teste', 'roleplay', 'avaliacao'];
+
+/**
+ * Caixa do avatar no Início, em Os meus cursos, nos Documentos e na Equipa (2026-11-28): a conversa abre na janela
+ * flutuante e, enquanto ela estiver aberta, a caixa do avatar fica oculta em todas essas páginas. Ao terminar, a
+ * janela fecha e a caixa volta.
+ */
+export const avatarAway = (s) => s.status !== 'idle' && !LESSON_ONLY.includes(s.place);
+
+/** A caixa de boas-vindas do Início (aluno sem cursos): também fica oculta durante a conversa. */
+export function AlexAway({ children }) {
+    const s = useAlexCall();
+    return avatarAway(s) ? null : children;
 }
 
 const euro = (v) => new Intl.NumberFormat(document.documentElement.lang || 'pt-PT', { style: 'currency', currency: 'EUR' }).format(v);
@@ -287,6 +304,8 @@ export default function AlexHost() {
     useEffect(() => { if (!auth?.user && isActive(s)) endAlex(); }, [auth?.user]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const floating = s.status !== 'idle' && s.docked === 0;
+    // Ao terminar a conversa, a janela flutuante fecha sozinha e a caixa do avatar volta às páginas (2026-11-28)
+    useEffect(() => { if (floating && s.status === 'ended') dismissAlex(); }, [floating, s.status]);
     return (
         <>
             <audio ref={audio} autoPlay />

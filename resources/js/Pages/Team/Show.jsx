@@ -102,7 +102,7 @@ export default function Show({ team, report, otherCourses, changeTypes, savedLay
                 ? <Person team={team} report={report} member={selected} course={course} onAction={(mode, ids) => setAction({ mode, members: ids })} />
                 : <p className="pn-empty">{t('A equipa ainda não tem pessoas.')}</p>,
         },
-        alex: alexDef(0, 18),
+        alex: alexDef(19),
     };
     const board = usePanelBoard({ view: 'equipas', panels, saved: savedLayout });
 

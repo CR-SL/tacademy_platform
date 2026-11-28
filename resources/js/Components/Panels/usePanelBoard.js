@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { t } from '@/i18n';
@@ -10,6 +11,9 @@ const ROW = 36;
 const GAP = 12;
 const MIN_W = 5;
 const MIN_H = 4;
+// Uma caixa pode ter um mínimo seu (minW, minH), como a do avatar: o botão "Falar com" fica sempre à vista
+const minW = (def) => Math.max(MIN_W, def?.minW ?? 0);
+const minH = (def) => Math.max(MIN_H, def?.minH ?? 0);
 const COL_H = 2;
 const EASE = 'cubic-bezier(.16, 1, .3, 1)';
 const CURSOR = { e: 'ew-resize', w: 'ew-resize', s: 'ns-resize', se: 'nwse-resize', sw: 'nesw-resize' };
@@ -126,8 +130,8 @@ function restore(defs, saved) {
             items[id] = base.items[id];
             return;
         }
-        const w = clamp(s.w, MIN_W, COLS);
-        items[id] = { x: clamp(s.x, 0, COLS - w), y: Math.max(0, s.y), w, h: Math.max(s.h, MIN_H) };
+        const w = clamp(s.w, minW(defs[id]), COLS);
+        items[id] = { x: clamp(s.x, 0, COLS - w), y: Math.max(0, s.y), w, h: Math.max(s.h, minH(defs[id])) };
     });
     const known = (list) => (Array.isArray(list) ? list.filter((id) => ids.includes(id)) : []);
     const order = known(saved.order);
@@ -142,13 +146,43 @@ function restore(defs, saved) {
     return layout;
 }
 
+// A caixa do avatar tem um só tamanho em todas as páginas (2026-11-28). Aqui põe-se esse tamanho na caixa desta
+// página, com o lado direito no mesmo sítio; se ficar mais larga, a caixa do lado esquerdo encolhe o que for preciso.
+const avatarId = (defs) => Object.keys(defs).find((id) => defs[id].avatar);
+function withAvatar(l, defs, size) {
+    const id = avatarId(defs);
+    if (!id || !l.items[id]) return l;
+    const def = defs[id];
+    const items = copy(l.items);
+    const it = items[id];
+    const w = clamp(size?.w ?? def.w, minW(def), COLS);
+    const h = Math.max(size?.h ?? def.h, minH(def));
+    const old = { ...it };
+    const x = clamp(it.x + it.w - w, 0, COLS - w);
+    Object.assign(it, { x, w, h });
+    const others = shown(l, items).filter((k) => k !== id);
+    others.forEach((k) => {
+        const o = items[k];
+        const oh = effH(l, k, o);
+        // Mais larga: a caixa da esquerda encolhe
+        if (o.x < x && o.x + o.w > x && hit(it, h, o, oh) && x - o.x >= minW(defs[k])) o.w = x - o.x;
+        // Mais estreita: a caixa que estava encostada à esquerda cresce até ela, para não ficar um buraco
+        const grown = { ...o, w: x - o.x };
+        if (x > old.x && o.x + o.w === old.x && o.y < old.y + old.h && old.y < o.y + oh
+            && !others.some((j) => j !== k && hit(grown, oh, items[j], effH(l, j, items[j])))) o.w = grown.w;
+    });
+    return { ...l, items: compact(l, items) };
+}
+
 export default function usePanelBoard({ view, panels, saved }) {
+    const { avatarBox } = usePage().props;
+    const shared = useRef(avatarBox ?? null);
     const titles = useRef({});
     titles.current = Object.fromEntries(Object.entries(panels).map(([id, p]) => [id, p.title]));
     const defs = useRef(panels);
     defs.current = panels;
 
-    const [layout, setLayoutState] = useState(() => restore(panels, saved));
+    const [layout, setLayoutState] = useState(() => withAvatar(restore(panels, saved), panels, avatarBox));
     const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 1080px)').matches);
     const [gesture, setGesture] = useState({ lifted: null, resizing: null });
     const [message, setMessage] = useState('');
@@ -169,6 +203,17 @@ export default function usePanelBoard({ view, panels, saved }) {
     }, []);
     const setItems = useCallback((items) => setLayout({ ...L.current, items }), [setLayout]);
 
+    // O tamanho da caixa do avatar, se mudou: vai à parte e passa a valer em todas as páginas
+    const avatarChange = useCallback(() => {
+        const id = avatarId(defs.current);
+        const it = id && L.current.items[id];
+        if (!it) return null;
+        const now = shared.current ?? defs.current[id];
+        if (it.w === now.w && it.h === now.h) return null;
+        shared.current = { w: it.w, h: it.h };
+        return shared.current;
+    }, []);
+
     const pending = useRef(false);
     const persist = useCallback(() => {
         clearTimeout(saveTimer.current);
@@ -178,8 +223,10 @@ export default function usePanelBoard({ view, panels, saved }) {
             axios.put(`/plataforma/paineis/${view}`, L.current).catch(() => {
                 // Sem ligação: a disposição fica nesta visita e volta a ser enviada na próxima alteração
             });
+            const box = avatarChange();
+            if (box) axios.put('/plataforma/paineis/avatar', box).catch(() => { shared.current = null; });
         }, 400);
-    }, [view]);
+    }, [view, avatarChange]);
 
     // Sair da página (ou fechar o separador) antes dos 400 ms: a mudança é enviada já, e chega mesmo com a página
     // a fechar (keepalive). Antes perdia-se: mover uma caixa e carregar logo em "Continuar a aula".
@@ -188,14 +235,17 @@ export default function usePanelBoard({ view, panels, saved }) {
         pending.current = false;
         clearTimeout(saveTimer.current);
         const xsrf = decodeURIComponent((document.cookie.match(/XSRF-TOKEN=([^;]+)/) || [])[1] || '');
-        fetch(`/plataforma/paineis/${view}`, {
+        const send = (url, body) => fetch(url, {
             method: 'PUT',
             keepalive: true,
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf },
-            body: JSON.stringify(L.current),
+            body: JSON.stringify(body),
         }).catch(() => {});
-    }, [view]);
+        send(`/plataforma/paineis/${view}`, L.current);
+        const box = avatarChange();
+        if (box) send('/plataforma/paineis/avatar', box);
+    }, [view, avatarChange]);
     useEffect(() => {
         window.addEventListener('pagehide', flushSave);
         return () => window.removeEventListener('pagehide', flushSave);
@@ -340,14 +390,14 @@ export default function usePanelBoard({ view, panels, saved }) {
             const n = { x: it.x, w: it.w, h: it.h };
             const cols = Math.round(dx / r.step);
             const rows = Math.round(dy / ROW);
-            if (r.dir.includes('e')) n.w = clamp(it.w + cols, MIN_W, COLS - it.x);
+            if (r.dir.includes('e')) n.w = clamp(it.w + cols, minW(defs.current[r.id]), COLS - it.x);
             if (r.dir.includes('w')) {
                 const right = it.x + it.w;
-                n.x = clamp(it.x + cols, 0, right - MIN_W);
+                n.x = clamp(it.x + cols, 0, right - minW(defs.current[r.id]));
                 n.w = right - n.x;
             }
             // Minimizada, a caixa é só a barra do título: muda a largura e guarda a altura para quando abrir
-            if (r.dir.includes('s') && !L.current.collapsed.includes(r.id)) n.h = clamp(it.h + rows, MIN_H, 40);
+            if (r.dir.includes('s') && !L.current.collapsed.includes(r.id)) n.h = clamp(it.h + rows, minH(defs.current[r.id]), 40);
             if (n.x === r.lx && n.w === r.lw && n.h === r.lh) return;
             r.lx = n.x;
             r.lw = n.w;
@@ -456,14 +506,14 @@ export default function usePanelBoard({ view, panels, saved }) {
                 setItems(items);
                 setMessage(t(':v1: coluna :v2, linha :v3.', { v1: titles.current[id], v2: items[id].x + 1, v3: items[id].y + 1 }));
             } else {
-                const next = { w: it.w, h: l.collapsed.includes(id) ? it.h : clamp(it.h + arrows[1], MIN_H, 40), x: it.x };
+                const next = { w: it.w, h: l.collapsed.includes(id) ? it.h : clamp(it.h + arrows[1], minH(defs.current[id]), 40), x: it.x };
                 if (arrows[0]) {
                     if (z.dataset.rz === 'sw') {
                         const right = it.x + it.w;
-                        next.x = clamp(it.x + arrows[0], 0, right - MIN_W);
+                        next.x = clamp(it.x + arrows[0], 0, right - minW(defs.current[id]));
                         next.w = right - next.x;
                     } else {
-                        next.w = clamp(it.w + arrows[0], MIN_W, COLS - it.x);
+                        next.w = clamp(it.w + arrows[0], minW(defs.current[id]), COLS - it.x);
                     }
                 }
                 setItems(resizeTo(l, l.items, id, next));
@@ -531,7 +581,8 @@ export default function usePanelBoard({ view, panels, saved }) {
 
     const reset = useCallback(() => {
         clearTimeout(saveTimer.current);
-        setLayout(defaults(defs.current));
+        // Repor a página mantém o tamanho comum da caixa do avatar (é o mesmo nas outras páginas)
+        setLayout(withAvatar(defaults(defs.current), defs.current, shared.current));
         axios.delete(`/plataforma/paineis/${view}`).catch(() => {});
     }, [setLayout, view]);
 

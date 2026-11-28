@@ -4,7 +4,8 @@ import { IconArrow, IconBack, IconCorner, IconFold, IconGrip, IconPanels, IconX 
 import { Bar as UiBar, Toast } from '@/Components/ui';
 
 import { t } from '@/i18n';
-import { AlexStart } from '@/Components/Alex/AlexCall';
+import { AlexStart, avatarAway } from '@/Components/Alex/AlexCall';
+import { useAlexCall } from '@/Components/Alex/alexStore';
 
 export function Bar({ value }) {
     return <UiBar value={value} className="mt-[5px]" />;
@@ -96,11 +97,13 @@ function Box({ board, id, panel }) {
 export default function PanelBoard({ board }) {
     const { panels, visible, rows, boardRef, gesture, layout, narrow, flags, message, toast } = board;
     const lifted = gesture.lifted && !narrow ? layout.items[gesture.lifted] : null;
+    // Com a conversa na janela flutuante, a caixa do avatar fica oculta (o lugar dela fica livre até a conversa acabar)
+    const away = avatarAway(useAlexCall());
 
     return (
         <div className="pn-root">
             <div className="pn-board" ref={boardRef} style={{ '--rows': rows }}>
-                {visible.map((id) => <Box key={id} board={board} id={id} panel={panels[id]} />)}
+                {visible.filter((id) => !(away && panels[id].avatar)).map((id) => <Box key={id} board={board} id={id} panel={panels[id]} />)}
                 {lifted && <div className="pn-ph" style={{ '--x': lifted.x, '--y': lifted.y, '--w': lifted.w, '--h': flags(gesture.lifted).h }} />}
             </div>
             <div className="pn-sr" aria-live="polite">{message}</div>
@@ -164,13 +167,13 @@ export function Crumb({ label, children }) {
 export function AlexPanel() {
     const { alex } = usePage().props;
     return (
-        <>
+        <div className="pn-alex">
             <img className="pn-alex-p" src="/images/alex.png" alt="" />
             <div className="pn-alex-c">
                 {alex?.place ? (
                     <>
                         <p className="pn-alex-note">{t(':name tira-te dúvidas sobre o curso “:course”.', { name: alex.name, course: alex.course })}</p>
-                        <AlexStart alex={alex} />
+                        <AlexStart alex={alex} hint={false} />
                     </>
                 ) : alex ? (
                     <>
@@ -184,12 +187,15 @@ export function AlexPanel() {
                     </>
                 )}
             </div>
-        </>
+        </div>
     );
 }
 
-export const alexDef = (y, h) => ({
-    title: t('Avatar do curso'), x: 19, y, w: 5, h, float: 'dark', summary: t('Dúvidas sobre o curso'), compact: true, body: <AlexPanel />,
+// A caixa do avatar tem o mesmo tamanho em todas as páginas (2026-11-28); só muda o lugar.
+// Não fica mais pequena do que o mínimo em que se vê o texto e o botão "Falar com".
+export const ALEX_BOX = { w: 5, h: 12, minW: 5, minH: 6 };
+export const alexDef = (x, y = 0) => ({
+    title: t('Avatar do curso'), x, y, ...ALEX_BOX, float: 'dark', summary: t('Dúvidas sobre o curso'), compact: true, avatar: true, body: <AlexPanel />,
 });
 
 export function EmptyPanel({ title, text, href, cta }) {

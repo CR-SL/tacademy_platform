@@ -16,6 +16,17 @@ class PanelLayoutController extends Controller
 
     public function update(Request $request, string $view): Response
     {
+        // A caixa do avatar tem um só tamanho em todas as páginas (2026-11-28): guarda-se à parte, só largura e altura
+        if ($view === 'avatar') {
+            $box = $request->validate([
+                'w' => ['required', 'integer', 'between:5,24'],
+                'h' => ['required', 'integer', 'between:6,40'],
+            ]);
+            $user = $request->user();
+            $user->forceFill(['panel_layouts' => [...($user->panel_layouts ?? []), 'avatar' => $box]])->save();
+
+            return response()->noContent();
+        }
         abort_unless(in_array($view, self::VIEWS, true), 404);
 
         $data = $request->validate([

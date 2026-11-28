@@ -183,6 +183,16 @@ class StudentPanelsTest extends TestCase
         $this->assertNull($this->student->fresh()->panel_layouts);
     }
 
+    public function test_the_avatar_box_has_one_size_for_every_page(): void
+    {
+        $this->actingAs($this->student)->putJson('/plataforma/paineis/avatar', ['w' => 7, 'h' => 12])->assertNoContent();
+        $this->actingAs($this->student)->putJson('/plataforma/paineis/avatar', ['w' => 4, 'h' => 12])->assertUnprocessable(); // abaixo do mínimo
+        $this->actingAs($this->student)->putJson('/plataforma/paineis/avatar', ['w' => 6, 'h' => 5])->assertUnprocessable();
+
+        $this->assertSame(['w' => 7, 'h' => 12], $this->student->fresh()->panel_layouts['avatar']);
+        $this->actingAs($this->student)->get('/plataforma/documentos')->assertInertia(fn ($page) => $page->where('avatarBox', ['w' => 7, 'h' => 12]));
+    }
+
     public function test_a_student_talks_with_the_instructor_and_only_they_see_it(): void
     {
         $this->actingAs($this->student)->post('/plataforma/mensagens', ['course_id' => $this->course->id, 'body' => 'Tenho uma dúvida.'])->assertRedirect();

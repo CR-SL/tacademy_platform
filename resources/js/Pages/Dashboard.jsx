@@ -22,8 +22,8 @@ function greeting() {
 // Ordem inicial quando há trabalho (as caixas de aprender, se as houver, vêm a seguir)
 const WORK_ORDER = ['pendentes', 'resumo', 'atencao', 'pedidos', 'compras', 'pessoas', 'catalogo', 'equipas', 'vistos', 'novo', 'ensino', 'avaliacoes', 'mensagens'];
 const TEACH_ORDER = ['novo', 'ensino', 'pendentes', 'avaliacoes', 'mensagens'];
-// Disposição inicial do aluno (opção A, 2026-11-14): Continuar e o Alex em cima, "Os meus cursos" e "Os meus documentos"
-// sempre na coluna da direita. Esta ordem é também a do telemóvel (uma só coluna).
+// Disposição inicial do aluno (opção A, 2026-11-14): Continuar, "Os meus cursos" e o Alex em cima, o Alex encostado à
+// direita (2026-11-28) e "Os meus documentos" por baixo dele. Esta ordem é também a do telemóvel (uma só coluna).
 const LEARN_ORDER = ['equipa', 'continuar', 'pendentes', 'cursos', 'documentos', 'alex', 'mensagens', 'resultados', 'notas', 'sugestoes', 'pausa'];
 
 export default function Dashboard(props) {

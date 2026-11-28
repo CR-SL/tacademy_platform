@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { AlexStart } from '@/Components/Alex/AlexCall';
+import { AlexAway, AlexStart } from '@/Components/Alex/AlexCall';
 import { useEffect, useRef, useState } from 'react';
 import { formatEuro, formatMinutes, levelLabels, plural } from '@/Components/CourseBuilder/format';
 import { alexDef, Bar, EmptyPanel } from '@/Components/Panels/PanelBoard';
@@ -209,8 +209,8 @@ function lessonNumber(resume) {
 
 // Lugares das caixas comuns no Início do aluno (Pendentes e Mensagens)
 export const LEARN_SPOTS = {
-    pendentes: { x: 0, y: 11, w: 9, h: 12 },
-    mensagens: { x: 9, y: 11, w: 9, h: 12 },
+    pendentes: { x: 0, y: 12, w: 9, h: 12 },
+    mensagens: { x: 9, y: 12, w: 9, h: 12 },
 };
 
 /** Definições das caixas de aprender (Pendentes e Mensagens são comuns e ficam na página). */
@@ -220,12 +220,12 @@ export function learningBoxes({ courses, resume, results, notes, suggestions, do
 
     return {
         cursos: {
-            title: t('Os meus cursos'), x: 18, y: 0, w: 6, h: 15,
+            title: t('Os meus cursos'), x: 13, y: 0, w: 6, h: 12,
             summary: [counts.curso && t(':curso em curso', { curso: counts.curso }), counts.novo && t(':novo por começar', { novo: counts.novo }), counts.feito && plural(counts.feito, t('1 concluído'), t(':n concluídos'))].filter(Boolean).join(' · '),
             body: <CoursesPanel courses={courses} />,
         },
         continuar: {
-            title: t('Continuar'), x: 0, y: 0, w: 12, h: 11,
+            title: t('Continuar'), x: 0, y: 0, w: 13, h: 12,
             label: resume ? [t('Continuar'), resume.course, lessonNumber(resume) && t('Aula :v1', { v1: lessonNumber(resume) })].filter(Boolean).join(' · ') : t('Continuar'),
             summary: resume?.lesson,
             hero: { image: resume?.image ?? '/images/cursos/cta-oficina.jpg', stamp: resume?.stamp },
@@ -233,30 +233,30 @@ export function learningBoxes({ courses, resume, results, notes, suggestions, do
             body: <ContinueBody resume={resume} hasCourses={courses.length > 0} />,
         },
         resultados: {
-            title: t('Resultados'), x: 0, y: 23, w: 6, h: 10,
+            title: t('Resultados'), x: 0, y: 24, w: 6, h: 10,
             summary: results[0] ? t('Último: :score%', { score: results[0].score }) : t('Sem testes feitos'),
             body: <ResultsPanel results={results} />,
         },
-        alex: { ...alexDef(0, 11), x: 12, w: 6, compact: false },
+        alex: alexDef(19),
         documentos: {
-            title: t('Os meus documentos'), x: 18, y: 15, w: 6, h: 14,
+            title: t('Os meus documentos'), x: 18, y: 12, w: 6, h: 22,
             summary: plural(documents.length, t('1 documento'), t(':n documentos')),
             body: <DocumentsPanel documents={documents} />,
         },
         notas: {
-            title: t('As minhas notas'), x: 6, y: 23, w: 12, h: 10,
+            title: t('As minhas notas'), x: 6, y: 24, w: 12, h: 10,
             label: t('As minhas notas · :length', { length: notes.length }),
             summary: notes[0] ? t('Última em :lesson', { lesson: notes[0].lesson }) : t('Sem notas'),
             body: <NotesPanel notes={notes} />,
         },
         sugestoes: {
-            title: t('Sugestões'), x: 0, y: 33, w: 24, h: 13,
+            title: t('Sugestões'), x: 0, y: 34, w: 24, h: 13,
             label: t('Sugeridos para ti'),
             summary: plural(suggestions.length, t('1 curso'), t(':n cursos')),
             body: <SuggestionsPanel suggestions={suggestions} />,
         },
         pausa: {
-            title: t('Pausa'), x: 0, y: 46, w: 8, h: 14, compact: true,
+            title: t('Pausa'), x: 0, y: 47, w: 8, h: 14, compact: true,
             label: t('Pausa · Arrumar a oficina'),
             summary: best ? t('Recorde: :best pontos', { best }) : t('Um minijogo para descontrair'),
             body: <WorkshopGame onBest={setBest} />,
@@ -304,16 +304,19 @@ export function Welcome({ firstName, starter }) {
             </div>
 
             {/* O avatar de dúvidas do curso logo no primeiro uso: o aluno fica a saber que pode falar com ele */}
+            {/* Durante a conversa (na janela flutuante) esta caixa fica oculta */}
             {alex?.place && (
-                <section aria-labelledby="w-alex" className="w-alex mt-10">
-                    <img src="/images/alex.png" alt="" />
-                    <div className="w-alex-c">
-                        <span className="pn-lab">{t('Avatar do curso')}</span>
-                        <h2 id="w-alex" className="pn-disp text-[24px] leading-[1.1]">{t('Conhece :name', { name: alex.name })}</h2>
-                        <p className="max-w-[52ch] text-[14.5px] text-text">{t('Um avatar com vídeo e voz que te tira dúvidas sobre o curso “:course”, a qualquer hora.', { course: alex.course })}</p>
-                        <AlexStart alex={alex} block={false} />
-                    </div>
-                </section>
+                <AlexAway>
+                    <section aria-labelledby="w-alex" className="w-alex mt-10">
+                        <img src="/images/alex.png" alt="" />
+                        <div className="w-alex-c">
+                            <span className="pn-lab">{t('Avatar do curso')}</span>
+                            <h2 id="w-alex" className="pn-disp text-[24px] leading-[1.1]">{t('Conhece :name', { name: alex.name })}</h2>
+                            <p className="max-w-[52ch] text-[14.5px] text-text">{t('Um avatar com vídeo e voz que te tira dúvidas sobre o curso “:course”, a qualquer hora.', { course: alex.course })}</p>
+                            <AlexStart alex={alex} block={false} hint={false} />
+                        </div>
+                    </section>
+                </AlexAway>
             )}
         </div>
     );

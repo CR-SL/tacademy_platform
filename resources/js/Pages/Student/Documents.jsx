@@ -85,7 +85,7 @@ export default function Documents({ courses, savedLayout }) {
                 ? <Files key={current.id} course={current} query={query} />
                 : <EmptyPanel title={t('Ainda não tens documentos')} text={t('Os documentos dos teus cursos aparecem aqui.')} href="/plataforma/cursos" cta={t('Ver o catálogo')} />,
         },
-        alex: alexDef(0, 20),
+        alex: alexDef(19),
     };
     const board = usePanelBoard({ view: 'documentos', panels, saved: savedLayout });
 

@@ -61,6 +61,8 @@ class HandleInertiaRequests extends Middleware
             'navCounts' => fn () => $request->user() ? app(\App\Services\Tasks::class)->navCounts($request->user()) : [],
             // O Alex (Tavus): onde pode ser chamado nesta página e quantas conversas faltam hoje; null onde não aparece
             'alex' => fn () => app(\App\Services\AlexService::class)->forRequest($request),
+            // Tamanho da caixa do avatar: um só para todas as páginas de cada utilizador (2026-11-28); null = o inicial
+            'avatarBox' => fn () => $request->user()?->panel_layouts['avatar'] ?? null,
             // Sino do Gestor de Cursos/admin: pedidos novos
             'staffInbox' => fn () => $request->user()?->isCourseStaff()
                 ? [

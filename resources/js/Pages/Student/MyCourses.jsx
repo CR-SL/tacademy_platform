@@ -114,14 +114,14 @@ export default function MyCourses({ courses, detail, savedLayout }) {
     // para que quem tinha a disposição antiga guardada passe a ver a nova
     const panels = {
         meus: {
-            title: t('Os meus cursos'), x: 0, y: 0, w: 16, h: 22,
+            title: t('Os meus cursos'), x: 0, y: 0, w: 19, h: 22,
             summary: `${courses.length} ${courses.length === 1 ? t('curso') : t('cursos')}`,
             mini: courses.length ? <Tabs courses={courses} filter={filter} onChange={setFilter} /> : null,
             body: courses.length
                 ? <CoursesList courses={courses} filter={filter} onOpen={open} />
                 : <EmptyPanel title={t('Ainda não tens cursos')} text={t('Quando te inscreveres num curso, aparece aqui.')} href="/plataforma/cursos" cta={t('Ver o catálogo')} />,
         },
-        formador: { ...alexDef(0, 22), x: 16, w: 8, compact: false, float: null, showSum: true },
+        formador: alexDef(19),
     };
     const board = usePanelBoard({ view: 'cursos', panels, saved: savedLayout });
 

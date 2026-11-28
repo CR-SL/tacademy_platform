@@ -165,7 +165,11 @@
 .pn-foot { padding: 10px 18px; }
 
 /* Alex */
-.pn-alex-p { width: 100%; aspect-ratio: 300 / 210; object-fit: cover; object-position: center top; background: var(--color-surface2); }
+/* A caixa do avatar: a foto ocupa o que sobra e o texto e o botão ficam sempre em baixo, à vista */
+.pn-alex { display: flex; flex-direction: column; height: 100%; }
+.pn-alex-p { flex: 1 1 0; min-height: 70px; width: 100%; object-fit: cover; object-position: center 15%; background: var(--color-surface2); }
+.pn-alex-c { flex: none; }
+.pn-stack .pn-alex-p { flex: none; aspect-ratio: 300 / 210; }
 .pn-alex-c { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px 18px; }
 .pn-alex-c .ui-btn, .w-alex .ui-btn { align-self: center; width: auto; height: 30px; padding: 0 14px; font-size: 13.5px; }
 /* O Alex no primeiro uso (boas-vindas do aluno sem cursos) */
